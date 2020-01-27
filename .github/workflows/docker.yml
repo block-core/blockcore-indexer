@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Build the Docker container image
-        run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t blockcoreindexer:0.0.1 --label "unstable=true" "."
+        run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t docker.pkg.github.com/block-core/blockcore-indexer/blockcoreindexer:0.0.1 --label "unstable=true" "."
 
       - name: Login and Push to GitHub Docker Registry
         run: |
