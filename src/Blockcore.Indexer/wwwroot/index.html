@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8" />
+   <title>Blockcore Indexer</title>
+</head>
+<body>
+   <h1>Blockcore Indexer</h1>
+
+   <div id="network">Please wait...</div>
+   <div id="progress"></div>
+   <br />
+   <a href="/api/stats">See details</a> | <a href="/docs">API Documentation</a>
+
+   <script>
+      var network = document.getElementById('network');
+      var progress = document.getElementById('progress');
+
+      const getData = async () => {
+         const response = await fetch('/api/stats');
+         const result = await response.json();
+         network.innerHTML = result.symbol;
+         progress.innerHTML = result.progress;
+      }
+
+      setInterval(getData, 5000);
+      getData();
+   </script>
+
+</body>
+</html>

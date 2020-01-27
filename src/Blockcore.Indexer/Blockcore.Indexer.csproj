@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+		<AssemblyName>Blockcore.Indexer</AssemblyName>
+		<OutputType>Exe</OutputType>
+		<PackageId>indexer.blockcore.net</PackageId>
+		<RuntimeFrameworkVersion>3.1.1</RuntimeFrameworkVersion>
+		<GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+		<GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+		<RootNamespace>Blockcore.Indexer</RootNamespace>
+		<UserSecretsId>7bd1d385-aa0f-4c2a-a842-f064d2cb4515</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<!--<DockerfileContext>..\..</DockerfileContext>-->
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<DocumentationFile>Blockcore.Indexer.xml</DocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Remove="wwwroot\index.html" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="wwwroot\index.html">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="4.1.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
+		<PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
+		<PackageReference Include="MongoDB.Driver" Version="2.10.1" />
+		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+		<PackageReference Include="NStratis" Version="4.0.0.77" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="5.0.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="5.0.0" />
+	</ItemGroup>
+
+</Project>
