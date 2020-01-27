@@ -14,9 +14,10 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Build the Docker container image
-        run: docker build -f "src\Blockcore.Indexer\Dockerfile" -t blockcoreindexer --label "unstable=true" "."
+        run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t blockcoreindexer --label "unstable=true" "."
 
       - name: Login and Push to GitHub Docker Registry
         run: |
           docker login docker.pkg.github.com -u ${{ github.repostitory }} -p "${GITHUB_PACKAGE_REGISTRY_TOKEN}"
-          docker push docker.pkg.github.com/chrispat/actions-container-service/app-services:latest
+          docker tag IMAGE_ID docker.pkg.github.com/block-core/blockcore-indexer/IMAGE_NAME:VERSION
+          docker push docker.pkg.github.com/block-core/blockcore-indexer/IMAGE_NAME:VERSION
