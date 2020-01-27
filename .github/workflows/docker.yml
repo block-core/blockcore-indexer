@@ -18,6 +18,6 @@ jobs:
 
       - name: Login and Push to GitHub Docker Registry
         run: |
-          docker login docker.pkg.github.com -u "blockcore-indexer" -p "${GITHUB_PACKAGE_REGISTRY_TOKEN}"
+          docker login docker.pkg.github.com -u "blockcore-indexer" -p "${secrets.GITHUB_TOKEN}"
           docker tag IMAGE_ID docker.pkg.github.com/block-core/blockcore-indexer/IMAGE_NAME:VERSION
           docker push docker.pkg.github.com/block-core/blockcore-indexer/IMAGE_NAME:VERSION
