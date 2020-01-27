@@ -1,22 +1,21 @@
-name: Build and Deploy Docker
+name: Docker
 
 on:
    push:
      branches:    
       - master
-      - feature/*
 
 jobs:
   build:
-    name: Docker
+    name: Build and Push
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
 
       - name: Build the Docker container image
-        run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t blockcoreindexer --label "unstable=true" "."
+        run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t blockcoreindexer:0.0.1 --label "unstable=true" "."
 
       - name: Login and Push to GitHub Docker Registry
         run: |
           docker login docker.pkg.github.com -u "blockcore-indexer" -p "${{secrets.GITHUB_TOKEN}}"
-          docker push docker.pkg.github.com/block-core/blockcore-indexer/indexer:0.0.1
+          docker push docker.pkg.github.com/block-core/blockcore-indexer/blockcoreindexer:0.0.1
