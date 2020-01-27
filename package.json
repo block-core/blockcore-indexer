@@ -1,0 +1,28 @@
+{
+    "name": "blockcoreindexer",
+    "version": "0.0.1",
+    "license": "MIT",
+    "author": {
+      "name": "Blockcore",
+      "email": "post@blockcore.net",
+      "url": "http://www.blockcore.net"
+    },
+    "description": "",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/block-core/blockcore-indexer.git"
+    },
+    "bugs": {
+      "url": "https://github.com/block-core/blockcore-indexer/issues"
+    },
+    "homepage": "https://github.com/block-core/blockcore-indexer#readme",
+    "scripts": {
+      "version": "node -p \"require('./package.json').version\"",
+      "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md"
+    },
+    "private": true,
+    "dependencies": {
+      "conventional-changelog-cli": "2.0.31"
+    },
+    "devDependencies": {}
+  }

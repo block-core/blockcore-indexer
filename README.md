@@ -1,5 +1,13 @@
 # Blockcore Indexer
 
+[5]: https://github.com/block-core/blockcore-indexer/actions
+[6]: https://github.com/block-core/blockcore-indexer/workflows/Build/badge.svg
+[7]: https://github.com/block-core/blockcore-indexer/workflows/Test/badge.svg
+[8]: https://github.com/block-core/blockcore-indexer/workflows/Release/badge.svg
+[9]: https://github.com/block-core/blockcore-indexer/workflows/Publish/badge.svg
+
+[![Build Status][6]][5] [![Test Status][7]][5] [![Release Status][8]][5] [![Publish Packages Status][9]][5]
+
 Blockcore Indexer scans the blockchain of Blockcore-derived chains and stores transaction/address information in a MongoDB database with REST API available for Block Explorers to use.
 
 Blockcore Indexer API can be searched by segwit addresses and Cold-Staking (hot and cold key) script types.

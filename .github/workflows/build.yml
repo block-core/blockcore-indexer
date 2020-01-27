@@ -1,0 +1,92 @@
+name: Build
+
+on: 
+  push:
+    branches:
+      - master
+
+jobs:
+  
+  buildTestRelease:
+
+    strategy:
+      matrix:
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
+        include:
+          - os: windows-latest
+            extension: ".zip"
+            runtime: "win-x64"
+          - os: ubuntu-latest
+            extension: ".tar.gz"
+            runtime: "linux-x64"
+          - os: macos-latest
+            runtime: "osx-x64"
+            extension: ".zip"
+        node_version: [12.x]
+        dotnet_version: ['3.1.101']
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+    
+    env:
+      PROJECT_NAME: 'Blockcore.Indexer'
+      SOLUTION_PATH: 'Blockcore.Indexer.sln'
+      PROJECT_PATH: 'src/Blockcore.Indexer/Blockcore.Indexer.csproj'
+      BUILD_CONFIGURATION: 'Release'
+
+    steps:
+
+    - uses: actions/checkout@v1
+      name: Checkout
+
+    - name: Setup Node.js (${{ matrix.node_version }})
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node_version }}
+
+    - name: Variables
+      run: |
+        echo "::set-env name=VERSION::$(npm run version --silent)"
+        echo "::set-env name=RELEASE_CONFIGURATION::${{ matrix.runtime }}"
+    - name: Setup .NET Core (${{ matrix.dotnet_version }})
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: ${{ matrix.dotnet_version }}
+
+    - name: Restore
+      run: dotnet restore ${{env.SOLUTION_PATH}}
+
+    - name: Build
+      run: dotnet build -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} -v m ${{env.SOLUTION_PATH}}
+
+    - name: Publish
+      run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} -v m -o ./src/${{ env.PROJECT_NAME }}/bin/publish ${{env.PROJECT_PATH}}
+
+    - name: Package Name
+      run: |
+        echo "::set-env name=RELEASE_NAME::${{ env.PROJECT_NAME }}-${{ env.VERSION }}-${{ env.RELEASE_CONFIGURATION }}${{ matrix.extension }}"
+        echo "::set-env name=RELEASE_PATH::${{ env.PROJECT_NAME }}-${{ env.VERSION }}-${{ env.RELEASE_CONFIGURATION }}${{ matrix.extension }}"
+    - name: Package (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        echo "::set-env name=RELEASE_PATH::./src/${{env.PROJECT_NAME}}/bin/publish/${{env.RELEASE_NAME}}"
+        cd ./src/${{env.PROJECT_NAME}}/bin/publish/
+        tar cvzf ${{env.RELEASE_NAME}} *
+    - name: Package (Windows)
+      if: matrix.os == 'windows-latest'
+      run: Compress-Archive -Path .\src\${{env.PROJECT_NAME}}\bin\publish\* -DestinationPath .\${{env.RELEASE_NAME}}
+
+    - name: Package (Mac)
+      if: matrix.os == 'macos-latest'
+      run: zip -j -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
+
+    - name: Release
+      uses: sondreb/action-release@master
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: "${{env.RELEASE_PATH}}"
+        draft: true
+        prerelease: true
+        body: ''
+        name: "Blockcore Indexer (Release ${{env.VERSION}})"
+        tag: v${{env.VERSION}}
