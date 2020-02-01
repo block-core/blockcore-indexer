@@ -1,6 +1,6 @@
-namespace Blockcore.Indexer.Config
+namespace Blockcore.Indexer.Settings
 {
-   public class NetworkConfiguration
+   public class NetworkSettings
    {
       public string NetworkConsensusFactoryType { get; set; }
 

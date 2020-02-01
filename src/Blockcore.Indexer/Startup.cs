@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using Blockcore.Indexer.Api.Handlers;
-using Blockcore.Indexer.Config;
+using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
 using Blockcore.Indexer.Storage;
@@ -30,9 +30,9 @@ namespace Blockcore.Indexer
 
       public void ConfigureServices(IServiceCollection services)
       {
-         services.Configure<ChainConfiguration>(Configuration.GetSection("Chain"));
-         services.Configure<NetworkConfiguration>(Configuration.GetSection("Network"));
-         services.Configure<IndexerConfiguration>(Configuration.GetSection("Indexer"));
+         services.Configure<ChainSettings>(Configuration.GetSection("Chain"));
+         services.Configure<NetworkSettings>(Configuration.GetSection("Network"));
+         services.Configure<IndexerSettings>(Configuration.GetSection("Indexer"));
 
          services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
@@ -70,13 +70,15 @@ namespace Blockcore.Indexer
                 options.SwaggerDoc("indexer", new OpenApiInfo { Title = "Blockcore Indexer API", Version = fileVersion });
 
                 // integrate xml comments
-                options.IncludeXmlComments(XmlCommentsFilePath);
+                if (File.Exists(XmlCommentsFilePath))
+                {
+                   options.IncludeXmlComments(XmlCommentsFilePath);
+                }
 
                 options.DescribeAllEnumsAsStrings();
 
                 options.DescribeStringEnumsInCamelCase();
              });
-
 
          services.AddSwaggerGenNewtonsoftSupport(); // explicit opt-in - needs to be placed after AddSwaggerGen()
 

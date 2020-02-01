@@ -2,19 +2,17 @@
 
 	<PropertyGroup>
 		<TargetFramework>netcoreapp3.1</TargetFramework>
-		<AssemblyName>Blockcore.Indexer</AssemblyName>
 		<OutputType>Exe</OutputType>
 		<PackageId>indexer.blockcore.net</PackageId>
 		<RuntimeFrameworkVersion>3.1.1</RuntimeFrameworkVersion>
 		<GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
 		<GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-		<RootNamespace>Blockcore.Indexer</RootNamespace>
 		<UserSecretsId>7bd1d385-aa0f-4c2a-a842-f064d2cb4515</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-		<!--<DockerfileContext>..\..</DockerfileContext>-->
+		<DockerfileContext>..\..</DockerfileContext>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<DocumentationFile>Blockcore.Indexer.xml</DocumentationFile>
 	</PropertyGroup>
 

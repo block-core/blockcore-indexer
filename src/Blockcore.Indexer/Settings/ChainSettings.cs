@@ -1,6 +1,6 @@
-namespace Blockcore.Indexer.Config
+namespace Blockcore.Indexer.Settings
 {
-   public class ChainConfiguration
+   public class ChainSettings
    {
       public string Name { get; set; }
 

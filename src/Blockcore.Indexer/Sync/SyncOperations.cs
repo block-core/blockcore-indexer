@@ -7,7 +7,7 @@ namespace Blockcore.Indexer.Sync
    using System.Threading.Tasks;
    using Blockcore.Indexer.Client;
    using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
@@ -26,18 +26,18 @@ namespace Blockcore.Indexer.Sync
 
       private readonly ILogger<SyncOperations> log;
 
-      private readonly IndexerConfiguration configuration;
+      private readonly IndexerSettings configuration;
 
       private readonly System.Diagnostics.Stopwatch watch;
 
       private readonly IMemoryCache cache;
 
-      MemoryCacheEntryOptions cacheOptions;
+      private readonly MemoryCacheEntryOptions cacheOptions;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncOperations"/> class.
       /// </summary>
-      public SyncOperations(IStorage storage, ILogger<SyncOperations> logger, IOptions<IndexerConfiguration> configuration, IMemoryCache cache)
+      public SyncOperations(IStorage storage, ILogger<SyncOperations> logger, IOptions<IndexerSettings> configuration, IMemoryCache cache)
       {
          this.configuration = configuration.Value;
          log = logger;

@@ -4,7 +4,7 @@ namespace Blockcore.Indexer.Sync
    using System.Linq;
    using System.Threading;
    using System.Threading.Tasks;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Sync.SyncTasks;
    using Microsoft.Extensions.DependencyInjection;
    using Microsoft.Extensions.Hosting;
@@ -16,15 +16,15 @@ namespace Blockcore.Indexer.Sync
    /// </summary>
    public class SyncServer : IHostedService, IDisposable
    {
-      private readonly IndexerConfiguration configuration;
-      private readonly ChainConfiguration chainConfiguration;
+      private readonly IndexerSettings configuration;
+      private readonly ChainSettings chainConfiguration;
       private readonly ILogger<SyncServer> log;
       private readonly IServiceScopeFactory scopeFactory;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncServer"/> class.
       /// </summary>
-      public SyncServer(ILogger<SyncServer> logger, IOptions<IndexerConfiguration> configuration, IOptions<ChainConfiguration> chainConfiguration, IServiceScopeFactory scopeFactory)
+      public SyncServer(ILogger<SyncServer> logger, IOptions<IndexerSettings> configuration, IOptions<ChainSettings> chainConfiguration, IServiceScopeFactory scopeFactory)
       {
          log = logger;
          this.configuration = configuration.Value;

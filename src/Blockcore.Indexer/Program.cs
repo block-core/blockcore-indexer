@@ -43,7 +43,7 @@ namespace Blockcore.Indexer
                else
                {
                   // TODO: Update this to master branch when it is updated.
-                  url = $"https://raw.githubusercontent.com/block-core/chaininfo/master/add-existing-setups/chains/{chain}.json";
+                  url = $"https://raw.githubusercontent.com/block-core/chaininfo/feature/add-existing-setups/chains/{chain}.json";
                }
 
                var http = new HttpClient();
@@ -63,32 +63,5 @@ namespace Blockcore.Indexer
             {
                webBuilder.UseStartup<Startup>();
             });
-
-
-      //public static void Main(string[] args)
-      //{
-      //    var chain = (args.Length == 0) ? string.Empty : args[0].ToUpper();
-
-      //    chain = (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CHAIN"))) ? chain : Environment.GetEnvironmentVariable("CHAIN").ToUpper();
-
-      //    if (string.IsNullOrWhiteSpace(chain))
-      //    {
-      //        throw new ArgumentNullException("CHAIN", "You must specify a single argument that indicates what chain to run. Either as an argument or ENV variable.");
-      //    }
-
-      //    var config = new ConfigurationBuilder()
-      //      .SetBasePath(Directory.GetCurrentDirectory())
-      //      .AddJsonFile("hosting.json", optional: true)
-      //      .AddJsonFile("setup.json", optional: false, reloadOnChange: false)
-      //      .AddJsonFile(Path.Combine("Setup", $"{chain}.json"), optional: true, reloadOnChange: false)
-      //      .AddCommandLine(args)
-      //      .AddEnvironmentVariables()
-      //      .Build();
-
-      //    WebHost.CreateDefaultBuilder(args)
-      //       .UseConfiguration(config)
-      //       .UseStartup<Startup>()
-      //       .Build().Run();
-      //}
    }
 }

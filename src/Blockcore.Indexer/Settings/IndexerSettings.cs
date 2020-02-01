@@ -1,6 +1,6 @@
-namespace Blockcore.Indexer.Config
+namespace Blockcore.Indexer.Settings
 {
-   public class IndexerConfiguration
+   public class IndexerSettings
    {
       public string RpcPassword { get; set; }
 

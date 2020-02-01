@@ -39,3 +39,24 @@ GET /api/query/block/Index/{blockIndex}/{transactions}
 GET /api/query/transaction/{transactionId}  
 GET /api/stats  
 GET /api/stats/peers  
+
+
+## Docker
+
+```sh
+docker build -t blockcoreindexer .
+```
+
+```sh
+docker run -p 9901:9901 --name cityindexer blockcoreindexer:latest
+```
+
+```sh
+// Run an individual chain from the docker sub-folders. Timeout should be high to avoid blockchain database storage issues.
+docker-compose up --timeout 600
+```
+
+```sh
+// Cleanup the majority of resources (doesn't delete volumes)
+docker system prune -a
+```

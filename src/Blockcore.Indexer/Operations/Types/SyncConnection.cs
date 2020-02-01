@@ -5,7 +5,7 @@ using NBitcoin.DataEncoders;
 namespace Blockcore.Indexer.Operations.Types
 {
    using System;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Microsoft.Extensions.Options;
 
    /// <summary>
@@ -13,7 +13,7 @@ namespace Blockcore.Indexer.Operations.Types
    /// </summary>
    public class NetworkConfig : Network
    {
-      public NetworkConfig(IndexerConfiguration config, ChainConfiguration chainConfig, NetworkConfiguration networkConfig)
+      public NetworkConfig(IndexerSettings config, ChainSettings chainConfig, NetworkSettings networkConfig)
       {
          CoinTicker = chainConfig.Symbol;
 
@@ -37,7 +37,7 @@ namespace Blockcore.Indexer.Operations.Types
 
    public class ConsensusConfig : Consensus
    {
-      public ConsensusConfig(IndexerConfiguration config, ConsensusFactory consensusFactory) : base(
+      public ConsensusConfig(IndexerSettings config, ConsensusFactory consensusFactory) : base(
           consensusFactory: consensusFactory,
           consensusOptions: null,
           coinType: 0,
@@ -81,11 +81,11 @@ namespace Blockcore.Indexer.Operations.Types
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncConnection"/> class.
       /// </summary>
-      public SyncConnection(IOptions<IndexerConfiguration> config, IOptions<ChainConfiguration> chainConfig, IOptions<NetworkConfiguration> networkConfig)
+      public SyncConnection(IOptions<IndexerSettings> config, IOptions<ChainSettings> chainConfig, IOptions<NetworkSettings> networkConfig)
       {
-         IndexerConfiguration configuration = config.Value;
-         ChainConfiguration chainConfiguration = chainConfig.Value;
-         NetworkConfiguration networkConfiguration = networkConfig.Value;
+         IndexerSettings configuration = config.Value;
+         ChainSettings chainConfiguration = chainConfig.Value;
+         NetworkSettings networkConfiguration = networkConfig.Value;
 
          Symbol = chainConfiguration.Symbol;
          Password = configuration.RpcPassword;
