@@ -1,13 +1,13 @@
 name: Build
 
-on: 
-  push:
-    branches:
-      - master
+# on: 
+#   push:
+#     branches:
+#       - master
 
 jobs:
   
-  buildTestRelease:
+  build:
 
     strategy:
       matrix:

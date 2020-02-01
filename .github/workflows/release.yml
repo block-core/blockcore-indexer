@@ -14,17 +14,17 @@ jobs:
       - name: deploy
         run: |
           echo "action - ${{ github.event.action }}"
-          echo "assets_url - ${{ github.event.assets_url }}"
-          echo "action - ${{ github.event.release.action }}"
-          echo "release - ${{ github.event.release.release }}"
-          echo "release - ${{ github.event.release.release }}"
-          echo "environment - ${{ github.event.deployment.task }}"
-          echo "payload - ${{ github.event.deployment.payload }}"
+          echo "url - ${{ github.event.release.url }}"
+          echo "assets_url - ${{ github.event.release.assets_url }}"
+          echo "id - ${{ github.event.release.id }}"
+          echo "tag_name - ${{ github.event.release.tag_name }}"
+          echo "assets - ${{ github.event.assets }}"
+          echo "assets[0] - ${{ github.event.assets[0] }}"
 
-      - name: Build the Docker container image
-        run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t docker.pkg.github.com/block-core/blockcore-indexer/blockcoreindexer:latest --label "unstable=true" "."
+      # - name: Build the Docker container image
+      #   run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t docker.pkg.github.com/block-core/blockcore-indexer/blockcoreindexer:latest --label "unstable=true" "."
 
-      - name: Login and Push to GitHub Docker Registry
-        run: |
-          docker login docker.pkg.github.com -u "blockcore-indexer" -p "${{secrets.GITHUB_TOKEN}}"
-          docker push docker.pkg.github.com/block-core/blockcore-indexer/blockcoreindexer:latest
+      # - name: Login and Push to GitHub Docker Registry
+      #   run: |
+      #     docker login docker.pkg.github.com -u "blockcore-indexer" -p "${{secrets.GITHUB_TOKEN}}"
+      #     docker push docker.pkg.github.com/block-core/blockcore-indexer/blockcoreindexer:latest
