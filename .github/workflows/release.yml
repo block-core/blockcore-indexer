@@ -24,7 +24,7 @@ jobs:
       - name: Find and Replace
         uses: jacobtomlinson/gha-find-replace@master
         with:
-          find: "${{version}}"
+          find: "[version]"
           replace: "${{ github.event.release.tag_name }}"
           include: "src/Blockcore.Indexer/Dockerfile"
 
