@@ -28,8 +28,13 @@ jobs:
           replace: "${{ github.event.release.tag_name }}"
           include: "src/Blockcore.Indexer/Dockerfile"
 
-      # - name: Build the Docker container image
-      #   run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t docker.pkg.github.com/block-core/blockcore-indexer/blockcoreindexer:latest --label "unstable=true" "."
+      - name: Build the Docker container image
+        run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t docker.pkg.github.com/block-core/blockcore-indexer/blockcoreindexer:latest --label "unstable=true" "."
+
+      - name: Login and Push to Docker Registry
+        run: |
+          docker login -u "sondreb" -p "${{secrets.DockerHubSecret}}"
+          docker push sondreb/indexertest:latest
 
       # - name: Login and Push to GitHub Docker Registry
       #   run: |
