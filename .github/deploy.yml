@@ -11,8 +11,26 @@ production:
 #   environment: staging
 #   production_environment: false
 
+btc:
+  environment: production
+  description: Deploy Indexer to btc.indexer.blockcore.net
+  payload:
+    chain: "BTC"
 
-# .github/deploy.yml
+city:
+  environment: production
+  description: Deploy Indexer to city.indexer.blockcore.net
+  payload:
+    chain: "CITY"
+
+
+xds:
+  environment: production
+  description: Deploy Indexer to xds.indexer.blockcore.net
+  payload:
+    chain: "XDS"
+
+
 canary:
   environment: production
   description: Deploy to production with %15 traffic.

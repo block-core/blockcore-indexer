@@ -1,13 +1,10 @@
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
+WORKDIR /app
+COPY . ./
+RUN dotnet publish -c Release -o /app/publish
+
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim
-WORKDIR /usr/local/app/
-
-RUN apt-get update \
-    && apt-get install -y curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN curl -Ls https://github.com/sondreb/blockcore-indexer/releases/download/#{VERSION}#/Blockcore.Indexer-#{VERSION}#-linux-x64.tar.gz \
-    | tar -xvz -C .
-
+WORKDIR /app
+COPY --from=build /app/publish .
 EXPOSE 9910
 ENTRYPOINT ["dotnet", "Blockcore.Indexer.dll"]

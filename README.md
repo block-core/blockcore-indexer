@@ -2,11 +2,9 @@
 
 [5]: https://github.com/block-core/blockcore-indexer/actions
 [6]: https://github.com/block-core/blockcore-indexer/workflows/Build/badge.svg
-[7]: https://github.com/block-core/blockcore-indexer/workflows/Test/badge.svg
-[8]: https://github.com/block-core/blockcore-indexer/workflows/Release/badge.svg
-[9]: https://github.com/block-core/blockcore-indexer/workflows/Publish/badge.svg
+[7]: https://github.com/block-core/blockcore-indexer/workflows/Release/badge.svg
 
-[![Build Status][6]][5] [![Test Status][7]][5] [![Release Status][8]][5] [![Publish Packages Status][9]][5]
+[![Build Status][6]][5] [![Release Status][7]][5]
 
 Blockcore Indexer scans the blockchain of Blockcore-derived chains and stores transaction/address information in a MongoDB database with REST API available for Block Explorers to use.
 
@@ -60,3 +58,25 @@ docker-compose up --timeout 600
 // Cleanup the majority of resources (doesn't delete volumes)
 docker system prune -a
 ```
+
+
+## Release Process
+
+1. New changes to the codebase must come as pull requests. This will trigger the [pull-request.yml](.github/workflows/pull-request.yml) workflow.
+
+2. When a pull request is merged to master, this will trigger [build.yml](.github/workflows/build.yml). Build will produce a draft release, or update existing.
+
+3. After manual testing and verification of the draft release (which contains binaries created by build), a project responsible can release the draft release to the public, either as a release or pre-release.
+
+4. The [release.yml](.github/workflows/release.yml) workflow picks up the release events, and builds the [docker image](src/Blockcore.Indexer/Dockerfile.Release) based on the newly released binary packages.
+
+5. Newly built and released container can then be installed using either :latest tag (not adviseable) or the specific version (advised)
+
+```sh
+docker pull blockcore/indexer:latest
+```
+
+```sh
+docker pull blockcore/indexer:0.0.3
+```
+
