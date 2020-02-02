@@ -6,12 +6,12 @@ on:
 
 jobs:
   build:
-    name: Build and Push Image 2
+    name: Build and Push
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
 
-      - name: deploy
+      - name: Log Variables
         run: |
           echo "action - ${{ github.event.action }}"
           echo "url - ${{ github.event.release.url }}"
