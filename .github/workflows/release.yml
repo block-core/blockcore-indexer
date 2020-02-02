@@ -21,12 +21,18 @@ jobs:
           echo "assets - ${{ github.event.assets }}"
           echo "assets[0] - ${{ github.event.assets[0] }}"
 
-      - name: Find and Replace
-        uses: jacobtomlinson/gha-find-replace@master
+      - uses: cschleiden/replace-tokens@v1
         with:
-          find: "[version]"
-          replace: "${{ github.event.release.tag_name }}"
-          include: "src/Blockcore.Indexer/Dockerfile"
+          files: '["**/Dockerfile"]'
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+
+      # - name: Find and Replace
+      #   uses: jacobtomlinson/gha-find-replace@master
+      #   with:
+      #     find: "[version]"
+      #     replace: "${{ github.event.release.tag_name }}"
+      #     include: "src/Blockcore.Indexer/Dockerfile"
 
       - name: Build the Docker container image
         run: docker build -f "./src/Blockcore.Indexer/Dockerfile" -t sondreb/indexertest:latest --label "unstable=true" "."
