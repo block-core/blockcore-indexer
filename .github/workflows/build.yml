@@ -3,7 +3,7 @@ name: Build
 on: 
   push:
     branches:
-      - test
+      - master
 
 jobs:
   
@@ -64,7 +64,7 @@ jobs:
 
     - name: Package Name
       run: |
-        echo "::set-env name=RELEASE_NAME::${{ env.PROJECT_NAME }}-${{ env.VERSION }}-${{ env.RELEASE_CONFIGURATION }}${{ matrix.extension }}"
+        echo "::set-env name=RELEASE_NAME::${{ env.PROJECT_NAME }}-v${{ env.VERSION }}-${{ env.RELEASE_CONFIGURATION }}${{ matrix.extension }}"
         echo "::set-env name=RELEASE_PATH::${{ env.PROJECT_NAME }}-${{ env.VERSION }}-${{ env.RELEASE_CONFIGURATION }}${{ matrix.extension }}"
     - name: Package (Linux)
       if: matrix.os == 'ubuntu-latest'
