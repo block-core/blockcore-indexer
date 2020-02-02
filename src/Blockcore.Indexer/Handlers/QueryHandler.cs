@@ -3,7 +3,7 @@ namespace Blockcore.Indexer.Api.Handlers
    using System.Collections.Generic;
    using System.Linq;
    using Blockcore.Indexer.Api.Handlers.Types;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Storage;
    using Microsoft.Extensions.Options;
@@ -14,16 +14,16 @@ namespace Blockcore.Indexer.Api.Handlers
    /// </summary>
    public class QueryHandler
    {
-      private readonly IndexerConfiguration configuration;
+      private readonly IndexerSettings configuration;
 
-      private readonly ChainConfiguration chainConfiguration;
+      private readonly ChainSettings chainConfiguration;
 
       private readonly IStorage storage;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryHandler"/> class.
       /// </summary>
-      public QueryHandler(IOptions<IndexerConfiguration> configuration, IOptions<ChainConfiguration> chainConfiguration, IStorage storage)
+      public QueryHandler(IOptions<IndexerSettings> configuration, IOptions<ChainSettings> chainConfiguration, IStorage storage)
       {
          this.storage = storage;
          this.configuration = configuration.Value;

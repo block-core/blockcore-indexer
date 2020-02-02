@@ -9,7 +9,7 @@ namespace Blockcore.Indexer.Api.Handlers
    using Blockcore.Indexer.Api.Handlers.Types;
    using Blockcore.Indexer.Client;
    using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Operations.Types;
    using Blockcore.Indexer.Storage;
    using Microsoft.Extensions.Options;
@@ -23,14 +23,14 @@ namespace Blockcore.Indexer.Api.Handlers
 
       private readonly IStorage storage;
 
-      private readonly IndexerConfiguration configuration;
+      private readonly IndexerSettings configuration;
 
-      private readonly ChainConfiguration chainConfiguration;
+      private readonly ChainSettings chainConfiguration;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsHandler"/> class.
       /// </summary>
-      public StatsHandler(SyncConnection connection, IStorage storage, IOptions<IndexerConfiguration> configuration, IOptions<ChainConfiguration> chainConfiguration)
+      public StatsHandler(SyncConnection connection, IStorage storage, IOptions<IndexerSettings> configuration, IOptions<ChainSettings> chainConfiguration)
       {
          this.storage = storage;
          syncConnection = connection;

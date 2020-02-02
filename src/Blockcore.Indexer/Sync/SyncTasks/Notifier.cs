@@ -7,7 +7,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using System.Net.Http.Formatting;
    using System.Net.Security;
    using System.Threading.Tasks;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations.Types;
    using Blockcore.Indexer.Storage;
@@ -19,9 +19,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    {
       private readonly ILogger<Notifier> log;
 
-      private readonly IndexerConfiguration configuration;
+      private readonly IndexerSettings configuration;
 
-      private readonly ChainConfiguration chainConfiguration;
+      private readonly ChainSettings chainConfiguration;
 
       private readonly IStorage storage;
 
@@ -32,7 +32,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       /// <summary>
       /// Initializes a new instance of the <see cref="Notifier"/> class. 
       /// </summary>
-      public Notifier(IOptions<IndexerConfiguration> configuration, IOptions<ChainConfiguration> chainConfiguration, ILogger<Notifier> logger, IStorage storage)
+      public Notifier(IOptions<IndexerSettings> configuration, IOptions<ChainSettings> chainConfiguration, ILogger<Notifier> logger, IStorage storage)
           : base(configuration, logger)
       {
          this.configuration = configuration.Value;

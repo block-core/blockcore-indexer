@@ -3,7 +3,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using System;
    using System.Collections.Concurrent;
    using System.Linq;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
 
@@ -12,7 +12,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       /// <summary>
       /// Initializes a new instance of the <see cref="TaskRunner{T}"/> class.
       /// </summary>
-      protected TaskRunner(IOptions<IndexerConfiguration> configuration, ILogger logger)
+      protected TaskRunner(IOptions<IndexerSettings> configuration, ILogger logger)
           : base(configuration, logger)
       {
          Queue = new ConcurrentQueue<T>();

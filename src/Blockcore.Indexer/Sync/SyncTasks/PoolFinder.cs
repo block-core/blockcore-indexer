@@ -2,7 +2,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 {
    using System.Linq;
    using System.Threading.Tasks;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
@@ -11,7 +11,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
    public class PoolFinder : TaskRunner
    {
-      private readonly IndexerConfiguration config;
+      private readonly IndexerSettings config;
 
       private readonly ISyncOperations syncOperations;
 
@@ -24,7 +24,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       /// <summary>
       /// Initializes a new instance of the <see cref="PoolFinder"/> class.
       /// </summary>
-      public PoolFinder(IOptions<IndexerConfiguration> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<PoolFinder> logger)
+      public PoolFinder(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<PoolFinder> logger)
           : base(configuration, logger)
       {
          log = logger;

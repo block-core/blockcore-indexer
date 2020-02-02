@@ -1,7 +1,7 @@
 ﻿namespace Blockcore.Indexer.Storage.Mongo
 {
    using System.Threading.Tasks;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Storage.Mongo.Types;
    using Blockcore.Indexer.Sync.SyncTasks;
    using Microsoft.Extensions.Logging;
@@ -17,12 +17,12 @@
 
       private readonly ILogger<MongoBuilder> log;
 
-      private readonly IndexerConfiguration configuration;
+      private readonly IndexerSettings configuration;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="MongoBuilder"/> class.
       /// </summary>
-      public MongoBuilder(ILogger<MongoBuilder> logger, IStorage data, IOptions<IndexerConfiguration> nakoConfiguration)
+      public MongoBuilder(ILogger<MongoBuilder> logger, IStorage data, IOptions<IndexerSettings> nakoConfiguration)
           : base(logger)
       {
          log = logger;

@@ -6,7 +6,7 @@ namespace Blockcore.Indexer.Storage.Mongo
    using System.Collections.Generic;
    using System.Linq;
    using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
@@ -28,14 +28,14 @@ namespace Blockcore.Indexer.Storage.Mongo
       private readonly ILogger<MongoStorageOperations> log;
       private readonly SyncConnection syncConnection;
 
-      private readonly IndexerConfiguration configuration;
+      private readonly IndexerSettings configuration;
 
       private readonly MongoData data;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="MongoStorageOperations"/> class.
       /// </summary>
-      public MongoStorageOperations(IStorage storage, ILogger<MongoStorageOperations> logger, IOptions<IndexerConfiguration> configuration, SyncConnection syncConnection)
+      public MongoStorageOperations(IStorage storage, ILogger<MongoStorageOperations> logger, IOptions<IndexerSettings> configuration, SyncConnection syncConnection)
       {
          data = (MongoData)storage;
          this.configuration = configuration.Value;

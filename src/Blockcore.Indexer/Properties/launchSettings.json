@@ -1,84 +1,69 @@
 {
-   "iisSettings": {
-      "windowsAuthentication": false,
-      "anonymousAuthentication": true,
-      "iisExpress": {
-         "applicationUrl": "http://localhost:1690/",
-         "sslPort": 0
-      }
-   },
    "profiles": {
-      "IIS Express": {
-         "commandName": "IISExpress",
+      "Docker (Development)": {
+         "commandName": "Docker",
+         "commandLineArgs": "--chain=Development",
          "launchBrowser": true,
-         "environmentVariables": {
-            "ASPNETCORE_ENVIRONMENT": "Development"
-         }
+         "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+         "publishAllPorts": true
       },
-      "Blockcore.Indexer": {
+      "Kestrel (Development)": {
          "commandName": "Project",
+         "commandLineArgs": "--chain=Development",
          "launchBrowser": true,
          "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"
          },
-         "applicationUrl": "http://localhost:9050/"
+         "applicationUrl": "http://localhost:9910/"
       },
       "Blockcore.Indexer (STRATIS)": {
          "commandName": "Project",
-         "commandLineArgs": "STRAT",
+         "commandLineArgs": "--chain=STRAT",
          "launchBrowser": true,
          "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"
          },
-         "applicationUrl": "http://localhost:9050/"
+         "applicationUrl": "http://localhost:9910/"
       },
       "Blockcore.Indexer (CITY)": {
          "commandName": "Project",
-         "commandLineArgs": "CITY",
+         "commandLineArgs": "--chain=CITY",
          "launchBrowser": true,
          "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"
          },
-         "applicationUrl": "http://localhost:9050/"
+         "applicationUrl": "http://localhost:9910/"
       },
       "Blockcore.Indexer (XDS)": {
          "commandName": "Project",
          "commandLineArgs": "--chain=XDS",
          "launchBrowser": true,
          "environmentVariables": {
-            "ASPNETCORE_ENVIRONMENT": "Development",
-            "CHAIN": "XDS"
+            "ASPNETCORE_ENVIRONMENT": "Development"
          },
-         "applicationUrl": "http://localhost:9050/"
+         "applicationUrl": "http://localhost:9910/"
       },
       "Blockcore.Indexer (ODX)": {
          "commandName": "Project",
-         "commandLineArgs": "ODX",
+         "commandLineArgs": "--chain=ODX",
          "launchBrowser": true,
          "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"
          },
-         "applicationUrl": "http://localhost:9050/"
+         "applicationUrl": "http://localhost:9910/"
       },
       "Blockcore.Indexer (TSTRAT)": {
          "commandName": "Project",
-         "commandLineArgs": "TSTRAT",
+         "commandLineArgs": "--chain=TSTRAT",
          "launchBrowser": true,
          "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"
          },
-         "applicationUrl": "http://localhost:9050/"
+         "applicationUrl": "http://localhost:9910/"
       },
       "Blockcore.Indexer (BTC)": {
          "commandName": "Project",
-         "commandLineArgs": "BTC"
-      },
-      "Docker": {
-         "commandName": "Docker",
-         "commandLineArgs": "XDS",
-         "launchBrowser": true,
-         "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
-         "publishAllPorts": true
+         "commandLineArgs": "--chain=BTC"
       }
    }
 }

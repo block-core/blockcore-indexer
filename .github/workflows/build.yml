@@ -1,4 +1,4 @@
-name: Build
+name: Build and Release Binaries
 
 on: 
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   
-  buildTestRelease:
+  build:
 
     strategy:
       matrix:
@@ -57,10 +57,10 @@ jobs:
       run: dotnet restore ${{env.SOLUTION_PATH}}
 
     - name: Build
-      run: dotnet build -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} -v m ${{env.SOLUTION_PATH}}
+      run: dotnet build -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} /p:Version=${{ env.VERSION }} -v m ${{env.SOLUTION_PATH}}
 
     - name: Publish
-      run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} -v m -o ./src/${{ env.PROJECT_NAME }}/bin/publish ${{env.PROJECT_PATH}}
+      run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} /p:Version=${{ env.VERSION }} -v m -o ./src/${{ env.PROJECT_NAME }}/bin/publish ${{env.PROJECT_PATH}}
 
     - name: Package Name
       run: |
@@ -80,6 +80,14 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: zip -j -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
+    #- run: mkdir -p path/to/artifact
+    #- run: echo hello > path/to/artifact/world.txt
+
+    - uses: actions/upload-artifact@v1
+      with:
+        name: blockcore-indexer
+        path: "${{env.RELEASE_PATH}}"
+
     - name: Release
       uses: sondreb/action-release@master
       with:
@@ -89,4 +97,4 @@ jobs:
         prerelease: true
         body: ''
         name: "Blockcore Indexer (Release ${{env.VERSION}})"
-        tag: v${{env.VERSION}}
+        tag: ${{env.VERSION}}

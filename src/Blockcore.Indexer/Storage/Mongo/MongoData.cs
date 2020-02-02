@@ -7,7 +7,7 @@ namespace Blockcore.Indexer.Storage.Mongo
    using System.Collections.Generic;
    using System.Linq;
    using Blockcore.Indexer.Client;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations.Types;
    using Blockcore.Indexer.Storage.Mongo.Types;
@@ -28,13 +28,13 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       private readonly SyncConnection syncConnection;
 
-      private readonly IndexerConfiguration configuration;
+      private readonly IndexerSettings configuration;
 
-      private readonly ChainConfiguration chainConfiguration;
+      private readonly ChainSettings chainConfiguration;
 
       private readonly System.Diagnostics.Stopwatch watch;
 
-      public MongoData(ILogger<MongoStorageOperations> logger, SyncConnection connection, IOptions<IndexerConfiguration> nakoConfiguration, IOptions<ChainConfiguration> chainConfiguration)
+      public MongoData(ILogger<MongoStorageOperations> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration)
       {
          configuration = nakoConfiguration.Value;
          this.chainConfiguration = chainConfiguration.Value;

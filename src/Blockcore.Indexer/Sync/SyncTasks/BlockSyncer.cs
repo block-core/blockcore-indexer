@@ -3,7 +3,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using System.Linq;
    using System.Threading.Tasks;
    using Blockcore.Indexer.Client;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
@@ -15,7 +15,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    /// </summary>
    public class BlockSyncer : TaskRunner<SyncBlockOperation>
    {
-      private readonly IndexerConfiguration config;
+      private readonly IndexerSettings config;
 
       private readonly ISyncOperations syncOperations;
 
@@ -28,7 +28,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockSyncer"/> class.
       /// </summary>
-      public BlockSyncer(IOptions<IndexerConfiguration> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockSyncer> logger)
+      public BlockSyncer(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockSyncer> logger)
           : base(configuration, logger)
       {
          log = logger;

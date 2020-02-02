@@ -4,7 +4,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using System.Linq;
    using System.Threading.Tasks;
    using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
@@ -27,7 +27,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockStore"/> class.
       /// </summary>
-      public BlockStore(IOptions<IndexerConfiguration> configuration, ILogger<BlockStore> logger, IStorageOperations storageOperations, SyncConnection syncConnection)
+      public BlockStore(IOptions<IndexerSettings> configuration, ILogger<BlockStore> logger, IStorageOperations storageOperations, SyncConnection syncConnection)
           : base(configuration, logger)
       {
          this.storageOperations = storageOperations;

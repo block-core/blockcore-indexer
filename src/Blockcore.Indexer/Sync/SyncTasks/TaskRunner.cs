@@ -3,7 +3,7 @@
    using System;
    using System.Threading;
    using System.Threading.Tasks;
-   using Blockcore.Indexer.Config;
+   using Blockcore.Indexer.Settings;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
 
@@ -14,7 +14,7 @@
       /// <summary>
       /// Initializes a new instance of the <see cref="TaskRunner"/> class.
       /// </summary>
-      protected TaskRunner(IOptions<IndexerConfiguration> configuration, ILogger logger)
+      protected TaskRunner(IOptions<IndexerSettings> configuration, ILogger logger)
       {
          log = logger;
          Delay = TimeSpan.FromSeconds(configuration.Value.SyncInterval);
