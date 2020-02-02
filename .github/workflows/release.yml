@@ -28,12 +28,12 @@ jobs:
           VERSION: ${{ github.event.release.tag_name }}
 
       - name: Build the Docker container image
-        run: docker build -f "./src/Blockcore.Indexer/Dockerfile.Release" -t sondreb/indexertest:latest --label "unstable=true" "."
+        run: docker build -f "./src/Blockcore.Indexer/Dockerfile.Release" -t sondreb/indexer:latest -t sondreb/indexer:${{ github.event.release.tag_name }} --label "unstable=true" "."
 
       - name: Login and Push to Docker Registry
         run: |
           docker login -u "sondreb" -p "${{secrets.DockerHubSecret}}"
-          docker push sondreb/indexertest:latest
+          docker push sondreb/indexer:latest
 
       # - name: Login and Push to GitHub Docker Registry
       #   run: |
