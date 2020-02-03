@@ -8,6 +8,7 @@
 
 .vs/
 Blockcore.Indexer.xml
+node_modules
 
 # Build results
 

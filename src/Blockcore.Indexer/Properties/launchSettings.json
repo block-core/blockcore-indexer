@@ -16,7 +16,7 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
-      "Blockcore.Indexer (STRATIS)": {
+      "STRATIS": {
          "commandName": "Project",
          "commandLineArgs": "--chain=STRAT",
          "launchBrowser": true,
@@ -25,7 +25,7 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
-      "Blockcore.Indexer (CITY)": {
+      "CITY": {
          "commandName": "Project",
          "commandLineArgs": "--chain=CITY",
          "launchBrowser": true,
@@ -34,7 +34,16 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
-      "Blockcore.Indexer (XDS)": {
+      "DST": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=DST",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
+      "XDS": {
          "commandName": "Project",
          "commandLineArgs": "--chain=XDS",
          "launchBrowser": true,
@@ -43,7 +52,7 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
-      "Blockcore.Indexer (ODX)": {
+      "ODX": {
          "commandName": "Project",
          "commandLineArgs": "--chain=ODX",
          "launchBrowser": true,
@@ -52,7 +61,7 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
-      "Blockcore.Indexer (TSTRAT)": {
+      "TSTRAT": {
          "commandName": "Project",
          "commandLineArgs": "--chain=TSTRAT",
          "launchBrowser": true,
@@ -61,7 +70,7 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
-      "Blockcore.Indexer (BTC)": {
+      "BTC": {
          "commandName": "Project",
          "commandLineArgs": "--chain=BTC"
       }
