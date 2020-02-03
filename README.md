@@ -4,7 +4,7 @@
 [2]: https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Binaries/badge.svg
 [3]: https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Docker%20Image/badge.svg
 
-[![Build Status][2]][1] [![Release Status][2]][1]
+[![Build Status][2]][1] [![Release Status][3]][1]
 
 Blockcore Indexer scans the blockchain of Blockcore-derived chains and stores transaction/address information in a MongoDB database with REST API available for Block Explorers to use.
 
