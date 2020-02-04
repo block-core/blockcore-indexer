@@ -73,6 +73,15 @@
       "BTC": {
          "commandName": "Project",
          "commandLineArgs": "--chain=BTC"
+      },
+      "X42": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=X42",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
       }
    }
 }
