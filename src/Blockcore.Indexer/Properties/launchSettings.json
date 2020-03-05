@@ -76,7 +76,16 @@
       },
       "X42": {
          "commandName": "Project",
-         "commandLineArgs": "--chain=X42",
+         "commandLineArgs": "--chain=https://x42.tech/chain/X42.json",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
+      "TX42": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=https://x42.tech/chain/TX42.json",
          "launchBrowser": true,
          "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"
