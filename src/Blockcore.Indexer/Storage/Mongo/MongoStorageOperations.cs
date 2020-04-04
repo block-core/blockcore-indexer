@@ -69,7 +69,11 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                   CreateBlock(item.BlockInfo);
 
-                  ////if (string.IsNullOrEmpty(lastBlock.NextBlockHash))
+                  if (string.IsNullOrEmpty(lastBlock.NextBlockHash))
+                  {
+                     lastBlock.NextBlockHash = item.BlockInfo.Hash;
+                     UpdateLastBlockNextHash(lastBlock);
+                  }
                   ////{
                   ////    lastBlock.NextBlockHash = item.BlockInfo.Hash;
                   ////    this.SyncOperations.UpdateBlockHash(lastBlock);
@@ -258,6 +262,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          };
 
          data.InsertBlock(blockInfo);
+      }
+      private void UpdateLastBlockNextHash(SyncBlockInfo block)
+      {
+        
+         data.UpdateLastBlockNextHash(block.BlockHash.ToString(), block.NextBlockHash.ToString());
       }
 
       private IEnumerable<T> GetBatch<T>(int maxItems, Queue<T> queue)
