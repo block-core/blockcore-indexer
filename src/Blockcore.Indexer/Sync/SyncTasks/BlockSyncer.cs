@@ -9,6 +9,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using Blockcore.Indexer.Operations.Types;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
+   using Blockcore.Indexer.Storage.Mongo;
 
    /// <summary>
    /// The block sync.
@@ -25,12 +26,14 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
+
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockSyncer"/> class.
       /// </summary>
-      public BlockSyncer(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockSyncer> logger)
+      public BlockSyncer(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockSyncer> logger, Storage.IStorage storage)
           : base(configuration, logger)
       {
+        
          log = logger;
          this.syncConnection = syncConnection;
          this.syncOperations = syncOperations;
@@ -61,7 +64,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   int outputs = block.Transactions.SelectMany(s => s.Outputs).Count();
 
                   Runner.Get<BlockStore>().Enqueue(block);
-
                   log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - BlockIndex = {block.BlockInfo.Height} - Transactions {block.Transactions.Count()} - Inputs {inputs} - Outputs {outputs} - ({inputs + outputs})");
                }
 

@@ -8,6 +8,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using Blockcore.Indexer.Operations.Types;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
+   using Blockcore.Indexer.Storage.Mongo;
 
    /// <summary>
    /// The block sync.
@@ -24,12 +25,18 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
+      private readonly Storage.IStorage storage;
+
+      private readonly IOptions<IndexerSettings> configuration;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockFinder"/> class.
       /// </summary>
-      public BlockFinder(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockFinder> logger)
+      public BlockFinder(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockFinder> logger, Storage.IStorage storage)
           : base(configuration, logger)
       {
+         this.configuration = configuration;
+         this.storage = storage;
          log = logger;
          this.syncConnection = syncConnection;
          this.syncOperations = syncOperations;
@@ -73,6 +80,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - SyncedIndex = {block.BlockInfo.Height}/{block.LastCryptoBlockIndex} - {block.LastCryptoBlockIndex - block.BlockInfo.Height} {blockStatus}");
 
          Runner.Get<BlockSyncer>().Enqueue(block);
+         if (block.LastCryptoBlockIndex - block.BlockInfo.Height<2)
+         {
+            MongoStorageOperations mongoStorageOperations = new MongoStorageOperations(storage, configuration, syncConnection);
+            mongoStorageOperations.UpdateConfirmations();
+         }
 
          return await Task.FromResult(true);
       }

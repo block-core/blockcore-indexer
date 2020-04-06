@@ -151,6 +151,12 @@ namespace Blockcore.Indexer.Storage.Mongo
          UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.NextBlockHash, nextBlockHash);
          MapBlock.UpdateOne(filter, update);
       }
+      public void UpdateConfirmations(string blockHash, long confirmations)
+      {
+         FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.BlockHash, blockHash);
+         UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.Confirmations, confirmations);
+         MapBlock.UpdateOne(filter, update);
+      }
       public void MarkOutput(string transaction, int index, string spendingTransactionId, long spendingBlockIndex)
       {
          FilterDefinition<MapTransactionAddress> filter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.Id, string.Format("{0}-{1}", transaction, index));
