@@ -44,6 +44,14 @@ namespace Blockcore.Indexer.Storage.Mongo
          this.storage = storage;
       }
 
+      public MongoStorageOperations(IStorage storage, IOptions<IndexerSettings> configuration, SyncConnection syncConnection)
+      {
+         data = (MongoData)storage;
+         this.configuration = configuration.Value;
+         this.storage = storage;
+         this.syncConnection = syncConnection;
+      }
+
       public void ValidateBlock(SyncBlockTransactionsOperation item)
       {
          if (item.BlockInfo != null)
@@ -69,11 +77,11 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                   CreateBlock(item.BlockInfo);
 
-                  ////if (string.IsNullOrEmpty(lastBlock.NextBlockHash))
-                  ////{
-                  ////    lastBlock.NextBlockHash = item.BlockInfo.Hash;
-                  ////    this.SyncOperations.UpdateBlockHash(lastBlock);
-                  ////}
+                  if (string.IsNullOrEmpty(lastBlock.NextBlockHash))
+                  {
+                     lastBlock.NextBlockHash = item.BlockInfo.Hash;
+                     UpdateLastBlockNextHash(lastBlock);
+                  }
                }
             }
             else
@@ -259,7 +267,23 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          data.InsertBlock(blockInfo);
       }
+      private void UpdateLastBlockNextHash(SyncBlockInfo block)
+      {        
+         data.UpdateLastBlockNextHash(block.BlockHash, block.NextBlockHash);
+      }
 
+      public void UpdateConfirmations()
+      {
+         SyncBlockInfo first = storage.BlockGetBlockCount(1).First();
+
+         for (long i = first.BlockIndex; i> first.BlockIndex - 500; i--){
+
+            SyncBlockInfo next = storage.BlockGetByIndex(i);
+            long Confirmations = first.BlockIndex - next.BlockIndex + 2;
+
+            data.UpdateConfirmations(next.BlockHash, Confirmations);
+         }  
+      }
       private IEnumerable<T> GetBatch<T>(int maxItems, Queue<T> queue)
       {
          //var total = 0;

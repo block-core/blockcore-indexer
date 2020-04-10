@@ -25,6 +25,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
+
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockSyncer"/> class.
       /// </summary>
@@ -61,7 +62,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   int outputs = block.Transactions.SelectMany(s => s.Outputs).Count();
 
                   Runner.Get<BlockStore>().Enqueue(block);
-
                   log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - BlockIndex = {block.BlockInfo.Height} - Transactions {block.Transactions.Count()} - Inputs {inputs} - Outputs {outputs} - ({inputs + outputs})");
                }
 
@@ -73,7 +73,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   int outputs = pool.Transactions.SelectMany(s => s.Outputs).Count();
 
                   Runner.Get<BlockStore>().Enqueue(pool);
-
                   log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - Pool = Sync - Transactions {pool.Transactions.Count()} - Inputs {inputs} - Outputs {outputs} - ({inputs + outputs})");
                }
             }
