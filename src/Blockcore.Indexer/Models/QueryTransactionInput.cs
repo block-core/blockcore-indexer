@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Api.Handlers.Types
+namespace Blockcore.Indexer.Api.Handlers.Types
 {
    public class QueryTransactionInput
    {

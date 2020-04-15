@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blockcore.Indexer.Tests", "src\Blockcore.Indexer.Tests\Blockcore.Indexer.Tests.csproj", "{F90920F8-D323-4A85-9CFE-5D4899AA3690}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{7A62B325-5349-4AE8-BEF8-5ED3E66DB246}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A62B325-5349-4AE8-BEF8-5ED3E66DB246}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A62B325-5349-4AE8-BEF8-5ED3E66DB246}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F90920F8-D323-4A85-9CFE-5D4899AA3690}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F90920F8-D323-4A85-9CFE-5D4899AA3690}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F90920F8-D323-4A85-9CFE-5D4899AA3690}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F90920F8-D323-4A85-9CFE-5D4899AA3690}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Storage.Types
+namespace Blockcore.Indexer.Storage.Types
 {
    public class SyncTransactionItemInput
    {
@@ -15,6 +15,10 @@
       public string WitScript { get; set; }
 
       public string SequenceLock { get; set; }
+
+      public string InputAddress { get; set; }
+
+      public string InputType { get; set; }
 
       #endregion
    }

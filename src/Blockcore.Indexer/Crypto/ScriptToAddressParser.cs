@@ -1,9 +1,21 @@
-﻿using NBitcoin;
+using NBitcoin;
 
 namespace Blockcore.Indexer.Crypto
 {
    public class ScriptToAddressParser
    {
+      public static string GetSignerAddress(Network network, Script script)
+      {
+         BitcoinAddress address = script.GetSignerAddress(network);
+
+         if (address == null)
+         {
+            return null;
+         }
+
+         return script.GetSignerAddress(network).ToString();
+      }
+
       public static string[] GetAddress(Network network, Script script)
       {
          ScriptTemplate template = NBitcoin.StandardScripts.GetTemplateFromScriptPubKey(script);

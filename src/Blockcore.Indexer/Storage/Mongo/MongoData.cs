@@ -267,6 +267,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                PreviousIndex = (int)v.PrevOut.N,
                WitScript = v.WitScript.ToScript().ToHex(),
                ScriptSig = v.ScriptSig.ToHex(),
+               InputAddress = ScriptToAddressParser.GetSignerAddress(syncConnection.Network, v.ScriptSig),
                SequenceLock = v.Sequence.ToString(),
             }).ToList(),
             Outputs = transaction.Outputs.Select((output, index) => new SyncTransactionItemOutput
@@ -437,7 +438,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             CoinStake = s.CoinStake,
             ScriptHex = new Script(Encoders.Hex.DecodeData(s.ScriptHex)).ToString(),
             Type = StandardScripts.GetTemplateFromScriptPubKey(new Script(Encoders.Hex.DecodeData(s.ScriptHex)))?.Type.ToString(),
-            Time = s.BlockIndex == -1 ? UnixUtils.DateToUnixTimestamp(DateTime.UtcNow) : current.BlockTime
+            Time = s.BlockIndex == -1 ? UnixUtils.DateToUnixTimestamp(DateTime.UtcNow) : BlockGetByIndex(s.BlockIndex).BlockTime
          });
       }
 
