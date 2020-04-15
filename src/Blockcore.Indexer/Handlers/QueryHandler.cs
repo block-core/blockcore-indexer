@@ -8,6 +8,8 @@ namespace Blockcore.Indexer.Api.Handlers
    using Blockcore.Indexer.Storage;
    using Microsoft.Extensions.Options;
    using NBitcoin;
+   using Blockcore.Indexer.Crypto;
+   using Blockcore.Indexer.Operations.Types;
 
    /// <summary>
    /// A handler that make request on the blockchain.
@@ -20,12 +22,19 @@ namespace Blockcore.Indexer.Api.Handlers
 
       private readonly IStorage storage;
 
+      private readonly SyncConnection connection;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryHandler"/> class.
       /// </summary>
-      public QueryHandler(IOptions<IndexerSettings> configuration, IOptions<ChainSettings> chainConfiguration, IStorage storage)
+      public QueryHandler(
+         IOptions<IndexerSettings> configuration,
+         IOptions<ChainSettings> chainConfiguration,
+         SyncConnection connection,
+         IStorage storage)
       {
          this.storage = storage;
+         this.connection = connection;
          this.configuration = configuration.Value;
          this.chainConfiguration = chainConfiguration.Value;
       }
@@ -430,7 +439,7 @@ namespace Blockcore.Indexer.Api.Handlers
             return new QueryTransaction();
          }
 
-         return new QueryTransaction
+         var result = new QueryTransaction
          {
             Symbol = chainConfiguration.Symbol,
             BlockHash = transaction?.BlockHash ?? null,
@@ -444,10 +453,11 @@ namespace Blockcore.Indexer.Api.Handlers
             Version = transactionItems.Version,
             IsCoinbase = transactionItems.IsCoinbase,
             IsCoinstake = transactionItems.IsCoinstake,
+
             Inputs = transactionItems.Inputs.Select(i => new QueryTransactionInput
             {
                CoinBase = i.InputCoinBase,
-               InputAddress = string.Empty,
+               InputAddress = i.InputAddress,
                InputIndex = i.PreviousIndex,
                InputTransactionId = i.PreviousTransactionHash,
                ScriptSig = i.ScriptSig,
@@ -466,6 +476,8 @@ namespace Blockcore.Indexer.Api.Handlers
                ScriptPubKeyAsm = new Script(NBitcoin.DataEncoders.Encoders.Hex.DecodeData(o.ScriptPubKey)).ToString()
             }),
          };
+
+         return result;
       }
 
       public QueryMempoolTransactions GetMempoolTransactions(int count)

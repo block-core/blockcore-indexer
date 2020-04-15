@@ -289,6 +289,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                PreviousIndex = (int)v.PrevOut.N,
                WitScript = v.WitScript.ToScript().ToHex(),
                ScriptSig = v.ScriptSig.ToHex(),
+               InputAddress = ScriptToAddressParser.GetSignerAddress(syncConnection.Network, v.ScriptSig),
                SequenceLock = v.Sequence.ToString(),
             }).ToList(),
             Outputs = transaction.Outputs.Select((output, index) => new SyncTransactionItemOutput
@@ -458,7 +459,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             CoinStake = s.CoinStake,
             ScriptHex = new Script(Encoders.Hex.DecodeData(s.ScriptHex)).ToString(),
             Type = StandardScripts.GetTemplateFromScriptPubKey(new Script(Encoders.Hex.DecodeData(s.ScriptHex)))?.Type.ToString(),
-            Time = s.BlockIndex == -1 ? UnixUtils.DateToUnixTimestamp(DateTime.UtcNow) : current.BlockTime
+            Time = s.BlockIndex == -1 ? UnixUtils.DateToUnixTimestamp(DateTime.UtcNow) : BlockGetByIndex(s.BlockIndex).BlockTime
          });
       }
 
@@ -557,8 +558,10 @@ namespace Blockcore.Indexer.Storage.Mongo
                   {
                      foreach (SyncTransactionItemInput input in inputs)
                      {
-                        string address = input.WitScript.ToHex();
-                       // log.LogInformation(item.ToString());
+                       
+                       // Script script = new Script(input.ScriptSig);
+                       //string address = ScriptToAddressParser.GetSignerAddress(syncConnection.Network, script);
+                       // log.LogInformation( script.ToJson());
                         //log.LogInformation(TransactionItemsGet(item).ToJson());
                         // ScriptToAddressParser.GetAddress(syncConnection.Network, input)?.FirstOrDefault()
                      }
