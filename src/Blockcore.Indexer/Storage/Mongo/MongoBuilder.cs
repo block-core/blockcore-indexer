@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Storage.Mongo
+namespace Blockcore.Indexer.Storage.Mongo
 {
    using System.Threading.Tasks;
    using Blockcore.Indexer.Settings;
@@ -75,6 +75,14 @@
             {
                cm.AutoMap();
                cm.MapIdMember(c => c.TransactionId);
+            });
+         }
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapRichlist)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapRichlist>(cm =>
+            {
+               cm.AutoMap();
+               cm.MapIdMember(c => c.Address);
             });
          }
 

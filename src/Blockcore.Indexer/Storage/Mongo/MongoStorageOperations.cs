@@ -271,7 +271,10 @@ namespace Blockcore.Indexer.Storage.Mongo
       {        
          data.UpdateLastBlockNextHash(block.BlockHash, block.NextBlockHash);
       }
-
+      public void UpdateRichList(SyncBlockInfo block, long confirmations)
+      {
+         data.UpdateRichList(block, confirmations);
+      }
       public void UpdateConfirmations()
       {
          SyncBlockInfo first = storage.BlockGetBlockCount(1).First();

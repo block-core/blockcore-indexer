@@ -9,6 +9,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
    using Blockcore.Indexer.Storage.Mongo;
+   using System;
+   using MongoDB.Bson;
+   using Blockcore.Indexer.Storage.Types;
 
    /// <summary>
    /// The block sync.
@@ -85,7 +88,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             MongoStorageOperations mongoStorageOperations = new MongoStorageOperations(storage, configuration, syncConnection);
             mongoStorageOperations.UpdateConfirmations();
          }
-
+    
          return await Task.FromResult(true);
       }
    }

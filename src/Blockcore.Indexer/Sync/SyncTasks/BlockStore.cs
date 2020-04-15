@@ -10,6 +10,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using Blockcore.Indexer.Operations.Types;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
+   using MongoDB.Bson;
+   using Blockcore.Indexer.Storage.Types;
+   using Blockcore.Indexer.Storage.Mongo;
 
    /// <summary>
    /// The block sync.
@@ -24,12 +27,17 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
+      private readonly Storage.IStorage storage;
+
+      private readonly IOptions<IndexerSettings> configuration;
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockStore"/> class.
       /// </summary>
-      public BlockStore(IOptions<IndexerSettings> configuration, ILogger<BlockStore> logger, IStorageOperations storageOperations, SyncConnection syncConnection)
+      public BlockStore(IOptions<IndexerSettings> configuration, ILogger<BlockStore> logger, IStorageOperations storageOperations, SyncConnection syncConnection, Storage.IStorage storage)
           : base(configuration, logger)
       {
+         this.configuration = configuration;
+         this.storage = storage;
          this.storageOperations = storageOperations;
          this.syncConnection = syncConnection;
          log = logger;
@@ -57,8 +65,12 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                syncConnection.RecentItems.Add((DateTime.UtcNow, watch.Elapsed, item.BlockInfo.Size));
             }
 
-            var notifications = new AddressNotifications { Addresses = count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
+            var notifications = new AddressNotifications { Addresses = count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };          
             Runner.Get<Notifier>().Enqueue(notifications);
+
+            SyncBlockInfo blockinfo = storage.BlockGetByHash(item.BlockInfo.PreviousBlockHash);
+            MongoStorageOperations mongoStorageOperations2 = new MongoStorageOperations(storage, configuration, syncConnection);
+            mongoStorageOperations2.UpdateRichList(blockinfo, 1);
 
             watch.Stop();
 

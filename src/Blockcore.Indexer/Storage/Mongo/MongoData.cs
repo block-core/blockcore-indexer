@@ -17,6 +17,9 @@ namespace Blockcore.Indexer.Storage.Mongo
    using MongoDB.Driver;
    using NBitcoin;
    using NBitcoin.DataEncoders;
+   using MongoDB.Bson;
+   using Microsoft.OpenApi.Any;
+   using Microsoft.AspNetCore.Mvc.ApiExplorer;
 
    public class MongoData : IStorage
    {
@@ -84,6 +87,13 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
+      public IMongoCollection<MapRichlist> MapRichlist
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<MapRichlist>("MapRichlist");
+         }
+      }
       public ConcurrentDictionary<string, NBitcoin.Transaction> MemoryTransactions { get; set; }
 
       public IEnumerable<SyncBlockInfo> BlockGetIncompleteBlocks()
@@ -157,6 +167,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.Confirmations, confirmations);
          MapBlock.UpdateOne(filter, update);
       }
+
       public void MarkOutput(string transaction, int index, string spendingTransactionId, long spendingBlockIndex)
       {
          FilterDefinition<MapTransactionAddress> filter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.Id, string.Format("{0}-{1}", transaction, index));
@@ -344,7 +355,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          long confirming = addrs.Where(s => s.Confirmations < confirmations).Sum(s => s.Value);
          long used = addrs.Where(s => s.SpendingTransactionHash != null).Sum(s => s.Value);
          long available = all - used;
-
          return new SyncTransactionAddressBalance
          {
             Available = available,
@@ -403,7 +413,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          watch.Stop();
 
-         log.LogInformation($"Select: Seconds = {watch.Elapsed.TotalSeconds} - UnspentOnly = {availableOnly} - Addr = {address} - Items = {addrs.Count()}");
+        // log.LogInformation($"Select: Seconds = {watch.Elapsed.TotalSeconds} - UnspentOnly = {availableOnly} - Addr = {address} - Items = {addrs.Count()}");
 
          // this creates a copy of the collection (to avoid thread issues)
          ICollection<Transaction> pool = MemoryTransactions.Values;
@@ -505,6 +515,88 @@ namespace Blockcore.Indexer.Storage.Mongo
             public bool Spent { get; set; }
             public bool Confirmed { get; set; }
          }
+      }
+      public void UpdateRichList(SyncBlockInfo block, long confirmations)
+      {
+         try
+         {
+            if (block!=null)
+            {
+               long height = block.BlockIndex;
+               IEnumerable<string> transactions = BlockTransactionGetByBlockIndex(height).Select(s => s.TransactionHash);
+               // log.LogInformation(height.ToString());
+               //Need to get input addresses
+               foreach (string item in transactions)
+               {
+                 
+                  IEnumerable<SyncTransactionItemOutput> outputs = TransactionItemsGet(item).Outputs;
+                  IEnumerable<SyncTransactionItemInput> inputs = TransactionItemsGet(item).Inputs;
+                  SyncTransactionItems transactionItem = TransactionItemsGet(item);
+
+                 /* if (height == 1574)
+                  {
+                     log.LogInformation(transactionItem.ToJson());
+                  }*/
+                  if (transactionItem.IsCoinstake)
+                  {
+                     string address = outputs.Last().Address;
+                     long stake = 2000000000;
+                     var data = new MapRichlist
+                     {
+                        Address = address,
+                        Balance = stake,
+                     };
+                    FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);                     
+                    UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", stake);
+                     if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
+                     {
+                        MapRichlist.InsertOne(data);
+                     }
+                  }
+               else
+                  {
+                     foreach (SyncTransactionItemInput input in inputs)
+                     {
+                        string address = input.WitScript.ToHex();
+                       // log.LogInformation(item.ToString());
+                        //log.LogInformation(TransactionItemsGet(item).ToJson());
+                        // ScriptToAddressParser.GetAddress(syncConnection.Network, input)?.FirstOrDefault()
+                     }
+
+                     foreach (SyncTransactionItemOutput output in outputs)
+                     {
+                        if (output.Address != null)
+                        {
+                           long value = output.Value;
+                           string address = output.Address;                          
+                           var data = new MapRichlist
+                           {
+                              Address = address,
+                              Balance = value,
+                           };
+                           FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
+                           UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
+                           if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
+                           {
+                            MapRichlist.InsertOne(data);
+                           }
+                           
+                          // log.LogInformation(item);
+                         //  log.LogInformation(data.ToJson());
+                        }
+
+                     }
+
+                  };
+               }
+
+            }
+         }
+         catch (Exception e)
+         {
+
+         }
+
       }
    }
 }

@@ -10,6 +10,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
    using Blockcore.Indexer.Storage.Mongo;
+   using MongoDB.Bson;
 
    /// <summary>
    /// The block sync.
@@ -59,11 +60,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                if (item.BlockInfo != null)
                {
                   SyncBlockTransactionsOperation block = syncOperations.SyncBlock(syncConnection, item.BlockInfo);
-
+                
                   int inputs = block.Transactions.SelectMany(s => s.Inputs).Count();
                   int outputs = block.Transactions.SelectMany(s => s.Outputs).Count();
-
                   Runner.Get<BlockStore>().Enqueue(block);
+                
                   log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - BlockIndex = {block.BlockInfo.Height} - Transactions {block.Transactions.Count()} - Inputs {inputs} - Outputs {outputs} - ({inputs + outputs})");
                }
 
