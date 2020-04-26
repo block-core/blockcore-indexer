@@ -94,14 +94,18 @@ namespace Blockcore.Indexer.Operations.Types
          if (string.IsNullOrWhiteSpace(networkConfiguration.NetworkType))
          {
             Network = new NetworkConfig(configuration, chainConfiguration, networkConfiguration);
+            HasNetworkType = false;
          }
          else
          {
             Network = (Network)Activator.CreateInstance(Type.GetType(networkConfiguration.NetworkType));
+            HasNetworkType = true;
          }
 
          RecentItems = new Buffer<(DateTime Inserted, TimeSpan Duration, long Size)>(5000);
       }
+
+      public bool HasNetworkType { get; set; }
 
       public NBitcoin.Network Network { get; }
 

@@ -1,5 +1,6 @@
-﻿namespace Blockcore.Indexer.Client.Types
+namespace Blockcore.Indexer.Client.Types
 {
+   using System;
    using System.Collections.Generic;
    using Newtonsoft.Json;
 
@@ -44,5 +45,7 @@
       public IList<long> InFlight { get; set; }
 
       public bool WhiteListed { get; set; }
+
+      public DateTime LastSeen { get; set; }
    }
 }

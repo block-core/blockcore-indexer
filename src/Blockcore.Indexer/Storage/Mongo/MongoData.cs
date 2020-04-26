@@ -17,6 +17,9 @@ namespace Blockcore.Indexer.Storage.Mongo
    using MongoDB.Driver;
    using NBitcoin;
    using NBitcoin.DataEncoders;
+   using Blockcore.Indexer.Client.Types;
+   using System.Threading.Tasks;
+   using MongoDB.Bson;
 
    public class MongoData : IStorage
    {
@@ -84,6 +87,14 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
+      public IMongoCollection<PeerInfo> Peer
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<PeerInfo>("Peer");
+         }
+      }
+
       public ConcurrentDictionary<string, NBitcoin.Transaction> MemoryTransactions { get; set; }
 
       public IEnumerable<SyncBlockInfo> BlockGetIncompleteBlocks()
@@ -125,6 +136,35 @@ namespace Blockcore.Indexer.Storage.Mongo
       public void InsertBlock(MapBlock info)
       {
          MapBlock.InsertOne(info);
+      }
+
+      /// <summary>
+      /// Inserts or updates a peer info instance. Returns the number of modified entries.
+      /// </summary>
+      /// <param name="info"></param>
+      /// <returns></returns>
+      public async Task<long> InsertPeer(PeerInfo info)
+      {
+         // Always update the LastSeen.
+         info.LastSeen = DateTime.UtcNow;
+
+         ReplaceOneResult replaceOneResult = await Peer.ReplaceOneAsync(doc => doc.Addr == info.Addr, info, new ReplaceOptions { IsUpsert = true });
+         
+         //if (replaceOneResult.ModifiedCount > 0)
+         //{
+         //   // We updated the document, so we'll add a modified date to it as well.
+         //   var updates = new List<UpdateDefinition<PeerInfo>>();
+         //   updates.Add(Builders<PeerInfo>.Update.Set(m => m.LastSeen, DateTime.UtcNow));
+         //   UpdateResult result = await Peer.UpdateOneAsync(doc => doc.Addr == info.Addr, Builders<PeerInfo>.Update.Combine(updates), new UpdateOptions() { IsUpsert = true });
+         //}
+
+         return replaceOneResult.ModifiedCount;
+      }
+
+      public List<PeerInfo> GetPeerFromDate(DateTime date)
+      {
+         FilterDefinition<PeerInfo> filter = Builders<PeerInfo>.Filter.Gt(addr => addr.LastSeen, date);
+         return Peer.Find(filter).ToList();
       }
 
       public SyncRawTransaction TransactionGetByHash(string trxHash)

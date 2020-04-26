@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
 		<TargetFramework>netcoreapp3.1</TargetFramework>
@@ -10,6 +10,7 @@
 		<UserSecretsId>7bd1d385-aa0f-4c2a-a842-f064d2cb4515</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<DockerfileContext>..\..</DockerfileContext>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -17,10 +18,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Blockcore.NBitcoin" Version="1.0.4" />
-		<PackageReference Include="Blockcore.Networks.Bitcoin" Version="1.0.4" />
-		<PackageReference Include="Blockcore.Networks.Stratis" Version="1.0.4" />
-		<PackageReference Include="Blockcore.Networks.Xds" Version="1.0.4" />
+		<PackageReference Include="Blockcore.NBitcoin" Version="1.0.6" />
+		<PackageReference Include="Blockcore.Networks.Bitcoin" Version="1.0.6" />
+		<PackageReference Include="Blockcore.Networks.Stratis" Version="1.0.6" />
+		<PackageReference Include="Blockcore.Networks.Xds" Version="1.0.6" />
+      <PackageReference Include="Blockcore.Networks.City" Version="1.0.6" />
 		<PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.8" />
 		<PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />

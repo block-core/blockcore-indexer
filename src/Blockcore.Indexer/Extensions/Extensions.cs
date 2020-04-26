@@ -1,13 +1,9 @@
-﻿namespace Blockcore.Indexer.Extensions
+namespace Blockcore.Indexer.Extensions
 {
-   #region Using Directives
-
    using System;
    using System.Collections.Generic;
    using System.Diagnostics;
    using System.Linq;
-
-   #endregion
 
    /// <summary>
    /// This class defines extension methods.
@@ -15,7 +11,36 @@
    [DebuggerStepThrough]
    public static class Extensions
    {
-      #region Public Methods and Operators
+      /// <summary>
+      /// Takes date input to API controllers and ensures they are UTC kind.
+      ///
+      /// If the API query is specified with Z (Zulu/UTC), then .NET converts this automatically to local time. To make correct queries in database, these must be translated back 
+      /// into universal time (UTC).
+      ///
+      /// Date inputs without Z, will be of kind unspecified and must be translated to UTC kind. If these are sent to database for query, they will be converted to local.
+      ///
+      /// The avoid conversion from unspecified, the global assumed kind can be set in Startup.cs:
+      /// 
+      /// services.AddControllers().AddNewtonsoftJson(options =>
+      /// {
+      ///       options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;
+      /// });
+      /// </summary>
+      /// <param name="date"></param>
+      /// <returns></returns>
+      public static DateTime ToUniversalDateTime(this DateTime date)
+      {
+         if (date.Kind == DateTimeKind.Local)
+         {
+            date = date.ToUniversalTime();
+         }
+         else if (date.Kind == DateTimeKind.Unspecified)
+         {
+            date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+         }
+
+         return date;
+      }
 
       /// <summary>
       /// The unix time stamp to date time.
@@ -116,10 +141,6 @@
          }
       }
 
-      #endregion
-
-      #region Methods
-
       /// <summary>
       /// Inner method to batch a collection in to fixed size batches.
       /// </summary>
@@ -132,7 +153,5 @@
             yield return source.Current;
          }
       }
-
-      #endregion
    }
 }

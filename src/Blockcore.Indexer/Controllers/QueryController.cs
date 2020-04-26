@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 
 namespace Blockcore.Indexer.Api.Handlers
 {
@@ -21,6 +21,12 @@ namespace Blockcore.Indexer.Api.Handlers
          handler = queryHandler;
       }
 
+      /// <summary>
+      /// Get transactions that belong to the specified address.
+      /// </summary>
+      /// <param name="address"></param>
+      /// <param name="confirmations"></param>
+      /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/confirmations/{confirmations:long=0}/transactions")]
       public IActionResult GetAddressTransactions(string address, long confirmations)

@@ -16,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
+using Blockcore.Indexer.Extensions;
 
 namespace Blockcore.Indexer
 {
@@ -44,17 +45,22 @@ namespace Blockcore.Indexer
          services.AddSingleton<SyncConnection>();
          services.AddSingleton<ISyncOperations, SyncOperations>();
          services.AddScoped<Runner>();
+
          services.AddScoped<TaskRunner, BlockFinder>();
          services.AddScoped<TaskRunner, BlockStore>();
          services.AddScoped<TaskRunner, BlockSyncer>();
          services.AddScoped<TaskRunner, PoolFinder>();
          services.AddScoped<TaskRunner, Notifier>();
+         services.AddScoped<TaskRunner, StatsSyncer>(); // Update peer information every 5 minute.
+
          services.AddScoped<TaskStarter, BlockReorger>();
 
          services.AddMemoryCache();
          services.AddHostedService<SyncServer>();
 
-         services.AddControllers().AddNewtonsoftJson(options =>
+         services.AddControllers(options => {
+            options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
+         }).AddNewtonsoftJson(options =>
          {
             options.SerializerSettings.FloatFormatHandling = Newtonsoft.Json.FloatFormatHandling.DefaultValue;
          });
@@ -62,12 +68,20 @@ namespace Blockcore.Indexer
          services.AddSwaggerGen(
              options =>
              {
-                // TODO: Decide which version to use.
                 string assemblyVersion = typeof(Startup).Assembly.GetName().Version.ToString();
-                string fileVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-                string productVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
 
-                options.SwaggerDoc("indexer", new OpenApiInfo { Title = "Blockcore Indexer API", Version = fileVersion });
+                options.SwaggerDoc("indexer",
+                  new OpenApiInfo
+                  {
+                     Title = "Blockcore Indexer API",
+                     Version = assemblyVersion,
+                     Description = "Blockchain index database that can be used for blockchain based software and services.",
+                     Contact = new OpenApiContact
+                     {
+                        Name = "Blockcore",
+                        Url = new Uri("https://www.blockcore.net/")
+                     }
+                  });
 
                 // integrate xml comments
                 if (File.Exists(XmlCommentsFilePath))
