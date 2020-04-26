@@ -23,13 +23,19 @@ namespace Blockcore.Indexer.Api.Handlers.Types
 
       public string Icon { get; set; }
 
-      public NetworkInfo Network { get; set; }
+      /// <summary>
+      /// Returns information and statistics returned directly from the node.
+      /// </summary>
+      public Types.Statistics Node { get; set; }
+
+      /// <summary>
+      /// Returns the known network configuration. This information is retrieved from the network configuration, not from the node.
+      /// </summary>
+      public NetworkInfo Configuration { get; set; }
    }
 
    public class NetworkInfo
    {
-      public string CoinTicker { get; set; }
-
       public int DefaultPort { get; set; }
 
       public int DefaultRPCPort { get; set; }
@@ -106,9 +112,9 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       /// </summary>
       public long SyncBlockIndex { get; set; }
 
-      public BlockchainInfoModel BlockchainInfo { get; set; }
+      public BlockchainInfoModel Blockchain { get; set; }
 
-      public NetworkInfoModel NetworkInfo { get; set; }
+      public NetworkInfoModel Network { get; set; }
 
       public int BlocksPerMinute { get; set; }
 

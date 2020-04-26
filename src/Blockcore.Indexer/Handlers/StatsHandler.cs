@@ -60,6 +60,9 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          long index = storage.BlockGetBlockCount(1).FirstOrDefault()?.BlockIndex ?? 0;
 
+         //SyncConnection connection = syncConnection;
+         //BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+
          var coinInfo = new CoinInfo
          {
             BlockHeight = index,
@@ -71,14 +74,16 @@ namespace Blockcore.Indexer.Api.Handlers
             Icon = chainConfiguration.Icon
          };
 
+         Statistics statitics = await Statistics();
+         coinInfo.Node = statitics;
+
          // If we have network type available, we'll extend with extra metadata.
          if (syncConnection.HasNetworkType)
          {
             NBitcoin.Network network = syncConnection.Network;
             NBitcoin.IConsensus consensus = network.Consensus;
 
-            coinInfo.Network = new NetworkInfo {
-               CoinTicker = network.CoinTicker,
+            coinInfo.Configuration = new NetworkInfo {
                DefaultAPIPort = network.DefaultAPIPort,
                DefaultMaxInboundConnections = network.DefaultMaxInboundConnections,
                DefaultMaxOutboundConnections = network.DefaultMaxOutboundConnections,
@@ -119,8 +124,8 @@ namespace Blockcore.Indexer.Api.Handlers
 
          try
          {
-            stats.BlockchainInfo = await client.GetBlockchainInfo();
-            stats.NetworkInfo = await client.GetNetworkInfo();
+            stats.Blockchain = await client.GetBlockchainInfo();
+            stats.Network = await client.GetNetworkInfo();
          }
          catch (Exception ex)
          {
@@ -133,7 +138,7 @@ namespace Blockcore.Indexer.Api.Handlers
          try
          {
             stats.SyncBlockIndex = storage.BlockGetBlockCount(1).First().BlockIndex;
-            stats.Progress = $"{stats.SyncBlockIndex}/{stats.BlockchainInfo.Blocks} - {stats.BlockchainInfo.Blocks - stats.SyncBlockIndex}";
+            stats.Progress = $"{stats.SyncBlockIndex}/{stats.Blockchain.Blocks} - {stats.Blockchain.Blocks - stats.SyncBlockIndex}";
 
             double totalSeconds = syncConnection.RecentItems.Sum(s => s.Duration.TotalSeconds);
             stats.AvgBlockPersistInSeconds = Math.Round(totalSeconds / syncConnection.RecentItems.Count, 2);
