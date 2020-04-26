@@ -1,26 +1,16 @@
-﻿namespace Blockcore.Indexer.Extensions
+namespace Blockcore.Indexer.Extensions
 {
-   #region Using Directives
-
    using System;
-
-   #endregion
 
    /// <summary>
    /// Internal class providing certain utility functions to other classes.
    /// </summary>
    internal sealed class UnixUtils
    {
-      #region Static Fields
-
       /// <summary>
       /// The Unix start date.
       /// </summary>
       private static readonly DateTime UnixStartDate = new DateTime(1970, 1, 1, 0, 0, 0);
-
-      #endregion
-
-      #region Methods
 
       /// <summary>
       /// Converts a <see cref="DateTime"/> object into a unix timestamp number.
@@ -69,7 +59,5 @@
       {
          return UnixStartDate.AddSeconds(timestamp);
       }
-
-      #endregion
    }
 }

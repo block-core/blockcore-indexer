@@ -57,6 +57,8 @@ namespace Blockcore.Indexer.Api.Handlers.Types
 
       public int DefaultMaxOutboundConnections { get; set; }
 
+      public DateTime GenesisDate { get; set; }
+
       public string GenesisHash { get; set; }
 
       public ConsensusInfo Consensus { get; set; }

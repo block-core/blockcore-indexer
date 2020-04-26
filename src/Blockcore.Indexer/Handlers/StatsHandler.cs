@@ -14,6 +14,7 @@ namespace Blockcore.Indexer.Api.Handlers
    using Blockcore.Indexer.Storage;
    using Microsoft.Extensions.Options;
    using Newtonsoft.Json;
+   using Blockcore.Indexer.Extensions;
 
    /// <summary>
    /// Handler to make get info about a blockchain.
@@ -86,6 +87,7 @@ namespace Blockcore.Indexer.Api.Handlers
                DefaultSignalRPort = network.DefaultSignalRPort,
                DNSSeeds = network.DNSSeeds.Select(s => s.Host).ToList(),
                FallbackFee = network.FallbackFee,
+               GenesisDate = UnixUtils.UnixTimestampToDate(network.GenesisTime).ToUniversalDateTime(), // Returns Kind.Unspecified, so translate.
                GenesisHash = network.GenesisHash.ToString(),
                MinRelayTxFee = network.MinRelayTxFee,
                MinTxFee = network.MinTxFee,
