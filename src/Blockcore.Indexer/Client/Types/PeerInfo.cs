@@ -6,8 +6,6 @@ namespace Blockcore.Indexer.Client.Types
 
    public class PeerInfo
    {
-      public uint Id { get; set; }
-
       public string Addr { get; set; }
 
       public string AddrLocal { get; set; }

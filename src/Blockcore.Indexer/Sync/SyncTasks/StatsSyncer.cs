@@ -49,7 +49,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          this.storageOperations = storageOperations;
 
          // Only run the StatsSyncer every 5 minute.
-         Delay = TimeSpan.FromMinutes(1);
+         Delay = TimeSpan.FromMinutes(5);
          watch = Stopwatch.Start();
       }
 
