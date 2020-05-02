@@ -119,6 +119,35 @@ namespace Blockcore.Indexer.Storage.Mongo
          return blocks.Where(b => b.SyncComplete);
       }
 
+      /// <summary>
+      /// Returns block information in the section specified with offset and limit. If offset is set to 0, then the last page is returned.
+      /// </summary>
+      /// <param name="offset">Set to zero if last page should be returned.</param>
+      /// <param name="limit">Amount of items to return.</param>
+      /// <returns></returns>
+      public (IEnumerable<SyncBlockInfo> Items, int Total) BlockGetByLimitOffset(int offset, int limit)
+      {
+         FilterDefinitionBuilder<MapBlock> filterBuilder = Builders<MapBlock>.Filter;
+         FilterDefinition<MapBlock> filter = filterBuilder.Empty;
+
+         // Skip and Limit only supports int, so we can't support long amount of documents.
+         int total = (int)MapBlock.Find(filter).CountDocuments();
+
+         // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
+         if (offset == 0)
+         {
+            offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
+         }
+
+         IEnumerable<SyncBlockInfo> list = MapBlock.Find(filter)
+                   .SortBy(p => p.BlockIndex)
+                   .Skip(offset - 1) // 1 based index, so we'll subtract one.
+                   .Limit(limit)
+                   .ToList().Select(Convert);
+
+         return (list, total);
+      }
+
       public SyncBlockInfo BlockGetByIndex(long blockIndex)
       {
          FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(info => info.BlockIndex, blockIndex);
@@ -149,7 +178,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          info.LastSeen = DateTime.UtcNow;
 
          ReplaceOneResult replaceOneResult = await Peer.ReplaceOneAsync(doc => doc.Addr == info.Addr, info, new ReplaceOptions { IsUpsert = true });
-         
+
          //if (replaceOneResult.ModifiedCount > 0)
          //{
          //   // We updated the document, so we'll add a modified date to it as well.

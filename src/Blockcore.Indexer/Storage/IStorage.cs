@@ -1,4 +1,4 @@
-﻿
+
 namespace Blockcore.Indexer.Storage
 {
    using System.Collections.Generic;
@@ -17,6 +17,8 @@ namespace Blockcore.Indexer.Storage
       SyncBlockInfo BlockGetByIndex(long blockIndex);
 
       SyncTransactionInfo BlockTransactionGet(string transactionId);
+
+      (IEnumerable<SyncBlockInfo> Items, int Total) BlockGetByLimitOffset(int offset, int limit);
 
       IEnumerable<SyncTransactionInfo> BlockTransactionGetByBlock(string blockHash);
 

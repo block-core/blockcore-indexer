@@ -12,6 +12,16 @@ Blockcore Indexer scans the blockchain of Blockcore-derived chains and stores tr
 
 Blockcore Indexer API can be searched by segwit addresses and Cold-Staking (hot and cold key) script types.
 
+## Compatibility
+
+While we do our best to keep compatibility of APIs going forward, we will continue to change and improve our APIs that can result in breaking changes for consumers of the APIs.
+
+We will attempt to avoid breaking changes within major releases.
+
+The 0.0.X releases of Blockcore Indexer is not compatible with the 0.1.X.
+
+All our technologies are available on docker, so can easily be upgraded and downgraded when there are compatibility issues.
+
 ### Technologies
 - .NET Core
 - Blockcore Platform

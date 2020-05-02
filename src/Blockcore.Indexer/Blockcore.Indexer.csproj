@@ -33,4 +33,8 @@
 		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="5.3.3" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Helpers\" />
+	</ItemGroup>
+
 </Project>

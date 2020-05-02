@@ -2,6 +2,8 @@ using System.Linq;
 
 namespace Blockcore.Indexer.Api.Handlers
 {
+   using System;
+   using Blockcore.Indexer.Paging;
    using Microsoft.AspNetCore.Mvc;
 
    /// <summary>
@@ -12,13 +14,15 @@ namespace Blockcore.Indexer.Api.Handlers
    public class QueryController : Controller
    {
       private readonly QueryHandler handler;
+      private readonly IPagingHelper paging;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
-      public QueryController(QueryHandler queryHandler)
+      public QueryController(QueryHandler queryHandler, IPagingHelper paging)
       {
          handler = queryHandler;
+         this.paging = paging;
       }
 
       /// <summary>
@@ -33,7 +37,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddressTransactions(address, confirmations);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -52,7 +56,7 @@ namespace Blockcore.Indexer.Api.Handlers
             ret.UnconfirmedTransactions = ret.UnconfirmedTransactions.Take(count);
          }
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -61,7 +65,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddress(address, confirmations);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -70,7 +74,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddressUtxoTransactions(address, confirmations);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -79,7 +83,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddressUtxo(address, confirmations);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -88,7 +92,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddressUtxoConfirmedTransactions(address, confirmations);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -97,7 +101,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddressUtxoUnconfirmedTransactions(address, confirmations);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -106,7 +110,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddressUtxo(address, 0);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -115,7 +119,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddress(address, 0);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -124,7 +128,7 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddressUtxoTransactions(address, 0);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -133,67 +137,103 @@ namespace Blockcore.Indexer.Api.Handlers
       {
          Types.QueryAddress ret = handler.GetAddressTransactions(address, 0);
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
+
+
+
+      /// <summary>
+      /// Returns blocks based on the offset and limit. The blocks are sorted from from lowest to highest index. You can use the "link" HTTP header to get dynamic paging links.
+      /// </summary>
+      /// <param name="offset">If value set to 0, then query will start from block tip, not from 1 (genesis).</param>
+      /// <param name="limit">Number of blocks to return. Maximum 50.</param>
+      /// <returns></returns>
       [HttpGet]
-      [Route("block/latest/{transactions?}")]
-      public IActionResult GetBlock(string transactions = null)
+      [Route("block")]
+      public IActionResult GetBlocks(int offset = 0, int limit = 10)
       {
-         Types.QueryBlock ret = handler.GetLastBlock(!string.IsNullOrEmpty(transactions));
+         if (limit > 50)
+         {
+            throw new ArgumentException("Limit is maximum 50.");
+         }
+
+         if (offset < 0)
+         {
+            throw new ArgumentException("Offset must be positive number.");
+         }
+
+         Types.QueryBlocks result = handler.BlockGetByLimitOffset(offset, limit);
+
+         // If the offset is not set, we'll default to query for the last page. We must ensure our URLs reflect this.
+         if (offset == 0)
+         {
+            offset = result.Total - limit + 1;
+         }
+
+         paging.Write(HttpContext, offset, limit, result.Total);
+
+         return Ok(result.Blocks);
+      }
+
+      /// <summary>
+      /// Returns a block based on the block id (hash).
+      /// </summary>
+      /// <param name="hash">Hash (ID) of the block to return.</param>
+      /// <param name="transactions">Flag that determine if transactions should be included in the block. Defaults to false.</param>
+      /// <returns></returns>
+      [HttpGet]
+      [Route("block/{hash}")]
+      public IActionResult GetBlockByHash(string hash, bool transactions = false)
+      {
+         Types.QueryBlock ret = handler.GetBlock(hash, transactions);
 
          if (ret == null)
          {
-            return new NotFoundResult();
+            return NotFound();
          }
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
+      /// <summary>
+      /// Returns a block based on the block height (index).
+      /// </summary>
+      /// <param name="index">The block height to get block from.</param>
+      /// <param name="transactions">Flag that determine if transactions should be included in the block. Defaults to false.</param>
+      /// <returns></returns>
       [HttpGet]
-      [Route("block/{blockHash}/{transactions?}")]
-      public IActionResult GetBlockByHash(string blockHash, string transactions = null)
+      [Route("block/index/{index}")]
+      public IActionResult GetBlockByIndex(long index, bool transactions = false)
       {
-         Types.QueryBlock ret = handler.GetBlock(blockHash, !string.IsNullOrEmpty(transactions));
+         Types.QueryBlock ret = handler.GetBlock(index, transactions);
 
          if (ret == null)
          {
-            return new NotFoundResult();
+            return NotFound();
          }
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
+      /// <summary>
+      /// Returns the latest blocks that is available.
+      /// </summary>
+      /// <param name="transactions"></param>
+      /// <returns></returns>
       [HttpGet]
-      [Route("block/index/{blockIndex}/{transactions?}")]
-      public IActionResult GetBlockByHash(long blockIndex, string transactions = null)
+      [Route("block/latest")]
+      public IActionResult GetLatestBlock(bool transactions = false)
       {
-         Types.QueryBlock ret = handler.GetBlock(blockIndex, !string.IsNullOrEmpty(transactions));
+         Types.QueryBlock ret = handler.GetLastBlock(transactions);
 
          if (ret == null)
          {
-            return new NotFoundResult();
+            return NotFound();
          }
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
-
-      [HttpGet]
-      [Route("block/index/{blockIndex}/Count/{count}")]
-      public IActionResult GetBlocksCount(long blockIndex, int count)
-      {
-         // Note - if blockIndex == -1 use latest block
-
-         Types.QueryBlocks ret = handler.GetBlocks(blockIndex, count);
-
-         if (ret == null)
-         {
-            return new NotFoundResult();
-         }
-
-         return new OkObjectResult(ret);
-      }
-
 
       [HttpGet]
       [Route("transaction/{transactionId}")]
@@ -203,10 +243,10 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (ret == null)
          {
-            return new NotFoundResult();
+            return NotFound();
          }
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet]
@@ -217,10 +257,10 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (ret == null)
          {
-            return new NotFoundResult();
+            return NotFound();
          }
 
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
    }
 }

@@ -10,6 +10,7 @@ namespace Blockcore.Indexer.Api.Handlers
    using NBitcoin;
    using Blockcore.Indexer.Crypto;
    using Blockcore.Indexer.Operations.Types;
+   using Blockcore.Indexer.Storage.Types;
 
    /// <summary>
    /// A handler that make request on the blockchain.
@@ -283,63 +284,29 @@ namespace Blockcore.Indexer.Api.Handlers
             return new QueryBlock();
          }
 
-         var queryBlock = new QueryBlock
-         {
-            Symbol = chainConfiguration.Symbol,
-            BlockHash = block.BlockHash,
-            BlockIndex = block.BlockIndex,
-            BlockSize = block.BlockSize,
-            BlockTime = block.BlockTime,
-            NextBlockHash = block.NextBlockHash,
-            PreviousBlockHash = block.PreviousBlockHash,
-            Synced = block.SyncComplete,
-            TransactionCount = block.TransactionCount,
-            Bits = block.Bits,
-            ChainWork = block.ChainWork,
-            Difficulty = block.Difficulty,
-            Confirmations = block.Confirmations,
-            Merkleroot = block.Merkleroot,
-            Nonce = block.Nonce,
-            PosBlockSignature = block.PosBlockSignature,
-            PosBlockTrust = block.PosBlockTrust,
-            PosChainTrust = block.PosChainTrust,
-            PosFlags = block.PosFlags,
-            PosHashProof = block.PosHashProof,
-            PosModifierv2 = block.PosModifierv2,
-            Version = block.Version,
-            Transactions = Enumerable.Empty<string>()
-         };
+         QueryBlock queryBlock = Map(block);
 
          if (getTransactions)
          {
             IEnumerable<Storage.Types.SyncTransactionInfo> transactions = storage.BlockTransactionGetByBlockIndex(block.BlockIndex);
-            queryBlock.Transactions = transactions.Select(s => s.TransactionHash);
+            queryBlock.Transactions = Map(transactions);
          }
 
          return queryBlock;
       }
 
-      public QueryBlocks GetBlocks(long blockIndex, int count)
+      public QueryBlocks BlockGetByLimitOffset(int offset, int limit)
       {
-         var blocks = new List<QueryBlock>();
+         (IEnumerable<SyncBlockInfo> Items, int Total) result = storage.BlockGetByLimitOffset(offset, limit);
+         IEnumerable<QueryBlock> blocks = result.Items.Select(b => Map(b));
 
-         if (blockIndex == -1)
+         QueryBlocks query = new QueryBlocks
          {
-            QueryBlock lastBlock = GetLastBlock(false);
-            blocks.Add(lastBlock);
-            blockIndex = lastBlock.BlockIndex - 1;
-            count--;
-         }
-
-         for (long i = 0; i < count; i++)
-         {
-            blocks.Add(GetBlock((int)blockIndex - i, false));
-         }
-
-         return new QueryBlocks
-         {
-            Blocks = blocks
+            Blocks = blocks,
+            Total = result.Total
          };
+
+         return query;
       }
 
       public QueryBlock GetBlock(long blockIndex, bool getTransactions = true)
@@ -351,35 +318,12 @@ namespace Blockcore.Indexer.Api.Handlers
             return new QueryBlock();
          }
 
-         var queryBlock = new QueryBlock
-         {
-            Symbol = chainConfiguration.Symbol,
-            BlockHash = block.BlockHash,
-            BlockIndex = block.BlockIndex,
-            BlockSize = block.BlockSize,
-            BlockTime = block.BlockTime,
-            NextBlockHash = block.NextBlockHash,
-            PreviousBlockHash = block.PreviousBlockHash,
-            Synced = block.SyncComplete,
-            TransactionCount = block.TransactionCount,
-            Bits = block.Bits,
-            Confirmations = block.Confirmations,
-            Merkleroot = block.Merkleroot,
-            Nonce = block.Nonce,
-            PosBlockSignature = block.PosBlockSignature,
-            PosBlockTrust = block.PosBlockTrust,
-            PosChainTrust = block.PosChainTrust,
-            PosFlags = block.PosFlags,
-            PosHashProof = block.PosHashProof,
-            PosModifierv2 = block.PosModifierv2,
-            Version = block.Version,
-            Transactions = Enumerable.Empty<string>()
-         };
+         QueryBlock queryBlock = Map(block);
 
          if (getTransactions)
          {
-            IEnumerable<Storage.Types.SyncTransactionInfo> transactions = storage.BlockTransactionGetByBlockIndex(block.BlockIndex);
-            queryBlock.Transactions = transactions.Select(s => s.TransactionHash);
+            IEnumerable<SyncTransactionInfo> transactions = storage.BlockTransactionGetByBlockIndex(block.BlockIndex);
+            queryBlock.Transactions = Map(transactions);
          }
 
          return queryBlock;
@@ -395,35 +339,12 @@ namespace Blockcore.Indexer.Api.Handlers
             return new QueryBlock();
          }
 
-         var queryBlock = new QueryBlock
-         {
-            Symbol = chainConfiguration.Symbol,
-            BlockHash = block.BlockHash,
-            BlockIndex = block.BlockIndex,
-            BlockSize = block.BlockSize,
-            BlockTime = block.BlockTime,
-            NextBlockHash = block.NextBlockHash,
-            PreviousBlockHash = block.PreviousBlockHash,
-            Synced = block.SyncComplete,
-            TransactionCount = block.TransactionCount,
-            Bits = block.Bits,
-            Confirmations = block.Confirmations,
-            Merkleroot = block.Merkleroot,
-            Nonce = block.Nonce,
-            PosBlockSignature = block.PosBlockSignature,
-            PosBlockTrust = block.PosBlockTrust,
-            PosChainTrust = block.PosChainTrust,
-            PosFlags = block.PosFlags,
-            PosHashProof = block.PosHashProof,
-            PosModifierv2 = block.PosModifierv2,
-            Version = block.Version,
-            Transactions = Enumerable.Empty<string>()
-         };
+         QueryBlock queryBlock = Map(block);
 
          if (getTransactions)
          {
-            IEnumerable<Storage.Types.SyncTransactionInfo> transactions = storage.BlockTransactionGetByBlockIndex(block.BlockIndex);
-            queryBlock.Transactions = transactions.Select(s => s.TransactionHash);
+            IEnumerable<SyncTransactionInfo> transactions = storage.BlockTransactionGetByBlockIndex(block.BlockIndex);
+            queryBlock.Transactions = Map(transactions);
          }
 
          return queryBlock;
@@ -445,7 +366,7 @@ namespace Blockcore.Indexer.Api.Handlers
             BlockHash = transaction?.BlockHash ?? null,
             BlockIndex = transaction?.BlockIndex ?? null,
             Confirmations = transaction?.Confirmations ?? 0,
-            Timestamp = transaction?.Timestamp.UnixTimeStampToDateTime() ?? null,
+            Timestamp = transaction?.Timestamp ?? 0,
             TransactionId = transaction?.TransactionHash ?? transactionId,
 
             RBF = transactionItems.RBF,
@@ -488,6 +409,52 @@ namespace Blockcore.Indexer.Api.Handlers
          {
             CoinTag = chainConfiguration.Symbol,
             Transactions = transactions.Select(t => new QueryMempoolTransaction { TransactionId = t.GetHash().ToString() }).Take(count).ToList()
+         };
+      }
+
+      private IEnumerable<QueryTransaction> Map(IEnumerable<Storage.Types.SyncTransactionInfo> transactions)
+      {
+         IEnumerable<QueryTransaction> list = transactions.Select(t => Map(t));
+         return list;
+      }
+
+      private QueryTransaction Map(SyncTransactionInfo transaction)
+      {
+         return new QueryTransaction
+         {
+            BlockHash = transaction.BlockHash,
+            BlockIndex = transaction.BlockIndex,
+            Confirmations = transaction.Confirmations,
+            TransactionId = transaction.TransactionHash,
+            Timestamp = transaction.Timestamp
+         };
+      }
+
+      private QueryBlock Map(SyncBlockInfo block)
+      {
+         return new QueryBlock
+         {
+            Symbol = chainConfiguration.Symbol,
+            BlockHash = block.BlockHash,
+            BlockIndex = block.BlockIndex,
+            BlockSize = block.BlockSize,
+            BlockTime = block.BlockTime,
+            NextBlockHash = block.NextBlockHash,
+            PreviousBlockHash = block.PreviousBlockHash,
+            Synced = block.SyncComplete,
+            TransactionCount = block.TransactionCount,
+            Bits = block.Bits,
+            Confirmations = block.Confirmations,
+            Merkleroot = block.Merkleroot,
+            Nonce = block.Nonce,
+            PosBlockSignature = block.PosBlockSignature,
+            PosBlockTrust = block.PosBlockTrust,
+            PosChainTrust = block.PosChainTrust,
+            PosFlags = block.PosFlags,
+            PosHashProof = block.PosHashProof,
+            PosModifierv2 = block.PosModifierv2,
+            Version = block.Version,
+            Transactions = new List<QueryTransaction>()
          };
       }
    }
