@@ -1,13 +1,7 @@
 namespace Blockcore.Indexer
 {
-   using System;
-   using System.Net.Http;
    using Microsoft.AspNetCore.Hosting;
-   using Microsoft.Extensions.Configuration;
    using Microsoft.Extensions.Hosting;
-   using System.Linq;
-   using System.Linq.Expressions;
-   using System.Globalization;
 
    /// <summary>
    /// The application program.
@@ -22,45 +16,17 @@ namespace Blockcore.Indexer
       public static IHostBuilder CreateHostBuilder(string[] args) =>
           Host.CreateDefaultBuilder(args)
          .ConfigureAppConfiguration(config =>
+         {
+            config.AddBlockcore("Blockore Indexer", args);
+         })
+         .ConfigureWebHostDefaults(webBuilder =>
+         {
+            webBuilder.ConfigureKestrel(serverOptions =>
             {
-               string chain = args
-                  .DefaultIfEmpty("--chain=BTC")
-                  .Where(arg => arg.StartsWith("--chain", ignoreCase: true, CultureInfo.InvariantCulture))
-                  .Select(arg => arg.Replace("--chain=", string.Empty, ignoreCase: true, CultureInfo.InvariantCulture))
-                  .FirstOrDefault();
-
-               if (string.IsNullOrWhiteSpace(chain))
-               {
-                  throw new ArgumentNullException("--chain", "You must specify the --chain argument. It can be either chain name, or URL to a json configuration.");
-               }
-
-               string url;
-
-               if (chain.Contains("/"))
-               {
-                  url = chain;
-               }
-               else
-               {
-                  url = $"https://chains.blockcore.net/chains/{chain}.json";
-               }
-
-               var http = new HttpClient();
-               HttpResponseMessage result = http.GetAsync(url).Result;
-
-               if (result.IsSuccessStatusCode)
-               {
-                  System.IO.Stream stream = result.Content.ReadAsStreamAsync().Result;
-                  config.AddJsonStream(stream);
-               }
-               else
-               {
-                  throw new ApplicationException("Unable to read the supplied configuration.");
-               }
-            })
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-               webBuilder.UseStartup<Startup>();
+               serverOptions.AddServerHeader = false;
             });
+
+            webBuilder.UseStartup<Startup>();
+         });
    }
 }

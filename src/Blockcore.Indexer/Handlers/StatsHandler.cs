@@ -13,6 +13,8 @@ namespace Blockcore.Indexer.Api.Handlers
    using Blockcore.Indexer.Operations.Types;
    using Blockcore.Indexer.Storage;
    using Microsoft.Extensions.Options;
+   using Newtonsoft.Json;
+   using Blockcore.Indexer.Extensions;
 
    /// <summary>
    /// Handler to make get info about a blockchain.
@@ -27,15 +29,22 @@ namespace Blockcore.Indexer.Api.Handlers
 
       private readonly ChainSettings chainConfiguration;
 
+      private readonly NetworkSettings networkConfig;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsHandler"/> class.
       /// </summary>
-      public StatsHandler(SyncConnection connection, IStorage storage, IOptions<IndexerSettings> configuration, IOptions<ChainSettings> chainConfiguration)
+      public StatsHandler(
+         SyncConnection connection, IStorage storage,
+         IOptions<NetworkSettings> networkConfig,
+         IOptions<IndexerSettings> configuration,
+         IOptions<ChainSettings> chainConfiguration)
       {
          this.storage = storage;
          syncConnection = connection;
          this.configuration = configuration.Value;
          this.chainConfiguration = chainConfiguration.Value;
+         this.networkConfig = networkConfig.Value;
       }
 
       public async Task<StatsConnection> StatsConnection()
@@ -49,9 +58,12 @@ namespace Blockcore.Indexer.Api.Handlers
 
       public async Task<CoinInfo> CoinInformation()
       {
-         long index = storage.BlockGetBlockCount(1).FirstOrDefault()?.BlockIndex ?? 0;
+         long index = storage.GetLatestBlock()?.BlockIndex ?? 0;
 
-         return new CoinInfo
+         //SyncConnection connection = syncConnection;
+         //BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+
+         var coinInfo = new CoinInfo
          {
             BlockHeight = index,
             Name = chainConfiguration.Name,
@@ -61,6 +73,47 @@ namespace Blockcore.Indexer.Api.Handlers
             Logo = chainConfiguration.Logo,
             Icon = chainConfiguration.Icon
          };
+
+         Statistics statitics = await Statistics();
+         coinInfo.Node = statitics;
+
+         // If we have network type available, we'll extend with extra metadata.
+         if (syncConnection.HasNetworkType)
+         {
+            NBitcoin.Network network = syncConnection.Network;
+            NBitcoin.IConsensus consensus = network.Consensus;
+
+            coinInfo.Configuration = new NetworkInfo {
+               DefaultAPIPort = network.DefaultAPIPort,
+               DefaultMaxInboundConnections = network.DefaultMaxInboundConnections,
+               DefaultMaxOutboundConnections = network.DefaultMaxOutboundConnections,
+               DefaultPort = network.DefaultPort,
+               DefaultRPCPort = network.DefaultRPCPort,
+               DefaultSignalRPort = network.DefaultSignalRPort,
+               DNSSeeds = network.DNSSeeds.Select(s => s.Host).ToList(),
+               FallbackFee = network.FallbackFee,
+               GenesisDate = UnixUtils.UnixTimestampToDate(network.GenesisTime).ToUniversalDateTime(), // Returns Kind.Unspecified, so translate.
+               GenesisHash = network.GenesisHash.ToString(),
+               MinRelayTxFee = network.MinRelayTxFee,
+               MinTxFee = network.MinTxFee,
+               Name = network.Name,
+               NetworkType = network.NetworkType,
+               SeedNodes = network.SeedNodes.Select(s => s.Endpoint.ToString()).ToList(),
+
+               Consensus = new ConsensusInfo {
+                  CoinbaseMaturity = consensus.CoinbaseMaturity,
+                  CoinType = consensus.CoinType,
+                  IsProofOfStake = consensus.IsProofOfStake,
+                  LastPOWBlock = consensus.LastPOWBlock,
+                  MaxMoney = consensus.MaxMoney,
+                  PremineReward = consensus.PremineReward.ToUnit(NBitcoin.MoneyUnit.BTC),
+                  ProofOfStakeReward = consensus.ProofOfStakeReward.ToUnit(NBitcoin.MoneyUnit.BTC),
+                  ProofOfWorkReward = consensus.ProofOfWorkReward.ToUnit(NBitcoin.MoneyUnit.BTC),
+                  TargetSpacing = consensus.TargetSpacing
+               } };
+         }
+
+         return coinInfo;
       }
 
       public async Task<Statistics> Statistics()
@@ -71,8 +124,8 @@ namespace Blockcore.Indexer.Api.Handlers
 
          try
          {
-            stats.BlockchainInfo = await client.GetBlockchainInfo();
-            stats.NetworkInfo = await client.GetNetworkInfo();
+            stats.Blockchain = await client.GetBlockchainInfo();
+            stats.Network = await client.GetNetworkInfo();
          }
          catch (Exception ex)
          {
@@ -80,12 +133,12 @@ namespace Blockcore.Indexer.Api.Handlers
             return stats;
          }
 
-         stats.TransactionsInPool = storage.GetMemoryTransactions().Count();
+         stats.TransactionsInPool = storage.GetMemoryTransactionsCount();
 
          try
          {
-            stats.SyncBlockIndex = storage.BlockGetBlockCount(1).First().BlockIndex;
-            stats.Progress = $"{stats.SyncBlockIndex}/{stats.BlockchainInfo.Blocks} - {stats.BlockchainInfo.Blocks - stats.SyncBlockIndex}";
+            stats.SyncBlockIndex = storage.GetLatestBlock().BlockIndex;
+            stats.Progress = $"{stats.SyncBlockIndex}/{stats.Blockchain.Blocks} - {stats.Blockchain.Blocks - stats.SyncBlockIndex}";
 
             double totalSeconds = syncConnection.RecentItems.Sum(s => s.Duration.TotalSeconds);
             stats.AvgBlockPersistInSeconds = Math.Round(totalSeconds / syncConnection.RecentItems.Count, 2);

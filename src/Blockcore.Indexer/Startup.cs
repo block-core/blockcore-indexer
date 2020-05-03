@@ -1,11 +1,12 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using Blockcore.Indexer.Api.Handlers;
-using Blockcore.Indexer.Settings;
+using Blockcore.Indexer.Extensions;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
+using Blockcore.Indexer.Paging;
+using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo;
 using Blockcore.Indexer.Sync;
@@ -34,7 +35,7 @@ namespace Blockcore.Indexer
          services.Configure<NetworkSettings>(Configuration.GetSection("Network"));
          services.Configure<IndexerSettings>(Configuration.GetSection("Indexer"));
 
-         services.AddSingleton<QueryHandler>();
+         // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
          services.AddSingleton<IStorage, MongoData>();
@@ -43,18 +44,24 @@ namespace Blockcore.Indexer
          services.AddTransient<SyncServer>();
          services.AddSingleton<SyncConnection>();
          services.AddSingleton<ISyncOperations, SyncOperations>();
+         services.AddSingleton<IPagingHelper, PagingHelper>();
          services.AddScoped<Runner>();
+
          services.AddScoped<TaskRunner, BlockFinder>();
          services.AddScoped<TaskRunner, BlockStore>();
          services.AddScoped<TaskRunner, BlockSyncer>();
          services.AddScoped<TaskRunner, PoolFinder>();
          services.AddScoped<TaskRunner, Notifier>();
+         services.AddScoped<TaskRunner, StatsSyncer>(); // Update peer information every 5 minute.
+
          services.AddScoped<TaskStarter, BlockReorger>();
 
          services.AddMemoryCache();
          services.AddHostedService<SyncServer>();
 
-         services.AddControllers().AddNewtonsoftJson(options =>
+         services.AddControllers(options => {
+            options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
+         }).AddNewtonsoftJson(options =>
          {
             options.SerializerSettings.FloatFormatHandling = Newtonsoft.Json.FloatFormatHandling.DefaultValue;
          });
@@ -62,12 +69,20 @@ namespace Blockcore.Indexer
          services.AddSwaggerGen(
              options =>
              {
-                // TODO: Decide which version to use.
                 string assemblyVersion = typeof(Startup).Assembly.GetName().Version.ToString();
-                string fileVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-                string productVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
 
-                options.SwaggerDoc("indexer", new OpenApiInfo { Title = "Blockcore Indexer API", Version = fileVersion });
+                options.SwaggerDoc("indexer",
+                  new OpenApiInfo
+                  {
+                     Title = "Blockcore Indexer API",
+                     Version = assemblyVersion,
+                     Description = "Blockchain index database that can be used for blockchain based software and services.",
+                     Contact = new OpenApiContact
+                     {
+                        Name = "Blockcore",
+                        Url = new Uri("https://www.blockcore.net/")
+                     }
+                  });
 
                 // integrate xml comments
                 if (File.Exists(XmlCommentsFilePath))
@@ -78,6 +93,8 @@ namespace Blockcore.Indexer
                 options.DescribeAllEnumsAsStrings();
 
                 options.DescribeStringEnumsInCamelCase();
+
+                options.EnableAnnotations();
              });
 
          services.AddSwaggerGenNewtonsoftSupport(); // explicit opt-in - needs to be placed after AddSwaggerGen()
@@ -105,11 +122,6 @@ namespace Blockcore.Indexer
 
          app.UseRouting();
 
-         app.UseEndpoints(endpoints =>
-         {
-            endpoints.MapControllers();
-         });
-
          app.UseSwagger(c =>
          {
             c.RouteTemplate = "docs/{documentName}/openapi.json";
@@ -119,6 +131,11 @@ namespace Blockcore.Indexer
          {
             c.RoutePrefix = "docs";
             c.SwaggerEndpoint("/docs/indexer/openapi.json", "Blockcore Indexer API");
+         });
+
+         app.UseEndpoints(endpoints =>
+         {
+            endpoints.MapControllers();
          });
       }
 

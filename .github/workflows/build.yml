@@ -78,7 +78,7 @@ jobs:
 
     - name: Package (Mac)
       if: matrix.os == 'macos-latest'
-      run: zip -j -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
+      run: zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
 
     #- run: mkdir -p path/to/artifact
     #- run: echo hello > path/to/artifact/world.txt
@@ -94,7 +94,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: "${{env.RELEASE_PATH}}"
         draft: true
-        prerelease: true
+        prerelease: false
         body: ''
         name: "Blockcore Indexer (Release ${{env.VERSION}})"
         tag: ${{env.VERSION}}

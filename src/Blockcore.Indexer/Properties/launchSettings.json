@@ -52,6 +52,15 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
+      "XLR": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=XLR",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
       "ODX": {
          "commandName": "Project",
          "commandLineArgs": "--chain=ODX",

@@ -1,29 +1,39 @@
 # Blockcore Indexer
 
 [1]: https://github.com/block-core/blockcore-indexer/actions
-[2]: https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Binaries/badge.svg
-[3]: https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Docker%20Image/badge.svg
+[2]: https://github.com/block-core/blockcore-indexer/workflows/Pull%20Request/badge.svg
+[3]: https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Binaries/badge.svg
+[4]: https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Docker%20Image/badge.svg
 
-[![Build Status][2]][1] [![Release Status][3]][1]
+ [![Pull Request][2]][1]
+ [![Build Status][3]][1] [![Release Status][4]][1]
 
 Blockcore Indexer scans the blockchain of Blockcore-derived chains and stores transaction/address information in a MongoDB database with REST API available for Block Explorers to use.
 
 Blockcore Indexer API can be searched by segwit addresses and Cold-Staking (hot and cold key) script types.
 
+## Compatibility
+
+While we do our best to keep compatibility of APIs going forward, we will continue to change and improve our APIs that can result in breaking changes for consumers of the APIs.
+
+We will attempt to avoid breaking changes within major releases.
+
+The 0.0.X releases of Blockcore Indexer is not compatible with the 0.1.X.
+
+All our technologies are available on docker, so can easily be upgraded and downgraded when there are compatibility issues.
+
 ### Technologies
 - .NET Core
-- NBitcoin and Stratis.Bitcoin
-- Running a full Bitcoin/Altcoin node either daemon or qt 
+- Blockcore Platform
+- Running a full Bitcoin/Blockcore node
 - Running a MongoDB instance as indexing storage
-- Kestrel Web Server with OpenAPI documentation
-
-We user [docker](https://www.docker.com/) (with docker-compose)
+- REST API that can be consumed by Block Explorer
 
 #### DB schema
 Can be found here:  
 https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexer/doc/dbschema.md
 
-#### Api
+#### API
 Swagger http://[server-url]:[port]/swagger/
 
 ##### examples
@@ -38,27 +48,33 @@ GET /api/query/transaction/{transactionId}
 GET /api/stats  
 GET /api/stats/peers  
 
+## Development
 
-## Docker
+To get started working on the indexer is super easy. All you need is a locally running node that has RPC enabled and a MongoDB instance.
 
-```sh
-docker build -t blockcoreindexer .
+The process of configuration flows like this:
+
+1. Startup looks at what chain it should start, this is always in the form of ticker symbol, such as BTC or CITY.
+2. Configuration is read from appsettings.json.
+3. Configuration is downloaded from https://chains.blockcore.net/
+4. Configuration is read from appsettings.Development.json.
+
+Out of the box, the configuration when you run from Visual Studio will connect to a local running node and local MongoDB instance.
+
+When you have the node running, pick it from the dropdown menu (green play button) in Visual Studio and run. The indexer should start indexing the blocks and store them in your local MongoDB instance.
+
+1. Download [Blockcore Reference Node](https://github.com/block-core/blockcore-nodes/releases).
+2. Download [MongoDB](https://www.mongodb.com/).
+3. Install MongoDB
+4. Run your reference node of choice, with these parameters: 
+
+```
+-server -rpcallowip=127.0.0.1 -rpcbind=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser
 ```
 
-```sh
-docker run -p 9901:9901 --name cityindexer blockcoreindexer:latest
-```
+5. As soon as you have connections and your node is starting to download blocks, you can start the Blockcore Indexer.
 
-```sh
-// Run an individual chain from the docker sub-folders. Timeout should be high to avoid blockchain database storage issues.
-docker-compose up --timeout 600
-```
-
-```sh
-// Cleanup the majority of resources (doesn't delete volumes)
-docker system prune -a
-```
-
+*Happy debugging and coding!*
 
 ## Release Process
 
@@ -77,6 +93,6 @@ docker pull blockcore/indexer:latest
 ```
 
 ```sh
-docker pull blockcore/indexer:0.0.3
+docker pull blockcore/indexer:0.0.6
 ```
 

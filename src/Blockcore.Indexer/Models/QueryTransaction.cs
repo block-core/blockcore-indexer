@@ -1,11 +1,7 @@
 namespace Blockcore.Indexer.Api.Handlers.Types
 {
-   #region Using Directives
-
    using System;
    using System.Collections.Generic;
-
-   #endregion
 
    public class QueryTransaction
    {
@@ -27,7 +23,7 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       /// <summary>
       /// Gets or sets the Timestamp.
       /// </summary>
-      public DateTime? Timestamp { get; set; }
+      public long Timestamp { get; set; }
 
       /// <summary>
       /// Gets or sets the transaction id.

@@ -1,9 +1,7 @@
-﻿namespace Blockcore.Indexer.Storage.Mongo.Types
+namespace Blockcore.Indexer.Storage.Mongo.Types
 {
    public class MapBlock
    {
-      #region Public Properties
-
       public string BlockHash { get; set; }
 
       public long BlockIndex { get; set; }
@@ -45,7 +43,5 @@
       public string PosBlockTrust { get; set; }
 
       public string PosChainTrust { get; set; }
-
-      #endregion
    }
 }

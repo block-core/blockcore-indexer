@@ -19,7 +19,40 @@ namespace Blockcore.Indexer.Operations.Types
 
          var consensusFactory = (ConsensusFactory)Activator.CreateInstance(Type.GetType(networkConfig.NetworkConsensusFactoryType));
 
-         Consensus = new ConsensusConfig(config, consensusFactory);
+         Consensus = new NBitcoin.Consensus(
+                consensusFactory: consensusFactory,
+                consensusOptions: null,
+                coinType: 0,
+                hashGenesisBlock: uint256.Zero,
+                subsidyHalvingInterval: 0,
+                majorityEnforceBlockUpgrade: 0,
+                majorityRejectBlockOutdated: 0,
+                majorityWindow: 0,
+                buriedDeployments: null,
+                bip9Deployments: null,
+                bip34Hash: uint256.Zero,
+                minerConfirmationWindow: 0,
+                maxReorgLength: 0,
+                defaultAssumeValid: uint256.Zero,
+                maxMoney: 0,
+                coinbaseMaturity: 0,
+                premineHeight: 0,
+                premineReward: 0,
+                proofOfWorkReward: 0,
+                targetTimespan: TimeSpan.Zero,
+                targetSpacing: TimeSpan.Zero,
+                powAllowMinDifficultyBlocks: false,
+                posNoRetargeting: false,
+                powNoRetargeting: false,
+                powLimit: new Target(uint256.Zero),
+                minimumChainWork: null,
+                isProofOfStake: consensusFactory is PosConsensusFactory,
+                lastPowBlock: 0,
+                proofOfStakeLimit: null,
+                proofOfStakeLimitV2: null,
+                proofOfStakeReward: 0,
+                proofOfStakeTimestampMask: 0x0000003F // 64 sec
+            );
 
          Base58Prefixes = new byte[12][];
          Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (networkConfig.NetworkPubkeyAddressPrefix) };
@@ -32,46 +65,6 @@ namespace Blockcore.Indexer.Operations.Types
 
          // TODO
          //StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate);
-      }
-   }
-
-   public class ConsensusConfig : Consensus
-   {
-      public ConsensusConfig(IndexerSettings config, ConsensusFactory consensusFactory) : base(
-          consensusFactory: consensusFactory,
-          consensusOptions: null,
-          coinType: 0,
-          hashGenesisBlock: uint256.Zero,
-          subsidyHalvingInterval: 0,
-          majorityEnforceBlockUpgrade: 0,
-          majorityRejectBlockOutdated: 0,
-          majorityWindow: 0,
-          buriedDeployments: null,
-          bip9Deployments: null,
-          bip34Hash: uint256.Zero,
-          ruleChangeActivationThreshold: 0,
-          minerConfirmationWindow: 0,
-          maxReorgLength: 0,
-          defaultAssumeValid: uint256.Zero,
-          maxMoney: 0,
-          coinbaseMaturity: 0,
-          premineHeight: 0,
-          premineReward: 0,
-          proofOfWorkReward: 0,
-          powTargetTimespan: TimeSpan.Zero,
-          powTargetSpacing: TimeSpan.Zero,
-          powAllowMinDifficultyBlocks: false,
-          posNoRetargeting: false,
-          powNoRetargeting: false,
-          powLimit: new Target(uint256.Zero),
-          minimumChainWork: null,
-          isProofOfStake: consensusFactory is PosConsensusFactory,
-          lastPowBlock: 0,
-          proofOfStakeLimit: null,
-          proofOfStakeLimitV2: null,
-          proofOfStakeReward: 0
-      )
-      {
       }
    }
 
@@ -98,12 +91,21 @@ namespace Blockcore.Indexer.Operations.Types
          Secure = configuration.RpcSecure;
          StartBlockIndex = configuration.StartBlockIndex;
 
-         // This can be replaced with a specific the network class of a specific coin
-         // Or use the config values to simulate the network class.
-         Network = new NetworkConfig(configuration, chainConfiguration, networkConfiguration);
+         if (string.IsNullOrWhiteSpace(networkConfiguration.NetworkType))
+         {
+            Network = new NetworkConfig(configuration, chainConfiguration, networkConfiguration);
+            HasNetworkType = false;
+         }
+         else
+         {
+            Network = (Network)Activator.CreateInstance(Type.GetType(networkConfiguration.NetworkType));
+            HasNetworkType = true;
+         }
 
          RecentItems = new Buffer<(DateTime Inserted, TimeSpan Duration, long Size)>(5000);
       }
+
+      public bool HasNetworkType { get; set; }
 
       public NBitcoin.Network Network { get; }
 

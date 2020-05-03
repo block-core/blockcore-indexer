@@ -2,9 +2,11 @@ namespace Blockcore.Indexer.Api.Handlers.Types
 {
    using System.Collections.Generic;
 
-   public class QueryBlocks
+   public class QueryBlockResults
    {
       public IEnumerable<QueryBlock> Blocks { get; set; }
+
+      public int Total { get; set; }
    }
 
    public class QueryBlock
@@ -83,6 +85,6 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       /// <summary>
       /// Gets or sets the transactions.
       /// </summary>
-      public IEnumerable<string> Transactions { get; set; }
+      public IEnumerable<QueryTransaction> Transactions { get; set; }
    }
 }

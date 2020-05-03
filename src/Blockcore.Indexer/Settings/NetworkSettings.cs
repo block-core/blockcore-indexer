@@ -4,6 +4,8 @@ namespace Blockcore.Indexer.Settings
    {
       public string NetworkConsensusFactoryType { get; set; }
 
+      public string NetworkType { get; set; }
+
       public byte NetworkPubkeyAddressPrefix { get; set; }
 
       public byte NetworkScriptAddressPrefix { get; set; }

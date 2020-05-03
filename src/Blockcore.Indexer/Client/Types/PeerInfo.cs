@@ -1,12 +1,13 @@
-﻿namespace Blockcore.Indexer.Client.Types
+namespace Blockcore.Indexer.Client.Types
 {
+   using System;
    using System.Collections.Generic;
+   using MongoDB.Bson.Serialization.Attributes;
    using Newtonsoft.Json;
 
+   [BsonIgnoreExtraElements]
    public class PeerInfo
    {
-      public uint Id { get; set; }
-
       public string Addr { get; set; }
 
       public string AddrLocal { get; set; }
@@ -44,5 +45,7 @@
       public IList<long> InFlight { get; set; }
 
       public bool WhiteListed { get; set; }
+
+      public DateTime LastSeen { get; set; }
    }
 }
