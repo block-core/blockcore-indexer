@@ -2,7 +2,7 @@ namespace Blockcore.Indexer.Api.Handlers.Types
 {
    using System.Collections.Generic;
 
-   public class QueryBlocks
+   public class QueryBlockResults
    {
       public IEnumerable<QueryBlock> Blocks { get; set; }
 

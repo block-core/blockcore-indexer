@@ -2,6 +2,21 @@ namespace Blockcore.Indexer.Api.Handlers.Types
 {
    using System.Collections.Generic;
 
+   public class QueryAddressResults
+   {
+      public int Total { get; set; }
+
+      /// <summary>
+      /// Gets or sets the transactions.
+      /// </summary>
+      public IEnumerable<QueryAddressItem> Transactions { get; set; }
+
+      /// <summary>
+      /// Gets or sets the Unconfirmed transactions.
+      /// </summary>
+      public IEnumerable<QueryAddressItem> UnconfirmedTransactions { get; set; }
+   }
+
    public class QueryAddress
    {
       /// <summary>
@@ -33,15 +48,5 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       /// Gets or sets the unconfirmed balance.
       /// </summary>
       public long UnconfirmedBalance { get; set; }
-
-      /// <summary>
-      /// Gets or sets the transactions.
-      /// </summary>
-      public IEnumerable<QueryAddressItem> Transactions { get; set; }
-
-      /// <summary>
-      /// Gets or sets the Unconfirmed transactions.
-      /// </summary>
-      public IEnumerable<QueryAddressItem> UnconfirmedTransactions { get; set; }
    }
 }

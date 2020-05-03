@@ -35,7 +35,7 @@ namespace Blockcore.Indexer
          services.Configure<NetworkSettings>(Configuration.GetSection("Network"));
          services.Configure<IndexerSettings>(Configuration.GetSection("Indexer"));
 
-         services.AddSingleton<QueryHandler>();
+         // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
          services.AddSingleton<IStorage, MongoData>();

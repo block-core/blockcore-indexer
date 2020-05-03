@@ -48,7 +48,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          if (item.BlockInfo != null)
          {
-            SyncBlockInfo lastBlock = storage.BlockGetBlockCount(1).FirstOrDefault();
+            SyncBlockInfo lastBlock = storage.GetLatestBlock();
 
             if (lastBlock != null)
             {

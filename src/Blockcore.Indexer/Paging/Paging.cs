@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
+using Blockcore.Indexer.Storage.Types;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.WebUtilities;
@@ -47,6 +48,8 @@ namespace Blockcore.Indexer.Paging
    public interface IPagingHelper
    {
       void Write(HttpContext context, long offset, int limit, long total);
+
+      void Write<T>(HttpContext context, QueryResult<T> queryResult);
    }
 
    /// <summary>
@@ -54,12 +57,17 @@ namespace Blockcore.Indexer.Paging
    /// </summary>
    public class PagingHelper : IPagingHelper
    {
+      public void Write<T>(HttpContext context, QueryResult<T> queryResult)
+      {
+         Write(context, queryResult.Offset, queryResult.Limit, queryResult.Total);
+      }
+
       public void Write(HttpContext context, long offset, int limit, long total)
       {
-         if (offset < 1)
-         {
-            throw new ArgumentException("Offset cannot be lower than 1.");
-         }
+         //if (offset < 1)
+         //{
+         //   throw new ArgumentException("Offset cannot be lower than 1.");
+         //}
 
          // If there are no offset, we'll default to total acount minus limit.
          //if (offset == 0)
@@ -93,7 +101,8 @@ namespace Blockcore.Indexer.Paging
          //context.Response.Headers["Access-Control-Expose-Headers"] = "Content-Length,Link,Pagination-Returned,Pagination-Total";
 
          context.Response.Headers["Link"] = string.Join(", ", links);
-         context.Response.Headers["Pagination-Returned"] = limit.ToString();
+         context.Response.Headers["Pagination-Offset"] = offset.ToString();
+         context.Response.Headers["Pagination-Limit"] = limit.ToString();
          context.Response.Headers["Pagination-Total"] = total.ToString();
       }
    }

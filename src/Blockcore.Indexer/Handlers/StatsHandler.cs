@@ -58,7 +58,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
       public async Task<CoinInfo> CoinInformation()
       {
-         long index = storage.BlockGetBlockCount(1).FirstOrDefault()?.BlockIndex ?? 0;
+         long index = storage.GetLatestBlock()?.BlockIndex ?? 0;
 
          //SyncConnection connection = syncConnection;
          //BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
@@ -133,11 +133,11 @@ namespace Blockcore.Indexer.Api.Handlers
             return stats;
          }
 
-         stats.TransactionsInPool = storage.GetMemoryTransactions().Count();
+         stats.TransactionsInPool = storage.GetMemoryTransactionsCount();
 
          try
          {
-            stats.SyncBlockIndex = storage.BlockGetBlockCount(1).First().BlockIndex;
+            stats.SyncBlockIndex = storage.GetLatestBlock().BlockIndex;
             stats.Progress = $"{stats.SyncBlockIndex}/{stats.Blockchain.Blocks} - {stats.Blockchain.Blocks - stats.SyncBlockIndex}";
 
             double totalSeconds = syncConnection.RecentItems.Sum(s => s.Duration.TotalSeconds);
