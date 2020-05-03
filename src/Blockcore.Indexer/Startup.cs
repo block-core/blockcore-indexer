@@ -56,6 +56,7 @@ namespace Blockcore.Indexer
 
          services.AddScoped<TaskStarter, BlockReorger>();
 
+         services.AddResponseCompression();
          services.AddMemoryCache();
          services.AddHostedService<SyncServer>();
 
@@ -113,6 +114,8 @@ namespace Blockcore.Indexer
 
          // Enable Cors
          app.UseCors("IndexerPolicy");
+
+         app.UseResponseCompression();
 
          //app.UseMvc();
 
