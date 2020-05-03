@@ -88,7 +88,7 @@ namespace Blockcore.Indexer.Sync
       {
          while (true)
          {
-            Storage.Types.SyncBlockInfo block = storage.BlockGetBlockCount(1).FirstOrDefault();
+            Storage.Types.SyncBlockInfo block = storage.GetLatestBlock();
 
             if (block == null)
             {

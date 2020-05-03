@@ -1,11 +1,12 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using Blockcore.Indexer.Api.Handlers;
-using Blockcore.Indexer.Settings;
+using Blockcore.Indexer.Extensions;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
+using Blockcore.Indexer.Paging;
+using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo;
 using Blockcore.Indexer.Sync;
@@ -16,7 +17,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
-using Blockcore.Indexer.Extensions;
 
 namespace Blockcore.Indexer
 {
@@ -35,7 +35,7 @@ namespace Blockcore.Indexer
          services.Configure<NetworkSettings>(Configuration.GetSection("Network"));
          services.Configure<IndexerSettings>(Configuration.GetSection("Indexer"));
 
-         services.AddSingleton<QueryHandler>();
+         // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
          services.AddSingleton<IStorage, MongoData>();
@@ -44,6 +44,7 @@ namespace Blockcore.Indexer
          services.AddTransient<SyncServer>();
          services.AddSingleton<SyncConnection>();
          services.AddSingleton<ISyncOperations, SyncOperations>();
+         services.AddSingleton<IPagingHelper, PagingHelper>();
          services.AddScoped<Runner>();
 
          services.AddScoped<TaskRunner, BlockFinder>();
@@ -92,6 +93,8 @@ namespace Blockcore.Indexer
                 options.DescribeAllEnumsAsStrings();
 
                 options.DescribeStringEnumsInCamelCase();
+
+                options.EnableAnnotations();
              });
 
          services.AddSwaggerGenNewtonsoftSupport(); // explicit opt-in - needs to be placed after AddSwaggerGen()
@@ -119,11 +122,6 @@ namespace Blockcore.Indexer
 
          app.UseRouting();
 
-         app.UseEndpoints(endpoints =>
-         {
-            endpoints.MapControllers();
-         });
-
          app.UseSwagger(c =>
          {
             c.RouteTemplate = "docs/{documentName}/openapi.json";
@@ -133,6 +131,11 @@ namespace Blockcore.Indexer
          {
             c.RoutePrefix = "docs";
             c.SwaggerEndpoint("/docs/indexer/openapi.json", "Blockcore Indexer API");
+         });
+
+         app.UseEndpoints(endpoints =>
+         {
+            endpoints.MapControllers();
          });
       }
 

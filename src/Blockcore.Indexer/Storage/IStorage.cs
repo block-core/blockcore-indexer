@@ -1,40 +1,66 @@
-﻿
+
 namespace Blockcore.Indexer.Storage
 {
+   using System;
    using System.Collections.Generic;
+   using Blockcore.Indexer.Api.Handlers.Types;
+   using Blockcore.Indexer.Storage.Mongo;
    using Blockcore.Indexer.Storage.Types;
 
    public interface IStorage
    {
-      IEnumerable<SyncBlockInfo> BlockGetIncompleteBlocks();
+      //IEnumerable<SyncBlockInfo> BlockGetIncompleteBlocks();
 
+      [Obsolete("Should not be used, instead use methods that support offset and limit.")]
       IEnumerable<SyncBlockInfo> BlockGetBlockCount(int count);
 
-      IEnumerable<SyncBlockInfo> BlockGetCompleteBlockCount(int count);
+      SyncBlockInfo GetLatestBlock();
 
-      SyncBlockInfo BlockGetByHash(string blockHash);
+      int GetMemoryTransactionsCount();
 
-      SyncBlockInfo BlockGetByIndex(long blockIndex);
+      AddressBalance AddressBalance(string address, long confirmations = 0, bool includeMempool = false);
 
-      SyncTransactionInfo BlockTransactionGet(string transactionId);
+      QueryResult<QueryTransaction> AddressTransactions(string address, long confirmations, bool unconfirmed, TransactionUsedFilter used, int offset, int limit);
 
-      IEnumerable<SyncTransactionInfo> BlockTransactionGetByBlock(string blockHash);
+      QueryResult<NBitcoin.Transaction> GetMemoryTransactions(int offset, int limit);
 
-      IEnumerable<SyncTransactionInfo> BlockTransactionGetByBlockIndex(long blockIndex);
+      QueryTransaction GetTransaction(string transactionId);
 
-      SyncTransactionItemOutput TransactionsGet(string transactionId, int index, SyncTransactionIndexType indexType);
+      QueryResult<SyncTransactionInfo> TransactionsByBlock(string hash, int offset, int limit);
 
-      SyncTransactionItems TransactionItemsGet(string transactionId);
+      QueryResult<SyncTransactionInfo> TransactionsByBlock(long index, int offset, int limit);
 
-      SyncTransactionAddressBalance AddressGetBalance(string address, long confirmations);
+      QueryResult<SyncBlockInfo> Blocks(int offset, int limit);
 
-      SyncTransactionAddressBalance AddressGetBalanceUtxo(string address, long confirmations);
+      SyncBlockInfo BlockByHash(string blockHash);
 
-      string GetSpendingTransaction(string transaction, int index);
+      SyncBlockInfo BlockByIndex(long blockIndex);
+
+      //IEnumerable<SyncBlockInfo> BlockGetCompleteBlockCount(int count);
+
+      //SyncBlockInfo BlockByHash(string blockHash);
+
+      //SyncTransactionInfo BlockTransactionGet(string transactionId);
+
+      //(IEnumerable<SyncBlockInfo> Items, int Total) BlockGetByLimitOffset(int offset, int limit);
+
+      //IEnumerable<SyncTransactionInfo> BlockTransactionGetByBlock(string blockHash);
+
+      //IEnumerable<SyncTransactionInfo> BlockTransactionGetByBlockIndex(long blockIndex);
+
+      //SyncTransactionItemOutput TransactionsGet(string transactionId, int index, SyncTransactionIndexType indexType);
+
+      //SyncTransactionItems TransactionItemsGet(string transactionId);
+
+      //Address AddressGetBalance(string address, long confirmations, bool availableOnly);
+
+      //// Address AddressGetBalanceUtxo(string address, long confirmations);
+
+      //string GetSpendingTransaction(string transaction, int index);
 
       void DeleteBlock(string blockHash);
 
-      IEnumerable<NBitcoin.Transaction> GetMemoryTransactions();
+      //IEnumerable<NBitcoin.Transaction> GetMemoryTransactions();
    }
 }
 

@@ -32,7 +32,7 @@ namespace Blockcore.Indexer.Api.Handlers
       [Route("heartbeat")]
       public IActionResult Heartbeat()
       {
-         return new OkObjectResult("Heartbeat");
+         return Ok("Heartbeat");
       }
 
       [HttpGet]
@@ -40,25 +40,26 @@ namespace Blockcore.Indexer.Api.Handlers
       public async Task<IActionResult> Connections()
       {
          Types.StatsConnection ret = await statsHandler.StatsConnection();
-
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       [HttpGet()]
       public async Task<IActionResult> Get()
       {
          Types.Statistics ret = await statsHandler.Statistics();
-
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
+      /// <summary>
+      /// Returns a lot of information about the network, node and consensus rules.
+      /// </summary>
+      /// <returns></returns>
       [HttpGet]
       [Route("info")]
       public async Task<IActionResult> Info()
       {
          Types.CoinInfo ret = await statsHandler.CoinInformation();
-
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       /// <summary>
@@ -70,8 +71,7 @@ namespace Blockcore.Indexer.Api.Handlers
       public async Task<IActionResult> Peers()
       {
          System.Collections.Generic.List<Client.Types.PeerInfo> ret = await statsHandler.Peers();
-
-         return new OkObjectResult(ret);
+         return Ok(ret);
       }
 
       /// <summary>
@@ -83,7 +83,7 @@ namespace Blockcore.Indexer.Api.Handlers
       public async Task<IActionResult> Peers(DateTime date)
       {
          List<Client.Types.PeerInfo> list = storage.GetPeerFromDate(date);
-         return new OkObjectResult(list);
+         return Ok(list);
       }
    }
 }
