@@ -36,7 +36,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}")]
-      public IActionResult GetAddress([MinLength(30)][MaxLength(40)]string address, long confirmations = 0)
+      public IActionResult GetAddress([MinLength(30)][MaxLength(54)]string address, long confirmations = 0)
       {
          return Ok(storage.AddressBalance(address, confirmations));
       }
@@ -51,7 +51,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions")]
-      public IActionResult GetAddressTransactions([MinLength(30)][MaxLength(40)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactions([MinLength(30)][MaxLength(54)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressTransactions(address, confirmations, false, TransactionUsedFilter.All, offset, limit));
       }
@@ -66,7 +66,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/unconfirmed")]
-      public IActionResult GetAddressTransactionsUnconfirmed([MinLength(30)][MaxLength(40)]string address, [Range(1, long.MaxValue)]long confirmations, [MinLength(0)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactionsUnconfirmed([MinLength(30)][MaxLength(54)]string address, [Range(1, long.MaxValue)]long confirmations, [MinLength(0)]int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.All, offset, limit));
       }
@@ -81,7 +81,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/spent")]
-      public IActionResult GetAddressTransactionsSpent([MinLength(30)][MaxLength(40)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactionsSpent([MinLength(30)][MaxLength(54)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.Spent, offset, limit));
       }
@@ -96,7 +96,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/unspent")]
-      public IActionResult GetAddressTransactionsUnspent([MinLength(30)][MaxLength(40)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactionsUnspent([MinLength(30)][MaxLength(54)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.Unspent, offset, limit));
       }
