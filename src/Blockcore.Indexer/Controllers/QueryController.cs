@@ -3,8 +3,10 @@ using System.Linq;
 namespace Blockcore.Indexer.Api.Handlers
 {
    using System;
+   using System.Net;
    using Blockcore.Indexer.Paging;
    using Microsoft.AspNetCore.Mvc;
+   using Swashbuckle.AspNetCore.Annotations;
 
    /// <summary>
    /// Controller to expose an api that queries the blockchain.
@@ -140,15 +142,25 @@ namespace Blockcore.Indexer.Api.Handlers
          return Ok(ret);
       }
 
-
-
-
       /// <summary>
       /// Returns blocks based on the offset and limit. The blocks are sorted from from lowest to highest index. You can use the "link" HTTP header to get dynamic paging links.
       /// </summary>
+      /// <remarks>
+      /// Sample request:
+      ///
+      ///     POST /Todo
+      ///     {
+      ///        "id": 1,
+      ///        "name": "Item1",
+      ///        "isComplete": true
+      ///     }
+      ///
+      /// </remarks>
       /// <param name="offset">If value set to 0, then query will start from block tip, not from 1 (genesis).</param>
       /// <param name="limit">Number of blocks to return. Maximum 50.</param>
-      /// <returns></returns>
+      /// <returns>A newly created TodoItem</returns>
+      /// <response code="201">Returns the newly created item</response>
+      /// <response code="400">If the item is null</response>     
       [HttpGet]
       [Route("block")]
       public IActionResult GetBlocks(int offset = 0, int limit = 10)

@@ -18,19 +18,20 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Blockcore.NBitcoin" Version="1.0.6" />
-		<PackageReference Include="Blockcore.Networks.Bitcoin" Version="1.0.6" />
-		<PackageReference Include="Blockcore.Networks.Stratis" Version="1.0.6" />
-		<PackageReference Include="Blockcore.Networks.Xds" Version="1.0.6" />
-      <PackageReference Include="Blockcore.Networks.City" Version="1.0.6" />
+		<PackageReference Include="Blockcore.NBitcoin" Version="1.0.7" />
+		<PackageReference Include="Blockcore.Networks.Bitcoin" Version="1.0.7" />
+		<PackageReference Include="Blockcore.Networks.Stratis" Version="1.0.7" />
+		<PackageReference Include="Blockcore.Networks.Xds" Version="1.0.7" />
+      <PackageReference Include="Blockcore.Networks.City" Version="1.0.7" />
 		<PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.8" />
 		<PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
 		<PackageReference Include="MongoDB.Driver" Version="2.10.3" />
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="5.3.3" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="5.3.3" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="5.3.3" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="5.4.1" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="5.4.1" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="5.4.1" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="5.4.1" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -46,7 +46,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (stats == null)
          {
-            return new QueryAddress();
+            return null;
          }
 
          // filter
@@ -101,7 +101,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (stats == null)
          {
-            return new QueryAddress();
+            return null;
          }
 
          return new QueryAddress
@@ -123,7 +123,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (stats == null)
          {
-            return new QueryAddress();
+            return null;
          }
 
          return new QueryAddress
@@ -145,7 +145,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (stats == null)
          {
-            return new QueryAddress();
+            return null;
          }
 
          // filter
@@ -165,6 +165,7 @@ namespace Blockcore.Indexer.Api.Handlers
             {
                PubScriptHex = t.ScriptHex,
                CoinBase = t.CoinBase,
+               CoinStake = t.CoinStake,
                Index = t.Index,
                SpendingTransactionHash = t.SpendingTransactionHash,
                SpendingBlockIndex = t.SpendingBlockIndex,
@@ -199,7 +200,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (stats == null)
          {
-            return new QueryAddress();
+            return null;
          }
 
          // filter
@@ -240,7 +241,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (stats == null)
          {
-            return new QueryAddress();
+            return null;
          }
 
          // filter
@@ -281,7 +282,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (block == null)
          {
-            return new QueryBlock();
+            return null;
          }
 
          QueryBlock queryBlock = Map(block);
@@ -315,7 +316,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (block == null)
          {
-            return new QueryBlock();
+            return null;
          }
 
          QueryBlock queryBlock = Map(block);
@@ -336,7 +337,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (block == null)
          {
-            return new QueryBlock();
+            return null;
          }
 
          QueryBlock queryBlock = Map(block);
@@ -357,7 +358,7 @@ namespace Blockcore.Indexer.Api.Handlers
 
          if (transactionItems == null)
          {
-            return new QueryTransaction();
+            return null;
          }
 
          var result = new QueryTransaction

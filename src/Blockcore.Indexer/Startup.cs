@@ -93,6 +93,8 @@ namespace Blockcore.Indexer
                 options.DescribeAllEnumsAsStrings();
 
                 options.DescribeStringEnumsInCamelCase();
+
+                options.EnableAnnotations();
              });
 
          services.AddSwaggerGenNewtonsoftSupport(); // explicit opt-in - needs to be placed after AddSwaggerGen()
