@@ -287,19 +287,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       private void UpdateLastBlockNextHash(SyncBlockInfo block)
       {        
          data.UpdateLastBlockNextHash(block.BlockHash, block.NextBlockHash);
-      }
-      public void UpdateConfirmations()
-      {
-         SyncBlockInfo first = storage.BlockGetBlockCount(1).First();
-
-         for (long i = first.BlockIndex; i> first.BlockIndex - 500; i--){
-
-            SyncBlockInfo next = storage.BlockGetByIndex(i);
-            long Confirmations = first.BlockIndex - next.BlockIndex + 2;
-
-            data.UpdateConfirmations(next.BlockHash, Confirmations);
-         }  
-      }
+      }      
       private IEnumerable<T> GetBatch<T>(int maxItems, Queue<T> queue)
       {
          //var total = 0;

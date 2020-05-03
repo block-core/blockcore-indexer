@@ -26,13 +26,6 @@ namespace Blockcore.Indexer.Storage.Mongo
       Spent = 1,
       Unspent = 2
    }
-   using MongoDB.Bson;
-   using Microsoft.OpenApi.Any;
-   using Microsoft.AspNetCore.Mvc.ApiExplorer;
-   using System.Runtime.InteropServices.ComTypes;
-   using Microsoft.AspNetCore.JsonPatch.Internal;
-   using System.Runtime.ConstrainedExecution;
-   using Microsoft.Extensions.ObjectPool;
 
    public class MongoData : IStorage
    {
@@ -840,17 +833,19 @@ namespace Blockcore.Indexer.Storage.Mongo
          //log.LogInformation(AddressGetBalance("XDXySiP3bTNac7sxjVnPZihg4HaowMMkpP", 1).Available.ToString());
          string transactionhash = transaction.Id;
          SyncTransactionItems item = TransactionItemsGet(transactionhash.Split('-')[0]);
-         SyncTransactionItemOutput output = item.Outputs[Int32.Parse(transactionhash.Split('-')[1])];
-         string address = output.Address;           
-           
+         if (item != null)
+         {
+            SyncTransactionItemOutput output = item.Outputs[Int32.Parse(transactionhash.Split('-')[1])];
+            string address = output.Address;
+
             if (address != null)
             {
                long value = 0;
 
                if (output.SpentInTransaction != null)
-               {                 
-                     value = output.Value * -1;
-                 
+               {
+                  value = output.Value * -1;
+
                }
                var data = new MapRichlist
                {
@@ -860,14 +855,16 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
                UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
-                       
+
                if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
                {
                   MapRichlist.InsertOne(data);
                }
+            }
+
+
          }
-         
-         
+
       }
    }
 }

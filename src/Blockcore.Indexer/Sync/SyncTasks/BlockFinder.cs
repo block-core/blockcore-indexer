@@ -83,13 +83,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - SyncedIndex = {block.BlockInfo.Height}/{block.LastCryptoBlockIndex} - {block.LastCryptoBlockIndex - block.BlockInfo.Height} {blockStatus}");
 
          Runner.Get<BlockSyncer>().Enqueue(block);
-         if (block.LastCryptoBlockIndex - block.BlockInfo.Height<2)
-         {
-            MongoStorageOperations mongoStorageOperations = new MongoStorageOperations(storage, configuration, syncConnection);
-            mongoStorageOperations.UpdateConfirmations();
-
-         }
-    
          return await Task.FromResult(true);
       }
    }
