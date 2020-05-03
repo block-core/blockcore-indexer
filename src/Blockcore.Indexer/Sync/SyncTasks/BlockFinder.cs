@@ -87,6 +87,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             MongoStorageOperations mongoStorageOperations = new MongoStorageOperations(storage, configuration, syncConnection);
             mongoStorageOperations.UpdateConfirmations();
+
          }
     
          return await Task.FromResult(true);

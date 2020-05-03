@@ -20,6 +20,10 @@ namespace Blockcore.Indexer.Storage.Mongo
    using MongoDB.Bson;
    using Microsoft.OpenApi.Any;
    using Microsoft.AspNetCore.Mvc.ApiExplorer;
+   using System.Runtime.InteropServices.ComTypes;
+   using Microsoft.AspNetCore.JsonPatch.Internal;
+   using System.Runtime.ConstrainedExecution;
+   using Microsoft.Extensions.ObjectPool;
 
    public class MongoData : IStorage
    {
@@ -352,6 +356,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       private SyncTransactionAddressBalance CreateAddresBalance(long confirmations, List<SyncTransactionAddressItem> addrs, bool availableOnly)
       {
+         
          long all = addrs.Where(s => s.Confirmations >= confirmations).Sum(s => s.Value);
          long confirming = addrs.Where(s => s.Confirmations < confirmations).Sum(s => s.Value);
          long used = addrs.Where(s => s.SpendingTransactionHash != null).Sum(s => s.Value);
@@ -487,6 +492,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                string id = rawTransaction.GetHash().ToString();
 
+
                yield return new MapTransactionAddress
                {
                   Id = string.Format("{0}-{1}", id, index),
@@ -517,89 +523,62 @@ namespace Blockcore.Indexer.Storage.Mongo
             public bool Confirmed { get; set; }
          }
       }
-      public void UpdateRichList(SyncBlockInfo block, long confirmations)
+      public void AddAddressesForRichlist(MapTransactionAddress transaction)         
       {
-         try
-         {
-            if (block!=null)
+         List<string> addresses = transaction.Addresses;
+         long value = transaction.Value;         
+         foreach (string address in addresses)
+         {           
+            var data = new MapRichlist
             {
-               long height = block.BlockIndex;
-               IEnumerable<string> transactions = BlockTransactionGetByBlockIndex(height).Select(s => s.TransactionHash);
-               // log.LogInformation(height.ToString());
-               //Need to get input addresses
-               foreach (string item in transactions)
-               {
+               Address = address,
+               Balance = value,
+            };
+            FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
+            UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
+            
+            if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
+            {
+               MapRichlist.InsertOne(data);
+            }            
+         }         
+      }
+
+      public void UpdateAddressesForRichlist(MapTransactionAddress transaction)
+      {
+         //log.LogInformation("MMMMMMMMMMMMMMMMMMMMMMMMMM");
+         //log.LogInformation(AddressGetBalance("XVxK3A16CPet12boZs94UG3mmHuBQsXxBK", 1).Available.ToString());
+         //log.LogInformation(AddressGetBalance("XDXySiP3bTNac7sxjVnPZihg4HaowMMkpP", 1).Available.ToString());
+         string transactionhash = transaction.Id;
+         SyncTransactionItems item = TransactionItemsGet(transactionhash.Split('-')[0]);
+         SyncTransactionItemOutput output = item.Outputs[Int32.Parse(transactionhash.Split('-')[1])];
+         string address = output.Address;           
+           
+            if (address != null)
+            {
+               long value = 0;
+
+               if (output.SpentInTransaction != null)
+               {                 
+                     value = output.Value * -1;
                  
-                  IEnumerable<SyncTransactionItemOutput> outputs = TransactionItemsGet(item).Outputs;
-                  IEnumerable<SyncTransactionItemInput> inputs = TransactionItemsGet(item).Inputs;
-                  SyncTransactionItems transactionItem = TransactionItemsGet(item);
-
-                 /* if (height == 1574)
-                  {
-                     log.LogInformation(transactionItem.ToJson());
-                  }*/
-                  if (transactionItem.IsCoinstake)
-                  {
-                     string address = outputs.Last().Address;
-                     long stake = 2000000000;
-                     var data = new MapRichlist
-                     {
-                        Address = address,
-                        Balance = stake,
-                     };
-                    FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);                     
-                    UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", stake);
-                     if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
-                     {
-                        MapRichlist.InsertOne(data);
-                     }
-                  }
-               else
-                  {
-                     foreach (SyncTransactionItemInput input in inputs)
-                     {
-                       
-                       // Script script = new Script(input.ScriptSig);
-                       //string address = ScriptToAddressParser.GetSignerAddress(syncConnection.Network, script);
-                       // log.LogInformation( script.ToJson());
-                        //log.LogInformation(TransactionItemsGet(item).ToJson());
-                        // ScriptToAddressParser.GetAddress(syncConnection.Network, input)?.FirstOrDefault()
-                     }
-
-                     foreach (SyncTransactionItemOutput output in outputs)
-                     {
-                        if (output.Address != null)
-                        {
-                           long value = output.Value;
-                           string address = output.Address;                          
-                           var data = new MapRichlist
-                           {
-                              Address = address,
-                              Balance = value,
-                           };
-                           FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
-                           UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
-                           if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
-                           {
-                            MapRichlist.InsertOne(data);
-                           }
-                           
-                          // log.LogInformation(item);
-                         //  log.LogInformation(data.ToJson());
-                        }
-
-                     }
-
-                  };
                }
+               var data = new MapRichlist
+               {
+                  Address = address,
+                  Balance = value,
+               };
 
-            }
+               FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
+               UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
+                       
+               if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
+               {
+                  MapRichlist.InsertOne(data);
+               }
          }
-         catch (Exception e)
-         {
-
-         }
-
+         
+         
       }
    }
 }

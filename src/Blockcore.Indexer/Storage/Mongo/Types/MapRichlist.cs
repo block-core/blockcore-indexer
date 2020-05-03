@@ -8,7 +8,7 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
    {
       #region Public Properties
       public string Address { get; set; }
-      public float Balance { get; set; }
+      public long Balance { get; set; }
       #endregion
    }
 }

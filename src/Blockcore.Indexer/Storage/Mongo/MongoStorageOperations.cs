@@ -17,6 +17,7 @@ namespace Blockcore.Indexer.Storage.Mongo
    using Microsoft.Extensions.Options;
    using MongoDB.Driver;
    using NBitcoin;
+   using MongoDB.Bson;
 
    /// <summary>
    /// Mongo storage operations.
@@ -128,6 +129,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                // insert inputs and add to the list for later to use on the notification task.
                var inputs = CreateInputs(item.BlockInfo.Height, items).ToList();
+               inputs.ForEach(i => data.AddAddressesForRichlist(i));
                var outputs = CreateOutputs(items, item.BlockInfo.Height).ToList();
                inputs.AddRange(outputs);
                var queueInner = new Queue<MapTransactionAddress>(inputs);
@@ -209,6 +211,19 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             // mark the block as synced.
             CompleteBlock(item.BlockInfo);
+           
+
+            IEnumerable<MapTransactionAddress> spent = stats.Items.Where(i => i.SpendingTransactionId != null);
+            foreach (MapTransactionAddress trans in spent)
+            {
+               if (trans.Addresses == null)
+               {
+                  // log.LogInformation("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
+                  // log.LogInformation(trans.ToJson());
+                  data.UpdateAddressesForRichlist(trans);
+               }       
+            }           
+            
          }
          else
          {
@@ -228,7 +243,9 @@ namespace Blockcore.Indexer.Storage.Mongo
             var inputs = CreateInputs(-1, item.Transactions).ToList();
             stats.Items.AddRange(inputs);
          }
-
+        
+         
+         
          return stats;
       }
 
@@ -270,10 +287,6 @@ namespace Blockcore.Indexer.Storage.Mongo
       private void UpdateLastBlockNextHash(SyncBlockInfo block)
       {        
          data.UpdateLastBlockNextHash(block.BlockHash, block.NextBlockHash);
-      }
-      public void UpdateRichList(SyncBlockInfo block, long confirmations)
-      {
-         data.UpdateRichList(block, confirmations);
       }
       public void UpdateConfirmations()
       {
@@ -339,10 +352,9 @@ namespace Blockcore.Indexer.Storage.Mongo
                TxOut output = rawTransaction.Outputs[index];
 
                string[] address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
-
+               
                if (address == null)
                   continue;
-
                yield return new MapTransactionAddress
                {
                   Id = string.Format("{0}-{1}", id, index),

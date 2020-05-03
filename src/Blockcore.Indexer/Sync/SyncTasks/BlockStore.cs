@@ -68,10 +68,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             var notifications = new AddressNotifications { Addresses = count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };          
             Runner.Get<Notifier>().Enqueue(notifications);
 
-            SyncBlockInfo blockinfo = storage.BlockGetByHash(item.BlockInfo.PreviousBlockHash);
-            MongoStorageOperations mongoStorageOperations2 = new MongoStorageOperations(storage, configuration, syncConnection);
-            mongoStorageOperations2.UpdateRichList(blockinfo, 1);
+          SyncBlockInfo blockinfo = storage.BlockGetByHash(item.BlockInfo.PreviousBlockHash);
 
+            
             watch.Stop();
 
             string message = item.BlockInfo != null ?
