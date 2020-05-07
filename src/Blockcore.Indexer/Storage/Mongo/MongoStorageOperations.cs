@@ -129,7 +129,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                // insert inputs and add to the list for later to use on the notification task.
                var inputs = CreateInputs(item.BlockInfo.Height, items).ToList();
-               inputs.ForEach(i => data.AddAddressesForRichlist(i));
+               inputs.ForEach(i => data.addBalanceRichlist(i));
                var outputs = CreateOutputs(items, item.BlockInfo.Height).ToList();
                inputs.AddRange(outputs);
                var queueInner = new Queue<MapTransactionAddress>(inputs);
@@ -212,17 +212,15 @@ namespace Blockcore.Indexer.Storage.Mongo
             // mark the block as synced.
             CompleteBlock(item.BlockInfo);
            
-
+            // Adds data to richlist
             IEnumerable<MapTransactionAddress> spent = stats.Items.Where(i => i.SpendingTransactionId != null);
             foreach (MapTransactionAddress trans in spent)
             {
                if (trans.Addresses == null)
                {
-                  // log.LogInformation("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
-                  // log.LogInformation(trans.ToJson());
-                  data.UpdateAddressesForRichlist(trans);
+                  data.removeBalanceRichlist(trans);
                }       
-            }           
+            }        
             
          }
          else

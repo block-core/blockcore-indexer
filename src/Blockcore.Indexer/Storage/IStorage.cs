@@ -6,6 +6,7 @@ namespace Blockcore.Indexer.Storage
    using Blockcore.Indexer.Api.Handlers.Types;
    using Blockcore.Indexer.Storage.Mongo;
    using Blockcore.Indexer.Storage.Types;
+   using Blockcore.Indexer.Storage.Mongo.Types;
 
    public interface IStorage
    {
@@ -35,6 +36,8 @@ namespace Blockcore.Indexer.Storage
       SyncBlockInfo BlockByHash(string blockHash);
 
       SyncBlockInfo BlockByIndex(long blockIndex);
+
+      QueryResult<MapRichlist> Richlist(int offset, int limit);
 
       //IEnumerable<SyncBlockInfo> BlockGetCompleteBlockCount(int count);
 

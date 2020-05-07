@@ -211,6 +211,16 @@ namespace Blockcore.Indexer.Api.Handlers
          return OkItem(storage.GetLatestBlock());
       }
 
+      /// <summary>
+      /// Returns richlist entries based on the offset and limit. The entries are sorted from from lowest to highest balance.
+      /// </summary>
+      [HttpGet]
+      [Route("richlist")]
+      public IActionResult GetRichlist([Range(0, int.MaxValue)]int offset = 0, [Range(1, 100)] int limit = 100)
+      {
+         return OkPaging(storage.Richlist(offset, limit));
+      }
+
       private IActionResult OkPaging<T>(QueryResult<T> result)
       {
          paging.Write(HttpContext, result);

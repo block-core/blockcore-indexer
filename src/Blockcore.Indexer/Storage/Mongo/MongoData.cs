@@ -392,6 +392,28 @@ namespace Blockcore.Indexer.Storage.Mongo
          return ret;
       }
 
+      public QueryResult<MapRichlist> Richlist(int offset, int limit)
+      {
+         FilterDefinitionBuilder<MapRichlist> filterBuilder = Builders<MapRichlist>.Filter;
+         FilterDefinition<MapRichlist> filter = filterBuilder.Empty;
+
+         // Skip and Limit only supports int, so we can't support long amount of documents.
+         int total = (int)MapRichlist.Find(filter).CountDocuments();
+
+         // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
+         if (offset == 0)
+         {
+            offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
+         }
+
+         IEnumerable<MapRichlist> list = MapRichlist.Find(filter)
+                   .SortBy(p => p.Balance)
+                   .Skip(offset - 1) // 1 based index, so we'll subtract one.
+                   .Limit(limit)
+                   .ToList();
+
+         return new QueryResult<MapRichlist> { Items = list, Total = total, Offset = offset, Limit = limit };
+      }
       /// <summary>
       /// Get transactions that belongs to a block.
       /// </summary>
@@ -806,7 +828,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          }
       }
-      public void AddAddressesForRichlist(MapTransactionAddress transaction)         
+      public void addBalanceRichlist(MapTransactionAddress transaction)         
       {
          List<string> addresses = transaction.Addresses;
          long value = transaction.Value;         
@@ -827,12 +849,8 @@ namespace Blockcore.Indexer.Storage.Mongo
          }         
       }
 
-      public void UpdateAddressesForRichlist(MapTransactionAddress transaction)
+      public void removeBalanceRichlist(MapTransactionAddress transaction)
       {
-         //log.LogInformation("MMMMMMMMMMMMMMMMMMMMMMMMMM");
-         //log.LogInformation(AddressGetBalance("XVxK3A16CPet12boZs94UG3mmHuBQsXxBK", 1).Available.ToString());
-         //log.LogInformation(AddressGetBalance("XDXySiP3bTNac7sxjVnPZihg4HaowMMkpP", 1).Available.ToString());
-         log.LogInformation(TransactionItemsGet("00018cc298d1b462ba64d00125b9b82640fcec7ea0a6e2e083211aa3ade8ce33").ToJson());
          string transactionhash = transaction.Id;
          SyncTransactionItems item = TransactionItemsGet(transactionhash.Split('-')[0]);
          if (item != null)
@@ -863,7 +881,6 @@ namespace Blockcore.Indexer.Storage.Mongo
                   MapRichlist.InsertOne(data);
                }
             }
-
 
          }
 
