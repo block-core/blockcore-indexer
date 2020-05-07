@@ -77,7 +77,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                cm.MapIdMember(c => c.TransactionId);
             });
          }
-         
+
          if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapRichlist)))
          {
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapRichlist>(cm =>
