@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using Blockcore.Indexer.Paging;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo;
@@ -149,14 +148,14 @@ namespace Blockcore.Indexer.Api.Handlers
          return OkPaging(storage.Blocks(offset, limit));
       }
 
-       /// <summary>
-       /// Return transactions in a block based on block hash.
-       /// </summary>
-       /// <param name="address"></param>
-       /// <param name="confirmations"></param>
-       /// <param name="offset"></param>
-       /// <param name="limit"></param>
-       /// <returns></returns>
+      /// <summary>
+      /// Return transactions in a block based on block hash.
+      /// </summary>
+      /// <param name="address"></param>
+      /// <param name="confirmations"></param>
+      /// <param name="offset"></param>
+      /// <param name="limit"></param>
+      /// <returns></returns>
       [HttpGet]
       [Route("block/{hash}/transactions")]
       public IActionResult GetBlockByHashTransactions(string hash, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
@@ -209,6 +208,16 @@ namespace Blockcore.Indexer.Api.Handlers
       public IActionResult GetLatestBlock(bool transactions = false)
       {
          return OkItem(storage.GetLatestBlock());
+      }
+
+      /// <summary>
+      /// Returns richlist entries based on the offset and limit. The entries are sorted from from lowest to highest balance.
+      /// </summary>
+      [HttpGet]
+      [Route("richlist")]
+      public IActionResult GetRichlist([Range(0, int.MaxValue)]int offset = 0, [Range(1, 100)] int limit = 100)
+      {
+         return OkPaging(storage.Richlist(offset, limit));
       }
 
       private IActionResult OkPaging<T>(QueryResult<T> result)

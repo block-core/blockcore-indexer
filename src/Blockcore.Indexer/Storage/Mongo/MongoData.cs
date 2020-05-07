@@ -93,6 +93,13 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
+      public IMongoCollection<MapRichlist> MapRichlist
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<MapRichlist>("MapRichlist");
+         }
+      }
       public IMongoCollection<PeerInfo> Peer
       {
          get
@@ -372,6 +379,28 @@ namespace Blockcore.Indexer.Storage.Mongo
          return ret;
       }
 
+      public QueryResult<MapRichlist> Richlist(int offset, int limit)
+      {
+         FilterDefinitionBuilder<MapRichlist> filterBuilder = Builders<MapRichlist>.Filter;
+         FilterDefinition<MapRichlist> filter = filterBuilder.Empty;
+
+         // Skip and Limit only supports int, so we can't support long amount of documents.
+         int total = (int)MapRichlist.Find(filter).CountDocuments();
+
+         // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
+         if (offset == 0)
+         {
+            offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
+         }
+
+         IEnumerable<MapRichlist> list = MapRichlist.Find(filter)
+                   .SortBy(p => p.Balance)
+                   .Skip(offset - 1) // 1 based index, so we'll subtract one.
+                   .Limit(limit)
+                   .ToList();
+
+         return new QueryResult<MapRichlist> { Items = list, Total = total, Offset = offset, Limit = limit };
+      }
       /// <summary>
       /// Get transactions that belongs to a block.
       /// </summary>
@@ -697,7 +726,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          watch.Stop();
 
-         log.LogInformation($"Select: Seconds = {watch.Elapsed.TotalSeconds} - UnspentOnly = {availableOnly} - Addr = {address} - Items = {addrs.Count()}");
+        // log.LogInformation($"Select: Seconds = {watch.Elapsed.TotalSeconds} - UnspentOnly = {availableOnly} - Addr = {address} - Items = {addrs.Count()}");
 
          // this creates a copy of the collection (to avoid thread issues)
          ICollection<Transaction> pool = MemoryTransactions.Values;
@@ -770,6 +799,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                string id = rawTransaction.GetHash().ToString();
 
+
                yield return new MapTransactionAddress
                {
                   Id = string.Format("{0}-{1}", id, index),
@@ -784,6 +814,71 @@ namespace Blockcore.Indexer.Storage.Mongo
                };
             }
          }
+      }
+      ///<Summary>
+      /// Gets the transaction value and adds it to the balance of corresponding address in MapRichlist.
+      /// If the address doesnt exist, it creates a new entry.
+      ///</Summary>
+      public void AddBalanceRichlist(MapTransactionAddress transaction)         
+      {
+         List<string> addresses = transaction.Addresses;
+         long value = transaction.Value;
+
+         foreach (string address in addresses)
+         {           
+            var data = new MapRichlist
+            {
+               Address = address,
+               Balance = value,
+            };
+            FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
+            UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
+            
+            if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
+            {
+               MapRichlist.InsertOne(data);
+            }            
+         }         
+      }
+
+      ///<Summary>
+      /// Gets the transaction value and substracts it from the balance of corresponding address in MapRichlist.
+      ///</Summary>
+      public void RemoveBalanceRichlist(MapTransactionAddress transaction)
+      {
+         string transactionhash = transaction.Id;
+         SyncTransactionItems item = TransactionItemsGet(transactionhash.Split('-')[0]);
+         if (item != null)
+         {
+            SyncTransactionItemOutput output = item.Outputs[Int32.Parse(transactionhash.Split('-')[1])];
+            string address = output.Address;
+
+            if (address != null)
+            {
+               long value = 0;
+
+               if (output.SpentInTransaction != null)
+               {
+                  value = output.Value * -1;
+
+               }
+               var data = new MapRichlist
+               {
+                  Address = address,
+                  Balance = value,
+               };
+
+               FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
+               UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
+
+               if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
+               {
+                  MapRichlist.InsertOne(data);
+               }
+            }
+
+         }
+
       }
    }
 }
