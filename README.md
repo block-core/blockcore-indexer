@@ -1,16 +1,29 @@
+<p align="center">
+  <p align="center">
+    <img src="https://avatars3.githubusercontent.com/u/53176002?s=200&v=4" height="100" alt="Blockcore" />
+  </p>
+  <h3 align="center">
+    About Blockcore Indexer
+  </h3>
+  <p align="center">
+    Basic and easy to use block indexer
+  </p>
+  <p align="center">
+      <a href="https://github.com/block-core/blockcore-indexer/actions"><img src="https://github.com/block-core/blockcore-indexer/workflows/Pull%20Request/badge.svg" /></a>
+      <a href="https://github.com/block-core/blockcore-indexer/actions"><img src="https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Binaries/badge.svg" /></a>
+      <a href="https://github.com/block-core/blockcore-indexer/actions"><img src="https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Docker%20Image/badge.svg" /></a>
+  </p>
+</p>
+
 # Blockcore Indexer
-
-[1]: https://github.com/block-core/blockcore-indexer/actions
-[2]: https://github.com/block-core/blockcore-indexer/workflows/Pull%20Request/badge.svg
-[3]: https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Binaries/badge.svg
-[4]: https://github.com/block-core/blockcore-indexer/workflows/Build%20and%20Release%20Docker%20Image/badge.svg
-
- [![Pull Request][2]][1]
- [![Build Status][3]][1] [![Release Status][4]][1]
 
 Blockcore Indexer scans the blockchain of Blockcore-derived chains and stores transaction/address information in a MongoDB database with REST API available for Block Explorers to use.
 
 Blockcore Indexer API can be searched by segwit addresses and Cold-Staking (hot and cold key) script types.
+
+## Usage examples
+
+If you want to quickly learn how to use the indexer for a custom solution, such as an block explorer, please look at our [Blockcore Explorer](https://github.com/block-core/blockcore-explorer) source code on how to implement paging and other features.
 
 ## Compatibility
 
@@ -34,19 +47,7 @@ Can be found here:
 https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexer/doc/dbschema.md
 
 #### API
-Swagger http://[server-url]:[port]/swagger/
-
-##### examples
-GET /api/query/address/{address}  
-GET /api/query/address/{address}/confirmations/{confirmations}/unspent/transactions  
-GET /api/query/address/{address}/unspent/transactions  
-GET /api/query/address/{address}/unspent  
-GET /api/query/block/Latest/{transactions}  
-GET /api/query/block/{blockHash}/{transactions}  
-GET /api/query/block/Index/{blockIndex}/{transactions}  
-GET /api/query/transaction/{transactionId}  
-GET /api/stats  
-GET /api/stats/peers  
+OpenAPI http://[server-url]:[port]/docs/
 
 ## Development
 
