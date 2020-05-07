@@ -275,19 +275,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.BlockHash, blockHash);
          UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
          MapBlock.UpdateOne(filter, update);
-      }
-      public void UpdateLastBlockNextHash(string blockHash, string nextBlockHash)
-      {
-         FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.BlockHash, blockHash);
-         UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.NextBlockHash, nextBlockHash);
-         MapBlock.UpdateOne(filter, update);
-      }
-      public void UpdateConfirmations(string blockHash, long confirmations)
-      {
-         FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.BlockHash, blockHash);
-         UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.Confirmations, confirmations);
-         MapBlock.UpdateOne(filter, update);
-      }
+      }   
 
       public void MarkOutput(string transaction, int index, string spendingTransactionId, long spendingBlockIndex)
       {

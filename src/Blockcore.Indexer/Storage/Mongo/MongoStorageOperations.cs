@@ -81,7 +81,6 @@ namespace Blockcore.Indexer.Storage.Mongo
                   if (string.IsNullOrEmpty(lastBlock.NextBlockHash))
                   {
                      lastBlock.NextBlockHash = item.BlockInfo.Hash;
-                     UpdateLastBlockNextHash(lastBlock);
                   }
                }
             }
@@ -241,9 +240,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             var inputs = CreateInputs(-1, item.Transactions).ToList();
             stats.Items.AddRange(inputs);
          }
-        
-         
-         
+
          return stats;
       }
 
@@ -282,10 +279,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          data.InsertBlock(blockInfo);
       }
-      private void UpdateLastBlockNextHash(SyncBlockInfo block)
-      {        
-         data.UpdateLastBlockNextHash(block.BlockHash, block.NextBlockHash);
-      }      
+     
       private IEnumerable<T> GetBatch<T>(int maxItems, Queue<T> queue)
       {
          //var total = 0;

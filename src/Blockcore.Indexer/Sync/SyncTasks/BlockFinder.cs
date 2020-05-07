@@ -7,11 +7,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
    using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
-   using Blockcore.Indexer.Storage.Mongo;
-   using System;
-   using MongoDB.Bson;
-   using Blockcore.Indexer.Storage.Types;
+   using Microsoft.Extensions.Options; 
 
    /// <summary>
    /// The block sync.
@@ -28,18 +24,13 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
-      private readonly Storage.IStorage storage;
-
-      private readonly IOptions<IndexerSettings> configuration;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockFinder"/> class.
       /// </summary>
-      public BlockFinder(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockFinder> logger, Storage.IStorage storage)
+      public BlockFinder(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockFinder> logger)
           : base(configuration, logger)
       {
-         this.configuration = configuration;
-         this.storage = storage;
          log = logger;
          this.syncConnection = syncConnection;
          this.syncOperations = syncOperations;

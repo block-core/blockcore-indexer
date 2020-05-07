@@ -44,6 +44,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          }
 
          SyncingBlocks syncingBlocks = Runner.SyncingBlocks;
+
          if (syncingBlocks.Blocked)
          {
             return false;
@@ -74,6 +75,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - New Transactions = {pool.Transactions.Count}/{syncingBlocks.CurrentPoolSyncing.Count()}");
 
          Runner.Get<BlockSyncer>().Enqueue(new SyncBlockOperation { PoolTransactions = pool });
+
          return await Task.FromResult(false);
       }
    }
