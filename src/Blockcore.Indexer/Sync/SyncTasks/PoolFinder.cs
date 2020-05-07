@@ -2,10 +2,10 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 {
    using System.Linq;
    using System.Threading.Tasks;
-   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
+   using Blockcore.Indexer.Settings;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
 
@@ -66,7 +66,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          SyncPoolTransactions pool = syncOperations.FindPoolTransactions(syncConnection, syncingBlocks);
 
          if (!pool.Transactions.Any())
-         {           
+         {
             return false;
          }
 

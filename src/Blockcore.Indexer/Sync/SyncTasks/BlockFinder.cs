@@ -24,7 +24,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
-
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockFinder"/> class.
       /// </summary>
@@ -74,7 +73,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - SyncedIndex = {block.BlockInfo.Height}/{block.LastCryptoBlockIndex} - {block.LastCryptoBlockIndex - block.BlockInfo.Height} {blockStatus}");
 
          Runner.Get<BlockSyncer>().Enqueue(block);
-         
+
          return await Task.FromResult(true);
       }
    }

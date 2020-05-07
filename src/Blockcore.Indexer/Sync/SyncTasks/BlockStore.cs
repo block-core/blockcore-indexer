@@ -4,10 +4,10 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using System.Linq;
    using System.Threading.Tasks;
    using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
+   using Blockcore.Indexer.Settings;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
 
@@ -57,9 +57,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                syncConnection.RecentItems.Add((DateTime.UtcNow, watch.Elapsed, item.BlockInfo.Size));
             }
 
-            var notifications = new AddressNotifications { Addresses = count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };          
+            var notifications = new AddressNotifications { Addresses = count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
             Runner.Get<Notifier>().Enqueue(notifications);
-            
+
             watch.Stop();
 
             string message = item.BlockInfo != null ?

@@ -5,8 +5,8 @@ namespace Blockcore.Indexer.Storage
    using System.Collections.Generic;
    using Blockcore.Indexer.Api.Handlers.Types;
    using Blockcore.Indexer.Storage.Mongo;
-   using Blockcore.Indexer.Storage.Types;
    using Blockcore.Indexer.Storage.Mongo.Types;
+   using Blockcore.Indexer.Storage.Types;
 
    public interface IStorage
    {
