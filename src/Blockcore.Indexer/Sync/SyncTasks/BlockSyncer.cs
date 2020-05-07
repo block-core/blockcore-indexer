@@ -3,10 +3,10 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using System.Linq;
    using System.Threading.Tasks;
    using Blockcore.Indexer.Client;
+   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
-   using Blockcore.Indexer.Settings;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
 
@@ -59,6 +59,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                   int inputs = block.Transactions.SelectMany(s => s.Inputs).Count();
                   int outputs = block.Transactions.SelectMany(s => s.Outputs).Count();
+
                   Runner.Get<BlockStore>().Enqueue(block);
 
                   log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - BlockIndex = {block.BlockInfo.Height} - Transactions {block.Transactions.Count()} - Inputs {inputs} - Outputs {outputs} - ({inputs + outputs})");
