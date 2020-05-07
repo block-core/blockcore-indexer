@@ -14,6 +14,7 @@ using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -831,6 +832,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          //log.LogInformation("MMMMMMMMMMMMMMMMMMMMMMMMMM");
          //log.LogInformation(AddressGetBalance("XVxK3A16CPet12boZs94UG3mmHuBQsXxBK", 1).Available.ToString());
          //log.LogInformation(AddressGetBalance("XDXySiP3bTNac7sxjVnPZihg4HaowMMkpP", 1).Available.ToString());
+         log.LogInformation(TransactionItemsGet("00018cc298d1b462ba64d00125b9b82640fcec7ea0a6e2e083211aa3ade8ce33").ToJson());
          string transactionhash = transaction.Id;
          SyncTransactionItems item = TransactionItemsGet(transactionhash.Split('-')[0]);
          if (item != null)
