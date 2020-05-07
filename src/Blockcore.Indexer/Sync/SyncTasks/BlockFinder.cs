@@ -5,7 +5,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
-   using Blockcore.Indexer.Operations.Types;   
+   using Blockcore.Indexer.Operations.Types;
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
 
