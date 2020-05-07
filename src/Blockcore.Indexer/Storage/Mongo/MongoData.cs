@@ -815,10 +815,15 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          }
       }
-      public void addBalanceRichlist(MapTransactionAddress transaction)         
+      ///<Summary>
+      /// Gets the transaction value and adds it to the balance of corresponding address in MapRichlist.
+      /// If the address doesnt exist, it creates a new entry.
+      ///</Summary>
+      public void AddBalanceRichlist(MapTransactionAddress transaction)         
       {
          List<string> addresses = transaction.Addresses;
-         long value = transaction.Value;         
+         long value = transaction.Value;
+
          foreach (string address in addresses)
          {           
             var data = new MapRichlist
@@ -836,7 +841,10 @@ namespace Blockcore.Indexer.Storage.Mongo
          }         
       }
 
-      public void removeBalanceRichlist(MapTransactionAddress transaction)
+      ///<Summary>
+      /// Gets the transaction value and substracts it from the balance of corresponding address in MapRichlist.
+      ///</Summary>
+      public void RemoveBalanceRichlist(MapTransactionAddress transaction)
       {
          string transactionhash = transaction.Id;
          SyncTransactionItems item = TransactionItemsGet(transactionhash.Split('-')[0]);

@@ -69,10 +69,11 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                   CreateBlock(item.BlockInfo);
 
-                  if (string.IsNullOrEmpty(lastBlock.NextBlockHash))
-                  {
-                     lastBlock.NextBlockHash = item.BlockInfo.Hash;
-                  }
+                  ////if (string.IsNullOrEmpty(lastBlock.NextBlockHash))
+                  ////{
+                  ////    lastBlock.NextBlockHash = item.BlockInfo.Hash;
+                  ////    this.SyncOperations.UpdateBlockHash(lastBlock);
+                  ////}
                }
             }
             else
@@ -119,7 +120,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                // insert inputs and add to the list for later to use on the notification task.
                var inputs = CreateInputs(item.BlockInfo.Height, items).ToList();
-               inputs.ForEach(i => data.addBalanceRichlist(i));
+               inputs.ForEach(i => data.AddBalanceRichlist(i));
                var outputs = CreateOutputs(items, item.BlockInfo.Height).ToList();
                inputs.AddRange(outputs);
                var queueInner = new Queue<MapTransactionAddress>(inputs);
@@ -208,7 +209,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             {
                if (trans.Addresses == null)
                {
-                  data.removeBalanceRichlist(trans);
+                  data.RemoveBalanceRichlist(trans);
                }       
             }        
             

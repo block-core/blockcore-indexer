@@ -2,12 +2,12 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 {
    using System.Linq;
    using System.Threading.Tasks;
-   using Blockcore.Indexer.Settings;
    using Blockcore.Indexer.Extensions;
    using Blockcore.Indexer.Operations;
    using Blockcore.Indexer.Operations.Types;
+   using Blockcore.Indexer.Settings;
    using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options; 
+   using Microsoft.Extensions.Options;
 
    /// <summary>
    /// The block sync.
@@ -74,7 +74,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - SyncedIndex = {block.BlockInfo.Height}/{block.LastCryptoBlockIndex} - {block.LastCryptoBlockIndex - block.BlockInfo.Height} {blockStatus}");
 
          Runner.Get<BlockSyncer>().Enqueue(block);
-
+         
          return await Task.FromResult(true);
       }
    }
