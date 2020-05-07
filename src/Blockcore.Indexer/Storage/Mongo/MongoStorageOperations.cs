@@ -17,7 +17,6 @@ namespace Blockcore.Indexer.Storage.Mongo
    using Microsoft.Extensions.Options;
    using MongoDB.Driver;
    using NBitcoin;
-   using MongoDB.Bson;
 
    /// <summary>
    /// Mongo storage operations.
@@ -43,14 +42,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          log = logger;
          this.syncConnection = syncConnection;
          this.storage = storage;
-      }
-
-      public MongoStorageOperations(IStorage storage, IOptions<IndexerSettings> configuration, SyncConnection syncConnection)
-      {
-         data = (MongoData)storage;
-         this.configuration = configuration.Value;
-         this.storage = storage;
-         this.syncConnection = syncConnection;
       }
 
       public void ValidateBlock(SyncBlockTransactionsOperation item)
@@ -279,7 +270,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          data.InsertBlock(blockInfo);
       }
-     
+
       private IEnumerable<T> GetBatch<T>(int maxItems, Queue<T> queue)
       {
          //var total = 0;
@@ -332,9 +323,10 @@ namespace Blockcore.Indexer.Storage.Mongo
                TxOut output = rawTransaction.Outputs[index];
 
                string[] address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
-               
+
                if (address == null)
                   continue;
+
                yield return new MapTransactionAddress
                {
                   Id = string.Format("{0}-{1}", id, index),

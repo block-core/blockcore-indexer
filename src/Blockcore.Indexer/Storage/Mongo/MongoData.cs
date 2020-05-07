@@ -14,7 +14,6 @@ using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using NBitcoin;
 using NBitcoin.DataEncoders;
@@ -275,7 +274,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.BlockHash, blockHash);
          UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
          MapBlock.UpdateOne(filter, update);
-      }   
+      }
 
       public void MarkOutput(string transaction, int index, string spendingTransactionId, long spendingBlockIndex)
       {

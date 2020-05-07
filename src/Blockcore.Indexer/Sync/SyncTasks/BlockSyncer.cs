@@ -25,14 +25,12 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
-
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockSyncer"/> class.
       /// </summary>
       public BlockSyncer(IOptions<IndexerSettings> configuration, ISyncOperations syncOperations, SyncConnection syncConnection, ILogger<BlockSyncer> logger)
           : base(configuration, logger)
-      {
-        
+      {        
          log = logger;
          this.syncConnection = syncConnection;
          this.syncOperations = syncOperations;

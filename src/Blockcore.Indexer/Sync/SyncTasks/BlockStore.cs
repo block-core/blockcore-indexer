@@ -59,7 +59,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             var notifications = new AddressNotifications { Addresses = count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };          
             Runner.Get<Notifier>().Enqueue(notifications);
-
             
             watch.Stop();
 
