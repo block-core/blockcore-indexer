@@ -1,6 +1,17 @@
+## <small>0.1.3 (2020-05-10)</small>
+
+* Add header to README for Indexer ([e7eba60](https://github.com/block-core/blockcore-indexer/commit/e7eba60))
+* Add unit test for paging ([67e5399](https://github.com/block-core/blockcore-indexer/commit/67e5399)), closes [#16](https://github.com/block-core/blockcore-indexer/issues/16)
+* Added Richlist to Indexer (#14) ([6bbf9e7](https://github.com/block-core/blockcore-indexer/commit/6bbf9e7)), closes [#14](https://github.com/block-core/blockcore-indexer/issues/14)
+* Fix issue with indexer not starting when database was empty ([16d1730](https://github.com/block-core/blockcore-indexer/commit/16d1730))
+
+
+
 ## <small>0.1.2 (2020-05-04)</small>
 
 * Add response compression ([3b7247c](https://github.com/block-core/blockcore-indexer/commit/3b7247c)), closes [#13](https://github.com/block-core/blockcore-indexer/issues/13)
+* Clean up package-lock.json ([e4ceabb](https://github.com/block-core/blockcore-indexer/commit/e4ceabb))
+* Update CHANGELOG ([c37dfb4](https://github.com/block-core/blockcore-indexer/commit/c37dfb4))
 
 
 
