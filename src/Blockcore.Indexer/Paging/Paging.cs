@@ -12,28 +12,49 @@ using Microsoft.Extensions.Primitives;
 
 namespace Blockcore.Indexer.Paging
 {
+   public delegate string RequestContextDelegate();
+
+   public class PageLink
+   {
+      public int Limit { get; set; }
+
+      public long Offset { get; set; }
+
+      public string Rel { get; set; }
+
+      public string Url { get; set; }
+   }
+
    public class PagingLinkBuilder
    {
-      private readonly HttpContext context;
+      private readonly RequestContextDelegate requestPath;
+      private readonly RequestContextDelegate requestQuery;
       readonly Dictionary<string, StringValues> list;
 
-      public PagingLinkBuilder(HttpContext context)
+      public PagingLinkBuilder(RequestContextDelegate requestPath, RequestContextDelegate requestQuery)
       {
-         this.context = context;
+         this.requestPath = requestPath;
 
          // Create the dictionary of query string values.
-         list = QueryHelpers.ParseQuery(context.Request.QueryString.ToString());
-
+         list = QueryHelpers.ParseQuery(requestQuery());
+         //list = QueryHelpers.ParseQuery(context.Request.QueryString.ToString());
+         // context.Request.Path
       }
 
-      public string Create(long offset, int limit, string rel)
+      public PageLink Create(long offset, int limit, string rel)
       {
+         PageLink link = new PageLink();
+
+         link.Offset = offset;
+         link.Limit = limit;
+         link.Rel = rel;
+
          // Make sure we update offset and limit
          list["offset"] = new StringValues(offset.ToString());
          list["limit"] = new StringValues(limit.ToString());
 
          // Get the relative URL before the query.
-         var uri = new Uri(context.Request.Path, UriKind.Relative);
+         var uri = new Uri(requestPath(), UriKind.Relative);
 
          // Create the query string from our updated values.
          var query = QueryString.Create(list);
@@ -41,7 +62,79 @@ namespace Blockcore.Indexer.Paging
          // Build the final URL and use .ToString() on QueryString to make sure it is encoded.
          string url = uri + query.ToString();
 
-         return $"<{url}>; rel=\"{rel}\"";
+         link.Url = $"<{url}>; rel=\"{rel}\"";
+
+         return link;
+      }
+      public List<PageLink> Links(long offset, int limit, long total)
+      {
+         List<PageLink> links = new List<PageLink>();
+
+         /*
+         SPECIFICATION:
+         The paging goes from 1 to total. The lowest item is 1.
+         Supplying offset 0, will return the last page of data.
+         On the last page of data, the "next" link should not be returned.
+         On the first page of data, the "previous" link should not be returned.
+         "first" and "last" are always returned no matter what.
+         If the limit is higher than total available items, handle this accordingly.
+         The array of links is always ordered: "first", "last", "previous" and "next".
+         */
+
+         // If the limit is higher than total, make the limit the total amount that is available.
+         if (limit > total)
+         {
+            limit = (int)total;
+         }
+
+         links.Add(Create(1, limit, "first"));
+         links.Add(Create((total - limit + 1), limit, "last"));
+
+         // If the limit is equal total, we won't be rendering next/previous links.
+         if (limit == total)
+         {
+            return links;
+         }
+
+         // if the offset is 0, we'll pick the last page.
+         if (offset == 0)
+         {
+            offset = (total - limit + 1);
+         }
+
+         // If offset queried is higher than 1, we'll always include the previous link.
+         if (offset > 1)
+         {
+            long offsetPrevious = offset - limit;
+
+            // If offset previous is lower than 1, make sure it's 1.
+            if (offsetPrevious < 1)
+            {
+               offsetPrevious = 1;
+            }
+
+            links.Add(Create(offsetPrevious, limit, "previous"));
+         }
+
+         long offsetNext = offset + limit;
+
+         if (offset + limit < total)
+         {
+            // Make sure the offset next is never higher than total.
+            if (offsetNext > total)
+            {
+               offsetNext = total;
+            }
+
+            if (offset == 0)
+            {
+               offsetNext = offsetNext++;
+            }
+
+            links.Add(Create(offsetNext, limit, "next"));
+         }
+
+         return links;
       }
    }
 
@@ -64,43 +157,18 @@ namespace Blockcore.Indexer.Paging
 
       public void Write(HttpContext context, long offset, int limit, long total)
       {
-         //if (offset < 1)
-         //{
-         //   throw new ArgumentException("Offset cannot be lower than 1.");
-         //}
+         RequestContextDelegate requestPath = delegate { return context.Request.Path; };
+         RequestContextDelegate requestQuery = delegate { return context.Request.QueryString.ToString(); };
 
-         // If there are no offset, we'll default to total acount minus limit.
-         //if (offset == 0)
-         //{
-         //   offset = total - limit;
-         //}
-
-         PagingLinkBuilder builder = new PagingLinkBuilder(context);
-         PathString route = context.Request.Path;
-         List<string> links = new List<string>();
-
-         // Determine total number of pages to get highest offset possible.
-         //int pageCount = total > 0 ? (int)Math.Ceiling(total / (double)limit) : 0;
-
-         links.Add(builder.Create(1, limit, "first"));
-         links.Add(builder.Create((total - limit + 1), limit, "last")); // +1 to be correct on last.
-
-         if (offset > 1)
-         {
-            links.Add(builder.Create((offset - limit), limit, "previous")); // +1 to be correct on previous.
-         }
-
-         if (offset + limit < total)
-         {
-            links.Add(builder.Create(offset + limit, limit, "next"));
-         }
+         PagingLinkBuilder builder = new PagingLinkBuilder(requestPath, requestQuery);
+         List<PageLink> links = builder.Links(offset, limit, total);
 
          context.Response.Headers["Access-Control-Allow-Headers"] = "*";
          context.Response.Headers["Access-Control-Allow-Origin"] = "*";
          context.Response.Headers["Access-Control-Expose-Headers"] = "*";
          //context.Response.Headers["Access-Control-Expose-Headers"] = "Content-Length,Link,Pagination-Returned,Pagination-Total";
 
-         context.Response.Headers["Link"] = string.Join(", ", links);
+         context.Response.Headers["Link"] = string.Join(", ", links.Select(l => l.Url));
          context.Response.Headers["Pagination-Offset"] = offset.ToString();
          context.Response.Headers["Pagination-Limit"] = limit.ToString();
          context.Response.Headers["Pagination-Total"] = total.ToString();

@@ -390,7 +390,15 @@ namespace Blockcore.Indexer.Storage.Mongo
          // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
          if (offset == 0)
          {
-            offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
+            // If limit is higher than total, simply use offset 0 and get all that exists.
+            if (limit > total)
+            {
+               offset = 1;
+            }
+            else
+            {
+               offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
+            }
          }
 
          IEnumerable<MapRichlist> list = MapRichlist.Find(filter)
@@ -726,7 +734,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          watch.Stop();
 
-        // log.LogInformation($"Select: Seconds = {watch.Elapsed.TotalSeconds} - UnspentOnly = {availableOnly} - Addr = {address} - Items = {addrs.Count()}");
+         // log.LogInformation($"Select: Seconds = {watch.Elapsed.TotalSeconds} - UnspentOnly = {availableOnly} - Addr = {address} - Items = {addrs.Count()}");
 
          // this creates a copy of the collection (to avoid thread issues)
          ICollection<Transaction> pool = MemoryTransactions.Values;
@@ -819,13 +827,13 @@ namespace Blockcore.Indexer.Storage.Mongo
       /// Gets the transaction value and adds it to the balance of corresponding address in MapRichlist.
       /// If the address doesnt exist, it creates a new entry.
       ///</Summary>
-      public void AddBalanceRichlist(MapTransactionAddress transaction)         
+      public void AddBalanceRichlist(MapTransactionAddress transaction)
       {
          List<string> addresses = transaction.Addresses;
          long value = transaction.Value;
 
          foreach (string address in addresses)
-         {           
+         {
             var data = new MapRichlist
             {
                Address = address,
@@ -833,12 +841,12 @@ namespace Blockcore.Indexer.Storage.Mongo
             };
             FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
             UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
-            
+
             if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
             {
                MapRichlist.InsertOne(data);
-            }            
-         }         
+            }
+         }
       }
 
       ///<Summary>
