@@ -63,20 +63,28 @@ namespace Blockcore
             throw new ArgumentNullException("--chain", "You must specify the --chain argument. It can be either chain name, or URL to a json configuration.");
          }
 
-         Console.WriteLine("CHAIN: " + chain);
-         string url = chain.Contains("/") ? chain : $"https://chains.blockcore.net/chains/{chain}.json";
-         Console.WriteLine("SETUP: " + url);
-
-         var http = new HttpClient();
-         HttpResponseMessage result = http.GetAsync(url).Result;
-
-         if (result.IsSuccessStatusCode)
+         if (args.Contains("--local"))
          {
-            builder.AddJsonStreamFirstIndex(result.Content.ReadAsStreamAsync().Result);
+            // Load your local custom blockchain settings.
+            builder.AddJsonFile("CUSTOM.json");
          }
          else
          {
-            throw new ApplicationException("Unable to read the supplied configuration.");
+            Console.WriteLine("CHAIN: " + chain);
+            string url = chain.Contains("/") ? chain : $"https://chains.blockcore.net/chains/{chain}.json";
+            Console.WriteLine("SETUP: " + url);
+
+            var http = new HttpClient();
+            HttpResponseMessage result = http.GetAsync(url).Result;
+
+            if (result.IsSuccessStatusCode)
+            {
+               builder.AddJsonStreamFirstIndex(result.Content.ReadAsStreamAsync().Result);
+            }
+            else
+            {
+               throw new ApplicationException("Unable to read the supplied configuration.");
+            }
          }
 
          return builder;
