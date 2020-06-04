@@ -100,6 +100,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             return mongoDatabase.GetCollection<MapRichlist>("MapRichlist");
          }
       }
+
       public IMongoCollection<PeerInfo> Peer
       {
          get
@@ -286,11 +287,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          MapTransactionAddress.UpdateOne(filter, update);
       }
 
-      public string GetSpendingTransaction(string transaction, int index)
+      public MapTransactionAddress GetSpendingTransaction(string transaction, int index)
       {
          FilterDefinition<MapTransactionAddress> filter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.Id, string.Format("{0}-{1}", transaction, index));
 
-         return MapTransactionAddress.Find(filter).ToList().Select(t => t.SpendingTransactionId).FirstOrDefault();
+         return MapTransactionAddress.Find(filter).ToList().FirstOrDefault();
       }
 
       public SyncTransactionInfo BlockTransactionGet(string transactionId)
@@ -317,31 +318,32 @@ namespace Blockcore.Indexer.Storage.Mongo
          };
       }
 
-      public SyncTransactionItems TransactionItemsGet(string transactionId)
+      public SyncTransactionItems TransactionItemsGet(string transactionId, NBitcoin.Transaction transaction = null)
       {
-         NBitcoin.Transaction transaction;
-
-         // Try to find the trx in disk
-         SyncRawTransaction rawtrx = TransactionGetByHash(transactionId);
-
-         if (rawtrx == null)
+         if (transaction == null)
          {
-            BitcoinClient client = CryptoClientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
+            // Try to find the trx in disk
+            SyncRawTransaction rawtrx = TransactionGetByHash(transactionId);
 
-            Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
-
-            if (res.Hex == null)
+            if (rawtrx == null)
             {
-               return null;
-            }
+               BitcoinClient client = CryptoClientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
 
-            transaction = syncConnection.Network.Consensus.ConsensusFactory.CreateTransaction(res.Hex);
-            transaction.PrecomputeHash(false, true);
-         }
-         else
-         {
-            transaction = syncConnection.Network.Consensus.ConsensusFactory.CreateTransaction(rawtrx.RawTransaction);
-            transaction.PrecomputeHash(false, true);
+               Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
+
+               if (res.Hex == null)
+               {
+                  return null;
+               }
+
+               transaction = syncConnection.Network.Consensus.ConsensusFactory.CreateTransaction(res.Hex);
+               transaction.PrecomputeHash(false, true);
+            }
+            else
+            {
+               transaction = syncConnection.Network.Consensus.ConsensusFactory.CreateTransaction(rawtrx.RawTransaction);
+               transaction.PrecomputeHash(false, true);
+            }
          }
 
          var ret = new SyncTransactionItems
@@ -370,10 +372,15 @@ namespace Blockcore.Indexer.Storage.Mongo
             }).ToList()
          };
 
+         foreach (SyncTransactionItemInput input in ret.Inputs)
+         {
+            input.InputAddress = GetSpendingTransaction(input.PreviousTransactionHash, input.PreviousIndex)?.Addresses.FirstOrDefault();
+         }
+
          // try to fetch spent outputs
          foreach (SyncTransactionItemOutput output in ret.Outputs)
          {
-            output.SpentInTransaction = GetSpendingTransaction(transactionId, output.Index);
+            output.SpentInTransaction = GetSpendingTransaction(transactionId, output.Index)?.SpendingTransactionId;
          }
 
          return ret;
@@ -409,6 +416,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          return new QueryResult<MapRichlist> { Items = list, Total = total, Offset = offset, Limit = limit };
       }
+
       /// <summary>
       /// Get transactions that belongs to a block.
       /// </summary>
@@ -458,7 +466,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          SyncBlockInfo current = BlockGetBlockCount(1).FirstOrDefault();
          return current;
       }
-
 
       public QueryResult<QueryTransaction> AddressTransactions(string address, long confirmations, bool unconfirmed, TransactionUsedFilter used, int offset, int limit)
       {
@@ -553,7 +560,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          //         }
          //      });
 
-         //      // if only spendable transactions are to be returned we need to remove 
+         //      // if only spendable transactions are to be returned we need to remove
          //      // any that have been marked as spent by a transaction in the pool
          //      if (availableOnly)
          //      {
@@ -618,13 +625,58 @@ namespace Blockcore.Indexer.Storage.Mongo
          MapBlock.DeleteOne(blockFilter);
       }
 
-      public QueryResult<NBitcoin.Transaction> GetMemoryTransactions(int offset, int limit)
+      public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)
       {
          ICollection<Transaction> list = MemoryTransactions.Values;
 
-         var queryResult = new QueryResult<NBitcoin.Transaction>
+         List<QueryTransaction> retList = new List<QueryTransaction>();
+
+         foreach (Transaction trx in list.Skip(offset - 1).Take(limit)) // 1 based index, so we'll subtract one.
          {
-            Items = list.Skip(offset - 1).Take(limit), // 1 based index, so we'll subtract one.
+            string transactionId = trx.GetHash().ToString();
+            SyncTransactionItems transactionItems = TransactionItemsGet(transactionId, trx);
+
+            var result = new QueryTransaction
+            {
+               Symbol = chainConfiguration.Symbol,
+               Confirmations = 0,
+               TransactionId = transactionId,
+
+               RBF = transactionItems.RBF,
+               LockTime = transactionItems.LockTime.ToString(),
+               Version = transactionItems.Version,
+               IsCoinbase = transactionItems.IsCoinbase,
+               IsCoinstake = transactionItems.IsCoinstake,
+
+               Inputs = transactionItems.Inputs.Select(i => new QueryTransactionInput
+               {
+                  CoinBase = i.InputCoinBase,
+                  InputAddress = i.InputAddress,
+                  InputIndex = i.PreviousIndex,
+                  InputTransactionId = i.PreviousTransactionHash,
+                  ScriptSig = i.ScriptSig,
+                  ScriptSigAsm = new Script(NBitcoin.DataEncoders.Encoders.Hex.DecodeData(i.ScriptSig)).ToString(),
+                  WitScript = i.WitScript,
+                  SequenceLock = i.SequenceLock
+               }),
+               Outputs = transactionItems.Outputs.Select(o => new QueryTransactionOutput
+               {
+                  Address = o.Address,
+                  Balance = o.Value,
+                  Index = o.Index,
+                  OutputType = o.OutputType,
+                  ScriptPubKey = o.ScriptPubKey,
+                  SpentInTransaction = o.SpentInTransaction,
+                  ScriptPubKeyAsm = new Script(NBitcoin.DataEncoders.Encoders.Hex.DecodeData(o.ScriptPubKey)).ToString()
+               }),
+            };
+
+            retList.Add(result);
+         }
+
+         var queryResult = new QueryResult<QueryTransaction>
+         {
+            Items = retList,
             Total = list.Count,
             Offset = offset,
             Limit = limit
@@ -675,7 +727,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          // TODO: Add again in the future.
          //if (availableOnly)
          //{
-         //   // we only want spendable transactions    
+         //   // we only want spendable transactions
          //   // filter = filter & builder.Eq(info => info.SpendingTransactionId, null);
          //   filter = filter.Where(info => info.SpendingTransactionId == null);
          //}
@@ -722,7 +774,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          if (availableOnly)
          {
-            // we only want spendable transactions    
+            // we only want spendable transactions
             filter = filter & builder.Eq(info => info.SpendingTransactionId, null);
          }
 
@@ -752,7 +804,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                }
             });
 
-            // if only spendable transactions are to be returned we need to remove 
+            // if only spendable transactions are to be returned we need to remove
             // any that have been marked as spent by a transaction in the pool
             if (availableOnly)
             {
@@ -807,7 +859,6 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                string id = rawTransaction.GetHash().ToString();
 
-
                yield return new MapTransactionAddress
                {
                   Id = string.Format("{0}-{1}", id, index),
@@ -823,6 +874,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          }
       }
+
       ///<Summary>
       /// Gets the transaction value and adds it to the balance of corresponding address in MapRichlist.
       /// If the address doesnt exist, it creates a new entry.
@@ -868,7 +920,6 @@ namespace Blockcore.Indexer.Storage.Mongo
                if (output.SpentInTransaction != null)
                {
                   value = output.Value * -1;
-
                }
                var data = new MapRichlist
                {
@@ -884,9 +935,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                   MapRichlist.InsertOne(data);
                }
             }
-
          }
-
       }
    }
 }
