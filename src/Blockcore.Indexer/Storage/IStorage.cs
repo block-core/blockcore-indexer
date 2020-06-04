@@ -1,4 +1,3 @@
-
 namespace Blockcore.Indexer.Storage
 {
    using System;
@@ -23,7 +22,7 @@ namespace Blockcore.Indexer.Storage
 
       QueryResult<QueryTransaction> AddressTransactions(string address, long confirmations, bool unconfirmed, TransactionUsedFilter used, int offset, int limit);
 
-      QueryResult<NBitcoin.Transaction> GetMemoryTransactions(int offset, int limit);
+      QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit);
 
       QueryTransaction GetTransaction(string transactionId);
 
@@ -66,4 +65,3 @@ namespace Blockcore.Indexer.Storage
       //IEnumerable<NBitcoin.Transaction> GetMemoryTransactions();
    }
 }
-
