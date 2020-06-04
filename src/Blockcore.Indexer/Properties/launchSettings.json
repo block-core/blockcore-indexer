@@ -16,6 +16,16 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
+      // Use this for your own custom code. Change your settings in "CUSTOM.json".
+      "CUSTOM (Local)": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=CUSTOM --local",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
       "STRATIS": {
          "commandName": "Project",
          "commandLineArgs": "--chain=STRAT",

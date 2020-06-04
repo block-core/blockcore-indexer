@@ -1,9 +1,11 @@
-## <small>0.1.3 (2020-05-10)</small>
+## <small>0.1.3 (2020-05-14)</small>
 
+* Add debug configuration for Visual Studio Code ([7796d55](https://github.com/block-core/blockcore-indexer/commit/7796d55))
 * Add header to README for Indexer ([e7eba60](https://github.com/block-core/blockcore-indexer/commit/e7eba60))
 * Add unit test for paging ([67e5399](https://github.com/block-core/blockcore-indexer/commit/67e5399)), closes [#16](https://github.com/block-core/blockcore-indexer/issues/16)
 * Added Richlist to Indexer (#14) ([6bbf9e7](https://github.com/block-core/blockcore-indexer/commit/6bbf9e7)), closes [#14](https://github.com/block-core/blockcore-indexer/issues/14)
 * Fix issue with indexer not starting when database was empty ([16d1730](https://github.com/block-core/blockcore-indexer/commit/16d1730))
+* Update changelog and prepare release ([f9d58ac](https://github.com/block-core/blockcore-indexer/commit/f9d58ac))
 
 
 
