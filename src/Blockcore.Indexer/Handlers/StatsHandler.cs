@@ -89,7 +89,6 @@ namespace Blockcore.Indexer.Api.Handlers
                DefaultMaxOutboundConnections = network.DefaultMaxOutboundConnections,
                DefaultPort = network.DefaultPort,
                DefaultRPCPort = network.DefaultRPCPort,
-               DefaultSignalRPort = network.DefaultSignalRPort,
                DNSSeeds = network.DNSSeeds.Select(s => s.Host).ToList(),
                FallbackFee = network.FallbackFee,
                GenesisDate = UnixUtils.UnixTimestampToDate(network.GenesisTime).ToUniversalDateTime(), // Returns Kind.Unspecified, so translate.
