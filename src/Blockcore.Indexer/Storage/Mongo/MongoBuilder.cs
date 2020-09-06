@@ -95,11 +95,15 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          IndexKeysDefinition<MapTransactionAddress> addrIndex = Builders<MapTransactionAddress>.IndexKeys.Ascending(addr => addr.Addresses);
          mongoData.MapTransactionAddress.Indexes.CreateOne(addrIndex);
+
          IndexKeysDefinition<MapTransactionAddress> addrBlockIndex = Builders<MapTransactionAddress>.IndexKeys.Ascending(addr => addr.BlockIndex);
          mongoData.MapTransactionAddress.Indexes.CreateOne(addrBlockIndex);
 
          IndexKeysDefinition<MapTransactionBlock> trxBlkIndex = Builders<MapTransactionBlock>.IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex);
          mongoData.MapTransactionBlock.Indexes.CreateOne(trxBlkIndex);
+
+         IndexKeysDefinition<MapRichlist> richListIndex = Builders<MapRichlist>.IndexKeys.Ascending(i => i.Balance);
+         mongoData.MapRichlist.Indexes.CreateOne(richListIndex);
 
          // This is not needed as the id field is already the index
          //var trxIndex = Builders<MapTransaction>.IndexKeys.Ascending(trxBlk => trxBlk.TransactionId);
