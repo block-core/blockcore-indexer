@@ -97,3 +97,22 @@ docker pull blockcore/indexer:latest
 docker pull blockcore/indexer:0.0.6
 ```
 
+## Troubleshooting
+
+
+```
+StatusCode = Unauthorized Error =  Blockcore.Indexer.Client.BitcoinClientException: StatusCode='Unauthorized' Error=Error (0)
+   at Blockcore.Indexer.Client.BitcoinClient.HandleError(String body, HttpResponseMessage response, Nullable`1 statusCode) in /home/runner/work/blockcore-indexer/blockcore-indexer/src/Blockcore.Indexer/Client/BitcoinClient.cs:line 617
+```
+
+Issue: This error log is often related to caller IP not being part of the "rpcallowip" list.
+
+
+```
+Blockcore.Indexer.Client.BitcoinCommunicationException: Daemon Failed Url = 'http://city-chain:4334/'
+ ---> System.AggregateException: One or more errors occurred. (Connection refused)
+ ---> System.Net.Http.HttpRequestException: Connection refused
+ ---> System.Net.Sockets.SocketException (111): Connection refused
+```
+
+Issue: This happens when the DNS name is not accessible.
