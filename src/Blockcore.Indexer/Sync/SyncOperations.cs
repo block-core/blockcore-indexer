@@ -16,6 +16,9 @@ namespace Blockcore.Indexer.Sync
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
    using NBitcoin;
+   using Blockcore.Consensus.TransactionInfo;
+   using Blockcore.Consensus.ScriptInfo;
+   using Blockcore.Consensus.BlockInfo;
 
    /// <summary>
    /// The CoinOperations interface.

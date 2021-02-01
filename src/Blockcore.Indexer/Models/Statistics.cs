@@ -3,6 +3,7 @@ namespace Blockcore.Indexer.Api.Handlers.Types
    using System;
    using System.Collections.Generic;
    using Blockcore.Indexer.Client.Types;
+   using Blockcore.Networks;
    using NBitcoin;
    using Newtonsoft.Json;
    using Newtonsoft.Json.Converters;

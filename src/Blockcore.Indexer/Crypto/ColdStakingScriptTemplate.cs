@@ -1,5 +1,8 @@
 using System;
 using System.Linq;
+using Blockcore.Consensus.ScriptInfo;
+using Blockcore.Consensus.TransactionInfo;
+using Blockcore.Networks;
 using NBitcoin;
 
 namespace Blockcore.Indexer.Crypto

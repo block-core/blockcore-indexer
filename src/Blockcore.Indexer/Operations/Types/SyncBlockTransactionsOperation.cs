@@ -1,8 +1,9 @@
-﻿using NBitcoin;
+using NBitcoin;
 
 namespace Blockcore.Indexer.Operations.Types
 {
    using System.Collections.Generic;
+   using Blockcore.Consensus.TransactionInfo;
    using Blockcore.Indexer.Client.Types;
 
    /// <summary>

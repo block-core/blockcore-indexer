@@ -17,6 +17,7 @@ namespace Blockcore.Indexer.Storage.Mongo
    using Microsoft.Extensions.Options;
    using MongoDB.Driver;
    using NBitcoin;
+   using Blockcore.Consensus.TransactionInfo;
 
    /// <summary>
    /// Mongo storage operations.
@@ -96,7 +97,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                 });
 
             // break the work in to batches of transactions
-            var queue = new Queue<NBitcoin.Transaction>(item.Transactions);
+            var queue = new Queue<Transaction>(item.Transactions);
             do
             {
                var items = GetBatch(configuration.MongoBatchSize, queue).ToList();
@@ -311,7 +312,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          return trxInfps;
       }
 
-      private IEnumerable<MapTransactionAddress> CreateInputs(long blockIndex, IEnumerable<NBitcoin.Transaction> transactions)
+      private IEnumerable<MapTransactionAddress> CreateInputs(long blockIndex, IEnumerable<Transaction> transactions)
       {
          foreach (Transaction transaction in transactions)
          {
@@ -344,7 +345,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
-      private IEnumerable<MapTransactionAddress> CreateOutputs(IEnumerable<NBitcoin.Transaction> transactions, long blockIndex)
+      private IEnumerable<MapTransactionAddress> CreateOutputs(IEnumerable<Transaction> transactions, long blockIndex)
       {
          foreach (Transaction transaction in transactions)
          {

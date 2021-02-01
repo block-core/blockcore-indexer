@@ -15,6 +15,8 @@ namespace Blockcore.Indexer.Api.Handlers
    using Microsoft.Extensions.Options;
    using Newtonsoft.Json;
    using Blockcore.Indexer.Extensions;
+   using Blockcore.Networks;
+   using Blockcore.Consensus;
 
    /// <summary>
    /// Handler to make get info about a blockchain.
@@ -80,8 +82,8 @@ namespace Blockcore.Indexer.Api.Handlers
          // If we have network type available, we'll extend with extra metadata.
          if (syncConnection.HasNetworkType)
          {
-            NBitcoin.Network network = syncConnection.Network;
-            NBitcoin.IConsensus consensus = network.Consensus;
+            Network network = syncConnection.Network;
+            IConsensus consensus = network.Consensus;
 
             coinInfo.Configuration = new NetworkInfo {
                DefaultAPIPort = network.DefaultAPIPort,

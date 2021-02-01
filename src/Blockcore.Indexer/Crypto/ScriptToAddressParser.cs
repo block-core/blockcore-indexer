@@ -1,3 +1,5 @@
+using Blockcore.Consensus.ScriptInfo;
+using Blockcore.Networks;
 using NBitcoin;
 
 namespace Blockcore.Indexer.Crypto
@@ -18,7 +20,7 @@ namespace Blockcore.Indexer.Crypto
 
       public static string[] GetAddress(Network network, Script script)
       {
-         ScriptTemplate template = NBitcoin.StandardScripts.GetTemplateFromScriptPubKey(script);
+         ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(script);
 
          if (template == null)
             return null;

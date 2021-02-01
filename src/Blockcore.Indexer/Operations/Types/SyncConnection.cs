@@ -5,7 +5,10 @@ using NBitcoin.DataEncoders;
 namespace Blockcore.Indexer.Operations.Types
 {
    using System;
+   using Blockcore.Consensus;
+   using Blockcore.Consensus.BlockInfo;
    using Blockcore.Indexer.Settings;
+   using Blockcore.Networks;
    using Microsoft.Extensions.Options;
 
    /// <summary>
@@ -19,7 +22,7 @@ namespace Blockcore.Indexer.Operations.Types
 
          var consensusFactory = (ConsensusFactory)Activator.CreateInstance(Type.GetType(networkConfig.NetworkConsensusFactoryType));
 
-         Consensus = new NBitcoin.Consensus(
+         Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: null,
                 coinType: 0,
@@ -107,7 +110,7 @@ namespace Blockcore.Indexer.Operations.Types
 
       public bool HasNetworkType { get; set; }
 
-      public NBitcoin.Network Network { get; }
+      public Network Network { get; }
 
       public string Symbol { get; set; }
 

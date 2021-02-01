@@ -1,8 +1,8 @@
+using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Crypto;
 using Blockcore.Indexer.Operations.Types;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NBitcoin;
 using Xunit;
 
 namespace Blockcore.Indexer.Tests

@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Blockcore.Consensus.ScriptInfo;
+using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Api.Handlers.Types;
 using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Client.Types;
@@ -55,7 +57,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          string dbName = configuration.DatabaseNameSubfix ? "Blockchain" + this.chainConfiguration.Symbol : "Blockchain";
 
          mongoDatabase = mongoClient.GetDatabase(dbName);
-         MemoryTransactions = new ConcurrentDictionary<string, NBitcoin.Transaction>();
+         MemoryTransactions = new ConcurrentDictionary<string, Transaction>();
 
          // Make sure we only create a single instance of the watcher.
          watch = Stopwatch.Start();
@@ -109,7 +111,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
-      public ConcurrentDictionary<string, NBitcoin.Transaction> MemoryTransactions { get; set; }
+      public ConcurrentDictionary<string, Transaction> MemoryTransactions { get; set; }
 
       public IEnumerable<SyncBlockInfo> BlockGetIncompleteBlocks()
       {
@@ -318,7 +320,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          };
       }
 
-      public SyncTransactionItems TransactionItemsGet(string transactionId, NBitcoin.Transaction transaction = null)
+      public SyncTransactionItems TransactionItemsGet(string transactionId, Transaction transaction = null)
       {
          if (transaction == null)
          {
@@ -835,12 +837,12 @@ namespace Blockcore.Indexer.Storage.Mongo
          });
       }
 
-      private IEnumerable<Tuple<NBitcoin.TxIn, string>> GetPoolOutputs(IEnumerable<NBitcoin.Transaction> pool)
+      private IEnumerable<Tuple<TxIn, string>> GetPoolOutputs(IEnumerable<Transaction> pool)
       {
-         return pool.SelectMany(s => s.Inputs.Select(v => new Tuple<NBitcoin.TxIn, string>(v, s.GetHash().ToString())));
+         return pool.SelectMany(s => s.Inputs.Select(v => new Tuple<TxIn, string>(v, s.GetHash().ToString())));
       }
 
-      private IEnumerable<MapTransactionAddress> PoolToMapTransactionAddress(IEnumerable<NBitcoin.Transaction> pool, string address)
+      private IEnumerable<MapTransactionAddress> PoolToMapTransactionAddress(IEnumerable<Transaction> pool, string address)
       {
          foreach (Transaction transaction in pool)
          {
