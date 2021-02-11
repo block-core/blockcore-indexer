@@ -17,6 +17,7 @@ namespace Blockcore.Indexer.Api.Handlers
    using Blockcore.Indexer.Extensions;
    using Blockcore.Networks;
    using Blockcore.Consensus;
+   using Blockcore.Indexer.Storage.Types;
 
    /// <summary>
    /// Handler to make get info about a blockchain.
@@ -138,16 +139,21 @@ namespace Blockcore.Indexer.Api.Handlers
 
          try
          {
-            stats.SyncBlockIndex = storage.GetLatestBlock().BlockIndex;
-            stats.Progress = $"{stats.SyncBlockIndex}/{stats.Blockchain.Blocks} - {stats.Blockchain.Blocks - stats.SyncBlockIndex}";
+            SyncBlockInfo latestBlock = storage.GetLatestBlock();
 
-            double totalSeconds = syncConnection.RecentItems.Sum(s => s.Duration.TotalSeconds);
-            stats.AvgBlockPersistInSeconds = Math.Round(totalSeconds / syncConnection.RecentItems.Count, 2);
+            if (latestBlock != null)
+            {
+               stats.SyncBlockIndex = latestBlock.BlockIndex;
+               stats.Progress = $"{stats.SyncBlockIndex}/{stats.Blockchain.Blocks} - {stats.Blockchain.Blocks - stats.SyncBlockIndex}";
 
-            long totalSize = syncConnection.RecentItems.Sum(s => s.Size);
-            stats.AvgBlockSizeKb = Math.Round((double)totalSize / syncConnection.RecentItems.Count, 0);
+               double totalSeconds = syncConnection.RecentItems.Sum(s => s.Duration.TotalSeconds);
+               stats.AvgBlockPersistInSeconds = Math.Round(totalSeconds / syncConnection.RecentItems.Count, 2);
 
-            stats.BlocksPerMinute = syncConnection.RecentItems.Count(w => w.Inserted > DateTime.UtcNow.AddMinutes(-1));
+               long totalSize = syncConnection.RecentItems.Sum(s => s.Size);
+               stats.AvgBlockSizeKb = Math.Round((double)totalSize / syncConnection.RecentItems.Count, 0);
+
+               stats.BlocksPerMinute = syncConnection.RecentItems.Count(w => w.Inserted > DateTime.UtcNow.AddMinutes(-1));
+            }
          }
          catch (Exception ex)
          {

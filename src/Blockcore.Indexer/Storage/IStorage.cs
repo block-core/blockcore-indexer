@@ -6,6 +6,7 @@ namespace Blockcore.Indexer.Storage
    using Blockcore.Indexer.Storage.Mongo;
    using Blockcore.Indexer.Storage.Mongo.Types;
    using Blockcore.Indexer.Storage.Types;
+   using NBitcoin;
 
    public interface IStorage
    {
@@ -37,6 +38,12 @@ namespace Blockcore.Indexer.Storage
       SyncBlockInfo BlockByIndex(long blockIndex);
 
       QueryResult<MapRichlist> Richlist(int offset, int limit);
+
+      MapRichlist RichlistBalance(string address);
+
+      List<MapRichlist> AddressBalances(IEnumerable<string> addresses);
+
+      long TotalBalance();
 
       //IEnumerable<SyncBlockInfo> BlockGetCompleteBlockCount(int count);
 

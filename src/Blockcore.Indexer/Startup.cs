@@ -19,6 +19,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 
 namespace Blockcore.Indexer
 {
@@ -36,6 +37,7 @@ namespace Blockcore.Indexer
          services.Configure<ChainSettings>(Configuration.GetSection("Chain"));
          services.Configure<NetworkSettings>(Configuration.GetSection("Network"));
          services.Configure<IndexerSettings>(Configuration.GetSection("Indexer"));
+         services.Configure<InsightSettings>(Configuration.GetSection("Insight"));
 
          // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
@@ -70,7 +72,8 @@ namespace Blockcore.Indexer
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
          }).AddNewtonsoftJson(options =>
          {
-            options.SerializerSettings.FloatFormatHandling = Newtonsoft.Json.FloatFormatHandling.DefaultValue;
+            options.SerializerSettings.FloatFormatHandling = FloatFormatHandling.DefaultValue;
+            options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore; // Don't include null fields.
          });
 
          services.AddSwaggerGen(

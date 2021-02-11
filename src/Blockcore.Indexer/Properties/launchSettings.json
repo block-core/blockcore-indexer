@@ -17,9 +17,18 @@
          "applicationUrl": "http://localhost:9910/"
       },
       // Use this for your own custom code. Change your settings in "CUSTOM.json".
-      "CUSTOM (Local)": {
+      "LOCAL (BTC)": {
          "commandName": "Project",
-         "commandLineArgs": "--chain=CUSTOM --local",
+         "commandLineArgs": "--chain=BTC --local",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
+      "LOCAL (City)": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=CITY --local",
          "launchBrowser": true,
          "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"

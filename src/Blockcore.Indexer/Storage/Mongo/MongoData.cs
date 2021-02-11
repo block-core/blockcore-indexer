@@ -419,6 +419,36 @@ namespace Blockcore.Indexer.Storage.Mongo
          return new QueryResult<MapRichlist> { Items = list, Total = total, Offset = offset, Limit = limit };
       }
 
+      public MapRichlist RichlistBalance(string address)
+      {
+         FilterDefinitionBuilder<MapRichlist> filterBuilder = Builders<MapRichlist>.Filter;
+         FilterDefinition<MapRichlist> filter = filterBuilder.Eq(m => m.Address, address);
+
+         MapRichlist document = MapRichlist.Find(filter).SingleOrDefault();
+
+         return document;
+      }
+
+      public List<MapRichlist> AddressBalances(IEnumerable<string> addresses)
+      {
+         FilterDefinitionBuilder<MapRichlist> filterBuilder = Builders<MapRichlist>.Filter;
+         FilterDefinition<MapRichlist> filter = filterBuilder.Where(s => addresses.Contains(s.Address));
+
+         List<MapRichlist> document = MapRichlist.Find(filter).ToList();
+
+         return document;
+      }
+
+      public long TotalBalance()
+      {
+         FilterDefinitionBuilder<MapRichlist> builder = Builders<MapRichlist>.Filter;
+         IQueryable<MapRichlist> filter = MapRichlist.AsQueryable();
+
+         long totalBalance = filter.Sum(s => s.Balance);
+
+         return totalBalance;
+      }
+
       /// <summary>
       /// Get transactions that belongs to a block.
       /// </summary>

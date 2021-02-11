@@ -66,7 +66,7 @@ namespace Blockcore
          if (args.Contains("--local"))
          {
             // Load your local custom blockchain settings.
-            builder.AddJsonFile("CUSTOM.json");
+            builder.AddJsonFile($"CUSTOM.{chain}.json");
          }
          else
          {

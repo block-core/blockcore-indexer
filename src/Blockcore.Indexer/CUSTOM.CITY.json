@@ -1,0 +1,143 @@
+{
+   "Chain": {
+      "Name": "City Chain",
+      "Symbol": "CITY",
+      "Description": "Blockchain for Smart Cities",
+      "Url": "https://www.city-chain.org/",
+      "Logo": "https://chains.blockcore.net/assets/CITY/logo.png",
+      "Icon": "https://chains.blockcore.net/assets/CITY/icon.png",
+      "Color": "#dfab3c"
+   },
+   "TipBot": {
+      "Discord": {
+         "Enabled": true,
+         "SupportUsername": "sondreb",
+         "SupportDiscriminator": "5919"
+      },
+      "Twitch": {
+         "Enabled": false,
+         "AccessToken": "",
+         "Channels": [
+            "vanarki"
+         ]
+      },
+      "Twitter": {
+         "Enabled": false
+      },
+      "Reddit": {
+         "Enabled": false
+      },
+      "Ticker": "CITY",
+      "NetworkFee": "0.00100000",
+      "ApiUrl": "http://city-tipbot-chain:4335/",
+      "UseSegwit": false,
+      "SupportUsername": "sondreb",
+      "SupportDiscriminator": "5919",
+      "BotOptionalPrefix": "tipbot-city",
+      "MinConfirmationsForDeposit": 3
+   },
+   "Network": {
+      "NetworkConsensusFactoryType": "Blockcore.Consensus.BlockInfo.PosConsensusFactory, Blockcore",
+      "NetworkType": "Blockcore.Networks.City.Networks.CityMain, Blockcore.Networks.City",
+      "NetworkPubkeyAddressPrefix": 28,
+      "NetworkScriptAddressPrefix": 88,
+      "NetworkWitnessPrefix": "city",
+      "P2PPort": 4333,
+      "RPCPort": 4334,
+      "APIPort": 4335
+   },
+   "Indexer": {
+      "StoreRawTransactions": true
+   },
+   "Insight": {
+      "Rewards": [
+         {
+            "Height": 0,
+            "Reward": 2
+         },
+         {
+            "Height": 2500,
+            "Reward": 20
+         },
+         {
+            "Height": 1111111,
+            "Reward": 2
+         }
+      ],
+      "Wallets": [
+         {
+            "Name": "City Chain Foundation",
+            "Type": "Fund",
+            "Url": "https://citychain.foundation",
+            "Address": [ "CU78ydNu7odWCEtrCcCSd3fN6hzZqBUyjz", "ABC" ],
+            "InitialAmount": 2747200000.00000000,
+            "Logo": "https://city-chain.org/images/logo/city-chain-foundation-vertical.png"
+         },
+         {
+            "Name": "Private City Fund",
+            "Type": "Fund",
+            "Url": "",
+            "Address": [ "Ccoquhaae7u6ASqQ5BiYueASz8EavUXrKn" ],
+            "InitialAmount": 7554800000.00,
+            "Logo": "https://city-chain.org/images/logo/private-city-fund-box.png"
+         },
+         {
+            "Name": "Private Business Incubator Program",
+            "Type": "Fund",
+            "Url": "",
+            "Address": [ "CSHuP5iNWrQ3AFPvK9ZnkcH8qvhPHp94kK" ],
+            "InitialAmount": 3434000000.00,
+            "Logo": "https://city-chain.org/images/logo/private-city-fund-box.png"
+         },
+         {
+            "Name": "Burnt",
+            "Type": "Burn",
+            "Address": []
+         }
+      ]
+   },
+   "Explorer": {
+      "Indexer": {
+         "ApiUrl": "http://localhost:9910/api",
+         "DocUrl": "http://localhost:9910/docs"
+      },
+      "Currency": {
+         "ApiUrl": "https://api.coincap.io/v2/rates",
+         "AutoConvert": true
+      },
+      "Ticker": {
+         "WebUrl": "https://coinpaprika.com/coin/city-city-coin/",
+         "ApiUrl": "https://api.coinpaprika.com/v1/tickers/city-city-coin?quotes=USD,BTC",
+         "PricePath": "quotes.BTC.price",
+         "PricePathBTC": "quotes.BTC.price",
+         "PricePathUSD": "quotes.USD.price",
+         "PercentagePath": "quotes.BTC.percent_change_1h",
+         "IsBitcoinPrice": true
+      },
+      "Setup": {
+         "Title": "City Chain Explorer",
+         "Footer": "Blockchain for Smart Cities. Empowering global citizens in the modern era.",
+         "Links": [
+            {
+               "icon": "fab fa-github",
+               "url": "https://github.com/CityChainFoundation/"
+            },
+            {
+               "icon": "fas fa-link",
+               "url": "https://city-chain.org/"
+            },
+            {
+               "icon": "fab fa-discord",
+               "url": "https://discord.gg/CD8CTJt"
+            },
+            {
+               "icon": "fab fa-telegram-plane",
+               "url": "https://t.me/citychain"
+            }
+         ]
+      },
+      "Features": {
+         "POSWeight": false
+      }
+   }
+}

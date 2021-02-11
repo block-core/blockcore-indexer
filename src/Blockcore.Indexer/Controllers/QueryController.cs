@@ -215,6 +215,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// </summary>
       [HttpGet]
       [Route("richlist")]
+      [Obsolete("This API has been moved to the /insight API.")]
       public IActionResult GetRichlist([Range(0, int.MaxValue)]int offset = 0, [Range(1, 100)] int limit = 100)
       {
          return OkPaging(storage.Richlist(offset, limit));
