@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Blockcore.Indexer.Api.Handlers;
 using Blockcore.Indexer.Extensions;
 using Blockcore.Indexer.Operations;
@@ -60,8 +62,12 @@ namespace Blockcore.Indexer
          services.AddMemoryCache();
          services.AddHostedService<SyncServer>();
 
-         services.AddControllers(options => {
+         services.AddControllers(options =>
+         {
             options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
+         }).AddJsonOptions(options =>
+         {
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
          }).AddNewtonsoftJson(options =>
          {
             options.SerializerSettings.FloatFormatHandling = Newtonsoft.Json.FloatFormatHandling.DefaultValue;
@@ -90,10 +96,6 @@ namespace Blockcore.Indexer
                 {
                    options.IncludeXmlComments(XmlCommentsFilePath);
                 }
-
-                options.DescribeAllEnumsAsStrings();
-
-                options.DescribeStringEnumsInCamelCase();
 
                 options.EnableAnnotations();
              });

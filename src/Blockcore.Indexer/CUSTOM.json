@@ -9,7 +9,7 @@
       "Color": "#f3b623"
    },
    "Network": {
-      "NetworkConsensusFactoryType": "NBitcoin.PosConsensusFactory, Blockcore.NBitcoin",
+      "NetworkConsensusFactoryType": "Blockcore.Consensus.BlockInfo.PosConsensusFactory, Blockcore",
       "NetworkPubkeyAddressPrefix": 0,
       "NetworkScriptAddressPrefix": 5,
       "NetworkWitnessPrefix": "coin",
