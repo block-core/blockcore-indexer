@@ -90,7 +90,16 @@ namespace Blockcore.Indexer.Api.Handlers
       public ActionResult<decimal> GetRewards()
       {
          long tip = storage.GetLatestBlock().BlockIndex;
-         return Ok(CalculateRewards(tip) / unit);
+         decimal rewards = CalculateRewards(tip);
+
+         if (rewards == -1)
+         {
+            return Ok(rewards);
+         }
+         else
+         {
+            return Ok(CalculateRewards(tip) / unit);
+         }
       }
 
       /// <summary>
