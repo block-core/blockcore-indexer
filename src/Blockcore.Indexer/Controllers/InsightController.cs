@@ -42,38 +42,6 @@ namespace Blockcore.Indexer.Api.Handlers
       }
 
       /// <summary>
-      /// Calculates the circulating supply that is available when funds, locked and burned wallets has been deducated.
-      /// </summary>
-      /// <returns></returns>
-      [HttpGet("supply/circulating")]
-      public ActionResult<decimal> GetCirculatingSupply()
-      {
-         return Ok(CalculateCirculatingSupply() / unit);
-      }
-
-      /// <summary>
-      /// Returns an estimate of rewards that block producers have received.
-      /// </summary>
-      /// <returns></returns>
-      [HttpGet("rewards")]
-      public ActionResult<decimal> GetRewards()
-      {
-         long tip = storage.GetLatestBlock().BlockIndex;
-         return Ok(CalculateRewards(tip) / unit);
-      }
-
- 
-      /// <summary>
-      /// Returns the total supply available, including funds, locked and burnt wallets.
-      /// </summary>
-      /// <returns></returns>
-      [HttpGet("supply/total")]
-      public ActionResult<decimal> GetTotalSupply()
-      {
-         return Ok(storage.TotalBalance());
-      }
-
-      /// <summary>
       /// Returns all available information on the supply. The results is cached for 10 seconds.
       /// </summary>
       /// <returns></returns>
@@ -90,25 +58,40 @@ namespace Blockcore.Indexer.Api.Handlers
             // Save data in cache.
             cache.Set(CacheKeys.Supply, supply, cacheEntryOptions);
          }
-         
+
          return Ok(supply);
       }
 
-      private Supply CalculateSupply()
+      /// <summary>
+      /// Calculates the circulating supply that is available when funds, locked and burned wallets has been deducated.
+      /// </summary>
+      /// <returns></returns>
+      [HttpGet("supply/circulating")]
+      public ActionResult<decimal> GetCirculatingSupply()
+      {
+         return Ok(CalculateCirculatingSupply() / unit);
+      }
+
+      /// <summary>
+      /// Returns the total supply available, including funds, locked and burnt wallets.
+      /// </summary>
+      /// <returns></returns>
+      [HttpGet("supply/total")]
+      public ActionResult<decimal> GetTotalSupply()
+      {
+         return Ok(storage.TotalBalance());
+      }
+
+      /// <summary>
+      /// Returns an estimate of rewards that block producers have received.
+      /// </summary>
+      /// <returns></returns>
+      [HttpGet("rewards")]
+      public ActionResult<decimal> GetRewards()
       {
          long tip = storage.GetLatestBlock().BlockIndex;
-
-         var supply = new Supply
-            {
-               Circulating = CalculateCirculatingSupply() / unit,
-               Total = storage.TotalBalance() / unit,
-               Max = syncConnection.Network.Consensus.MaxMoney / unit,
-               Rewards = CalculateRewards(tip),
-               Height = tip
-            };
-
-            return supply;
-         }
+         return Ok(CalculateRewards(tip) / unit);
+      }
 
       /// <summary>
       /// Retrieve details about known wallets. Results is cached for 10 seconds.
@@ -134,7 +117,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// Returns richlist entries based on the offset and limit. The entries are sorted from from lowest to highest balance.
       /// </summary>
       [HttpGet("richlist")]
-      public IActionResult GetRichlist([Range(0, int.MaxValue)]int offset = 0, [Range(1, 100)] int limit = 100)
+      public IActionResult GetRichlist([Range(0, int.MaxValue)] int offset = 0, [Range(1, 100)] int limit = 100)
       {
          return OkPaging(storage.Richlist(offset, limit));
       }
@@ -156,6 +139,22 @@ namespace Blockcore.Indexer.Api.Handlers
          {
             return Ok(result.Items);
          }
+      }
+
+      private Supply CalculateSupply()
+      {
+         long tip = storage.GetLatestBlock().BlockIndex;
+
+         var supply = new Supply
+         {
+            Circulating = CalculateCirculatingSupply() / unit,
+            Total = storage.TotalBalance() / unit,
+            Max = syncConnection.Network.Consensus.MaxMoney / unit,
+            Rewards = CalculateRewards(tip),
+            Height = tip
+         };
+
+         return supply;
       }
 
       /// <summary>
