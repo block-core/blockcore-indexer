@@ -33,7 +33,7 @@ jobs:
       - name: Login and Push to Docker Registry
         run: |
           docker login -u "sondreb" -p "${{secrets.DockerHubSecret}}"
-          docker push blockcore/indexer
+          docker push --all-tags blockcore/indexer
 
       # - name: Login and Push to GitHub Docker Registry
       #   run: |
