@@ -20,5 +20,16 @@ namespace Blockcore.Indexer.Models
       public decimal InitialAmount { get; set; }
 
       public decimal Balance { get; set; }
+
+      /// <summary>
+      /// Returns false if the Type is set to either Fund, Locked or Burn. Returns true for other type of wallets.
+      /// </summary>
+      public bool Circulating
+      {
+         get
+         {
+            return !(Type == "Fund" || Type == "Locked" || Type == "Burn");
+         }
+      }
    }
 }

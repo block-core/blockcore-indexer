@@ -195,7 +195,7 @@ namespace Blockcore.Indexer.Api.Handlers
       private decimal CalculateCirculatingSupply()
       {
          long totalBalance = storage.TotalBalance();
-         IEnumerable<string[]> addresses = insightConfiguration.Wallets.Select(w => w.Address);
+         IEnumerable<string[]> addresses = insightConfiguration.Wallets.Where(w => !w.Circulating).Select(w => w.Address);
 
          List<string> listOfAddress = new List<string>();
 

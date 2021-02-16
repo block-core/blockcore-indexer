@@ -90,6 +90,14 @@
             "Logo": "https://city-chain.org/images/logo/private-city-fund-box.png"
          },
          {
+            "Name": "Premine",
+            "Type": "Premine",
+            "Url": "",
+            "Address": [ "CTdmGuyx1DM2uWLSNR9LyHP7m6SE45n4z8" ],
+            "InitialAmount": 13736000000.00000000,
+            "Logo": ""
+         },
+         {
             "Name": "Burnt",
             "Type": "Burn",
             "Address": []
