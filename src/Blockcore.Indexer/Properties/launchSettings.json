@@ -53,6 +53,33 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
+      "XRC": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=XRC",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
+      "HOME": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=HOME",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
+      "X1": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=X1",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
       "DST": {
          "commandName": "Project",
          "commandLineArgs": "--chain=DST",
