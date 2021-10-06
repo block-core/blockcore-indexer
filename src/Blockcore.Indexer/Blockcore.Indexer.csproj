@@ -24,6 +24,7 @@
 		<PackageReference Include="Blockcore.Networks.OpenExo" Version="1.0.*" />
 		<PackageReference Include="Blockcore.Networks.Rutanio" Version="1.0.*" />
 		<PackageReference Include="Blockcore.Networks.Stratis" Version="1.0.*" />
+		<PackageReference Include="Blockcore.Networks.Strax" Version="1.0.*" />
 		<PackageReference Include="Blockcore.Networks.x42" Version="1.0.*" />
 		<PackageReference Include="Blockcore.Networks.Xds" Version="1.0.*" />
       <PackageReference Include="Blockcore.Networks.City" Version="1.0.*" />
