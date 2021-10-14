@@ -44,6 +44,15 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
+      "STRAX": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=STRAX",
+         "launchBrowser": false,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
       "CITY": {
          "commandName": "Project",
          "commandLineArgs": "--chain=CITY",
