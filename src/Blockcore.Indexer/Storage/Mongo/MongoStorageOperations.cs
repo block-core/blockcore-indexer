@@ -236,11 +236,80 @@ namespace Blockcore.Indexer.Storage.Mongo
          return stats;
       }
 
-      public InsertStats ProcessBlock(SyncBlockTransactionsOperation item)
+      public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
       {
-         ValidateBlock(item);
-         InsertStats count = InsertTransactions(item);
-         return count;
+         storageBatch.MapBlocks.Add(CreateMapBlock(item.BlockInfo));
+         storageBatch.TotalSize += item.BlockInfo.Size;
+
+         storageBatch.MapTransactionBlocks.AddRange(item.Transactions.Select(s => new MapTransactionBlock
+         {
+            BlockIndex = item.BlockInfo.Height,
+            TransactionId = s.GetHash().ToString()
+         }));
+
+         IEnumerable<MapTransactionAddress> inputs = CreateInputs(item.BlockInfo.Height, item.Transactions);
+         foreach (MapTransactionAddress mapTransactionAddress in inputs)
+         {
+            storageBatch.MapTransactionAddresses.Add(mapTransactionAddress.Id, new InsertOneModel<MapTransactionAddress>(mapTransactionAddress));
+         }
+
+         IEnumerable<MapTransactionAddress> outputs = CreateOutputs(item.Transactions, item.BlockInfo.Height);
+         foreach (MapTransactionAddress mapTransactionAddress in outputs)
+         {
+            if (storageBatch.MapTransactionAddresses.TryGetValue(mapTransactionAddress.Id, out WriteModel<MapTransactionAddress> MapTransactionAddressOut))
+            {
+               // in case a utxo is spent in the same block we just modify the inserted item directly
+
+               var imta = MapTransactionAddressOut as InsertOneModel<MapTransactionAddress>;
+               imta.Document.SpendingTransactionId = mapTransactionAddress.SpendingTransactionId;
+               imta.Document.SpendingBlockIndex = mapTransactionAddress.SpendingBlockIndex;
+            }
+            else
+            {
+               FilterDefinition<MapTransactionAddress> filter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.Id, mapTransactionAddress.Id);
+
+               UpdateDefinition<MapTransactionAddress> update = Builders<MapTransactionAddress>.Update
+                   .Set(blockInfo => blockInfo.SpendingTransactionId, mapTransactionAddress.SpendingTransactionId)
+                   .Set(blockInfo => blockInfo.SpendingBlockIndex, mapTransactionAddress.SpendingBlockIndex);
+
+               storageBatch.MapTransactionAddresses.Add(mapTransactionAddress.Id, new UpdateOneModel<MapTransactionAddress>(filter, update));
+            }
+         }
+
+         if (configuration.StoreRawTransactions)
+         {
+            storageBatch.MapTransactions.AddRange(item.Transactions.Select(t => new MapTransaction
+            {
+               TransactionId = t.GetHash().ToString(),
+               RawTransaction = t.ToBytes(syncConnection.Network.Consensus.ConsensusFactory)
+            }));
+         }
+      }
+
+      public void PushStorageBatch(StorageBatch storageBatch)
+      {
+         data.MapBlock.InsertMany(storageBatch.MapBlocks, new InsertManyOptions { IsOrdered = false });
+         data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
+         data.MapTransactionAddress.BulkWrite(storageBatch.MapTransactionAddresses.Values, new BulkWriteOptions() { IsOrdered = false });
+
+         if (storageBatch.MapTransactions.Any())
+            data.MapTransaction.InsertMany(storageBatch.MapTransactions, new InsertManyOptions { IsOrdered = false });
+
+         List<UpdateOneModel<MapBlock>> markBlocksAsComplete = new List<UpdateOneModel<MapBlock>>();
+         foreach (MapBlock mapBlock in storageBatch.MapBlocks.OrderBy(b => b.BlockIndex))
+         {
+            FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
+            UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
+
+            markBlocksAsComplete.Add(new UpdateOneModel<MapBlock>(filter, update));
+         }
+         data.MapBlock.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
+
+         storageBatch.TotalSize = 0;
+         storageBatch.MapBlocks.Clear();
+         storageBatch.MapTransactionBlocks.Clear();
+         storageBatch.MapTransactionAddresses.Clear();
+         storageBatch.MapTransactions.Clear();
       }
 
       private void CompleteBlock(BlockInfo block)
@@ -250,7 +319,14 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       private void CreateBlock(BlockInfo block)
       {
-         var blockInfo = new MapBlock
+         MapBlock blockInfo = CreateMapBlock(block);
+
+         data.InsertBlock(blockInfo);
+      }
+
+      private MapBlock CreateMapBlock(BlockInfo block)
+      {
+         return new MapBlock
          {
             BlockIndex = block.Height,
             BlockHash = block.Hash,
@@ -274,8 +350,6 @@ namespace Blockcore.Indexer.Storage.Mongo
             Version = block.Version,
             SyncComplete = false
          };
-
-         data.InsertBlock(blockInfo);
       }
 
       private IEnumerable<T> GetBatch<T>(int maxItems, Queue<T> queue)

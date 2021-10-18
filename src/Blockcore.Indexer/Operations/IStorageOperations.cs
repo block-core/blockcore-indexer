@@ -1,10 +1,10 @@
-﻿namespace Blockcore.Indexer.Operations
+namespace Blockcore.Indexer.Operations
 {
    #region Using Directives
 
    using Blockcore.Indexer.Operations.Types;
 
-   #endregion
+   #endregion Using Directives
 
    /// <summary>
    /// The StorageOperations interface.
@@ -20,5 +20,9 @@
       /// Insert transactions.
       /// </summary>
       InsertStats InsertTransactions(SyncBlockTransactionsOperation item);
+
+      void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item);
+
+      void PushStorageBatch(StorageBatch storageBatch);
    }
 }

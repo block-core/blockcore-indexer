@@ -65,6 +65,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          SyncConnection connection = syncConnection;
          BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
 
+         StorageBatch storageBatch = new StorageBatch();
+
          Storage.Types.SyncBlockInfo tip = RewindToLastCompletedBlock();
 
          if (tip == null)
@@ -78,9 +80,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(syncConnection, genesisBlock);
 
-            // todo: unify this later
-            storageOperations.ValidateBlock(block);
-            InsertStats count = storageOperations.InsertTransactions(block);
+            storageOperations.AddToStorageBatch(storageBatch, block);
+            storageOperations.PushStorageBatch(storageBatch);
 
             tip = storage.BlockByHash(genesisHash);
          }
@@ -116,14 +117,28 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             // build mongod data from that block
             SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(syncConnection, nextBlock);
 
-            storageOperations.ValidateBlock(block);
-            InsertStats count = storageOperations.InsertTransactions(block);
-
-            tip = storage.BlockByHash(nextHash);
+            storageOperations.AddToStorageBatch(storageBatch, block);
 
             watch.Stop();
 
-            log.LogDebug($"Processed block = {nextBlock.Height}({nextHash}) Transactions = {nextBlock.Transactions.Count()} Size = {(decimal)nextBlock.Size / 1000000}mb Seconds = {watch.Elapsed.TotalSeconds}");
+            log.LogDebug($"Fetched block = {nextBlock.Height}({nextHash}) Transactions = {nextBlock.Transactions.Count()} Size = {(decimal)nextBlock.Size / 1000000}mb Seconds = {watch.Elapsed.TotalSeconds}");
+
+            if (storageBatch.TotalSize > 10000000)
+            {
+               int count = storageBatch.MapBlocks.Count;
+               long size = storageBatch.TotalSize;
+
+               watch.Restart();
+
+               storageOperations.PushStorageBatch(storageBatch);
+
+               watch.Stop();
+
+               log.LogDebug($"Pushed {count} blocks total Size = {(decimal)size / 1000000}mb Seconds = {watch.Elapsed.TotalSeconds}");
+            }
+
+            tip = new Storage.Types.SyncBlockInfo { BlockHash = nextBlock.Hash, BlockIndex = nextBlock.Height };
+            //tip = storage.BlockByHash(nextHash);
          }
 
          return await Task.FromResult(true);
@@ -138,6 +153,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          while (lastBlock != null && lastBlock.SyncComplete == false)
          {
+            log.LogDebug($"Rewinding block {lastBlock.BlockIndex}({lastBlock.BlockHash})");
+
             storage.DeleteBlock(lastBlock.BlockHash);
             lastBlock = storage.BlockByIndex(lastBlock.BlockIndex - 1);
          }
