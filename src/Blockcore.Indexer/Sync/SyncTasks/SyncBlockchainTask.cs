@@ -65,8 +65,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          SyncConnection connection = syncConnection;
          BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
 
-         Storage.Types.QueryResult<Storage.Types.SyncBlockInfo> blocks = storage.Blocks(0, 10);
-         Storage.Types.SyncBlockInfo tip = blocks.Items.OrderByDescending(o => o.BlockIndex).Where(b => b.SyncComplete = true).FirstOrDefault();
+         Storage.Types.SyncBlockInfo tip = RewindToLastCompletedBlock();
 
          if (tip == null)
          {
@@ -77,7 +76,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             log.LogDebug($"Processing genesis hash = {genesisHash}");
 
-            SyncBlockTransactionsOperation block = syncOperations.SyncBlock(syncConnection, genesisBlock);
+            SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(syncConnection, genesisBlock);
 
             // todo: unify this later
             storageOperations.ValidateBlock(block);
@@ -107,12 +106,15 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                // todo: implement reorg
                // reorg, delete the last block and go back one block then restart the loop
                log.LogDebug($"Reorg detected on block = {tip.BlockIndex}");
-               await syncOperations.CheckBlockReorganization(connection);
+               // await syncOperations.CheckBlockReorganization(connection);
+
+               storage.DeleteBlock(tip.BlockHash);
+               tip = storage.BlockByIndex(tip.BlockIndex - 1);
                continue;
             }
 
             // build mongod data from that block
-            SyncBlockTransactionsOperation block = syncOperations.SyncBlock(syncConnection, nextBlock);
+            SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(syncConnection, nextBlock);
 
             storageOperations.ValidateBlock(block);
             InsertStats count = storageOperations.InsertTransactions(block);
@@ -125,6 +127,22 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          }
 
          return await Task.FromResult(true);
+      }
+
+      public Storage.Types.SyncBlockInfo RewindToLastCompletedBlock()
+      {
+         Storage.Types.SyncBlockInfo lastBlock = storage.GetLatestBlock();
+
+         if (lastBlock == null)
+            return null;
+
+         while (lastBlock != null && lastBlock.SyncComplete == false)
+         {
+            storage.DeleteBlock(lastBlock.BlockHash);
+            lastBlock = storage.BlockByIndex(lastBlock.BlockIndex - 1);
+         }
+
+         return lastBlock;
       }
    }
 }

@@ -206,7 +206,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          int total = (int)MapBlock.Find(filter).CountDocuments();
 
          // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
-         if (offset == 0)
+         if (offset == 0 && total > 0)
          {
             offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
          }
@@ -655,6 +655,10 @@ namespace Blockcore.Indexer.Storage.Mongo
          // delete the block itself.
          FilterDefinition<MapBlock> blockFilter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
          MapBlock.DeleteOne(blockFilter);
+
+         // mark transactions that are spent by the block as unspent
+         // todo:
+
       }
 
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)

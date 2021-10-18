@@ -55,7 +55,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             {
                if (item.BlockInfo != null)
                {
-                  SyncBlockTransactionsOperation block = syncOperations.SyncBlock(syncConnection, item.BlockInfo);
+                  SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(syncConnection, item.BlockInfo);
 
                   int inputs = block.Transactions.SelectMany(s => s.Inputs).Count();
                   int outputs = block.Transactions.SelectMany(s => s.Outputs).Count();

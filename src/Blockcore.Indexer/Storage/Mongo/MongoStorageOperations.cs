@@ -121,7 +121,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                // insert inputs and add to the list for later to use on the notification task.
                var inputs = CreateInputs(item.BlockInfo.Height, items).ToList();
-               inputs.ForEach(i => data.AddBalanceRichlist(i));
+               // inputs.ForEach(i => data.AddBalanceRichlist(i));
                var outputs = CreateOutputs(items, item.BlockInfo.Height).ToList();
                inputs.AddRange(outputs);
                var queueInner = new Queue<MapTransactionAddress>(inputs);
@@ -203,17 +203,16 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             // mark the block as synced.
             CompleteBlock(item.BlockInfo);
-           
+
             // Adds data to richlist
-            IEnumerable<MapTransactionAddress> spent = stats.Items.Where(i => i.SpendingTransactionId != null);
-            foreach (MapTransactionAddress trans in spent)
-            {
-               if (trans.Addresses == null)
-               {
-                  data.RemoveBalanceRichlist(trans);
-               }       
-            }        
-            
+            //IEnumerable<MapTransactionAddress> spent = stats.Items.Where(i => i.SpendingTransactionId != null);
+            //foreach (MapTransactionAddress trans in spent)
+            //{
+            //   if (trans.Addresses == null)
+            //   {
+            //      data.RemoveBalanceRichlist(trans);
+            //   }
+            //}
          }
          else
          {
@@ -237,6 +236,12 @@ namespace Blockcore.Indexer.Storage.Mongo
          return stats;
       }
 
+      public InsertStats ProcessBlock(SyncBlockTransactionsOperation item)
+      {
+         ValidateBlock(item);
+         InsertStats count = InsertTransactions(item);
+         return count;
+      }
 
       private void CompleteBlock(BlockInfo block)
       {
@@ -360,7 +365,6 @@ namespace Blockcore.Indexer.Storage.Mongo
                   SpendingTransactionId = transaction.GetHash().ToString(),
                   SpendingBlockIndex = blockIndex,
                };
-
             }
          }
       }

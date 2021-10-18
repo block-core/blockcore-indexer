@@ -82,7 +82,7 @@ namespace Blockcore.Indexer.Sync
          return SyncPoolInternal(connection, poolTransactions);
       }
 
-      public SyncBlockTransactionsOperation SyncBlock(SyncConnection connection, BlockInfo block)
+      public SyncBlockTransactionsOperation FetchFullBlock(SyncConnection connection, BlockInfo block)
       {
          return SyncBlockInternal(connection, block);
       }
@@ -238,7 +238,7 @@ namespace Blockcore.Indexer.Sync
             {
                if (!throwIfNotFound && bce.IsTransactionNotFound())
                {
-                  //// the transaction was not found in the client, 
+                  //// the transaction was not found in the client,
                   //// if this is a pool sync we assume the transaction was initially found in the pool and became invalid.
                   return;
                }

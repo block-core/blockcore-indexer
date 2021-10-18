@@ -31,7 +31,7 @@ namespace Blockcore.Indexer.Operations
       /// <summary>
       /// The sync transactions.
       /// </summary>
-      SyncBlockTransactionsOperation SyncBlock(SyncConnection connection, BlockInfo block);
+      SyncBlockTransactionsOperation FetchFullBlock(SyncConnection connection, BlockInfo block);
 
       /// <summary>
       /// The check block reorganization.

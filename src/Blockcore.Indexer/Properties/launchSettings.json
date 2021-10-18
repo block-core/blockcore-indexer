@@ -145,7 +145,12 @@
       },
       "BTC": {
          "commandName": "Project",
-         "commandLineArgs": "--chain=BTC"
+         "commandLineArgs": "--chain=BTC",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
       }
    }
 }
