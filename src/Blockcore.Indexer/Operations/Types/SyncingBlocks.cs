@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Operations.Types
+namespace Blockcore.Indexer.Operations.Types
 {
    using System.Collections.Concurrent;
    using System.Collections.Generic;
@@ -9,6 +9,14 @@
       public ConcurrentDictionary<string, BlockInfo> CurrentSyncing { get; set; }
 
       public BlockInfo LastBlock { get; set; }
+
+      public Storage.Types.SyncBlockInfo StoreTip { get; set; }
+
+      public BlockInfo PullingTip { get; set; }
+
+      public StorageBatch StorageBatch { get; set; }
+
+      public bool ReorgMode { get; set; }
 
       public long LastClientBlockIndex { get; set; }
 

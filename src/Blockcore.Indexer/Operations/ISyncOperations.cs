@@ -6,7 +6,7 @@ namespace Blockcore.Indexer.Operations
    using Blockcore.Indexer.Client.Types;
    using Blockcore.Indexer.Operations.Types;
 
-   #endregion
+   #endregion Using Directives
 
    /// <summary>
    /// The SyncOperations interface.
@@ -36,6 +36,11 @@ namespace Blockcore.Indexer.Operations
       /// <summary>
       /// The check block reorganization.
       /// </summary>
-      Task CheckBlockReorganization(SyncConnection connection);
+      Task<Storage.Types.SyncBlockInfo> RewindToBestChain(SyncConnection connection);
+
+      /// <summary>
+      /// Delete all blocks that are not complete
+      /// </summary>
+      Storage.Types.SyncBlockInfo RewindToLastCompletedBlock();
    }
 }

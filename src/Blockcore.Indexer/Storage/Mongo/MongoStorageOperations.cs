@@ -305,11 +305,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
          data.MapBlock.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
 
-         storageBatch.TotalSize = 0;
-         storageBatch.MapBlocks.Clear();
-         storageBatch.MapTransactionBlocks.Clear();
-         storageBatch.MapTransactionAddresses.Clear();
-         storageBatch.MapTransactions.Clear();
+         storageBatch.Clear();
       }
 
       private void CompleteBlock(BlockInfo block)

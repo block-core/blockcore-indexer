@@ -23,7 +23,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly SyncConnection syncConnection;
 
-      private readonly ILogger<BlockFinder> log;
+      private readonly ILogger<BlockPuller> log;
 
       private readonly System.Diagnostics.Stopwatch watch;
 
@@ -31,13 +31,13 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       private readonly IStorageOperations storageOperations;
 
       /// <summary>
-      /// Initializes a new instance of the <see cref="BlockFinder"/> class.
+      /// Initializes a new instance of the <see cref="BlockPuller"/> class.
       /// </summary>
       public SyncBlockchainTask(
          IOptions<IndexerSettings> configuration,
          ISyncOperations syncOperations,
          SyncConnection syncConnection,
-         ILogger<BlockFinder> logger,
+         ILogger<BlockPuller> logger,
          IStorage storage,
          IStorageOperations storageOperations)
           : base(configuration, logger)

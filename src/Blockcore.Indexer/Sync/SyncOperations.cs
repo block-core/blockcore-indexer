@@ -87,28 +87,47 @@ namespace Blockcore.Indexer.Sync
          return SyncBlockInternal(connection, block);
       }
 
-      public async Task CheckBlockReorganization(SyncConnection connection)
+      public async Task<Storage.Types.SyncBlockInfo> RewindToBestChain(SyncConnection connection)
       {
+         BitcoinClient client = CryptoClientFactory.Create(connection);
+
          while (true)
          {
             Storage.Types.SyncBlockInfo block = storage.GetLatestBlock();
 
             if (block == null)
             {
-               break;
+               return null;
             }
 
-            BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
             string currentHash = await client.GetblockHashAsync(block.BlockIndex);
             if (currentHash == block.BlockHash)
             {
-               break;
+               return block;
             }
 
-            log.LogInformation($"SyncOperations: Deleting block {block.BlockIndex}");
+            log.LogDebug($"Rewinding block {block.BlockIndex}({block.BlockHash})");
 
             storage.DeleteBlock(block.BlockHash);
          }
+      }
+
+      public Storage.Types.SyncBlockInfo RewindToLastCompletedBlock()
+      {
+         Storage.Types.SyncBlockInfo lastBlock = storage.GetLatestBlock();
+
+         if (lastBlock == null)
+            return null;
+
+         while (lastBlock != null && lastBlock.SyncComplete == false)
+         {
+            log.LogDebug($"Rewinding block {lastBlock.BlockIndex}({lastBlock.BlockHash})");
+
+            storage.DeleteBlock(lastBlock.BlockHash);
+            lastBlock = storage.BlockByIndex(lastBlock.BlockIndex - 1);
+         }
+
+         return lastBlock;
       }
 
       private SyncBlockOperation GetNextBlockToSync(BitcoinClient client, SyncConnection connection, long lastCryptoBlockIndex, SyncingBlocks syncingBlocks)
