@@ -238,7 +238,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
       {
-         storageBatch.MapBlocks.Add(CreateMapBlock(item.BlockInfo));
+         storageBatch.MapBlocks.Add(item.BlockInfo.Height, CreateMapBlock(item.BlockInfo));
          storageBatch.TotalSize += item.BlockInfo.Size;
 
          storageBatch.MapTransactionBlocks.AddRange(item.Transactions.Select(s => new MapTransactionBlock
@@ -286,26 +286,28 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
-      public void PushStorageBatch(StorageBatch storageBatch)
+      public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
       {
-         data.MapBlock.InsertMany(storageBatch.MapBlocks, new InsertManyOptions { IsOrdered = false });
+         data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions { IsOrdered = false });
          data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
          data.MapTransactionAddress.BulkWrite(storageBatch.MapTransactionAddresses.Values, new BulkWriteOptions() { IsOrdered = false });
 
          if (storageBatch.MapTransactions.Any())
             data.MapTransaction.InsertMany(storageBatch.MapTransactions, new InsertManyOptions { IsOrdered = false });
 
+         string lastBlockHash = null;
          List<UpdateOneModel<MapBlock>> markBlocksAsComplete = new List<UpdateOneModel<MapBlock>>();
-         foreach (MapBlock mapBlock in storageBatch.MapBlocks.OrderBy(b => b.BlockIndex))
+         foreach (MapBlock mapBlock in storageBatch.MapBlocks.Values.OrderBy(b => b.BlockIndex))
          {
             FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
             UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
 
             markBlocksAsComplete.Add(new UpdateOneModel<MapBlock>(filter, update));
+            lastBlockHash = mapBlock.BlockHash;
          }
          data.MapBlock.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
 
-         storageBatch.Clear();
+         return storage.BlockByHash(lastBlockHash);
       }
 
       private void CompleteBlock(BlockInfo block)

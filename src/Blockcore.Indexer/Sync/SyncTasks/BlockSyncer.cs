@@ -46,7 +46,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return false;
          }
 
-
          if (TryDequeue(out SyncBlockOperation item))
          {
             watch.Restart();
@@ -60,7 +59,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   int inputs = block.Transactions.SelectMany(s => s.Inputs).Count();
                   int outputs = block.Transactions.SelectMany(s => s.Outputs).Count();
 
-                  Runner.Get<BlockStore>().Enqueue(block);
+                  Runner.Get<BlockStore>().Enqueue(null);
 
                   log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - BlockIndex = {block.BlockInfo.Height} - Transactions {block.Transactions.Count()} - Inputs {inputs} - Outputs {outputs} - ({inputs + outputs})");
                }
@@ -72,7 +71,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   int inputs = pool.Transactions.SelectMany(s => s.Inputs).Count();
                   int outputs = pool.Transactions.SelectMany(s => s.Outputs).Count();
 
-                  Runner.Get<BlockStore>().Enqueue(pool);
+                  Runner.Get<BlockStore>().Enqueue(null);
 
                   log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - Pool = Sync - Transactions {pool.Transactions.Count()} - Inputs {inputs} - Outputs {outputs} - ({inputs + outputs})");
                }

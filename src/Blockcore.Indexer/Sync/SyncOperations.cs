@@ -296,9 +296,7 @@ namespace Blockcore.Indexer.Sync
 
       private SyncBlockTransactionsOperation SyncBlockInternal(SyncConnection connection, BlockInfo block)
       {
-         System.Diagnostics.Stopwatch watch = Stopwatch.Start();
-
-         BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         BitcoinClient client = CryptoClientFactory.Create(connection);
 
          string hex = client.GetBlockHex(block.Hash);
 
@@ -309,10 +307,7 @@ namespace Blockcore.Indexer.Sync
             blockItemTransaction.PrecomputeHash(false, true);
          }
 
-         //var blockItem = Block.Load(Encoders.Hex.DecodeData(hex), consensusFactory);
-         var returnBlock = new SyncBlockTransactionsOperation { BlockInfo = block, Transactions = blockItem.Transactions };  //this.SyncBlockTransactions(client, connection, block.Transactions, true);
-
-         watch.Stop();
+         var returnBlock = new SyncBlockTransactionsOperation { BlockInfo = block, Transactions = blockItem.Transactions };
 
          return returnBlock;
       }

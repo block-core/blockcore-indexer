@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Blockcore.Indexer.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Sync.SyncTasks
 {
@@ -16,7 +17,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    /// <summary>
    /// The block sync.
    /// </summary>
-   public class BlockStore : TaskRunner<SyncBlockTransactionsOperation>
+   public class BlockStore : TaskRunner<StorageBatch>
    {
       private readonly ILogger<BlockStore> log;
 
@@ -26,6 +27,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       private readonly SyncConnection syncConnection;
 
       private readonly System.Diagnostics.Stopwatch watch;
+      private readonly Queue<(long count, long size, double seconds)> insertStats;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockStore"/> class.
@@ -43,9 +45,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          this.syncConnection = syncConnection;
          log = logger;
          watch = Stopwatch.Start();
+         insertStats = new Queue<(long count, long size, double seconds)>();
       }
-
-      private Queue<(int, long, double)> inserts = new Queue<(int, long, double)>();
 
       /// <inheritdoc />
       public override async Task<bool> OnExecute()
@@ -54,45 +55,47 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToBestChain(syncConnection);
             Runner.SyncingBlocks.PullingTip = null;
-            Runner.SyncingBlocks.StorageBatch.Clear();
+            Queue.Clear();
             Runner.SyncingBlocks.ReorgMode = false;
             return false;
          }
 
-         if (TryDequeue(out SyncBlockTransactionsOperation item))
+         if (TryDequeue(out StorageBatch item))
          {
-            // watch.Restart();
+            // log.LogDebug($"Add to batch block = {item.BlockInfo.Height}({item.BlockInfo.Hash}) batch size = {(decimal)Runner.SyncingBlocks.StorageBatch.TotalSize / 1000000}mb");
 
-            // storageOperations.ValidateBlock(item);
-
-            // InsertStats count = storageOperations.InsertTransactions(item);
-
-            storageOperations.AddToStorageBatch(Runner.SyncingBlocks.StorageBatch, item);
-
-            log.LogDebug($"Add to batch block = {item.BlockInfo.Height}({item.BlockInfo.Hash}) batch size = {(decimal)Runner.SyncingBlocks.StorageBatch.TotalSize / 1000000}mb");
-
-            if (Runner.SyncingBlocks.StorageBatch.TotalSize > 20000000) // 10000000)
+            // check all blocks are consecutive and start from the last block in store.
+            string prevHash = Runner.SyncingBlocks.StoreTip.BlockHash;
+            foreach (MapBlock mapBlock in item.MapBlocks.Values.OrderBy(b => b.BlockIndex))
             {
-               int count = Runner.SyncingBlocks.StorageBatch.MapBlocks.Count;
-               long size = Runner.SyncingBlocks.StorageBatch.TotalSize;
+               if (mapBlock.PreviousBlockHash != prevHash)
+               {
+                  throw new ApplicationException("None consecutive block received");
+               }
 
-               watch.Restart();
-
-               storageOperations.PushStorageBatch(Runner.SyncingBlocks.StorageBatch);
-
-               watch.Stop();
-
-               inserts.Enqueue((count, size, watch.Elapsed.TotalSeconds));
-
-               if (inserts.Count > 100)
-                  inserts.Dequeue();
-
-               int totalBlocks = inserts.Sum((tuple => tuple.Item1));
-               double totalSeconds = inserts.Sum((tuple => tuple.Item3));
-               double avg = totalSeconds / totalBlocks;
-
-               log.LogDebug($"Pushed {count} blocks total Size = {(decimal)size / 1000000}mb Seconds = {watch.Elapsed.TotalSeconds} avg insert {avg:0.00} blocks per second");
+               prevHash = mapBlock.BlockHash;
             }
+
+            long count = item.MapBlocks.Count;
+            long size = item.TotalSize;
+
+            watch.Restart();
+
+            Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(item);
+
+            watch.Stop();
+
+            insertStats.Enqueue((count, size, watch.Elapsed.TotalSeconds));
+
+            if (insertStats.Count > 100)
+               insertStats.Dequeue();
+
+            long totalBlocks = insertStats.Sum((tuple => tuple.count));
+            double totalSeconds = insertStats.Sum((tuple => tuple.seconds));
+            double avgBlocks = totalBlocks / totalSeconds;
+            double avgSeconds = totalSeconds / totalBlocks;
+
+            log.LogDebug($"Pushed {count} blocks tip = {Runner.SyncingBlocks.StoreTip.BlockIndex}({Runner.SyncingBlocks.StoreTip.BlockHash}) total Size = {((decimal)size / 1000000):0.00}mb Seconds = {watch.Elapsed.TotalSeconds} avg insert {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b)");
 
             //if (item.BlockInfo != null)
             //{

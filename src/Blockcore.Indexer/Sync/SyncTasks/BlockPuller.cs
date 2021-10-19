@@ -28,6 +28,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       private readonly IStorageOperations storageOperations;
       private readonly System.Diagnostics.Stopwatch watch;
 
+      private StorageBatch currentStorageBatch;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockPuller"/> class.
       /// </summary>
@@ -56,9 +58,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return true;
          }
 
-         SyncingBlocks syncingBlocks = Runner.SyncingBlocks;
-
-         if (syncingBlocks.Blocked)
+         if (Runner.SyncingBlocks.Blocked)
          {
             return false;
          }
@@ -79,7 +79,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          if (Runner.SyncingBlocks.PullingTip == null)
          {
+            // start pulling blocks form this tip
             Runner.SyncingBlocks.PullingTip = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
+            currentStorageBatch = new StorageBatch();
+
+            log.LogDebug($"Fetching block started at block {Runner.SyncingBlocks.PullingTip.Height}({Runner.SyncingBlocks.PullingTip.Hash})");
          }
 
          // fetch the next block form the fullnode
@@ -98,6 +102,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             log.LogDebug($"Reorg detected on block = {Runner.SyncingBlocks.PullingTip.Height} - ({Runner.SyncingBlocks.PullingTip.Hash})");
 
+            // reorgs are sorted at the store task
             Runner.SyncingBlocks.ReorgMode = true;
             return false;
          }
@@ -105,18 +110,30 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          // build mongod data from that block
          SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(syncConnection, nextBlock);
 
-         if (block == null || block.BlockInfo == null)
+         if (block?.BlockInfo == null)
          {
             throw new ApplicationException("Block was not found.");
          }
 
+         storageOperations.AddToStorageBatch(currentStorageBatch, block);
+
          watch.Stop();
 
-         log.LogDebug($"Fetched block = {nextBlock.Height}({nextHash}) Transactions = {nextBlock.Transactions.Count()} Size = {(decimal)nextBlock.Size / 1000000}mb Seconds = {watch.Elapsed.TotalSeconds}");
+         //log.LogDebug($"Fetched block = {nextBlock.Height}({nextHash}) Transactions = {nextBlock.Transactions.Count()} Size = {(decimal)nextBlock.Size / 1000000}mb Seconds = {watch.Elapsed.TotalSeconds} batch size = {(decimal)Runner.SyncingBlocks.CurrentStorageBatch.TotalSize / 1000000}mb");
 
          //log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - SyncedIndex = {block.BlockInfo.Height}/{Runner.SyncingBlocks.LastClientBlockIndex} - {Runner.SyncingBlocks.LastClientBlockIndex - block.BlockInfo.Height}");
 
-         Runner.Get<BlockStore>().Enqueue(block);
+         long nodeTip = syncOperations.GetBlockCount(client);
+         // DateTime blockTime = nextBlock.Time.UnixTimeStampToDateTime();
+         bool ibd = nodeTip - nextBlock.Height > 20;
+
+         if (!ibd || currentStorageBatch.MapBlocks.Count > 1000 || currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
+         {
+            log.LogDebug($"Batch of {currentStorageBatch.MapBlocks.Count} blocks created at height = {nextBlock.Height}({nextHash}) batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb");
+
+            Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
+            currentStorageBatch = new StorageBatch();
+         }
 
          Runner.SyncingBlocks.PullingTip = nextBlock;
 

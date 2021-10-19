@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace Blockcore.Indexer.Operations.Types
 {
    #region Using Directives
@@ -11,17 +13,8 @@ namespace Blockcore.Indexer.Operations.Types
    {
       public long TotalSize { get; set; }
       public Dictionary<string, MongoDB.Driver.WriteModel<MapTransactionAddress>> MapTransactionAddresses { get; set; } = new Dictionary<string, MongoDB.Driver.WriteModel<MapTransactionAddress>>();
-      public List<Storage.Mongo.Types.MapTransactionBlock> MapTransactionBlocks { get; set; } = new List<Storage.Mongo.Types.MapTransactionBlock>();
-      public List<Storage.Mongo.Types.MapBlock> MapBlocks { get; set; } = new List<Storage.Mongo.Types.MapBlock>();
-      public List<Storage.Mongo.Types.MapTransaction> MapTransactions { get; set; } = new List<Storage.Mongo.Types.MapTransaction>();
-
-      public void Clear()
-      {
-         TotalSize = 0;
-         MapBlocks.Clear();
-         MapTransactionBlocks.Clear();
-         MapTransactionAddresses.Clear();
-         MapTransactions.Clear();
-      }
+      public List<MapTransactionBlock> MapTransactionBlocks { get; set; } = new List<MapTransactionBlock>();
+      public Dictionary<long, MapBlock> MapBlocks { get; set; } = new Dictionary<long, MapBlock>();
+      public List<MapTransaction> MapTransactions { get; set; } = new List<MapTransaction>();
    }
 }

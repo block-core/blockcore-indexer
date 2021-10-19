@@ -1,3 +1,5 @@
+using Blockcore.Indexer.Client;
+
 namespace Blockcore.Indexer.Operations
 {
    #region Using Directives
@@ -42,5 +44,10 @@ namespace Blockcore.Indexer.Operations
       /// Delete all blocks that are not complete
       /// </summary>
       Storage.Types.SyncBlockInfo RewindToLastCompletedBlock();
+
+      /// <summary>
+      /// Gets the height of the last block on the node.
+      /// </summary>
+      long GetBlockCount(BitcoinClient client);
    }
 }

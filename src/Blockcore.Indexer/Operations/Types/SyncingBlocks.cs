@@ -14,8 +14,6 @@ namespace Blockcore.Indexer.Operations.Types
 
       public BlockInfo PullingTip { get; set; }
 
-      public StorageBatch StorageBatch { get; set; }
-
       public bool ReorgMode { get; set; }
 
       public long LastClientBlockIndex { get; set; }
