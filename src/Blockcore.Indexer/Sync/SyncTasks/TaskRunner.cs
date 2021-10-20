@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Sync.SyncTasks
+namespace Blockcore.Indexer.Sync.SyncTasks
 {
    using System;
    using System.Threading;
@@ -55,7 +55,6 @@
                 catch (OperationCanceledException)
                 {
                    // do nothing the task was cancel.
-                   throw;
                 }
                 catch (Exception ex)
                 {

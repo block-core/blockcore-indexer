@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Blockcore.Indexer
 {
    using Microsoft.AspNetCore.Hosting;
@@ -15,18 +17,27 @@ namespace Blockcore.Indexer
 
       public static IHostBuilder CreateHostBuilder(string[] args) =>
           Host.CreateDefaultBuilder(args)
-         .ConfigureAppConfiguration(config =>
-         {
-            config.AddBlockcore("Blockore Indexer", args);
-         })
-         .ConfigureWebHostDefaults(webBuilder =>
-         {
-            webBuilder.ConfigureKestrel(serverOptions =>
+             .ConfigureServices((hostContext, services) =>
+             {
+                services.Configure<HostOptions>(option =>
+                {
+                   // the BlockStore task can take long time to complete
+                   // to avoid rewind on shutdown we allow it extra time
+                   option.ShutdownTimeout = System.TimeSpan.FromSeconds(20);
+                });
+             })
+            .ConfigureAppConfiguration(config =>
             {
-               serverOptions.AddServerHeader = false;
-            });
+               config.AddBlockcore("Blockore Indexer", args);
+            })
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+               webBuilder.ConfigureKestrel(serverOptions =>
+               {
+                  serverOptions.AddServerHeader = false;
+               });
 
-            webBuilder.UseStartup<Startup>();
-         });
+               webBuilder.UseStartup<Startup>();
+            });
    }
 }

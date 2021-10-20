@@ -85,6 +85,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             watch.Stop();
 
+            if (Runner.SyncingBlocks.StoreTip == null)
+               throw new ApplicationException("Store tip was not persisted");
+
             insertStats.Enqueue((count, size, watch.Elapsed.TotalSeconds));
 
             if (insertStats.Count > 100)
