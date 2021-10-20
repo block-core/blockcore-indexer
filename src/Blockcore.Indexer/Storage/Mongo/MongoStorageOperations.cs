@@ -292,8 +292,22 @@ namespace Blockcore.Indexer.Storage.Mongo
          data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
          data.MapTransactionAddress.BulkWrite(storageBatch.MapTransactionAddresses.Values, new BulkWriteOptions() { IsOrdered = false });
 
-         if (storageBatch.MapTransactions.Any())
-            data.MapTransaction.InsertMany(storageBatch.MapTransactions, new InsertManyOptions { IsOrdered = false });
+         try
+         {
+            if (storageBatch.MapTransactions.Any())
+               data.MapTransaction.InsertMany(storageBatch.MapTransactions, new InsertManyOptions { IsOrdered = false });
+         }
+         catch (MongoBulkWriteException mbwex)
+         {
+            // in cases of reorgs trx are not deleted from the store,
+            // if a trx is already written and we attempt to write it again
+            // the write will fail and throw, so we ignore such errors.
+            // (IsOrdered = false will attempt all entries and only throw when done)
+            if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))//.Message.Contains("E11000 duplicate key error collection"))
+            {
+               throw;
+            }
+         }
 
          string lastBlockHash = null;
          List<UpdateOneModel<MapBlock>> markBlocksAsComplete = new List<UpdateOneModel<MapBlock>>();
