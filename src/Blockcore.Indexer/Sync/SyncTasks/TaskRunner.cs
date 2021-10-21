@@ -45,7 +45,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                          continue;
                       }
 
-                      log.LogDebug($"TaskRunner-{GetType().Name} Delay = {Delay.TotalSeconds}");
+                      //log.LogDebug($"TaskRunner-{GetType().Name} Delay = {Delay.TotalSeconds}");
 
                       cancellationToken.ThrowIfCancellationRequested();
 
