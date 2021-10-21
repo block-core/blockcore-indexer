@@ -18,11 +18,6 @@ namespace Blockcore.Indexer.Operations
       /// <summary>
       /// The sync block.
       /// </summary>
-      SyncBlockOperation FindBlock(SyncConnection connection, SyncingBlocks container);
-
-      /// <summary>
-      /// The sync block.
-      /// </summary>
       SyncPoolTransactions FindPoolTransactions(SyncConnection connection, SyncingBlocks container);
 
       /// <summary>

@@ -95,6 +95,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return false;
          }
 
+         // update the chains tip
+         Runner.SyncingBlocks.ChainTipHeight = syncOperations.GetBlockCount(client);
+
          BlockInfo nextBlock = await client.GetBlockAsync(nextHash);
 
          // check if the next block prev hash is the same as our current tip
@@ -119,13 +122,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          watch.Stop();
 
-         //log.LogDebug($"Fetched block = {nextBlock.Height}({nextHash}) Transactions = {nextBlock.Transactions.Count()} Size = {(decimal)nextBlock.Size / 1000000}mb Seconds = {watch.Elapsed.TotalSeconds} batch size = {(decimal)Runner.SyncingBlocks.CurrentStorageBatch.TotalSize / 1000000}mb");
-
-         //log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - SyncedIndex = {block.BlockInfo.Height}/{Runner.SyncingBlocks.LastClientBlockIndex} - {Runner.SyncingBlocks.LastClientBlockIndex - block.BlockInfo.Height}");
-
-         long nodeTip = syncOperations.GetBlockCount(client);
-         // DateTime blockTime = nextBlock.Time.UnixTimeStampToDateTime();
-         bool ibd = nodeTip - nextBlock.Height > 20;
+         bool ibd = Runner.SyncingBlocks.ChainTipHeight - nextBlock.Height > 20;
 
          if (!ibd || currentStorageBatch.MapBlocks.Count > 1000 || currentStorageBatch.TotalSize > 5000000) // 5000000) // 10000000) todo: add this to config
          {

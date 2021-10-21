@@ -62,8 +62,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          if (TryDequeue(out StorageBatch item))
          {
-            // log.LogDebug($"Add to batch block = {item.BlockInfo.Height}({item.BlockInfo.Hash}) batch size = {(decimal)Runner.SyncingBlocks.StorageBatch.TotalSize / 1000000}mb");
-
             // check all blocks are consecutive and start from the last block in store.
             string prevHash = Runner.SyncingBlocks.StoreTip.BlockHash;
             foreach (MapBlock mapBlock in item.MapBlocks.Values.OrderBy(b => b.BlockIndex))
@@ -76,9 +74,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                prevHash = mapBlock.BlockHash;
             }
 
-            long count = item.MapBlocks.Count;
-            long size = item.TotalSize;
-
             watch.Restart();
 
             Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(item);
@@ -88,7 +83,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             if (Runner.SyncingBlocks.StoreTip == null)
                throw new ApplicationException("Store tip was not persisted");
 
-            insertStats.Enqueue((count, size, watch.Elapsed.TotalSeconds));
+            insertStats.Enqueue((item.MapBlocks.Count, item.TotalSize, watch.Elapsed.TotalSeconds));
 
             if (insertStats.Count > 100)
                insertStats.Dequeue();
@@ -98,28 +93,10 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             double avgBlocks = totalBlocks / totalSeconds;
             double avgSeconds = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Pushed {count} blocks tip = {Runner.SyncingBlocks.StoreTip.BlockIndex}({Runner.SyncingBlocks.StoreTip.BlockHash}) total Size = {((decimal)size / 1000000):0.00}mb Seconds = {watch.Elapsed.TotalSeconds} avg insert {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b)");
-
-            //if (item.BlockInfo != null)
-            //{
-            //   if (!Runner.SyncingBlocks.CurrentSyncing.TryRemove(item.BlockInfo.Hash, out BlockInfo blockInfo))
-            //   {
-            //      throw new Exception(string.Format("Failed to remove block hash {0} from collection", item.BlockInfo.Hash));
-            //   }
-
-            //   syncConnection.RecentItems.Add((DateTime.UtcNow, watch.Elapsed, item.BlockInfo.Size));
-            //}
+            log.LogDebug($"Pushed {item.MapBlocks.Count} blocks tip = {Runner.SyncingBlocks.StoreTip.BlockIndex}({Runner.SyncingBlocks.StoreTip.BlockHash}) total Size = {((decimal)item.TotalSize / 1000000):0.00}mb Seconds = {watch.Elapsed.TotalSeconds} avg insert {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b)");
 
             var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
             Runner.Get<Notifier>().Enqueue(notifications);
-
-            //  watch.Stop();
-
-            //string message = item.BlockInfo != null ?
-            //    string.Format("Seconds = {0} - BlockIndex = {1} - TotalItems = {2} - Size = {3} kb", watch.Elapsed.TotalSeconds, item.BlockInfo.Height, count.Transactions + count.InputsOutputs, item.BlockInfo.Size) :
-            //    string.Format("Seconds = {0} - PoolSync - TotalItems = {1}", watch.Elapsed.TotalSeconds, count.Transactions + count.InputsOutputs);
-
-            //log.LogDebug(message);
 
             return await Task.FromResult(true);
          }

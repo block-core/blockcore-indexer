@@ -236,6 +236,29 @@ namespace Blockcore.Indexer.Storage.Mongo
          return stats;
       }
 
+      public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
+      {
+         var stats = new InsertStats { Items = new List<MapTransactionAddress>() };
+
+         // memory transaction push in to the pool.
+         item.Transactions.ForEach(t =>
+         {
+            data.MemoryTransactions.TryAdd(t.GetHash().ToString(), t);
+         });
+
+         stats.Transactions = data.MemoryTransactions.Count();
+
+         // todo: for accuracy - remove transactions from the mongo memory pool that are not anymore in the syncing pool
+         // remove all transactions from the memory pool
+         // this can be done using the SyncingBlocks objects - see method SyncOperations.FindPoolInternal()
+
+         // add to the list for later to use on the notification task.
+         var inputs = CreateInputs(-1, item.Transactions).ToList();
+         stats.Items.AddRange(inputs);
+
+         return stats;
+      }
+
       public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
       {
          storageBatch.MapBlocks.Add(item.BlockInfo.Height, CreateMapBlock(item.BlockInfo));
@@ -288,6 +311,15 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
       {
+         if (!data.MemoryTransactions.IsEmpty)
+         {
+            // remove all transactions from the memory pool
+            storageBatch.MapTransactions.ForEach(t =>
+            {
+               data.MemoryTransactions.TryRemove(t.TransactionId, out Transaction outer);
+            });
+         }
+
          data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions { IsOrdered = false });
          data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
          data.MapTransactionAddress.BulkWrite(storageBatch.MapTransactionAddresses.Values, new BulkWriteOptions() { IsOrdered = false });

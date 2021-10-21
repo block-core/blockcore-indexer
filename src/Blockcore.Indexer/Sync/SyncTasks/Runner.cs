@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Sync.SyncTasks
+namespace Blockcore.Indexer.Sync.SyncTasks
 {
    using System.Collections.Concurrent;
    using System.Collections.Generic;
@@ -31,7 +31,7 @@
       {
          this.taskStarters = taskStarters;
          this.taskRunners = taskRunners;
-         SyncingBlocks = new SyncingBlocks { CurrentSyncing = new ConcurrentDictionary<string, BlockInfo>(), CurrentPoolSyncing = new List<string>() };
+         SyncingBlocks = new SyncingBlocks { LocalMempoolView = new List<string>() };
       }
 
       public SyncingBlocks SyncingBlocks { get; set; }
@@ -39,24 +39,6 @@
       public T Get<T>() where T : TaskRunner
       {
          return taskRunners.OfType<T>().Single();
-      }
-
-      public void BlockAndDeplete()
-      {
-         SyncingBlocks.Blocked = true;
-
-         taskRunners.OfType<IBlockableItem>().ForEach(f => f.Blocked = true);
-         taskRunners.OfType<IBlockableItem>().ForEach(f => f.Deplete());
-
-         SyncingBlocks.LastBlock = null;
-         SyncingBlocks.CurrentPoolSyncing.Clear();
-         SyncingBlocks.CurrentSyncing.Clear();
-      }
-
-      public void UnBlock()
-      {
-         taskRunners.OfType<IBlockableItem>().ForEach(f => f.Blocked = false);
-         SyncingBlocks.Blocked = false;
       }
 
       /// <summary>

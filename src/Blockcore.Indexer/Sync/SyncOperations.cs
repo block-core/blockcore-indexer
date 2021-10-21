@@ -67,11 +67,6 @@ namespace Blockcore.Indexer.Sync
          return cacheEntry;
       }
 
-      public SyncBlockOperation FindBlock(SyncConnection connection, SyncingBlocks container)
-      {
-         return FindBlockInternal(connection, container);
-      }
-
       public SyncPoolTransactions FindPoolTransactions(SyncConnection connection, SyncingBlocks container)
       {
          return FindPoolInternal(connection, container);
@@ -130,108 +125,20 @@ namespace Blockcore.Indexer.Sync
          return lastBlock;
       }
 
-      private SyncBlockOperation GetNextBlockToSync(BitcoinClient client, SyncConnection connection, long lastCryptoBlockIndex, SyncingBlocks syncingBlocks)
-      {
-         if (syncingBlocks.LastBlock == null)
-         {
-            // because inserting blocks is sequential we'll use the indexed 'height' filed to check if the last block is incomplete.
-            var incomplete = storage.BlockGetBlockCount(6).Where(b => !b.SyncComplete).ToList(); ////this.storage.BlockGetIncompleteBlocks().ToList();
-
-            Storage.Types.SyncBlockInfo incompleteToSync = incomplete.OrderBy(o => o.BlockIndex).FirstOrDefault(f => !syncingBlocks.CurrentSyncing.ContainsKey(f.BlockHash));
-
-            if (incompleteToSync != null)
-            {
-               BlockInfo incompleteBlock = client.GetBlock(incompleteToSync.BlockHash);
-
-               return new SyncBlockOperation { BlockInfo = incompleteBlock, IncompleteBlock = true, LastCryptoBlockIndex = lastCryptoBlockIndex };
-            }
-
-            string blockHashsToSync;
-
-            var blocks = storage.BlockGetBlockCount(1).ToList();
-
-            if (blocks.Any())
-            {
-               long lastBlockIndex = blocks.First().BlockIndex;
-
-               if (lastBlockIndex == lastCryptoBlockIndex)
-               {
-                  // No new blocks.
-                  return default(SyncBlockOperation);
-               }
-
-               blockHashsToSync = client.GetblockHash(lastBlockIndex + 1);
-            }
-            else
-            {
-               // No blocks in store start from zero configured block index.
-               blockHashsToSync = client.GetblockHash(connection.StartBlockIndex);
-            }
-
-            BlockInfo nextNewBlock = client.GetBlock(blockHashsToSync);
-
-            syncingBlocks.LastBlock = nextNewBlock;
-
-            return new SyncBlockOperation { BlockInfo = nextNewBlock, LastCryptoBlockIndex = lastCryptoBlockIndex };
-         }
-
-         if (syncingBlocks.LastBlock.Height == lastCryptoBlockIndex)
-         {
-            // No new blocks.
-            return default(SyncBlockOperation);
-         }
-
-         string nextHash = client.GetblockHash(syncingBlocks.LastBlock.Height + 1);
-
-         BlockInfo nextBlock = client.GetBlock(nextHash);
-
-         syncingBlocks.LastBlock = nextBlock;
-
-         return new SyncBlockOperation { BlockInfo = nextBlock, LastCryptoBlockIndex = lastCryptoBlockIndex };
-      }
-
-      private SyncBlockOperation FindBlockInternal(SyncConnection connection, SyncingBlocks syncingBlocks)
-      {
-         watch.Restart();
-
-         BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
-
-         syncingBlocks.LastClientBlockIndex = GetBlockCount(client);
-
-         SyncBlockOperation blockToSync = GetNextBlockToSync(client, connection, syncingBlocks.LastClientBlockIndex, syncingBlocks);
-
-         if (blockToSync != null && blockToSync.BlockInfo != null)
-         {
-            syncingBlocks.CurrentSyncing.TryAdd(blockToSync.BlockInfo.Hash, blockToSync.BlockInfo);
-         }
-
-         watch.Stop();
-
-         return blockToSync;
-      }
-
       private SyncPoolTransactions FindPoolInternal(SyncConnection connection, SyncingBlocks syncingBlocks)
       {
-         watch.Restart();
-
-         BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         BitcoinClient client = CryptoClientFactory.Create(connection);
 
          IEnumerable<string> memPool = client.GetRawMemPool();
 
          var currentMemoryPool = new HashSet<string>(memPool);
-         var currentTable = new HashSet<string>(syncingBlocks.CurrentPoolSyncing);
+         var currentTable = new HashSet<string>(syncingBlocks.LocalMempoolView);
 
          var newTransactions = currentMemoryPool.Except(currentTable).ToList();
          var deleteTransaction = currentTable.Except(currentMemoryPool).ToList();
 
-         //var newTransactionsLimited = newTransactions.Count() < 1000 ? newTransactions : newTransactions.Take(1000).ToList();
-
-         syncingBlocks.CurrentPoolSyncing.AddRange(newTransactions);
-         deleteTransaction.ForEach(t => syncingBlocks.CurrentPoolSyncing.Remove(t));
-
-         watch.Stop();
-
-         log.LogDebug($"SyncPool: Seconds = {watch.Elapsed.TotalSeconds} - New Transactions = {newTransactions.Count()}");
+         syncingBlocks.LocalMempoolView.AddRange(newTransactions);
+         deleteTransaction.ForEach(t => syncingBlocks.LocalMempoolView.Remove(t));
 
          return new SyncPoolTransactions { Transactions = newTransactions };
       }
@@ -278,18 +185,9 @@ namespace Blockcore.Indexer.Sync
 
       private SyncBlockTransactionsOperation SyncPoolInternal(SyncConnection connection, SyncPoolTransactions poolTransactions)
       {
-         watch.Restart();
-
-         BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         BitcoinClient client = CryptoClientFactory.Create(connection);
 
          SyncBlockTransactionsOperation returnBlock = SyncBlockTransactions(client, connection, poolTransactions.Transactions, false);
-
-         watch.Stop();
-
-         int transactionCount = returnBlock.Transactions.Count();
-         double totalSeconds = watch.Elapsed.TotalSeconds;
-
-         log.LogDebug($"SyncPool: Seconds = {watch.Elapsed.TotalSeconds} - Transactions = {transactionCount}");
 
          return returnBlock;
       }
