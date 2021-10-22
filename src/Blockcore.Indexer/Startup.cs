@@ -51,14 +51,13 @@ namespace Blockcore.Indexer
          services.AddSingleton<IPagingHelper, PagingHelper>();
          services.AddScoped<Runner>();
 
-         services.AddScoped<TaskRunner, BlockFinder>();
-         services.AddScoped<TaskRunner, BlockStore>();
-         services.AddScoped<TaskRunner, BlockSyncer>();
-         services.AddScoped<TaskRunner, PoolFinder>();
+         services.AddScoped<TaskRunner, MempoolPuller>();
          services.AddScoped<TaskRunner, Notifier>();
          services.AddScoped<TaskRunner, StatsSyncer>(); // Update peer information every 5 minute.
 
-         services.AddScoped<TaskStarter, BlockReorger>();
+         services.AddScoped<TaskRunner, BlockPuller>();
+         services.AddScoped<TaskRunner, BlockStore>();
+         services.AddScoped<TaskStarter, BlockStartup>();
 
          services.AddResponseCompression();
          services.AddMemoryCache();
@@ -147,7 +146,7 @@ namespace Blockcore.Indexer
          });
       }
 
-      static string XmlCommentsFilePath
+      private static string XmlCommentsFilePath
       {
          get
          {

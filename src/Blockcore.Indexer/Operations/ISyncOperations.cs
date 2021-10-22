@@ -1,3 +1,5 @@
+using Blockcore.Indexer.Client;
+
 namespace Blockcore.Indexer.Operations
 {
    #region Using Directives
@@ -6,18 +8,13 @@ namespace Blockcore.Indexer.Operations
    using Blockcore.Indexer.Client.Types;
    using Blockcore.Indexer.Operations.Types;
 
-   #endregion
+   #endregion Using Directives
 
    /// <summary>
    /// The SyncOperations interface.
    /// </summary>
    public interface ISyncOperations
    {
-      /// <summary>
-      /// The sync block.
-      /// </summary>
-      SyncBlockOperation FindBlock(SyncConnection connection, SyncingBlocks container);
-
       /// <summary>
       /// The sync block.
       /// </summary>
@@ -31,11 +28,21 @@ namespace Blockcore.Indexer.Operations
       /// <summary>
       /// The sync transactions.
       /// </summary>
-      SyncBlockTransactionsOperation SyncBlock(SyncConnection connection, BlockInfo block);
+      SyncBlockTransactionsOperation FetchFullBlock(SyncConnection connection, BlockInfo block);
 
       /// <summary>
       /// The check block reorganization.
       /// </summary>
-      Task CheckBlockReorganization(SyncConnection connection);
+      Task<Storage.Types.SyncBlockInfo> RewindToBestChain(SyncConnection connection);
+
+      /// <summary>
+      /// Delete all blocks that are not complete
+      /// </summary>
+      Storage.Types.SyncBlockInfo RewindToLastCompletedBlock();
+
+      /// <summary>
+      /// Gets the height of the last block on the node.
+      /// </summary>
+      long GetBlockCount(BitcoinClient client);
    }
 }

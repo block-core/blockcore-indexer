@@ -121,7 +121,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                // insert inputs and add to the list for later to use on the notification task.
                var inputs = CreateInputs(item.BlockInfo.Height, items).ToList();
-               inputs.ForEach(i => data.AddBalanceRichlist(i));
+               // inputs.ForEach(i => data.AddBalanceRichlist(i));
                var outputs = CreateOutputs(items, item.BlockInfo.Height).ToList();
                inputs.AddRange(outputs);
                var queueInner = new Queue<MapTransactionAddress>(inputs);
@@ -203,17 +203,16 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             // mark the block as synced.
             CompleteBlock(item.BlockInfo);
-           
+
             // Adds data to richlist
-            IEnumerable<MapTransactionAddress> spent = stats.Items.Where(i => i.SpendingTransactionId != null);
-            foreach (MapTransactionAddress trans in spent)
-            {
-               if (trans.Addresses == null)
-               {
-                  data.RemoveBalanceRichlist(trans);
-               }       
-            }        
-            
+            //IEnumerable<MapTransactionAddress> spent = stats.Items.Where(i => i.SpendingTransactionId != null);
+            //foreach (MapTransactionAddress trans in spent)
+            //{
+            //   if (trans.Addresses == null)
+            //   {
+            //      data.RemoveBalanceRichlist(trans);
+            //   }
+            //}
          }
          else
          {
@@ -237,6 +236,125 @@ namespace Blockcore.Indexer.Storage.Mongo
          return stats;
       }
 
+      public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
+      {
+         var stats = new InsertStats { Items = new List<MapTransactionAddress>() };
+
+         // memory transaction push in to the pool.
+         item.Transactions.ForEach(t =>
+         {
+            data.MemoryTransactions.TryAdd(t.GetHash().ToString(), t);
+         });
+
+         stats.Transactions = data.MemoryTransactions.Count();
+
+         // todo: for accuracy - remove transactions from the mongo memory pool that are not anymore in the syncing pool
+         // remove all transactions from the memory pool
+         // this can be done using the SyncingBlocks objects - see method SyncOperations.FindPoolInternal()
+
+         // add to the list for later to use on the notification task.
+         var inputs = CreateInputs(-1, item.Transactions).ToList();
+         stats.Items.AddRange(inputs);
+
+         return stats;
+      }
+
+      public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
+      {
+         storageBatch.MapBlocks.Add(item.BlockInfo.Height, CreateMapBlock(item.BlockInfo));
+         storageBatch.TotalSize += item.BlockInfo.Size;
+
+         storageBatch.MapTransactionBlocks.AddRange(item.Transactions.Select(s => new MapTransactionBlock
+         {
+            BlockIndex = item.BlockInfo.Height,
+            TransactionId = s.GetHash().ToString()
+         }));
+
+         IEnumerable<MapTransactionAddress> inputs = CreateInputs(item.BlockInfo.Height, item.Transactions);
+         foreach (MapTransactionAddress mapTransactionAddress in inputs)
+         {
+            storageBatch.MapTransactionAddresses.Add(mapTransactionAddress.Id, new InsertOneModel<MapTransactionAddress>(mapTransactionAddress));
+         }
+
+         IEnumerable<MapTransactionAddress> outputs = CreateOutputs(item.Transactions, item.BlockInfo.Height);
+         foreach (MapTransactionAddress mapTransactionAddress in outputs)
+         {
+            if (storageBatch.MapTransactionAddresses.TryGetValue(mapTransactionAddress.Id, out WriteModel<MapTransactionAddress> MapTransactionAddressOut))
+            {
+               // in case a utxo is spent in the same block we just modify the inserted item directly
+
+               var imta = MapTransactionAddressOut as InsertOneModel<MapTransactionAddress>;
+               imta.Document.SpendingTransactionId = mapTransactionAddress.SpendingTransactionId;
+               imta.Document.SpendingBlockIndex = mapTransactionAddress.SpendingBlockIndex;
+            }
+            else
+            {
+               FilterDefinition<MapTransactionAddress> filter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.Id, mapTransactionAddress.Id);
+
+               UpdateDefinition<MapTransactionAddress> update = Builders<MapTransactionAddress>.Update
+                   .Set(blockInfo => blockInfo.SpendingTransactionId, mapTransactionAddress.SpendingTransactionId)
+                   .Set(blockInfo => blockInfo.SpendingBlockIndex, mapTransactionAddress.SpendingBlockIndex);
+
+               storageBatch.MapTransactionAddresses.Add(mapTransactionAddress.Id, new UpdateOneModel<MapTransactionAddress>(filter, update));
+            }
+         }
+
+         if (configuration.StoreRawTransactions)
+         {
+            storageBatch.MapTransactions.AddRange(item.Transactions.Select(t => new MapTransaction
+            {
+               TransactionId = t.GetHash().ToString(),
+               RawTransaction = t.ToBytes(syncConnection.Network.Consensus.ConsensusFactory)
+            }));
+         }
+      }
+
+      public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
+      {
+         if (!data.MemoryTransactions.IsEmpty)
+         {
+            // remove all transactions from the memory pool
+            storageBatch.MapTransactions.ForEach(t =>
+            {
+               data.MemoryTransactions.TryRemove(t.TransactionId, out Transaction outer);
+            });
+         }
+
+         data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions { IsOrdered = false });
+         data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
+         data.MapTransactionAddress.BulkWrite(storageBatch.MapTransactionAddresses.Values, new BulkWriteOptions() { IsOrdered = false });
+
+         try
+         {
+            if (storageBatch.MapTransactions.Any())
+               data.MapTransaction.InsertMany(storageBatch.MapTransactions, new InsertManyOptions { IsOrdered = false });
+         }
+         catch (MongoBulkWriteException mbwex)
+         {
+            // in cases of reorgs trx are not deleted from the store,
+            // if a trx is already written and we attempt to write it again
+            // the write will fail and throw, so we ignore such errors.
+            // (IsOrdered = false will attempt all entries and only throw when done)
+            if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))//.Message.Contains("E11000 duplicate key error collection"))
+            {
+               throw;
+            }
+         }
+
+         string lastBlockHash = null;
+         List<UpdateOneModel<MapBlock>> markBlocksAsComplete = new List<UpdateOneModel<MapBlock>>();
+         foreach (MapBlock mapBlock in storageBatch.MapBlocks.Values.OrderBy(b => b.BlockIndex))
+         {
+            FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
+            UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
+
+            markBlocksAsComplete.Add(new UpdateOneModel<MapBlock>(filter, update));
+            lastBlockHash = mapBlock.BlockHash;
+         }
+         data.MapBlock.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
+
+         return storage.BlockByHash(lastBlockHash);
+      }
 
       private void CompleteBlock(BlockInfo block)
       {
@@ -245,7 +363,14 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       private void CreateBlock(BlockInfo block)
       {
-         var blockInfo = new MapBlock
+         MapBlock blockInfo = CreateMapBlock(block);
+
+         data.InsertBlock(blockInfo);
+      }
+
+      private MapBlock CreateMapBlock(BlockInfo block)
+      {
+         return new MapBlock
          {
             BlockIndex = block.Height,
             BlockHash = block.Hash,
@@ -269,8 +394,6 @@ namespace Blockcore.Indexer.Storage.Mongo
             Version = block.Version,
             SyncComplete = false
          };
-
-         data.InsertBlock(blockInfo);
       }
 
       private IEnumerable<T> GetBatch<T>(int maxItems, Queue<T> queue)
@@ -360,7 +483,6 @@ namespace Blockcore.Indexer.Storage.Mongo
                   SpendingTransactionId = transaction.GetHash().ToString(),
                   SpendingBlockIndex = blockIndex,
                };
-
             }
          }
       }

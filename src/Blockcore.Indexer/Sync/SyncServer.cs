@@ -21,6 +21,9 @@ namespace Blockcore.Indexer.Sync
       private readonly ILogger<SyncServer> log;
       private readonly IServiceScopeFactory scopeFactory;
 
+      private Task mainTask;
+      private CancellationTokenSource mainCancellationTokenSource;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncServer"/> class.
       /// </summary>
@@ -34,7 +37,6 @@ namespace Blockcore.Indexer.Sync
 
       public void Dispose()
       {
-
       }
 
       public Task StartAsync(CancellationToken cancellationToken)
@@ -42,14 +44,19 @@ namespace Blockcore.Indexer.Sync
          log.LogInformation($"Start sync for {chainConfiguration.Symbol}");
          log.LogInformation("Starting the Sync Service...");
 
-         Task.Run(async () =>
+         mainTask = Task.Run(async () =>
          {
+            mainCancellationTokenSource = new CancellationTokenSource();
+
             try
             {
-               while (!cancellationToken.IsCancellationRequested)
+               while (!mainCancellationTokenSource.IsCancellationRequested)
                {
                   var tokenSource = new CancellationTokenSource();
-                  cancellationToken.Register(() => { tokenSource.Cancel(); });
+                  mainCancellationTokenSource.Token.Register(() =>
+                  {
+                     tokenSource.Cancel();
+                  });
 
                   try
                   {
@@ -58,9 +65,9 @@ namespace Blockcore.Indexer.Sync
                         Runner runner = scope.ServiceProvider.GetService<Runner>();
                         System.Collections.Generic.IEnumerable<Task> runningTasks = runner.RunAll(tokenSource);
 
-                        Task.WaitAll(runningTasks.ToArray(), cancellationToken);
+                        Task.WaitAll(runningTasks.ToArray());
 
-                        if (cancellationToken.IsCancellationRequested)
+                        if (mainCancellationTokenSource.IsCancellationRequested)
                         {
                            tokenSource.Cancel();
                         }
@@ -86,6 +93,9 @@ namespace Blockcore.Indexer.Sync
 
                      foreach (Exception innerException in ae.Flatten().InnerExceptions)
                      {
+                        if (innerException is OperationCanceledException)
+                           throw innerException;
+
                         log.LogError(innerException, "Sync");
                      }
 
@@ -99,7 +109,7 @@ namespace Blockcore.Indexer.Sync
                      // Blokcore Indexer is designed to be idempotent, we want to continue running even if errors are found.
                      // so if an unepxected error happened we log it wait and start again
 
-                     Task.Delay(TimeSpan.FromSeconds(retryInterval), cancellationToken).Wait(cancellationToken);
+                     Task.Delay(TimeSpan.FromSeconds(retryInterval), mainCancellationTokenSource.Token).Wait(mainCancellationTokenSource.Token);
 
                      continue;
                   }
@@ -113,21 +123,36 @@ namespace Blockcore.Indexer.Sync
             catch (OperationCanceledException)
             {
                // do nothing the task was cancel.
-               throw;
             }
             catch (Exception ex)
             {
                log.LogError(ex, "Sync");
                throw;
             }
-
          }, cancellationToken);
+
          return Task.CompletedTask;
       }
 
-      public Task StopAsync(CancellationToken cancellationToken)
+      public async Task StopAsync(CancellationToken cancellationToken)
       {
-         return Task.CompletedTask;
+         if (mainTask == null)
+         {
+            return;
+         }
+
+         log.LogInformation("Shutdown can take up to 20 seconds...");
+
+         try
+         {
+            // Signal cancellation to the executing method
+            mainCancellationTokenSource.Cancel();
+         }
+         finally
+         {
+            // Wait until the task completes or the stop token triggers
+            await Task.WhenAny(mainTask, Task.Delay(Timeout.Infinite, cancellationToken));
+         }
       }
    }
 }
