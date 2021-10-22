@@ -44,7 +44,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          }
       }
 
-      public override Task OnExecute()
+      public override async Task OnExecute()
       {
          Client.BitcoinClient client = Client.CryptoClientFactory.Create(connection);
 
@@ -63,9 +63,14 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             StorageBatch genesisBatch = new StorageBatch();
             storageOperations.AddToStorageBatch(genesisBatch, block);
             storageOperations.PushStorageBatch(genesisBatch);
+            Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
          }
 
-         return Task.CompletedTask;
+         var fetchedBlock = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
+         if (fetchedBlock == null)
+         {
+            Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToBestChain(connection);
+         }
       }
    }
 }
