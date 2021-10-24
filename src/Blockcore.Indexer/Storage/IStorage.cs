@@ -10,11 +10,6 @@ namespace Blockcore.Indexer.Storage
 
    public interface IStorage
    {
-      //IEnumerable<SyncBlockInfo> BlockGetIncompleteBlocks();
-
-      [Obsolete("Should not be used, instead use methods that support offset and limit.")]
-      IEnumerable<SyncBlockInfo> BlockGetBlockCount(int count);
-
       SyncBlockInfo GetLatestBlock();
 
       int GetMemoryTransactionsCount();

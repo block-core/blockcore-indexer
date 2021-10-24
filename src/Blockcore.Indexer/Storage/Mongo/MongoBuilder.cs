@@ -60,6 +60,15 @@ namespace Blockcore.Indexer.Storage.Mongo
                 });
          }
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransactionAddressComputed)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionAddressComputed>(cm =>
+            {
+               cm.AutoMap();
+               cm.MapIdMember(c => c.Address);
+            });
+         }
+
          if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransactionBlock)))
          {
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionBlock>(cm =>

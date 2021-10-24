@@ -1,3 +1,5 @@
+using Blockcore.Indexer.Client.Types;
+
 namespace Blockcore.Indexer.Sync.SyncTasks
 {
    using System.Threading.Tasks;
@@ -66,7 +68,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
          }
 
-         var fetchedBlock = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
+         BlockInfo fetchedBlock = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
          if (fetchedBlock == null)
          {
             Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToBestChain(connection);
