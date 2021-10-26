@@ -17,7 +17,6 @@ using Blockcore.Indexer.Storage.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using NBitcoin;
 using NBitcoin.DataEncoders;
 
 namespace Blockcore.Indexer.Storage.Mongo
@@ -538,53 +537,52 @@ namespace Blockcore.Indexer.Storage.Mongo
       /// Calculates the balance for specified address. When confirmations is 0 (default), then all transactions (excluding mempool) will be counted.
       /// </summary>
       /// <param name="address"></param>
-      /// <param name="confirmations"></param>
-      /// <param name="includeMempool"></param>
-      /// <returns></returns>
-      public AddressBalance AddressBalance(string address, long confirmations = 0, bool includeMempool = false)
+      public AddressBalance AddressBalance(string address)
       {
          FilterDefinition<MapTransactionAddressComputed> addrFilter = Builders<MapTransactionAddressComputed>.Filter.Eq(info => info.Address, address);
-
          MapTransactionAddressComputed addressComputed = MapTransactionAddressComputed.Find(addrFilter).FirstOrDefault();
-
-         var balance = new AddressBalance
-         {
-            Address = address,
-         };
-
-         SyncBlockInfo currentBlock = GetLatestBlock();
 
          if (addressComputed == null)
          {
             addressComputed = new MapTransactionAddressComputed() { Address = address, ComputedBlockIndex = 0, Received = 0, Sent = 0 };
          }
-         else
+
+         long fromHeight = addressComputed.ComputedBlockIndex;
+
+         IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
+            .Where(t => t.Addresses.Contains(address))
+            .Where(b => b.BlockIndex > fromHeight || b.SpendingBlockIndex > fromHeight);
+
+         long countReceived = 0, countSent = 0, received = 0, sent = 0, maxHeight = 0;
+
+         foreach (MapTransactionAddress item in filter)
          {
-            if (currentBlock.BlockIndex == addressComputed.ComputedBlockIndex)
+            maxHeight = Math.Max(maxHeight, Math.Max(item.BlockIndex, item.SpendingBlockIndex ?? 0));
+
+            if (item.BlockIndex > fromHeight)
             {
-               return new AddressBalance
-               {
-                  Address = address,
-                  Received = addressComputed.Received,
-                  Sent = addressComputed.Sent,
-                  Available = addressComputed.Available,
-               };
+               received += item.Value;
+               countReceived++;
+            }
+
+            if (item.SpendingTransactionId != null && item.SpendingBlockIndex > fromHeight)
+            {
+               sent += item.Value;
+               countSent++;
             }
          }
 
-         // Create a query against transactions on the specified address.
-         var allItems = AddressTransactionFilter(address, addressComputed.ComputedBlockIndex).ToList();
+         if (maxHeight > 0)
+         {
+            addressComputed.Received += received;
+            addressComputed.Sent += sent;
+            addressComputed.Available = addressComputed.Received.Value - addressComputed.Sent.Value;
+            addressComputed.TotalReceived += countReceived;
+            addressComputed.TotalSent += countSent;
+            addressComputed.ComputedBlockIndex = maxHeight; // the last block a trx was received to this address
 
-         IEnumerable<MapTransactionAddress> receivedOuputs = allItems.Where(a => a.BlockIndex > addressComputed.ComputedBlockIndex);
-         IEnumerable<MapTransactionAddress> spentOutputs = allItems.Where(a => a.SpendingBlockIndex > addressComputed.ComputedBlockIndex && a.SpendingTransactionId != null);
-
-         addressComputed.Received += receivedOuputs.Sum(s => s.Value);
-         addressComputed.Sent += spentOutputs.Sum(s => s.Value);
-         addressComputed.Available = addressComputed.Received.Value - addressComputed.Sent.Value;
-         addressComputed.TotalTransactions += allItems.Count;
-         addressComputed.ComputedBlockIndex = currentBlock.BlockIndex; // the last block a trx was received to this address
-
-         MapTransactionAddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
+            MapTransactionAddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
+         }
 
          return new AddressBalance
          {
@@ -593,74 +591,6 @@ namespace Blockcore.Indexer.Storage.Mongo
             Sent = addressComputed.Sent,
             Available = addressComputed.Available,
          };
-
-         // Create a query against transactions on the specified address.
-         IQueryable<MapTransactionAddress> filter1 = AddressTransactionFilter(address, 0);
-
-         long confirmed = 0;
-         long unconfirmed = 0;
-
-         // TODO: Continue work on the includeMempool when other stuff are finished.
-         //if (includeMempool)
-         //{
-         //   // this creates a copy of the collection (to avoid thread issues)
-         //   ICollection<Transaction> pool = MemoryTransactions.Values;
-
-         //   if (pool.Any())
-         //   {
-         //      // mark trx in output as spent if they exist in the pool
-         //      // List<MapTransactionAddress> addrsupdate = addrs;
-
-         //      GetPoolOutputs(pool).ForEach(f =>
-         //      {
-         //         string outputAddress = f.Item1.PrevOut.Hash.ToString();
-
-         //         // TODO: Verify why Index mattered in the query here... we don't have that available now that we have flipped how we look into the mempool.
-         //         //MapTransactionAddress adr = addrsupdate.FirstOrDefault(a => a.TransactionId == f.Item1.PrevOut.Hash.ToString() && a.Index == f.Item1.PrevOut.N);
-
-         //         if (adr != null)
-         //         {
-         //            adr.SpendingTransactionId = f.Item2;
-         //         }
-         //      });
-
-         //      // if only spendable transactions are to be returned we need to remove
-         //      // any that have been marked as spent by a transaction in the pool
-         //      if (availableOnly)
-         //      {
-         //         addrs = addrs.Where(d => d.SpendingTransactionId == null).ToList();
-         //      }
-
-         //      // add all pool transactions to main output
-         //      var paddr = PoolToMapTransactionAddress(pool, address).ToList();
-         //      addrs = addrs.OrderByDescending(s => s.BlockIndex).Concat(paddr).ToList();
-         //   }
-         //}
-
-         // Make sure we only compute extra queries when we absolutely need to.
-         if (confirmations > 0)
-         {
-            SyncBlockInfo current = GetLatestBlock();
-
-            // Calculate the minimum height to get confirmations required.
-            long height = current.BlockIndex - confirmations;
-
-            // Check if BlockIndex is lower or equal to height. Height is (Tip - Confirmations).
-            confirmed = filter1.Where(s => s.BlockIndex <= height).Sum(s => s.Value);
-
-            // Check if BlockIndex is higher than the height. Height is (Tip - Confirmations).
-            unconfirmed = filter1.Where(s => s.BlockIndex > height).Sum(s => s.Value);
-         }
-         else
-         {
-            // Check if BlockIndex is lower or equal to height. Height is (Tip - Confirmations).
-            confirmed = filter1.Sum(s => s.Value);
-         }
-
-         long sent = filter1.Where(s => s.SpendingTransactionId != null).Sum(s => s.Value);
-         long available = confirmed - sent;
-
-         return balance;
       }
 
       private IQueryable<MapTransactionAddress> AddressTransactionFilter(string address, long fromHeight)

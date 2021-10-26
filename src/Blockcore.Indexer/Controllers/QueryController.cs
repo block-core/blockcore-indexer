@@ -35,9 +35,9 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}")]
-      public IActionResult GetAddress([MinLength(30)][MaxLength(100)]string address, long confirmations = 0)
+      public IActionResult GetAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         return Ok(storage.AddressBalance(address, confirmations));
+         return Ok(storage.AddressBalance(address));
       }
 
       /// <summary>
@@ -50,7 +50,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions")]
-      public IActionResult GetAddressTransactions([MinLength(30)][MaxLength(100)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactions([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressTransactions(address, confirmations, false, TransactionUsedFilter.All, offset, limit));
       }
@@ -65,7 +65,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/unconfirmed")]
-      public IActionResult GetAddressTransactionsUnconfirmed([MinLength(30)][MaxLength(100)]string address, [Range(1, long.MaxValue)]long confirmations, [MinLength(0)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactionsUnconfirmed([MinLength(30)][MaxLength(100)] string address, [Range(1, long.MaxValue)] long confirmations, [MinLength(0)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.All, offset, limit));
       }
@@ -80,7 +80,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/spent")]
-      public IActionResult GetAddressTransactionsSpent([MinLength(30)][MaxLength(100)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactionsSpent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.Spent, offset, limit));
       }
@@ -95,7 +95,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/unspent")]
-      public IActionResult GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)]string address, long confirmations = 0, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.Unspent, offset, limit));
       }
@@ -108,7 +108,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("mempool/transactions")]
-      public IActionResult GetMempoolTransactions([Range(0, int.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetMempoolTransactions([Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.GetMemoryTransactions(offset, limit));
       }
@@ -143,7 +143,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <param name="limit">Number of blocks to return. Maximum 50.</param>
       [HttpGet]
       [Route("block")]
-      public IActionResult GetBlocks([Range(0, int.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetBlocks([Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.Blocks(offset, limit));
       }
@@ -158,7 +158,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("block/{hash}/transactions")]
-      public IActionResult GetBlockByHashTransactions(string hash, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetBlockByHashTransactions(string hash, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.TransactionsByBlock(hash, offset, limit));
       }
@@ -182,10 +182,11 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("block/index/{index}")]
-      public IActionResult GetBlockByIndex([Range(0, long.MaxValue)]long index)
+      public IActionResult GetBlockByIndex([Range(0, long.MaxValue)] long index)
       {
          return OkItem(storage.BlockByIndex(index));
       }
+
       /// <summary>
       /// Return transactions in a block based on block height (index).
       /// </summary>
@@ -193,7 +194,7 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("block/index/{index}/transactions")]
-      public IActionResult GetBlockByIndexTransactions([Range(0, long.MaxValue)]long index, [Range(0, long.MaxValue)]int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetBlockByIndexTransactions([Range(0, long.MaxValue)] long index, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.TransactionsByBlock(index, offset, limit));
       }
@@ -216,7 +217,7 @@ namespace Blockcore.Indexer.Api.Handlers
       [HttpGet]
       [Route("richlist")]
       [Obsolete("This API has been moved to the /insight API.")]
-      public IActionResult GetRichlist([Range(0, int.MaxValue)]int offset = 0, [Range(1, 100)] int limit = 100)
+      public IActionResult GetRichlist([Range(0, int.MaxValue)] int offset = 0, [Range(1, 100)] int limit = 100)
       {
          return OkPaging(storage.Richlist(offset, limit));
       }

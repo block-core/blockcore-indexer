@@ -14,7 +14,8 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
 
       public long ComputedBlockIndex { get; set; }
 
-      public long TotalTransactions { get; set; }
+      public long TotalReceived { get; set; }
+      public long TotalSent { get; set; }
 
       public long TotalSpendableTransactions { get; set; }
    }

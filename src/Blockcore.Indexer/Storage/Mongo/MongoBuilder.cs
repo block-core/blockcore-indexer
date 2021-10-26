@@ -108,6 +108,9 @@ namespace Blockcore.Indexer.Storage.Mongo
          IndexKeysDefinition<MapTransactionAddress> addrBlockIndex = Builders<MapTransactionAddress>.IndexKeys.Ascending(addr => addr.BlockIndex);
          mongoData.MapTransactionAddress.Indexes.CreateOne(addrBlockIndex);
 
+         IndexKeysDefinition<MapTransactionAddress> addrSpentBlockIndex = Builders<MapTransactionAddress>.IndexKeys.Ascending(addr => addr.SpendingBlockIndex);
+         mongoData.MapTransactionAddress.Indexes.CreateOne(addrSpentBlockIndex);
+
          IndexKeysDefinition<MapTransactionBlock> trxBlkIndex = Builders<MapTransactionBlock>.IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex);
          mongoData.MapTransactionBlock.Indexes.CreateOne(trxBlkIndex);
 
