@@ -1,3 +1,5 @@
+using Cloo;
+
 namespace Blockcore.Indexer.Storage.Mongo
 {
    using System.Threading.Tasks;
@@ -65,7 +67,16 @@ namespace Blockcore.Indexer.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionAddressComputed>(cm =>
             {
                cm.AutoMap();
-               cm.MapIdMember(c => c.Address);
+               cm.MapIdMember(c => c.Id);
+            });
+         }
+
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransactionAddressHistoryComputed)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionAddressHistoryComputed>(cm =>
+            {
+               cm.AutoMap();
+               cm.MapIdMember(c => c.Id);
             });
          }
 
@@ -117,9 +128,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          IndexKeysDefinition<MapRichlist> richListIndex = Builders<MapRichlist>.IndexKeys.Ascending(i => i.Balance);
          mongoData.MapRichlist.Indexes.CreateOne(richListIndex);
 
-         // This is not needed as the id field is already the index
-         //var trxIndex = Builders<MapTransaction>.IndexKeys.Ascending(trxBlk => trxBlk.TransactionId);
-         //this.mongoData.MapTransaction.Indexes.CreateOne(trxIndex);
+         IndexKeysDefinition<MapTransactionAddressComputed> addrComp = Builders<MapTransactionAddressComputed>.IndexKeys.Ascending(i => i.Addresses);
+         mongoData.MapTransactionAddressComputed.Indexes.CreateOne(addrComp);
+
+         IndexKeysDefinition<MapTransactionAddressHistoryComputed> addrHistory = Builders<MapTransactionAddressHistoryComputed>.IndexKeys.Ascending(i => i.BlockIndex);
+         mongoData.MapTransactionAddressHistoryComputed.Indexes.CreateOne(addrHistory);
 
          return Task.FromResult(1);
       }

@@ -4,7 +4,9 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
 
    public class MapTransactionAddressComputed
    {
-      public string Address { get; set; }
+      public string Id { get; set; }
+
+      public List<string> Addresses { get; set; }
 
       public long Available { get; set; }
 
@@ -15,6 +17,7 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
       public long ComputedBlockIndex { get; set; }
 
       public long TotalReceived { get; set; }
+
       public long TotalSent { get; set; }
 
       public long TotalSpendableTransactions { get; set; }
