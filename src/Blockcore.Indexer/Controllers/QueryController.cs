@@ -52,7 +52,7 @@ namespace Blockcore.Indexer.Api.Handlers
       [Route("address/{address}/transactions")]
       public IActionResult GetAddressTransactions([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return OkPaging(storage.AddressTransactions(address, confirmations, false, TransactionUsedFilter.All, offset, limit));
+         return OkPaging(storage.AddressHistory(address, offset, limit));
       }
 
       /// <summary>
@@ -67,7 +67,7 @@ namespace Blockcore.Indexer.Api.Handlers
       [Route("address/{address}/transactions/unconfirmed")]
       public IActionResult GetAddressTransactionsUnconfirmed([MinLength(30)][MaxLength(100)] string address, [Range(1, long.MaxValue)] long confirmations, [MinLength(0)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.All, offset, limit));
+         return OkPaging(storage.AddressHistory(address, offset, limit));
       }
 
       /// <summary>
@@ -82,7 +82,7 @@ namespace Blockcore.Indexer.Api.Handlers
       [Route("address/{address}/transactions/spent")]
       public IActionResult GetAddressTransactionsSpent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.Spent, offset, limit));
+         return OkPaging(storage.AddressHistory(address, offset, limit));
       }
 
       /// <summary>
@@ -97,7 +97,7 @@ namespace Blockcore.Indexer.Api.Handlers
       [Route("address/{address}/transactions/unspent")]
       public IActionResult GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return OkPaging(storage.AddressTransactions(address, confirmations, true, TransactionUsedFilter.Unspent, offset, limit));
+         return OkPaging(storage.AddressHistory(address, offset, limit));
       }
 
       /// <summary>

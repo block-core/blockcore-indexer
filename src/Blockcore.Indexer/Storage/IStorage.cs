@@ -14,9 +14,9 @@ namespace Blockcore.Indexer.Storage
 
       int GetMemoryTransactionsCount();
 
-      AddressBalance AddressBalance(string address);
+      QueryAddress AddressBalance(string address);
 
-      QueryResult<QueryTransaction> AddressTransactions(string address, long confirmations, bool unconfirmed, TransactionUsedFilter used, int offset, int limit);
+      QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit);
 
       QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit);
 

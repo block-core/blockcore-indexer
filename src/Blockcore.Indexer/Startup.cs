@@ -51,6 +51,8 @@ namespace Blockcore.Indexer
          services.AddSingleton<IPagingHelper, PagingHelper>();
          services.AddScoped<Runner>();
 
+         services.AddSingleton<SyncingBlocks>();
+
          services.AddScoped<TaskRunner, MempoolPuller>();
          services.AddScoped<TaskRunner, Notifier>();
          services.AddScoped<TaskRunner, StatsSyncer>(); // Update peer information every 5 minute.

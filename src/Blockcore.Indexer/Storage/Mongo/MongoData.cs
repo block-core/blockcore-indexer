@@ -14,6 +14,7 @@ using Blockcore.Indexer.Operations.Types;
 using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Sync.SyncTasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -37,6 +38,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       private readonly IMongoDatabase mongoDatabase;
 
       private readonly SyncConnection syncConnection;
+      private readonly SyncingBlocks syncingBlocks;
 
       private readonly IndexerSettings configuration;
 
@@ -44,12 +46,13 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       private readonly System.Diagnostics.Stopwatch watch;
 
-      public MongoData(ILogger<MongoStorageOperations> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration)
+      public MongoData(ILogger<MongoStorageOperations> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, SyncingBlocks syncingBlocks)
       {
          configuration = nakoConfiguration.Value;
          this.chainConfiguration = chainConfiguration.Value;
 
          syncConnection = connection;
+         this.syncingBlocks = syncingBlocks;
          log = logger;
          mongoClient = new MongoClient(configuration.ConnectionString.Replace("{Symbol}", this.chainConfiguration.Symbol.ToLower()));
 
@@ -294,7 +297,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             return null;
          }
 
-         SyncBlockInfo current = GetLatestBlock();
+         SyncBlockInfo current = syncingBlocks.StoreTip;// GetLatestBlock();
 
          SyncBlockInfo blk = BlockByIndex(trx.BlockIndex);
 
@@ -487,61 +490,34 @@ namespace Blockcore.Indexer.Storage.Mongo
          return current;
       }
 
-      public QueryResult<QueryTransaction> AddressTransactions(string address, long confirmations, bool unconfirmed, TransactionUsedFilter used, int offset, int limit)
+      public QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit)
       {
-         long fromHeight = 0; //addressComputed.ComputedBlockIndex;
+         // make sure fields are computed
+         MapTransactionAddressComputed addressComputed = ComputeAddressBalance(address);
 
-         FilterDefinition<MapTransactionAddress> filter1 = Builders<MapTransactionAddress>.Filter.Where(t =>
-            t.Addresses.Contains(address) &&
-            (t.BlockIndex > fromHeight || t.SpendingBlockIndex > fromHeight));
-
-         var res = MapTransactionAddress.Aggregate().UnionWith(MapTransactionAddress).Match(filter1).ToList();
-
-         IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
-            .Where(t => t.Addresses.Contains(address))
-            .Where(b => b.BlockIndex > fromHeight || b.SpendingBlockIndex > fromHeight);
-
-         if (confirmations > 0)
-         {
-            SyncBlockInfo current = GetLatestBlock();
-
-            // Calculate the minimum height to get confirmations required.
-            long height = current.BlockIndex - confirmations;
-
-            if (unconfirmed)
-            {
-               // Check if BlockIndex is higher than the height. Height is (Tip - Confirmations).
-               filter = filter.Where(s => s.BlockIndex > height);
-            }
-            else
-            {
-               // Check if BlockIndex is lower or equal to height. Height is (Tip - Confirmations).
-               filter = filter.Where(s => s.BlockIndex <= height);
-            }
-         }
-
-         // Filter on spent, unspent or just include all (default).
-         if (used == TransactionUsedFilter.Spent)
-         {
-            filter = filter.Where(s => s.SpendingTransactionId != null);
-         }
-         else if (used == TransactionUsedFilter.Unspent)
-         {
-            filter = filter.Where(s => s.SpendingTransactionId == null);
-         }
+         IQueryable<MapTransactionAddressHistoryComputed> filter = MapTransactionAddressHistoryComputed.AsQueryable()
+            .Where(t => t.Addresses.Contains(address));
 
          filter = filter.OrderByDescending(s => s.BlockIndex);
 
          // This will first perform one db query.
-         int total = filter.Count();
+         long total = addressComputed.TotalSent + addressComputed.TotalReceived;// filter.Count();
 
          // This will perform a query and return only transaction ID of the filtered results.
-         var list = filter.Skip(offset).Take(limit).Select(t => t.TransactionId).ToList();
+         var list = filter.Skip(offset).Take(limit).ToList();
 
          // Loop all transaction IDs and get the transaction object.
-         IEnumerable<QueryTransaction> transactions = list.Select(id => GetTransaction(id));
+         IEnumerable<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
+         {
+            BlockIndex = item.BlockIndex,
+            Value = item.Amount,
+            EntryType = item.EntryType,
+            Index = item.Index,
+            TransactionHash = item.TransactionId,
+            Confirmations = syncingBlocks.StoreTip.BlockIndex - item.BlockIndex
+         });
 
-         return new QueryResult<QueryTransaction>
+         return new QueryResult<QueryAddressItem>
          {
             Items = transactions,
             Offset = offset,
@@ -554,7 +530,22 @@ namespace Blockcore.Indexer.Storage.Mongo
       /// Calculates the balance for specified address. When confirmations is 0 (default), then all transactions (excluding mempool) will be counted.
       /// </summary>
       /// <param name="address"></param>
-      public AddressBalance AddressBalance(string address)
+      public QueryAddress AddressBalance(string address)
+      {
+         MapTransactionAddressComputed addressComputed = ComputeAddressBalance(address);
+
+         return new QueryAddress
+         {
+            Address = address,
+            TotalReceived = addressComputed.Received,
+            TotalSent = addressComputed.Sent,
+            Balance = addressComputed.Available,
+            TotalReceivedCount = addressComputed.TotalReceived,
+            TotalSentCount = addressComputed.TotalSent,
+         };
+      }
+
+      private MapTransactionAddressComputed ComputeAddressBalance(string address)
       {
          FilterDefinition<MapTransactionAddressComputed> addrFilter = Builders<MapTransactionAddressComputed>.Filter.AnyIn(info => info.Addresses, new List<string> { address });
          MapTransactionAddressComputed addressComputed = MapTransactionAddressComputed.Find(addrFilter).FirstOrDefault();
@@ -572,6 +563,8 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          long countReceived = 0, countSent = 0, received = 0, sent = 0, maxHeight = 0;
 
+         var history = new List<MapTransactionAddressHistoryComputed>();
+
          foreach (MapTransactionAddress item in filter)
          {
             if (addressComputed.Addresses == null)
@@ -583,17 +576,54 @@ namespace Blockcore.Indexer.Storage.Mongo
             {
                received += item.Value;
                countReceived++;
+
+               history.Add(new MapTransactionAddressHistoryComputed
+               {
+                  Addresses = item.Addresses,
+                  BlockIndex = item.BlockIndex,
+                  EntryType = "input",
+                  Amount = item.Value,
+                  Index = item.Index,
+                  TransactionId = item.TransactionId,
+                  Id = $"input-{item.TransactionId}-{item.Index}"
+               });
             }
 
             if (item.SpendingTransactionId != null && item.SpendingBlockIndex > fromHeight)
             {
                sent += item.Value;
                countSent++;
+               history.Add(new MapTransactionAddressHistoryComputed
+               {
+                  Addresses = item.Addresses,
+                  BlockIndex = item.BlockIndex,
+                  EntryType = "output",
+                  Amount = item.Value,
+                  Index = -1, // todo: should we track input index?
+                  TransactionId = item.TransactionId,
+                  Id = $"output-{item.TransactionId}-{item.Index}"
+               });
             }
          }
 
          if (maxHeight > 0)
          {
+            try
+            {
+               MapTransactionAddressHistoryComputed.InsertMany(history, new InsertManyOptions { IsOrdered = false });
+            }
+            catch (MongoBulkWriteException mbwex)
+            {
+               // in cases of reorgs trx are not deleted from the store,
+               // if a trx is already written and we attempt to write it again
+               // the write will fail and throw, so we ignore such errors.
+               // (IsOrdered = false will attempt all entries and only throw when done)
+               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey)) //.Message.Contains("E11000 duplicate key error collection"))
+               {
+                  throw;
+               }
+            }
+
             addressComputed.Received += received;
             addressComputed.Sent += sent;
             addressComputed.Available = addressComputed.Received.Value - addressComputed.Sent.Value;
@@ -604,13 +634,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             MapTransactionAddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
          }
 
-         return new AddressBalance
-         {
-            Address = address,
-            Received = addressComputed.Received,
-            Sent = addressComputed.Sent,
-            Available = addressComputed.Available,
-         };
+         return addressComputed;
       }
 
       public void DeleteBlock(string blockHash)
@@ -629,8 +653,25 @@ namespace Blockcore.Indexer.Storage.Mongo
          FilterDefinition<MapBlock> blockFilter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
          MapBlock.DeleteOne(blockFilter);
 
+         // delete computed
+         FilterDefinition<MapTransactionAddressComputed> addrCompFilter = Builders<MapTransactionAddressComputed>.Filter.Eq(addr => addr.ComputedBlockIndex, block.BlockIndex);
+         MapTransactionAddressComputed.DeleteMany(addrCompFilter);
+
+         FilterDefinition<MapTransactionAddressHistoryComputed> addrCompHistFilter = Builders<MapTransactionAddressHistoryComputed>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         MapTransactionAddressHistoryComputed.DeleteMany(addrCompHistFilter);
+
          // mark transactions that are spent by the block as unspent
-         // todo:
+         // todo: enable this code
+         // do we really need this? its most likely an output that
+         // is reorged will be spent in another block and will be picked
+         // later when syncing the new block and override the previous value
+
+         //FilterDefinition<MapTransactionAddress> addrUpdateFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.SpendingBlockIndex, block.BlockIndex);
+         //UpdateDefinition<MapTransactionAddress> update = Builders<MapTransactionAddress>.Update
+         //   .Set(blockInfo => blockInfo.SpendingTransactionId, null)
+         //   .Set(blockInfo => blockInfo.SpendingBlockIndex, null);
+
+         //MapTransactionAddress.UpdateMany(addrUpdateFilter, update, new UpdateOptions());
       }
 
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)

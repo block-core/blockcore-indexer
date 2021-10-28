@@ -27,11 +27,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       /// <summary>
       /// Initializes a new instance of the <see cref="Runner"/> class.
       /// </summary>
-      public Runner(IEnumerable<TaskStarter> taskStarters, IEnumerable<TaskRunner> taskRunners)
+      public Runner(IEnumerable<TaskStarter> taskStarters, IEnumerable<TaskRunner> taskRunners, SyncingBlocks syncingBlocks)
       {
          this.taskStarters = taskStarters;
          this.taskRunners = taskRunners;
-         SyncingBlocks = new SyncingBlocks { LocalMempoolView = new List<string>() };
+         SyncingBlocks = syncingBlocks;
       }
 
       public SyncingBlocks SyncingBlocks { get; set; }

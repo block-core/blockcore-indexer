@@ -16,6 +16,6 @@ namespace Blockcore.Indexer.Operations.Types
 
       public bool Blocked { get; set; }
 
-      public List<string> LocalMempoolView { get; set; }
+      public List<string> LocalMempoolView { get; set; } = new List<string>();
    }
 }
