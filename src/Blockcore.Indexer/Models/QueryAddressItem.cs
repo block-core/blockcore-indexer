@@ -3,11 +3,6 @@ namespace Blockcore.Indexer.Api.Handlers.Types
    public class QueryAddressItem
    {
       /// <summary>
-      /// Gets or sets the input index.
-      /// </summary>
-      public int Index { get; set; }
-
-      /// <summary>
       /// Gets or sets the type.
       /// </summary>
       public string EntryType { get; set; }

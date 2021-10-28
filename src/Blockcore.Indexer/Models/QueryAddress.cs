@@ -22,6 +22,16 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       public long? TotalReceived { get; set; }
 
       /// <summary>
+      /// Gets or sets the total received.
+      /// </summary>
+      public long? TotalStake { get; set; }
+
+      /// <summary>
+      /// Gets or sets the total received.
+      /// </summary>
+      public long? TotalMine { get; set; }
+
+      /// <summary>
       /// Gets or sets the total sent.
       /// </summary>
       public long? TotalSent { get; set; }
@@ -35,5 +45,9 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       /// Gets or sets the unconfirmed balance.
       /// </summary>
       public long TotalSentCount { get; set; }
+
+      public long TotalStakeCount { get; set; }
+
+      public long TotalMineCount { get; set; }
    }
 }

@@ -498,10 +498,20 @@ namespace Blockcore.Indexer.Storage.Mongo
          IQueryable<MapTransactionAddressHistoryComputed> filter = MapTransactionAddressHistoryComputed.AsQueryable()
             .Where(t => t.Addresses.Contains(address));
 
-         filter = filter.OrderByDescending(s => s.BlockIndex);
-
          // This will first perform one db query.
          long total = addressComputed.TotalSent + addressComputed.TotalReceived;// filter.Count();
+
+         if (offset > total)
+            offset = 0;
+
+         if (offset == 0)
+         {
+            filter = filter.OrderByDescending(s => s.BlockIndex);
+         }
+         else
+         {
+            filter = filter.OrderBy(s => s.BlockIndex);
+         }
 
          // This will perform a query and return only transaction ID of the filtered results.
          var list = filter.Skip(offset).Take(limit).ToList();
@@ -512,7 +522,6 @@ namespace Blockcore.Indexer.Storage.Mongo
             BlockIndex = item.BlockIndex,
             Value = item.Amount,
             EntryType = item.EntryType,
-            Index = item.Index,
             TransactionHash = item.TransactionId,
             Confirmations = syncingBlocks.StoreTip.BlockIndex - item.BlockIndex
          });
@@ -563,8 +572,9 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          long countReceived = 0, countSent = 0, received = 0, sent = 0, maxHeight = 0;
 
-         var history = new List<MapTransactionAddressHistoryComputed>();
+         var history = new Dictionary<string, MapTransactionAddressHistoryComputed>();
 
+         int position = 1;
          foreach (MapTransactionAddress item in filter)
          {
             if (addressComputed.Addresses == null)
@@ -575,34 +585,49 @@ namespace Blockcore.Indexer.Storage.Mongo
             if (item.BlockIndex > fromHeight)
             {
                received += item.Value;
-               countReceived++;
 
-               history.Add(new MapTransactionAddressHistoryComputed
+               if (history.TryGetValue(item.TransactionId, out MapTransactionAddressHistoryComputed current))
                {
-                  Addresses = item.Addresses,
-                  BlockIndex = item.BlockIndex,
-                  EntryType = "input",
-                  Amount = item.Value,
-                  Index = item.Index,
-                  TransactionId = item.TransactionId,
-                  Id = $"input-{item.TransactionId}-{item.Index}"
-               });
+                  current.Amount += item.Value;
+               }
+               else
+               {
+                  countReceived++;
+                  history.Add(item.TransactionId, new MapTransactionAddressHistoryComputed
+                  {
+                     Addresses = item.Addresses,
+                     BlockIndex = item.BlockIndex,
+                     EntryType = item.CoinBase ? "mine" : item.CoinStake ? "stake" : "receive",
+                     Amount = item.Value,
+                     Position = position++,
+                     TransactionId = item.TransactionId,
+                     Id = $"{item.TransactionId}-{item.Addresses.First()}"
+                  });
+               }
             }
 
             if (item.SpendingTransactionId != null && item.SpendingBlockIndex > fromHeight)
             {
                sent += item.Value;
-               countSent++;
-               history.Add(new MapTransactionAddressHistoryComputed
+
+               if (history.TryGetValue(item.SpendingTransactionId, out MapTransactionAddressHistoryComputed current))
                {
-                  Addresses = item.Addresses,
-                  BlockIndex = item.BlockIndex,
-                  EntryType = "output",
-                  Amount = item.Value,
-                  Index = -1, // todo: should we track input index?
-                  TransactionId = item.TransactionId,
-                  Id = $"output-{item.TransactionId}-{item.Index}"
-               });
+                  current.Amount += item.Value;
+               }
+               else
+               {
+                  countSent++;
+                  history.Add(item.SpendingTransactionId, new MapTransactionAddressHistoryComputed
+                  {
+                     Addresses = item.Addresses,
+                     BlockIndex = item.BlockIndex,
+                     EntryType = "send",
+                     Amount = item.Value,
+                     Position = position++,
+                     TransactionId = item.SpendingTransactionId,
+                     Id = $"{item.SpendingTransactionId}-{item.Addresses.First()}"
+                  });
+               }
             }
          }
 
@@ -610,7 +635,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          {
             try
             {
-               MapTransactionAddressHistoryComputed.InsertMany(history, new InsertManyOptions { IsOrdered = false });
+               MapTransactionAddressHistoryComputed.InsertMany(history.Values, new InsertManyOptions { IsOrdered = false });
             }
             catch (MongoBulkWriteException mbwex)
             {

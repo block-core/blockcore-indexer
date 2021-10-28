@@ -50,6 +50,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       {
          Client.BitcoinClient client = Client.CryptoClientFactory.Create(connection);
 
+         Runner.SyncingBlocks.PullingTip = null;
          Runner.SyncingBlocks.StoreTip = syncOperations.RewindToLastCompletedBlock();
 
          if (Runner.SyncingBlocks.StoreTip == null)

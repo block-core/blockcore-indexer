@@ -131,8 +131,14 @@ namespace Blockcore.Indexer.Storage.Mongo
          IndexKeysDefinition<MapTransactionAddressComputed> addrComp = Builders<MapTransactionAddressComputed>.IndexKeys.Ascending(i => i.Addresses);
          mongoData.MapTransactionAddressComputed.Indexes.CreateOne(addrComp);
 
-         IndexKeysDefinition<MapTransactionAddressHistoryComputed> addrHistory = Builders<MapTransactionAddressHistoryComputed>.IndexKeys.Ascending(i => i.BlockIndex);
-         mongoData.MapTransactionAddressHistoryComputed.Indexes.CreateOne(addrHistory);
+         //IndexKeysDefinition<MapTransactionAddressHistoryComputed> addrHistory = Builders<MapTransactionAddressHistoryComputed>.IndexKeys.Ascending(i => i.BlockIndex);
+         //mongoData.MapTransactionAddressHistoryComputed.Indexes.CreateOne(addrHistory);
+
+         IndexKeysDefinition<MapTransactionAddressHistoryComputed> addrHistory1 = Builders<MapTransactionAddressHistoryComputed>.IndexKeys.Descending(i => i.BlockIndex);
+         mongoData.MapTransactionAddressHistoryComputed.Indexes.CreateOne(addrHistory1);
+
+         IndexKeysDefinition<MapTransactionAddressHistoryComputed> addrHistory2 = Builders<MapTransactionAddressHistoryComputed>.IndexKeys.Descending(i => i.Position);
+         mongoData.MapTransactionAddressHistoryComputed.Indexes.CreateOne(addrHistory2);
 
          return Task.FromResult(1);
       }
