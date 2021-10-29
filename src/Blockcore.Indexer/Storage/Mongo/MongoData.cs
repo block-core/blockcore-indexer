@@ -505,22 +505,20 @@ namespace Blockcore.Indexer.Storage.Mongo
             offset = 0;
 
          if (offset == 0)
-         {
-            filter = filter.OrderByDescending(s => s.BlockIndex);
-         }
-         else
-         {
-            filter = filter.OrderBy(s => s.BlockIndex);
-         }
+            offset = (int)total;
+
+         filter = filter.OrderByDescending(s => s.Position);
 
          // This will perform a query and return only transaction ID of the filtered results.
-         var list = filter.Skip(offset).Take(limit).ToList();
+         //var list = filter.Skip(offset).Take(limit).ToList();
+
+         var list = filter.Where(w => w.Position <= offset && w.Position > offset - limit).ToList();
 
          // Loop all transaction IDs and get the transaction object.
          IEnumerable<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
          {
             BlockIndex = item.BlockIndex,
-            Value = item.Amount,
+            Value = item.AmountReceived - item.AmountSent,
             EntryType = item.EntryType,
             TransactionHash = item.TransactionId,
             Confirmations = syncingBlocks.StoreTip.BlockIndex - item.BlockIndex
@@ -554,6 +552,28 @@ namespace Blockcore.Indexer.Storage.Mongo
          };
       }
 
+      /// <summary>
+      /// Compute the balance and history of a given address.
+      /// If the address already has history only the difference is computed.
+      /// The difference is any new entries related to the given address from the last time it was computed.
+      ///
+      /// Edge cases that need special handling:
+      /// - two inputs in the same transaction
+      /// - to outputs in the same transaction
+      /// - outputs and inputs in the same transaction
+      ///
+      /// Paging:
+      /// We use a computed field called position that is incremented on each entry that is added to the list.
+      /// The position is indexed but is only directly related to the given address
+      /// When paging is requested we will fetch directly the required rows (no need to perform a table scan)
+      ///
+      /// Resource Access:
+      /// concerns around computing tables
+      /// 1. users call the method concurrently and compute the data simultaneously, this is mostly cpu wistful
+      ///    as the tables are idempotent and the first call will compute and persist the computed data but second
+      ///    will just fail to persist any existing entries
+      ///    potential fix: lock an address entry to disk while its being computed (use the db in case multiple indexers are used)
+      /// </summary>
       private MapTransactionAddressComputed ComputeAddressBalance(string address)
       {
          FilterDefinition<MapTransactionAddressComputed> addrFilter = Builders<MapTransactionAddressComputed>.Filter.AnyIn(info => info.Addresses, new List<string> { address });
@@ -565,16 +585,17 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
 
          long fromHeight = addressComputed.ComputedBlockIndex;
+         long tipIndex = syncingBlocks.StoreTip.BlockIndex;
 
          IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
             .Where(t => t.Addresses.Contains(address))
-            .Where(b => b.BlockIndex > fromHeight || b.SpendingBlockIndex > fromHeight);
+            .Where(b => b.BlockIndex > fromHeight || b.SpendingBlockIndex > fromHeight)
+            .Where(b => b.BlockIndex <= tipIndex || b.SpendingBlockIndex <= tipIndex); // filter out entries of blocks that have not been completed
 
          long countReceived = 0, countSent = 0, received = 0, sent = 0, maxHeight = 0;
 
          var history = new Dictionary<string, MapTransactionAddressHistoryComputed>();
 
-         int position = 1;
          foreach (MapTransactionAddress item in filter)
          {
             if (addressComputed.Addresses == null)
@@ -588,7 +609,10 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                if (history.TryGetValue(item.TransactionId, out MapTransactionAddressHistoryComputed current))
                {
-                  current.Amount += item.Value;
+                  current.AmountReceived += item.Value;
+
+                  // we need to override entry type as it might have been set by an input.
+                  current.EntryType = item.CoinBase ? "mine" : item.CoinStake ? "stake" : "receive";
                }
                else
                {
@@ -598,10 +622,9 @@ namespace Blockcore.Indexer.Storage.Mongo
                      Addresses = item.Addresses,
                      BlockIndex = item.BlockIndex,
                      EntryType = item.CoinBase ? "mine" : item.CoinStake ? "stake" : "receive",
-                     Amount = item.Value,
-                     Position = position++,
+                     AmountReceived = item.Value,
                      TransactionId = item.TransactionId,
-                     Id = $"{item.TransactionId}-{item.Addresses.First()}"
+                     Id = $"{item.TransactionId}-{address}"
                   });
                }
             }
@@ -612,7 +635,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                if (history.TryGetValue(item.SpendingTransactionId, out MapTransactionAddressHistoryComputed current))
                {
-                  current.Amount += item.Value;
+                  current.AmountSent += item.Value;
                }
                else
                {
@@ -620,12 +643,11 @@ namespace Blockcore.Indexer.Storage.Mongo
                   history.Add(item.SpendingTransactionId, new MapTransactionAddressHistoryComputed
                   {
                      Addresses = item.Addresses,
-                     BlockIndex = item.BlockIndex,
+                     BlockIndex = item.SpendingBlockIndex.Value,
                      EntryType = "send",
-                     Amount = item.Value,
-                     Position = position++,
+                     AmountSent = item.Value,
                      TransactionId = item.SpendingTransactionId,
-                     Id = $"{item.SpendingTransactionId}-{item.Addresses.First()}"
+                     Id = $"{item.SpendingTransactionId}-{address}"
                   });
                }
             }
@@ -633,6 +655,13 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          if (maxHeight > 0)
          {
+            // unfortunately we have to iterate the collection again.
+            long position = addressComputed.TotalSent + addressComputed.TotalReceived;
+            foreach (MapTransactionAddressHistoryComputed historyValue in history.Values.OrderBy(o => o.BlockIndex))
+            {
+               historyValue.Position = ++position;
+            }
+
             try
             {
                MapTransactionAddressHistoryComputed.InsertMany(history.Values, new InsertManyOptions { IsOrdered = false });

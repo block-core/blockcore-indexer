@@ -10,11 +10,13 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
 
       public string EntryType { get; set; }
 
-      public long Amount { get; set; }
+      public long AmountSent { get; set; }
+
+      public long AmountReceived { get; set; }
 
       public string TransactionId { get; set; }
 
-      public int Position { get; set; }
+      public long Position { get; set; }
 
       public long BlockIndex { get; set; }
    }
