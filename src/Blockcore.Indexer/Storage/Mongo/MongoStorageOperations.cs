@@ -322,7 +322,9 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions { IsOrdered = false });
          data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
-         data.MapTransactionAddress.BulkWrite(storageBatch.MapTransactionAddresses.Values, new BulkWriteOptions() { IsOrdered = false });
+
+         if (storageBatch.MapTransactionAddresses.Values.Any())
+            data.MapTransactionAddress.BulkWrite(storageBatch.MapTransactionAddresses.Values, new BulkWriteOptions() { IsOrdered = false });
 
          try
          {

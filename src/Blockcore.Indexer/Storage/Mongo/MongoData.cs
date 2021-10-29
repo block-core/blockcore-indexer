@@ -196,6 +196,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          // Skip and Limit only supports int, so we can't support long amount of documents.
          int total = (int)MapBlock.Find(filter).CountDocuments();
 
+         if (total == 0)
+         {
+            return new QueryResult<SyncBlockInfo> { Items = Enumerable.Empty<SyncBlockInfo>(), Total = total, Offset = offset, Limit = limit };
+         }
+
          // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
          if (offset == 0 && total > 0)
          {

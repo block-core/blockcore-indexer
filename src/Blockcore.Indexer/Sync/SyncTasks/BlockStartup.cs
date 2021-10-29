@@ -61,11 +61,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             log.LogDebug($"Processing genesis hash = {genesisHash}");
 
-            SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(connection, Runner.SyncingBlocks.PullingTip);
+            BlockInfo genesisBlock = await client.GetBlockAsync(genesisHash);
+            SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(connection, genesisBlock);
 
             StorageBatch genesisBatch = new StorageBatch();
             storageOperations.AddToStorageBatch(genesisBatch, block);
-            storageOperations.PushStorageBatch(genesisBatch);
             Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
          }
 
