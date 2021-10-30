@@ -504,7 +504,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             .Where(t => t.Addresses.Contains(address));
 
          // This will first perform one db query.
-         long total = addressComputed.TotalSent + addressComputed.TotalReceived;// filter.Count();
+         long total = addressComputed.TotalSent + addressComputed.TotalReceived + addressComputed.TotalStaked + addressComputed.TotalMined;
 
          if (offset > total)
             offset = 0;
@@ -526,7 +526,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             Value = item.AmountReceived - item.AmountSent,
             EntryType = item.EntryType,
             TransactionHash = item.TransactionId,
-            Confirmations = syncingBlocks.StoreTip.BlockIndex - item.BlockIndex
+            Confirmations = syncingBlocks.StoreTip.BlockIndex + 1 - item.BlockIndex
          });
 
          return new QueryResult<QueryAddressItem>
@@ -549,11 +549,15 @@ namespace Blockcore.Indexer.Storage.Mongo
          return new QueryAddress
          {
             Address = address,
-            TotalReceived = addressComputed.Received,
-            TotalSent = addressComputed.Sent,
             Balance = addressComputed.Available,
+            TotalReceived = addressComputed.Received,
+            TotalStake = addressComputed.Staked,
+            TotalMine = addressComputed.TotalMined,
+            TotalSent = addressComputed.Sent,
             TotalReceivedCount = addressComputed.TotalReceived,
             TotalSentCount = addressComputed.TotalSent,
+            TotalStakeCount = addressComputed.TotalStaked,
+            TotalMineCount = addressComputed.TotalMined
          };
       }
 
@@ -597,7 +601,9 @@ namespace Blockcore.Indexer.Storage.Mongo
             .Where(b => b.BlockIndex > fromHeight || b.SpendingBlockIndex > fromHeight)
             .Where(b => b.BlockIndex <= tipIndex || b.SpendingBlockIndex <= tipIndex); // filter out entries of blocks that have not been completed
 
-         long countReceived = 0, countSent = 0, received = 0, sent = 0, maxHeight = 0;
+         long countReceived = 0, countSent = 0, countStaked = 0, countMined = 0;
+         long received = 0, sent = 0, staked = 0, mined = 0;
+         long maxHeight = 0;
 
          var history = new Dictionary<string, MapTransactionAddressHistoryComputed>();
 
@@ -610,18 +616,30 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             if (item.BlockIndex > fromHeight)
             {
-               received += item.Value;
+               if (item.CoinStake) { staked += item.Value; }
+               else if (item.CoinBase) { mined += item.Value; }
+               else { received += item.Value; }
 
                if (history.TryGetValue(item.TransactionId, out MapTransactionAddressHistoryComputed current))
                {
                   current.AmountReceived += item.Value;
+
+                  if (current.EntryType == "send")
+                  {
+                     if (item.CoinStake) { countStaked++; }
+                     else if (item.CoinBase) { countMined++; }
+                     else { countReceived++; }
+                  }
 
                   // we need to override entry type as it might have been set by an input.
                   current.EntryType = item.CoinBase ? "mine" : item.CoinStake ? "stake" : "receive";
                }
                else
                {
-                  countReceived++;
+                  if (item.CoinStake) { countStaked++; }
+                  else if (item.CoinBase) { countMined++; }
+                  else { countReceived++; }
+
                   history.Add(item.TransactionId, new MapTransactionAddressHistoryComputed
                   {
                      Addresses = item.Addresses,
@@ -660,8 +678,15 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          if (maxHeight > 0)
          {
+            long balance = addressComputed.Received + addressComputed.Mined + addressComputed.Staked - addressComputed.Sent;
+
+            if (balance < 0)
+            {
+               throw new ApplicationException("Failed to compute balance correcty");
+            }
+
             // unfortunately we have to iterate the collection again.
-            long position = addressComputed.TotalSent + addressComputed.TotalReceived;
+            long position = addressComputed.TotalSent + addressComputed.TotalReceived + addressComputed.TotalStaked + addressComputed.TotalMined;
             foreach (MapTransactionAddressHistoryComputed historyValue in history.Values.OrderBy(o => o.BlockIndex))
             {
                historyValue.Position = ++position;
@@ -684,10 +709,15 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
 
             addressComputed.Received += received;
+            addressComputed.Staked += staked;
+            addressComputed.Mined += mined;
             addressComputed.Sent += sent;
-            addressComputed.Available = addressComputed.Received.Value - addressComputed.Sent.Value;
+            addressComputed.Available = addressComputed.Received + addressComputed.Mined + addressComputed.Staked - addressComputed.Sent;
             addressComputed.TotalReceived += countReceived;
             addressComputed.TotalSent += countSent;
+            addressComputed.TotalStaked += countStaked;
+            addressComputed.TotalMined += countMined;
+
             addressComputed.ComputedBlockIndex = maxHeight; // the last block a trx was received to this address
 
             MapTransactionAddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
