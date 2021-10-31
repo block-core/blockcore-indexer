@@ -606,6 +606,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          long maxHeight = 0;
 
          var history = new Dictionary<string, MapTransactionAddressHistoryComputed>();
+         var spent = new List<MapTransactionAddress>();
 
          foreach (MapTransactionAddress item in filter)
          {
@@ -614,7 +615,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             maxHeight = Math.Max(maxHeight, Math.Max(item.BlockIndex, item.SpendingBlockIndex ?? 0));
 
-            if (item.BlockIndex > fromHeight)
+            if (item.BlockIndex > fromHeight && item.BlockIndex <= tipIndex)
             {
                if (item.CoinStake) { staked += item.Value; }
                else if (item.CoinBase) { mined += item.Value; }
@@ -622,17 +623,10 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                if (history.TryGetValue(item.TransactionId, out MapTransactionAddressHistoryComputed current))
                {
+                  // if we are here this means the transaction had two outputs that belong to
+                  // this address so we aggregate the value of the amount received
+
                   current.AmountReceived += item.Value;
-
-                  if (current.EntryType == "send")
-                  {
-                     if (item.CoinStake) { countStaked++; }
-                     else if (item.CoinBase) { countMined++; }
-                     else { countReceived++; }
-                  }
-
-                  // we need to override entry type as it might have been set by an input.
-                  current.EntryType = item.CoinBase ? "mine" : item.CoinStake ? "stake" : "receive";
                }
                else
                {
@@ -652,44 +646,69 @@ namespace Blockcore.Indexer.Storage.Mongo
                }
             }
 
-            if (item.SpendingTransactionId != null && item.SpendingBlockIndex > fromHeight)
+            if (item.SpendingTransactionId != null && item.SpendingBlockIndex > fromHeight && item.SpendingBlockIndex <= tipIndex)
             {
-               sent += item.Value;
+               spent.Add(item);
+            }
+         }
 
-               if (history.TryGetValue(item.SpendingTransactionId, out MapTransactionAddressHistoryComputed current))
+         foreach (MapTransactionAddress item in spent)
+         {
+            sent += item.Value;
+
+            if (history.TryGetValue(item.SpendingTransactionId, out MapTransactionAddressHistoryComputed current))
+            {
+               // if we are here this means the transaction had inputs that belong to
+               // this address (the address paid itself, this normally happens in staking
+               // where outputs are destroyed and created with subsidy)
+               // so we aggregate the value of the amount sent
+
+               current.AmountSent += item.Value;
+            }
+            else
+            {
+               countSent++;
+               history.Add(item.SpendingTransactionId, new MapTransactionAddressHistoryComputed
                {
-                  current.AmountSent += item.Value;
-               }
-               else
-               {
-                  countSent++;
-                  history.Add(item.SpendingTransactionId, new MapTransactionAddressHistoryComputed
-                  {
-                     Addresses = item.Addresses,
-                     BlockIndex = item.SpendingBlockIndex.Value,
-                     EntryType = "send",
-                     AmountSent = item.Value,
-                     TransactionId = item.SpendingTransactionId,
-                     Id = $"{item.SpendingTransactionId}-{address}"
-                  });
-               }
+                  Addresses = item.Addresses,
+                  BlockIndex = item.SpendingBlockIndex.Value,
+                  EntryType = "send",
+                  AmountSent = item.Value,
+                  TransactionId = item.SpendingTransactionId,
+                  Id = $"{item.SpendingTransactionId}-{address}"
+               });
             }
          }
 
          if (maxHeight > 0)
          {
-            long balance = addressComputed.Received + addressComputed.Mined + addressComputed.Staked - addressComputed.Sent;
-
-            if (balance < 0)
+            long totalCount = countSent + countReceived + countMined + countStaked;
+            if (totalCount < history.Values.Count)
             {
-               throw new ApplicationException("Failed to compute balance correcty");
+               throw new ApplicationException("Failed to compute history correctly");
             }
 
-            // unfortunately we have to iterate the collection again.
+            // each entry is assigned an incremental id to improve efficiency of paging.
             long position = addressComputed.TotalSent + addressComputed.TotalReceived + addressComputed.TotalStaked + addressComputed.TotalMined;
             foreach (MapTransactionAddressHistoryComputed historyValue in history.Values.OrderBy(o => o.BlockIndex))
             {
                historyValue.Position = ++position;
+            }
+
+            addressComputed.Received += received;
+            addressComputed.Staked += staked;
+            addressComputed.Mined += mined;
+            addressComputed.Sent += sent;
+            addressComputed.Available = addressComputed.Received + addressComputed.Mined + addressComputed.Staked - addressComputed.Sent;
+            addressComputed.TotalReceived += countReceived;
+            addressComputed.TotalSent += countSent;
+            addressComputed.TotalStaked += countStaked;
+            addressComputed.TotalMined += countMined;
+            addressComputed.ComputedBlockIndex = maxHeight; // the last block a trx was received to this address
+
+            if (addressComputed.Available < 0)
+            {
+               throw new ApplicationException("Failed to compute balance correctly");
             }
 
             try
@@ -708,18 +727,6 @@ namespace Blockcore.Indexer.Storage.Mongo
                }
             }
 
-            addressComputed.Received += received;
-            addressComputed.Staked += staked;
-            addressComputed.Mined += mined;
-            addressComputed.Sent += sent;
-            addressComputed.Available = addressComputed.Received + addressComputed.Mined + addressComputed.Staked - addressComputed.Sent;
-            addressComputed.TotalReceived += countReceived;
-            addressComputed.TotalSent += countSent;
-            addressComputed.TotalStaked += countStaked;
-            addressComputed.TotalMined += countMined;
-
-            addressComputed.ComputedBlockIndex = maxHeight; // the last block a trx was received to this address
-
             MapTransactionAddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
          }
 
@@ -737,10 +744,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          // delete the transaction
          FilterDefinition<MapTransactionBlock> transactionFilter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
          MapTransactionBlock.DeleteMany(transactionFilter);
-
-         // delete the block itself.
-         FilterDefinition<MapBlock> blockFilter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
-         MapBlock.DeleteOne(blockFilter);
 
          // delete computed
          FilterDefinition<MapTransactionAddressComputed> addrCompFilter = Builders<MapTransactionAddressComputed>.Filter.Eq(addr => addr.ComputedBlockIndex, block.BlockIndex);
@@ -761,6 +764,10 @@ namespace Blockcore.Indexer.Storage.Mongo
          //   .Set(blockInfo => blockInfo.SpendingBlockIndex, null);
 
          //MapTransactionAddress.UpdateMany(addrUpdateFilter, update, new UpdateOptions());
+
+         // delete the block itself is done last
+         FilterDefinition<MapBlock> blockFilter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
+         MapBlock.DeleteOne(blockFilter);
       }
 
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)
