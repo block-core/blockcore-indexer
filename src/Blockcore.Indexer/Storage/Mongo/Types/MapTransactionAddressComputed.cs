@@ -20,13 +20,13 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
 
       public long ComputedBlockIndex { get; set; }
 
-      public long TotalReceived { get; set; }
+      public long CountReceived { get; set; }
 
-      public long TotalSent { get; set; }
+      public long CountSent { get; set; }
 
-      public long TotalStaked { get; set; }
+      public long CountStaked { get; set; }
 
-      public long TotalMined { get; set; }
+      public long CountMined { get; set; }
 
       public long TotalSpendableTransactions { get; set; }
    }
