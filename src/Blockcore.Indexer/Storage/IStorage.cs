@@ -10,18 +10,13 @@ namespace Blockcore.Indexer.Storage
 
    public interface IStorage
    {
-      //IEnumerable<SyncBlockInfo> BlockGetIncompleteBlocks();
-
-      [Obsolete("Should not be used, instead use methods that support offset and limit.")]
-      IEnumerable<SyncBlockInfo> BlockGetBlockCount(int count);
-
       SyncBlockInfo GetLatestBlock();
 
       int GetMemoryTransactionsCount();
 
-      AddressBalance AddressBalance(string address, long confirmations = 0, bool includeMempool = false);
+      QueryAddress AddressBalance(string address);
 
-      QueryResult<QueryTransaction> AddressTransactions(string address, long confirmations, bool unconfirmed, TransactionUsedFilter used, int offset, int limit);
+      QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit);
 
       QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit);
 

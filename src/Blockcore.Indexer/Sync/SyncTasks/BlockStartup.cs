@@ -1,3 +1,5 @@
+using Blockcore.Indexer.Client.Types;
+
 namespace Blockcore.Indexer.Sync.SyncTasks
 {
    using System.Threading.Tasks;
@@ -48,6 +50,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       {
          Client.BitcoinClient client = Client.CryptoClientFactory.Create(connection);
 
+         Runner.SyncingBlocks.PullingTip = null;
          Runner.SyncingBlocks.StoreTip = syncOperations.RewindToLastCompletedBlock();
 
          if (Runner.SyncingBlocks.StoreTip == null)
@@ -58,15 +61,15 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             log.LogDebug($"Processing genesis hash = {genesisHash}");
 
-            SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(connection, Runner.SyncingBlocks.PullingTip);
+            BlockInfo genesisBlock = await client.GetBlockAsync(genesisHash);
+            SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(connection, genesisBlock);
 
             StorageBatch genesisBatch = new StorageBatch();
             storageOperations.AddToStorageBatch(genesisBatch, block);
-            storageOperations.PushStorageBatch(genesisBatch);
             Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
          }
 
-         var fetchedBlock = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
+         BlockInfo fetchedBlock = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
          if (fetchedBlock == null)
          {
             Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToBestChain(connection);
