@@ -194,26 +194,20 @@ namespace Blockcore.Indexer.Storage.Mongo
          FilterDefinition<MapBlock> filter = filterBuilder.Empty;
 
          // Skip and Limit only supports int, so we can't support long amount of documents.
-         int total = (int)MapBlock.Find(filter).CountDocuments();
+         int total = syncingBlocks.StoreTip != null ? (int)syncingBlocks.StoreTip.BlockIndex : (int)MapBlock.Find(filter).CountDocuments() - 1;
 
          if (total == 0)
          {
             return new QueryResult<SyncBlockInfo> { Items = Enumerable.Empty<SyncBlockInfo>(), Total = total, Offset = offset, Limit = limit };
          }
 
-         // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
-         if (offset == 0 && total > 0)
-         {
-            offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
-         }
+         if (offset == 0 || offset > total)
+            offset = total;
 
-         IEnumerable<SyncBlockInfo> list = MapBlock.Find(filter)
-                   .SortBy(p => p.BlockIndex)
-                   .Skip(offset - 1) // 1 based index, so we'll subtract one.
-                   .Limit(limit)
-                   .ToList().Select(Convert);
+         IQueryable<MapBlock> filter1 = MapBlock.AsQueryable().Where(w => w.BlockIndex <= offset && w.BlockIndex > offset - limit);
+         IEnumerable<SyncBlockInfo> list1 = filter1.ToList().Select(Convert);
 
-         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
+         return new QueryResult<SyncBlockInfo> { Items = list1, Total = total, Offset = offset, Limit = limit };
       }
 
       public SyncBlockInfo BlockByIndex(long blockIndex)
@@ -506,10 +500,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          // This will first perform one db query.
          long total = addressComputed.CountSent + addressComputed.CountReceived + addressComputed.CountStaked + addressComputed.CountMined;
 
-         if (offset > total)
-            offset = 0;
-
-         if (offset == 0)
+         if (offset == 0 || offset > total)
             offset = (int)total;
 
          filter = filter.OrderByDescending(s => s.Position);
