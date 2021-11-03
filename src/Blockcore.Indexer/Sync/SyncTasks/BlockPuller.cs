@@ -131,7 +131,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          if (!ibd || currentStorageBatch.MapBlocks.Count >= 1000 || currentStorageBatch.TotalSize > 5000000) // 5000000) // 10000000) todo: add this to config
          {
-            log.LogDebug($"Batch of {currentStorageBatch.MapBlocks.Count} blocks created at height = {nextBlock.Height}({nextHash}) batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb. Batch time taken = {watchBatch.ElapsedMilliseconds}ms.");
+            log.LogDebug($"Batch of {currentStorageBatch.MapBlocks.Count} blocks created at height = {nextBlock.Height}({nextHash}) batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb Seconds = {watchBatch.Elapsed.TotalSeconds}.");
 
             Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
             currentStorageBatch = new StorageBatch();
