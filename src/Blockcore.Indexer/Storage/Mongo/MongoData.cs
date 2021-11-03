@@ -194,7 +194,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          FilterDefinition<MapBlock> filter = filterBuilder.Empty;
 
          // Skip and Limit only supports int, so we can't support long amount of documents.
-         int total = (int)MapBlock.Find(filter).CountDocuments();
+         int total = syncingBlocks.StoreTip != null ? (int)syncingBlocks.StoreTip.BlockIndex : (int)MapBlock.Find(filter).CountDocuments() - 1;
 
          if (total == 0)
          {
@@ -202,18 +202,24 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
 
          // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
-         if (offset == 0 && total > 0)
-         {
-            offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
-         }
+         //if (offset == 0 && total > 0)
+         //{
+         //   offset = (total - limit); //+ 1; // +1 to counteract the Skip -1 below.
+         //}
 
-         IEnumerable<SyncBlockInfo> list = MapBlock.Find(filter)
-                   .SortBy(p => p.BlockIndex)
-                   .Skip(offset - 1) // 1 based index, so we'll subtract one.
-                   .Limit(limit)
-                   .ToList().Select(Convert);
+         if (offset == 0 || offset > total)
+            offset = total;
 
-         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
+         IQueryable<MapBlock> filter1 = MapBlock.AsQueryable().Where(w => w.BlockIndex <= offset && w.BlockIndex > offset - limit);
+         IEnumerable<SyncBlockInfo> list1 = filter1.ToList().Select(Convert);
+
+         //IEnumerable<SyncBlockInfo> list = MapBlock.Find(filter)
+         //          .SortBy(p => p.BlockIndex)
+         //          .Skip(offset - 1) // 1 based index, so we'll subtract one.
+         //          .Limit(limit)
+         //          .ToList().Select(Convert);
+
+         return new QueryResult<SyncBlockInfo> { Items = list1, Total = total, Offset = offset, Limit = limit };
       }
 
       public SyncBlockInfo BlockByIndex(long blockIndex)
