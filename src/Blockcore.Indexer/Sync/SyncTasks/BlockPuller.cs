@@ -25,8 +25,12 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       private readonly SyncConnection syncConnection;
 
       private readonly ILogger<BlockPuller> log;
+
       private readonly IStorageOperations storageOperations;
+
       private readonly System.Diagnostics.Stopwatch watch;
+
+      private readonly System.Diagnostics.Stopwatch watchBatch;
 
       private StorageBatch currentStorageBatch;
 
@@ -47,6 +51,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          this.syncOperations = syncOperations;
          config = configuration.Value;
          watch = Stopwatch.Start();
+         watchBatch = Stopwatch.Start();
       }
 
       /// <inheritdoc />
@@ -126,10 +131,12 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          if (!ibd || currentStorageBatch.MapBlocks.Count > 1000 || currentStorageBatch.TotalSize > 5000000) // 5000000) // 10000000) todo: add this to config
          {
-            log.LogDebug($"Batch of {currentStorageBatch.MapBlocks.Count} blocks created at height = {nextBlock.Height}({nextHash}) batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb");
+            log.LogDebug($"Batch of {currentStorageBatch.MapBlocks.Count} blocks created at height = {nextBlock.Height}({nextHash}) batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb. Batch time taken = {watchBatch.ElapsedMilliseconds}ms.");
 
             Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
             currentStorageBatch = new StorageBatch();
+
+            watchBatch.Restart();
          }
 
          Runner.SyncingBlocks.PullingTip = nextBlock;
