@@ -646,7 +646,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          }
 
-         if (maxHeight > 0)
+         if (transcations.Any())
          {
             foreach (KeyValuePair<string, MapTransactionAddressBag> item in transcations.OrderBy(o => o.Value.BlockIndex))
             {
