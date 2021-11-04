@@ -497,6 +497,20 @@ namespace Blockcore.Indexer.Storage.Mongo
          IQueryable<MapTransactionAddressHistoryComputed> filter = MapTransactionAddressHistoryComputed.AsQueryable()
             .Where(t => t.Addresses.Contains(address));
 
+         SyncBlockInfo storeTip = syncingBlocks.StoreTip;
+         if (storeTip == null)
+         {
+            // this can happen if node is in the middle of reorg
+
+            return new QueryResult<QueryAddressItem>
+            {
+               Items = Enumerable.Empty<QueryAddressItem>(),
+               Offset = offset,
+               Limit = limit,
+               Total = 0
+            };
+         };
+
          // This will first perform one db query.
          long total = addressComputed.CountSent + addressComputed.CountReceived + addressComputed.CountStaked + addressComputed.CountMined;
 
@@ -576,21 +590,27 @@ namespace Blockcore.Indexer.Storage.Mongo
       /// </summary>
       private MapTransactionAddressComputed ComputeAddressBalance(string address)
       {
-         FilterDefinition<MapTransactionAddressComputed> addrFilter = Builders<MapTransactionAddressComputed>.Filter.AnyIn(info => info.Addresses, new List<string> { address });
+         FilterDefinition<MapTransactionAddressComputed> addrFilter = Builders<MapTransactionAddressComputed>.Filter
+            .Where(f => f.Addresses.Contains(address)); //.AnyIn(info => info.Addresses, new List<string> { address });
          MapTransactionAddressComputed addressComputed = MapTransactionAddressComputed.Find(addrFilter).FirstOrDefault();
 
          if (addressComputed == null)
          {
-            addressComputed = new MapTransactionAddressComputed() { Id = address, ComputedBlockIndex = 0, Received = 0, Sent = 0 };
+            addressComputed = new MapTransactionAddressComputed() { Id = address, Addresses = new List<string> { address }, ComputedBlockIndex = 0 };
+            MapTransactionAddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
          }
 
-         long fromHeight = addressComputed.ComputedBlockIndex;
-         long tipIndex = syncingBlocks.StoreTip.BlockIndex;
+         SyncBlockInfo storeTip = syncingBlocks.StoreTip;
+         if (storeTip == null)
+            return addressComputed; // this can happen if node is in the middle of reorg
+
+         long currentHeight = addressComputed.ComputedBlockIndex;
+         long tipHeight = storeTip.BlockIndex;
 
          IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
             .Where(t => t.Addresses.Contains(address))
-            .Where(b => b.BlockIndex > fromHeight || b.SpendingBlockIndex > fromHeight)
-            .Where(b => b.BlockIndex <= tipIndex || b.SpendingBlockIndex <= tipIndex); // filter out entries of blocks that have not been completed
+            .Where(b => b.BlockIndex > currentHeight || b.SpendingBlockIndex > currentHeight)
+            .Where(b => b.BlockIndex <= tipHeight || b.SpendingBlockIndex <= tipHeight); // filter out entries of blocks that have not been completed
 
          long countReceived = 0, countSent = 0, countStaked = 0, countMined = 0;
          long received = 0, sent = 0, staked = 0, mined = 0;
@@ -601,12 +621,9 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          foreach (MapTransactionAddress item in filter)
          {
-            if (addressComputed.Addresses == null)
-               addressComputed.Addresses = item.Addresses;
-
             maxHeight = Math.Max(maxHeight, Math.Max(item.BlockIndex, item.SpendingBlockIndex ?? 0));
 
-            if (item.BlockIndex > fromHeight && item.BlockIndex <= tipIndex)
+            if (item.BlockIndex > currentHeight && item.BlockIndex <= tipHeight)
             {
                if (transcations.TryGetValue(item.TransactionId, out MapTransactionAddressBag current))
                {
@@ -622,7 +639,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                }
             }
 
-            if (item.SpendingTransactionId != null && item.SpendingBlockIndex > fromHeight && item.SpendingBlockIndex <= tipIndex)
+            if (item.SpendingTransactionId != null && item.SpendingBlockIndex > currentHeight && item.SpendingBlockIndex <= tipHeight)
             {
                if (transcations.TryGetValue(item.SpendingTransactionId, out MapTransactionAddressBag current))
                {
@@ -718,7 +735,25 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             try
             {
+               // only push to store if the same version of computed bloc index is present (meaning entry was not modified)
+               FilterDefinition<MapTransactionAddressComputed> updateFilter = Builders<MapTransactionAddressComputed>.Filter
+                  .Where(f => f.Addresses.Contains(address) && f.ComputedBlockIndex == currentHeight);
+
+               // update the computed address entry, this will throw if a newer version is in store
+               MapTransactionAddressComputed.ReplaceOne(updateFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
+
+               // if we managed to update the address we can safely insert history
                MapTransactionAddressHistoryComputed.InsertMany(history.Values, new InsertManyOptions { IsOrdered = false });
+            }
+            catch (MongoWriteException nwe)
+            {
+               if (nwe.WriteError.Category != ServerErrorCategory.DuplicateKey) //.Message.Contains("E11000 duplicate key error collection"))
+               {
+                  throw;
+               }
+
+               // address was already modified fetch the latest version
+               addressComputed = MapTransactionAddressComputed.Find(addrFilter).FirstOrDefault();
             }
             catch (MongoBulkWriteException mbwex)
             {
@@ -730,9 +765,13 @@ namespace Blockcore.Indexer.Storage.Mongo
                {
                   throw;
                }
-            }
 
-            MapTransactionAddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
+               // not sure what to do here, this should never happen if we correctly manage OCC
+               // (Optimistic Concurrency Control) on the address computed table.
+
+               // throw this for now
+               throw;
+            }
          }
 
          return addressComputed;
