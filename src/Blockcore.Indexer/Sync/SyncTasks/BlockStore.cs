@@ -53,6 +53,10 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       {
          if (Runner.SyncingBlocks.ReorgMode == true)
          {
+            // null the store tip so the document count will be taken form disk
+            Runner.SyncingBlocks.StoreTip = null;
+
+            // rewind the data in store
             Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToBestChain(syncConnection);
             Runner.SyncingBlocks.PullingTip = null;
             Queue.Clear();
