@@ -15,6 +15,7 @@ using Blockcore.Indexer.Sync;
 using Blockcore.Indexer.Sync.SyncTasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -68,6 +69,7 @@ namespace Blockcore.Indexer
          services.AddControllers(options =>
          {
             options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
+            options.Conventions.Add(new ActionHidingConvention());
          }).AddJsonOptions(options =>
          {
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
@@ -155,6 +157,22 @@ namespace Blockcore.Indexer
             string basePath = PlatformServices.Default.Application.ApplicationBasePath;
             string fileName = typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml";
             return Path.Combine(basePath, fileName);
+         }
+      }
+
+      /// <summary>
+      /// Hide Stratis related endpoints in Swagger shown due to using Nuget packages
+      /// in WebApi project for serialization.
+      /// </summary>
+      public class ActionHidingConvention : IActionModelConvention
+      {
+         public void Apply(ActionModel action)
+         {
+            // Replace with any logic you want
+            if (!action.Controller.DisplayName.Contains("Blockcore.Indexer"))
+            {
+               action.ApiExplorer.IsVisible = false;
+            }
          }
       }
    }
