@@ -583,15 +583,16 @@ namespace Blockcore.Indexer.Storage.Mongo
       ///
       /// Resource Access:
       /// concerns around computing tables
-      /// 1. users call the method concurrently and compute the data simultaneously, this is mostly cpu wistful
+      ///    users call the method concurrently and compute the data simultaneously, this is mostly cpu wistful
       ///    as the tables are idempotent and the first call will compute and persist the computed data but second
-      ///    will just fail to persist any existing entries
-      ///    potential fix: lock an address entry to disk while its being computed (use the db in case multiple indexers are used)
+      ///    will just fail to persist any existing entries, to apply this we use OCC (Optimistic Concurrency Control)
+      ///    on the block height, if the version currently in disk is not the same as when the row was read
+      ///    another process already calculated the latest additional entries
       /// </summary>
       private MapTransactionAddressComputed ComputeAddressBalance(string address)
       {
          FilterDefinition<MapTransactionAddressComputed> addrFilter = Builders<MapTransactionAddressComputed>.Filter
-            .Where(f => f.Addresses.Contains(address)); //.AnyIn(info => info.Addresses, new List<string> { address });
+            .Where(f => f.Addresses.Contains(address));
          MapTransactionAddressComputed addressComputed = MapTransactionAddressComputed.Find(addrFilter).FirstOrDefault();
 
          if (addressComputed == null)
@@ -609,8 +610,8 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
             .Where(t => t.Addresses.Contains(address))
-            .Where(b => b.BlockIndex > currentHeight || b.SpendingBlockIndex > currentHeight)
-            .Where(b => b.BlockIndex <= tipHeight || b.SpendingBlockIndex <= tipHeight); // filter out entries of blocks that have not been completed
+            .Where(b => (b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight)
+                        || (b.SpendingBlockIndex > currentHeight && b.SpendingBlockIndex <= tipHeight));
 
          long countReceived = 0, countSent = 0, countStaked = 0, countMined = 0;
          long received = 0, sent = 0, staked = 0, mined = 0;
@@ -621,10 +622,10 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          foreach (MapTransactionAddress item in filter)
          {
-            maxHeight = Math.Max(maxHeight, Math.Max(item.BlockIndex, item.SpendingBlockIndex ?? 0));
-
             if (item.BlockIndex > currentHeight && item.BlockIndex <= tipHeight)
             {
+               maxHeight = Math.Max(maxHeight, item.BlockIndex);
+
                if (transcations.TryGetValue(item.TransactionId, out MapTransactionAddressBag current))
                {
                   current.CoinBase = item.CoinBase;
@@ -641,6 +642,8 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             if (item.SpendingTransactionId != null && item.SpendingBlockIndex > currentHeight && item.SpendingBlockIndex <= tipHeight)
             {
+               maxHeight = Math.Max(maxHeight, item.SpendingBlockIndex.Value);
+
                if (transcations.TryGetValue(item.SpendingTransactionId, out MapTransactionAddressBag current))
                {
                   current.Inputs.Add(item);
@@ -736,6 +739,8 @@ namespace Blockcore.Indexer.Storage.Mongo
             try
             {
                // only push to store if the same version of computed bloc index is present (meaning entry was not modified)
+               // block height must change if new trx are added so use it to apply OCC (Optimistic Concurrency Control)
+               // to determine if a newer entry was pushed to store.
                FilterDefinition<MapTransactionAddressComputed> updateFilter = Builders<MapTransactionAddressComputed>.Filter
                   .Where(f => f.Addresses.Contains(address) && f.ComputedBlockIndex == currentHeight);
 
@@ -747,7 +752,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
             catch (MongoWriteException nwe)
             {
-               if (nwe.WriteError.Category != ServerErrorCategory.DuplicateKey) //.Message.Contains("E11000 duplicate key error collection"))
+               if (nwe.WriteError.Category != ServerErrorCategory.DuplicateKey)
                {
                   throw;
                }
@@ -761,16 +766,10 @@ namespace Blockcore.Indexer.Storage.Mongo
                // if a trx is already written and we attempt to write it again
                // the write will fail and throw, so we ignore such errors.
                // (IsOrdered = false will attempt all entries and only throw when done)
-               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey)) //.Message.Contains("E11000 duplicate key error collection"))
+               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
                {
                   throw;
                }
-
-               // not sure what to do here, this should never happen if we correctly manage OCC
-               // (Optimistic Concurrency Control) on the address computed table.
-
-               // throw this for now
-               throw;
             }
          }
 
