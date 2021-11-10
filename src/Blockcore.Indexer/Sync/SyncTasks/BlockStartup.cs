@@ -50,25 +50,32 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       {
          Client.BitcoinClient client = Client.CryptoClientFactory.Create(connection);
 
+         // null the pulling tip so it will start form store tip
          Runner.SyncingBlocks.PullingTip = null;
+
+         // null the store tip so the document count will be taken form disk
+         Runner.SyncingBlocks.StoreTip = null;
+
+         // rewind the chain down to the last block that completed to sync
          Runner.SyncingBlocks.StoreTip = syncOperations.RewindToLastCompletedBlock();
 
          if (Runner.SyncingBlocks.StoreTip == null)
          {
             // No blocks in store start from zero
             // push the genesis block to store
-            string genesisHash = client.GetblockHash(connection.StartBlockIndex);
+            string startHash = client.GetblockHash(connection.StartBlockIndex);
 
-            log.LogDebug($"Processing genesis hash = {genesisHash}");
+            log.LogDebug($"Processing the first block hash = {startHash}");
 
-            BlockInfo genesisBlock = await client.GetBlockAsync(genesisHash);
-            SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(connection, genesisBlock);
+            BlockInfo startBlock = await client.GetBlockAsync(startHash);
+            SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(connection, startBlock);
 
-            StorageBatch genesisBatch = new StorageBatch();
-            storageOperations.AddToStorageBatch(genesisBatch, block);
-            Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
+            StorageBatch startBlockBatch = new StorageBatch();
+            storageOperations.AddToStorageBatch(startBlockBatch, block);
+            Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(startBlockBatch);
          }
 
+         // a reorg happened when the node was shutdown reorg the store to the best known block
          BlockInfo fetchedBlock = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
          if (fetchedBlock == null)
          {

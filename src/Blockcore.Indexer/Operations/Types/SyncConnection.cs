@@ -128,6 +128,10 @@ namespace Blockcore.Indexer.Operations.Types
 
       public string User { get; set; }
 
+      /// <summary>
+      /// The block height to start the sync from,
+      /// note this can not be changed without wiping the db.
+      /// </summary>
       public long StartBlockIndex { get; set; }
 
       public Buffer<(DateTime Inserted, TimeSpan Duration, long Size)> RecentItems { get; set; }
