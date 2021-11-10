@@ -51,13 +51,15 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          Client.BitcoinClient client = Client.CryptoClientFactory.Create(connection);
 
          Runner.SyncingBlocks.PullingTip = null;
+         Runner.SyncingBlocks.StoreTip = null;
+
          Runner.SyncingBlocks.StoreTip = syncOperations.RewindToLastCompletedBlock();
 
          if (Runner.SyncingBlocks.StoreTip == null)
          {
             // No blocks in store start from zero
             // push the genesis block to store
-            string genesisHash = client.GetblockHash(connection.StartBlockIndex);
+            string genesisHash = client.GetblockHash(0);
 
             log.LogDebug($"Processing genesis hash = {genesisHash}");
 
