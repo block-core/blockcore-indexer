@@ -1,5 +1,3 @@
-using Blockcore.Indexer.Client.Types;
-
 namespace Blockcore.Indexer.Sync.SyncTasks
 {
    using System.Threading.Tasks;
@@ -61,6 +59,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             // push the genesis block to store
             string genesisHash = client.GetblockHash(0);
 
+            var genesisBlock = client.GetBlock(genesisHash);
+
             log.LogDebug($"Processing genesis hash = {genesisHash}");
 
             BlockInfo genesisBlock = await client.GetBlockAsync(genesisHash);
@@ -69,6 +69,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             StorageBatch genesisBatch = new StorageBatch();
             storageOperations.AddToStorageBatch(genesisBatch, block);
             Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
+             Runner.SyncingBlocks.StoreTip.BlockHash = genesisHash; // this is just a workaround that needs to be addressed properly later on
          }
 
          BlockInfo fetchedBlock = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);

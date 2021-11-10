@@ -62,8 +62,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          // indexes
          log.LogTrace("MongoBuilder: Creating indexes");
 
-         IndexKeysDefinition<AddressTransaction> blkIndex = Builders<AddressTransaction>.IndexKeys.Ascending(blk => blk.Address);
-         mongoData.AddressTransaction.Indexes.CreateOne(blkIndex);
+         IndexKeysDefinition<AddressTransaction> addressIndex = Builders<AddressTransaction>.IndexKeys.Ascending(blk => blk.Address);
+         mongoData.AddressTransaction.Indexes.CreateOne(addressIndex);
+
+         IndexKeysDefinition<AddressTransaction> transactionIndex = Builders<AddressTransaction>.IndexKeys.Ascending(blk => blk.TransactionId);
+         mongoData.AddressTransaction.Indexes.CreateOne(transactionIndex);
 
          return Task.FromResult(1);
       }

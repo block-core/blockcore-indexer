@@ -57,12 +57,14 @@ namespace Blockcore.Indexer.Storage.Mongo
             .SelectMany(addr =>
                addr.addresses.Select((a, addrIdx) => new AddressTransaction
                {
-                  UniquId = item.BlockInfo.Height * 100000000 + addr.trxIndex * 100000 + addr.outputIndex * 100 +
-                            addrIdx,
+                  //UniquId = item.BlockInfo.Height * 100000000 + addr.trxIndex * 100000 + addr.outputIndex * 100 + addrIdx,
                   Address = a,
                   AddressHash = MemoryMarshal.AsRef<int>(Hashes.SHA256(Encoding.ASCII.GetBytes(a))),
                   TransactionId = addr.trx.GetHash().ToString(),
-                  BlockIndex = item.BlockInfo.Height
+                  BlockIndex = item.BlockInfo.Height,
+                  TransactionIndex = addr.trxIndex,
+                  OutputIndex = addr.outputIndex,
+                  AddressIndex = addrIdx
                }));
 
          storageBatch.AddressTransactions.AddRange(addresses);
