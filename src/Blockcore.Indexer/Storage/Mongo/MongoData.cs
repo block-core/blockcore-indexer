@@ -190,24 +190,21 @@ namespace Blockcore.Indexer.Storage.Mongo
       /// <returns></returns>
       public QueryResult<SyncBlockInfo> Blocks(int offset, int limit)
       {
-         FilterDefinitionBuilder<MapBlock> filterBuilder = Builders<MapBlock>.Filter;
-         FilterDefinition<MapBlock> filter = filterBuilder.Empty;
+         // page using the block height as paging counter
+         SyncBlockInfo storeTip = syncingBlocks.StoreTip;
+         long total = storeTip != null ?
+            storeTip.BlockIndex :
+            MapBlock.Find(Builders<MapBlock>.Filter.Empty).CountDocuments() - 1;
 
-         // Skip and Limit only supports int, so we can't support long amount of documents.
-         int total = syncingBlocks.StoreTip != null ? (int)syncingBlocks.StoreTip.BlockIndex : (int)MapBlock.Find(filter).CountDocuments() - 1;
-
-         if (total == 0)
-         {
-            return new QueryResult<SyncBlockInfo> { Items = Enumerable.Empty<SyncBlockInfo>(), Total = total, Offset = offset, Limit = limit };
-         }
+         if (total == -1) total = 0;
 
          if (offset == 0 || offset > total)
-            offset = total;
+            offset = (int)total;
 
-         IQueryable<MapBlock> filter1 = MapBlock.AsQueryable().Where(w => w.BlockIndex <= offset && w.BlockIndex > offset - limit);
-         IEnumerable<SyncBlockInfo> list1 = filter1.ToList().Select(Convert);
+         IQueryable<MapBlock> filter = MapBlock.AsQueryable().Where(w => w.BlockIndex <= offset && w.BlockIndex > offset - limit);
+         IEnumerable<SyncBlockInfo> list = filter.ToList().Select(Convert);
 
-         return new QueryResult<SyncBlockInfo> { Items = list1, Total = total, Offset = offset, Limit = limit };
+         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
       }
 
       public SyncBlockInfo BlockByIndex(long blockIndex)

@@ -92,7 +92,6 @@ namespace Blockcore.Indexer.Operations.Types
          ServerDomain = configuration.RpcDomain.Replace("{Symbol}", chainConfiguration.Symbol.ToLower());
          User = configuration.RpcUser;
          Secure = configuration.RpcSecure;
-         StartBlockIndex = configuration.StartBlockIndex;
 
          if (string.IsNullOrWhiteSpace(networkConfiguration.NetworkType))
          {
@@ -127,8 +126,6 @@ namespace Blockcore.Indexer.Operations.Types
       public string ServerName { get; set; }
 
       public string User { get; set; }
-
-      public long StartBlockIndex { get; set; }
 
       public Buffer<(DateTime Inserted, TimeSpan Duration, long Size)> RecentItems { get; set; }
    }

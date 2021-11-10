@@ -18,8 +18,6 @@ namespace Blockcore.Indexer.Settings
 
       public bool SyncBlockchain { get; set; }
 
-      public long StartBlockIndex { get; set; }
-
       public bool SyncMemoryPool { get; set; }
 
       public string RpcUser { get; set; }
