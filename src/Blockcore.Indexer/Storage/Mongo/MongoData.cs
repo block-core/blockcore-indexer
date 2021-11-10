@@ -65,6 +65,22 @@ namespace Blockcore.Indexer.Storage.Mongo
          watch = Stopwatch.Start();
       }
 
+      public IMongoCollection<AddressTransaction> AddressTransaction
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<AddressTransaction>("AddressTransaction");
+         }
+      }
+
+      public IMongoCollection<AddressForInput> AddressForInput
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<AddressForInput>("AddressTransaction");
+         }
+      }
+
       public IMongoCollection<MapTransactionAddress> MapTransactionAddress
       {
          get

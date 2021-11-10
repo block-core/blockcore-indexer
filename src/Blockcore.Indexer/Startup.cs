@@ -44,8 +44,8 @@ namespace Blockcore.Indexer
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
          services.AddSingleton<IStorage, MongoData>();
-         services.AddSingleton<IStorageOperations, MongoStorageOperations>();
-         services.AddSingleton<TaskStarter, MongoBuilder>();
+         services.AddSingleton<IStorageOperations, MongoStorageOperationsPOC>();
+         services.AddSingleton<TaskStarter, MongoBuilderPocAddress>();
          services.AddTransient<SyncServer>();
          services.AddSingleton<SyncConnection>();
          services.AddSingleton<ISyncOperations, SyncOperations>();
