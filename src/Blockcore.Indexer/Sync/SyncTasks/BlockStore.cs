@@ -25,6 +25,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       private readonly ISyncOperations syncOperations;
 
       private readonly SyncConnection syncConnection;
+      readonly IUtxoCache utxoCache;
 
       private readonly System.Diagnostics.Stopwatch watch;
       private readonly Queue<(long count, long size, double seconds)> insertStats;
@@ -37,12 +38,14 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          ILogger<BlockStore> logger,
          IStorageOperations storageOperations,
          ISyncOperations syncOperations,
-         SyncConnection syncConnection)
+         SyncConnection syncConnection,
+         IUtxoCache utxoCache)
           : base(configuration, logger)
       {
          this.storageOperations = storageOperations;
          this.syncOperations = syncOperations;
          this.syncConnection = syncConnection;
+         this.utxoCache = utxoCache;
          log = logger;
          watch = Stopwatch.Start();
          insertStats = new Queue<(long count, long size, double seconds)>();
@@ -67,16 +70,16 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          if (TryDequeue(out StorageBatch item))
          {
             // check all blocks are consecutive and start from the last block in store.
-            //string prevHash = Runner.SyncingBlocks.StoreTip.BlockHash;
-            //foreach (MapBlock mapBlock in item.MapBlocks.Values.OrderBy(b => b.BlockIndex))
-            //{
-            //   if (mapBlock.PreviousBlockHash != prevHash)
-            //   {
-            //      throw new ApplicationException("None consecutive block received");
-            //   }
+            string prevHash = Runner.SyncingBlocks.StoreTip.BlockHash;
+            foreach (MapBlock mapBlock in item.MapBlocks.Values.OrderBy(b => b.BlockIndex))
+            {
+               if (mapBlock.PreviousBlockHash != prevHash)
+               {
+                  throw new ApplicationException("None consecutive block received");
+               }
 
-            //   prevHash = mapBlock.BlockHash;
-            //}
+               prevHash = mapBlock.BlockHash;
+            }
 
             watch.Restart();
 
@@ -97,7 +100,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             double avgBlocks = totalBlocks / totalSeconds;
             double avgSeconds = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Pushed {item.AddressForOutputs.Count} outputs, {item.AddressForInputs.Count} inputs,  blocks tip = {Runner.SyncingBlocks.StoreTip.BlockIndex} total Size = {((decimal)item.TotalSize / 1000000):0.00}mb Seconds = {watch.Elapsed.TotalSeconds} avg insert {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b)");
+            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, utxocache={utxoCache.CacheSize}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.SyncingBlocks.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, avg insert {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b)");
 
             var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
             Runner.Get<Notifier>().Enqueue(notifications);

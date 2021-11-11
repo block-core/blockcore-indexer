@@ -13,6 +13,6 @@ namespace Blockcore.Indexer.Operations
       AddressForOutput GetOrFetch(string outpoint, bool addToCache = false);
       void AddToCache(IEnumerable<AddressForOutput> outputs);
 
-      void RemoveFromCache(IEnumerable<AddressForOutput> outputs);
+      void RemoveFromCache(IEnumerable<AddressForInput> inputs);
    }
 }

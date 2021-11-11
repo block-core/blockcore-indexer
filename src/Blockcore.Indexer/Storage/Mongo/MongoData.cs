@@ -208,9 +208,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          // page using the block height as paging counter
          SyncBlockInfo storeTip = syncingBlocks.StoreTip;
-         long total = storeTip != null ?
-            storeTip.BlockIndex :
-            MapBlock.Find(Builders<MapBlock>.Filter.Empty).CountDocuments() - 1;
+         long total = storeTip?.BlockIndex ?? MapBlock.Find(Builders<MapBlock>.Filter.Empty).CountDocuments() - 1;
 
          if (total == -1) total = 0;
 
@@ -369,7 +367,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             }).ToList(),
             Outputs = transaction.Outputs.Select((output, index) => new SyncTransactionItemOutput
             {
-               Address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.FirstOrDefault(),
+               Address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.Addresses?.FirstOrDefault(),
                Index = index,
                Value = output.Value,
                OutputType = StandardScripts.GetTemplateFromScriptPubKey(output.ScriptPubKey)?.Type.ToString(),
@@ -1041,7 +1039,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             int index = 0;
             foreach (TxOut output in rawTransaction.Outputs)
             {
-               string[] addressIndex = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
+               string[] addressIndex = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.Addresses;
 
                if (addressIndex == null)
                   continue;

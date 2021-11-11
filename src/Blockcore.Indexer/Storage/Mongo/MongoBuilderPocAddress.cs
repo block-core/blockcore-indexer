@@ -39,13 +39,41 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          log.LogTrace("MongoBuilder: Creating mappings");
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapBlock)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapBlock>(cm =>
+            {
+               cm.AutoMap();
+               //cm.MapIdMember(c => c.BlockHash);
+               cm.MapIdMember(c => c.BlockIndex);
+            });
+         }
+
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransactionBlock)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionBlock>(cm =>
+            {
+               cm.AutoMap();
+               //cm.MapIdMember(c => c.TransactionId);
+            });
+         }
+
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransaction)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransaction>(cm =>
+            {
+               cm.AutoMap();
+               cm.MapIdMember(c => c.TransactionId);
+            });
+         }
+
          if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressForOutput)))
          {
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForOutput>(cm =>
-                {
-                   cm.AutoMap();
-                   //cm.MapIdMember(c => c.Outpoint);
-                });
+            {
+               cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
+            });
          }
 
          if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressForInput)))
@@ -53,7 +81,6 @@ namespace Blockcore.Indexer.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForInput>(cm =>
             {
                cm.AutoMap();
-               //cm.MapIdMember(c => c.Outpoint);
             });
          }
 
@@ -62,11 +89,16 @@ namespace Blockcore.Indexer.Storage.Mongo
          // indexes
          log.LogTrace("MongoBuilder: Creating indexes");
 
+         //IndexKeysDefinition<MapBlock> blkIndex = Builders<MapBlock>.IndexKeys.Ascending(blk => blk.BlockIndex);
+         //mongoData.MapBlock.Indexes.CreateOne(blkIndex);
+
+         //IndexKeysDefinition<MapTransactionBlock> trxBlkIndex = Builders<MapTransactionBlock>.IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex);
+         //mongoData.MapTransactionBlock.Indexes.CreateOne(trxBlkIndex);
+
          //IndexKeysDefinition<AddressTransaction> addressIndex = Builders<AddressTransaction>.IndexKeys.Ascending(blk => blk.Address);
          //mongoData.AddressTransaction.Indexes.CreateOne(addressIndex);
 
-         //IndexKeysDefinition<AddressForOutput> transactionIndex = Builders<AddressForOutput>.IndexKeys.Ascending(blk => blk.TransactionId);
-         //mongoData.AddressTransaction.Indexes.CreateOne(transactionIndex);
+         mongoData.AddressForOutput.Indexes.CreateOne(Builders<AddressForOutput>.IndexKeys.Ascending(blk => blk.Outpoint));
 
          return Task.FromResult(1);
       }

@@ -17,7 +17,7 @@ namespace Blockcore.Indexer.Operations.Types
       private readonly ILogger<UtxoCache> logger;
       private readonly ConcurrentDictionary<string, AddressForOutput> cache;
 
-      private readonly int maxItemInCache = 1_000_000;
+      private readonly int maxItemInCache = 10_000_000;
 
       public UtxoCache(IStorage storage, ILogger<UtxoCache> logger)
       {
@@ -62,9 +62,9 @@ namespace Blockcore.Indexer.Operations.Types
          }
       }
 
-      public void RemoveFromCache(IEnumerable<AddressForOutput> outputs)
+      public void RemoveFromCache(IEnumerable<AddressForInput> inputs)
       {
-         foreach (AddressForOutput output in outputs)
+         foreach (AddressForInput output in inputs)
          {
             cache.TryRemove(output.Outpoint, out _);
          }

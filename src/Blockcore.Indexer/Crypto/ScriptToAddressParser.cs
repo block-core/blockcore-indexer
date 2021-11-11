@@ -4,6 +4,13 @@ using NBitcoin;
 
 namespace Blockcore.Indexer.Crypto
 {
+   public class ScriptOutputTemplte
+   {
+      public string[] Addresses { get; set; }
+
+      public TxOutType TxOutType { get; set; }
+   }
+
    public class ScriptToAddressParser
    {
       public static string GetSignerAddress(Network network, Script script)
@@ -18,23 +25,28 @@ namespace Blockcore.Indexer.Crypto
          return script.GetSignerAddress(network).ToString();
       }
 
-      public static string[] GetAddress(Network network, Script script)
+      public static ScriptOutputTemplte GetAddress(Network network, Script script)
       {
          ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(script);
 
          if (template == null)
             return null;
 
-         if (template.Type == TxOutType.TX_NONSTANDARD)
-            return null;
-
-         if (template.Type == TxOutType.TX_NULL_DATA)
-            return null;
+         if (template.Type == TxOutType.TX_NONSTANDARD ||
+             template.Type == TxOutType.TX_NULL_DATA ||
+             template.Type == TxOutType.TX_MULTISIG)
+         {
+            return new ScriptOutputTemplte {TxOutType = template.Type};
+         }
 
          if (template.Type == TxOutType.TX_PUBKEY)
          {
             PubKey[] pubkeys = script.GetDestinationPublicKeys(network);
-            return new[] { pubkeys[0].GetAddress(network).ToString() };
+            return new ScriptOutputTemplte
+            {
+               TxOutType = template.Type,
+               Addresses = new[] {pubkeys[0].GetAddress(network).ToString()}
+            };
          }
 
          if (template.Type == TxOutType.TX_PUBKEYHASH ||
@@ -44,14 +56,12 @@ namespace Blockcore.Indexer.Crypto
             BitcoinAddress bitcoinAddress = script.GetDestinationAddress(network);
             if (bitcoinAddress != null)
             {
-               return new[] { bitcoinAddress.ToString() };
+               return new ScriptOutputTemplte
+               {
+                  TxOutType = template.Type,
+                  Addresses = new[] {bitcoinAddress.ToString()}
+               };
             }
-         }
-
-         if (template.Type == TxOutType.TX_MULTISIG)
-         {
-            // TODO;
-            return null;
          }
 
          if (template.Type == TxOutType.TX_COLDSTAKE)
@@ -59,18 +69,17 @@ namespace Blockcore.Indexer.Crypto
             if (ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(script, out KeyId hotPubKeyHash, out KeyId coldPubKeyHash))
             {
                // We want to index based on both the cold and hot key
-               return new[]
+               return new ScriptOutputTemplte
                {
-                        hotPubKeyHash.GetAddress(network).ToString(),
-                        coldPubKeyHash.GetAddress(network).ToString(),
-                    };
+                  TxOutType = template.Type,
+                  Addresses = new[] {hotPubKeyHash.GetAddress(network).ToString(), coldPubKeyHash.GetAddress(network).ToString(),}
+               };
             }
 
-            return null;
+            return new ScriptOutputTemplte { TxOutType = template.Type };
          }
 
          return null;
       }
    }
 }
-
