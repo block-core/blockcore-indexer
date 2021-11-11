@@ -62,7 +62,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             trx.Outputs.Select((output,index) =>
                {
                   ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
-                  string  addr = res != null ? res.Addresses.First() ?? res.TxOutType.ToString() : string.Empty;
+                  string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.TxOutType.ToString() : null;
                   
                   return new AddressForOutput
                   {

@@ -40,7 +40,7 @@ namespace Blockcore.Indexer.Operations.Types
          IMongoQueryable<AddressForOutput> query = data.AddressForOutput.AsQueryable()
             .Where(w => w.Outpoint == outpoint);
 
-         AddressForOutput output = query.SingleOrDefault();
+         AddressForOutput output = query.FirstOrDefault();
 
          if (output == null)
          {
