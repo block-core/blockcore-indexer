@@ -44,7 +44,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForOutput>(cm =>
                 {
                    cm.AutoMap();
-                   cm.MapIdMember(c => c.Outpoint);
+                   //cm.MapIdMember(c => c.Outpoint);
                 });
          }
 
@@ -53,7 +53,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForInput>(cm =>
             {
                cm.AutoMap();
-               cm.MapIdMember(c => c.Outpoint);
+               //cm.MapIdMember(c => c.Outpoint);
             });
          }
 

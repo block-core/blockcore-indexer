@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Crypto;
 using Blockcore.Indexer.Operations;
@@ -20,12 +21,14 @@ namespace Blockcore.Indexer.Storage.Mongo
    public class MongoStorageOperationsPOC : IStorageOperations
    {
       private readonly SyncConnection syncConnection;
+      readonly IUtxoCache utxoCache;
       private readonly System.Diagnostics.Stopwatch watch;
       private readonly MongoData data;
 
-      public MongoStorageOperationsPOC(SyncConnection syncConnection,IStorage storage)
+      public MongoStorageOperationsPOC(SyncConnection syncConnection,IStorage storage, IUtxoCache utxoCache)
       {
          this.syncConnection = syncConnection;
+         this.utxoCache = utxoCache;
          data = (MongoData)storage;
          watch = new System.Diagnostics.Stopwatch();
       }
@@ -35,7 +38,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          storageBatch.TotalSize += item.BlockInfo.Size;
          storageBatch.MapBlocks.Add(item.BlockInfo.Height, new MapBlock {BlockIndex = item.BlockInfo.Height, BlockHash = item.BlockInfo.Hash, PreviousBlockHash = item.BlockInfo.PreviousBlockHash});// CreateMapBlock(item.BlockInfo));
 
-         var outputs = item.Transactions.SelectMany((trx, i) =>
+         IEnumerable<AddressForOutput> outputs = item.Transactions.SelectMany((trx, i) =>
             trx.Outputs.Select((output, j) =>
                {
                   return new AddressForOutput
@@ -53,17 +56,25 @@ namespace Blockcore.Indexer.Storage.Mongo
           
 
          storageBatch.AddressForOutputs.AddRange(outputs);
+         utxoCache.AddToCache(storageBatch.AddressForOutputs);
 
-         var inputs = item.Transactions.SelectMany((trx, i) =>
-            trx.Inputs.Select((output, j) =>
-            {
-               return new AddressForInput()
+         IEnumerable<AddressForInput> inputs = item.Transactions.SelectMany((trx, i) =>
+               trx.Inputs.Select((input, j) =>
                {
-                  //Address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey).FirstOrDefault(),
-                  Outpoint = string.Format("{0}-{1}", trx.GetHash(), j), BlockIndex = item.BlockInfo.Height,
-                  //Value = output.Value,
-               };
-            }));
+                  string inputsOuput = $"{input.PrevOut.Hash}-{input.PrevOut.N}";
+
+                  AddressForOutput utxo = utxoCache.GetOrFetch(inputsOuput);
+
+                  return new AddressForInput()
+                  {
+                     Value = utxo.Value,
+                     Address = ScriptToAddressParser.GetAddress(syncConnection.Network, Script.FromHex(utxo.ScriptHex))?.FirstOrDefault(),
+                     Outpoint = inputsOuput,
+                     TrxHash = trx.GetHash().ToString(),
+                     BlockIndex = item.BlockInfo.Height,
+                  };
+               }))
+            .Where(addr => addr.Address != null);
 
 
          storageBatch.AddressForInputs.AddRange(inputs);
@@ -72,6 +83,8 @@ namespace Blockcore.Indexer.Storage.Mongo
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
       {
          watch.Start();
+
+         data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions { IsOrdered = false });
 
          var t1 = Task.Run(() =>
          {
