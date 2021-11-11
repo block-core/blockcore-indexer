@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
+using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Crypto;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
@@ -31,50 +33,78 @@ namespace Blockcore.Indexer.Storage.Mongo
       public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
       {
          storageBatch.TotalSize += item.BlockInfo.Size;
+         storageBatch.MapBlocks.Add(item.BlockInfo.Height, new MapBlock {BlockIndex = item.BlockInfo.Height, BlockHash = item.BlockInfo.Hash, PreviousBlockHash = item.BlockInfo.PreviousBlockHash});// CreateMapBlock(item.BlockInfo));
 
-         // var outputIndexList = item.Transactions.SelectMany((_,i) => _.Outputs.Select((o,j) =>
-         //  new AddressForInput
-         //  {
-         //     UniquID = item.BlockInfo.Height * 100000000 + i * 1000 + j,
-         //     OutputIndex = j,
-         //     TransactionId = _.ToHex(),
-         //     Address = o.ScriptPubKey.ToHex(),
-         //  }));
-         //
-         //
-         //
-         // storageBatch.AddressForInputs.AddRange(outputIndexList);
-
-         var addresses = item.Transactions.SelectMany((_, i) =>
-               _.Outputs.Select((o, j) => new
+         var outputs = item.Transactions.SelectMany((trx, i) =>
+            trx.Outputs.Select((output, j) =>
                {
-                  trx = _,
-                  trxIndex = i,
-                  addresses = ScriptToAddressParser.GetAddress(syncConnection.Network, o.ScriptPubKey),
-                  outputIndex = j
-               }))
-            .Where(addr => addr.addresses != null)
-            .SelectMany(addr =>
-               addr.addresses.Select((a, addrIdx) => new AddressTransaction
-               {
-                  //UniquId = item.BlockInfo.Height * 100000000 + addr.trxIndex * 100000 + addr.outputIndex * 100 + addrIdx,
-                  Address = a,
-                  AddressHash = MemoryMarshal.AsRef<int>(Hashes.SHA256(Encoding.ASCII.GetBytes(a))),
-                  TransactionId = addr.trx.GetHash().ToString(),
-                  BlockIndex = item.BlockInfo.Height,
-                  TransactionIndex = addr.trxIndex,
-                  OutputIndex = addr.outputIndex,
-                  AddressIndex = addrIdx
-               }));
+                  return new AddressForOutput
+                  {
+                     Address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.FirstOrDefault(),
+                     Outpoint = string.Format("{0}-{1}", trx.GetHash(), j),
+                     BlockIndex = item.BlockInfo.Height,
+                     Value = output.Value,
+                     ScriptHex = output.ScriptPubKey.ToHex(),
+                     CoinBase = trx.IsCoinBase,
+                     CoinStake = syncConnection.Network.Consensus.IsProofOfStake && trx.IsCoinStake,
+                  };
+               })
+               .Where(addr => addr.Address != null));
+          
 
-         storageBatch.AddressTransactions.AddRange(addresses);
+         storageBatch.AddressForOutputs.AddRange(outputs);
+
+         var inputs = item.Transactions.SelectMany((trx, i) =>
+            trx.Inputs.Select((output, j) =>
+            {
+               return new AddressForInput()
+               {
+                  //Address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey).FirstOrDefault(),
+                  Outpoint = string.Format("{0}-{1}", trx.GetHash(), j), BlockIndex = item.BlockInfo.Height,
+                  //Value = output.Value,
+               };
+            }));
+
+
+         storageBatch.AddressForInputs.AddRange(inputs);
       }
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
       {
          watch.Start();
 
-         data.AddressTransaction.InsertMany(storageBatch.AddressTransactions, new InsertManyOptions { IsOrdered = false });
+         var t1 = Task.Run(() =>
+         {
+            try
+            {
+               data.AddressForOutput.InsertMany(storageBatch.AddressForOutputs, new InsertManyOptions {IsOrdered = false});
+            }
+            catch (MongoBulkWriteException mbwex)
+            {
+               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey)) //.Message.Contains("E11000 duplicate key error collection"))
+               {
+                  throw;
+               }
+            }
+         });
+
+         var t2 = Task.Run(() =>
+         {
+            try
+            {
+               if (storageBatch.AddressForInputs.Any())
+                  data.AddressForInput.InsertMany(storageBatch.AddressForInputs, new InsertManyOptions {IsOrdered = false});
+            }
+            catch (MongoBulkWriteException mbwex)
+            {
+               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey)) //.Message.Contains("E11000 duplicate key error collection"))
+               {
+                  throw;
+               }
+            }
+         });
+
+         Task.WaitAll(t1, t2);
 
          watch.Stop();
 

@@ -17,7 +17,7 @@ namespace Blockcore.Indexer.Operations.Types
       public Dictionary<long, MapBlock> MapBlocks { get; set; } = new Dictionary<long, MapBlock>();
       public List<MapTransaction> MapTransactions { get; set; } = new List<MapTransaction>();
 
-      public List<AddressTransaction> AddressTransactions { get; set; } = new List<AddressTransaction>();
+      public List<AddressForOutput> AddressForOutputs { get; set; } = new List<AddressForOutput>();
 
       public List<AddressForInput> AddressForInputs { get; set; } = new List<AddressForInput>();
    }

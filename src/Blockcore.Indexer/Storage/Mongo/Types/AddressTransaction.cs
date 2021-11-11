@@ -1,16 +1,17 @@
+using System.Collections.Generic;
+
 namespace Blockcore.Indexer.Storage.Mongo.Types
 {
-   public class AddressTransaction
+   public class AddressForOutput
    {
-      public long UniquId { get; set; }
+      public string Outpoint { get; set; }
+      //public List<string> Addresses { get; set; }
       public string Address { get; set; }
-      public int AddressHash { get; set; }
-      public string TransactionId { get; set; }
-      public int AddressCounter { get; set; }
-      public long BlockIndex { get; set; }
-      public long TransactionIndex { get; set; }
-      public long OutputIndex { get; set; }
-      public long AddressIndex { get; set; }
 
+      public string ScriptHex { get; set; }
+      public long Value { get; set; }
+      public long BlockIndex { get; set; }
+      public bool CoinBase { get; set; }
+      public bool CoinStake { get; set; }
    }
 }

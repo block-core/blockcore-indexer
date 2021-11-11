@@ -57,7 +57,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             // No blocks in store start from zero
             // push the genesis block to store
-            string genesisHash = client.GetblockHash(0);
+            int start = 0;
+            string genesisHash = client.GetblockHash(start);
 
             var genesisBlock = client.GetBlock(genesisHash);
 

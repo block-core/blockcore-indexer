@@ -39,13 +39,13 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          log.LogTrace("MongoBuilder: Creating mappings");
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressTransaction)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressForOutput)))
          {
-            // MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressTransaction>(cm =>
-            //     {
-            //        cm.AutoMap();
-            //        cm.MapIdMember(c => c.UniquId);
-            //     });
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForOutput>(cm =>
+                {
+                   cm.AutoMap();
+                   cm.MapIdMember(c => c.Outpoint);
+                });
          }
 
          if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressForInput)))
@@ -53,7 +53,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForInput>(cm =>
             {
                cm.AutoMap();
-               cm.MapIdMember(c => c.UniquID);
+               cm.MapIdMember(c => c.Outpoint);
             });
          }
 
@@ -62,11 +62,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          // indexes
          log.LogTrace("MongoBuilder: Creating indexes");
 
-         IndexKeysDefinition<AddressTransaction> addressIndex = Builders<AddressTransaction>.IndexKeys.Ascending(blk => blk.Address);
-         mongoData.AddressTransaction.Indexes.CreateOne(addressIndex);
+         //IndexKeysDefinition<AddressTransaction> addressIndex = Builders<AddressTransaction>.IndexKeys.Ascending(blk => blk.Address);
+         //mongoData.AddressTransaction.Indexes.CreateOne(addressIndex);
 
-         IndexKeysDefinition<AddressTransaction> transactionIndex = Builders<AddressTransaction>.IndexKeys.Ascending(blk => blk.TransactionId);
-         mongoData.AddressTransaction.Indexes.CreateOne(transactionIndex);
+         //IndexKeysDefinition<AddressForOutput> transactionIndex = Builders<AddressForOutput>.IndexKeys.Ascending(blk => blk.TransactionId);
+         //mongoData.AddressTransaction.Indexes.CreateOne(transactionIndex);
 
          return Task.FromResult(1);
       }
