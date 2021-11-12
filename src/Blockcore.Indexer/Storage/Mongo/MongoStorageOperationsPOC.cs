@@ -16,6 +16,7 @@ using Blockcore.Indexer.Storage.Types;
 using Blockcore.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using NBitcoin;
 using NBitcoin.Crypto;
 
@@ -80,14 +81,19 @@ namespace Blockcore.Indexer.Storage.Mongo
          storageBatch.AddressForOutputs.AddRange(outputs);
          utxoCache.AddToCache(storageBatch.AddressForOutputs);
 
-         IEnumerable<AddressForInput> inputs = item.Transactions
+         var notFoundOutputs = new List<string>();
+
+         var inputs = item.Transactions
             .Where(t => t.IsCoinBase == false)
             .SelectMany((trx, trxIndex) =>
                trx.Inputs.Select((input, inputIndex) =>
                {
                   string inputsOuput = $"{input.PrevOut.Hash}-{input.PrevOut.N}";
 
-                  UtxoCacheItem utxo = utxoCache.GetOrFetch(inputsOuput);
+                  UtxoCacheItem utxo = utxoCache.GetOne(inputsOuput);
+
+                  if(utxo == null)
+                     notFoundOutputs.Add(inputsOuput);
 
                   return new AddressForInput()
                   {
@@ -97,11 +103,30 @@ namespace Blockcore.Indexer.Storage.Mongo
                      TrxHash = trx.GetHash().ToString(),
                      BlockIndex = item.BlockInfo.Height,
                   };
-               }));
+               })).ToDictionary(
+               entry => entry.Outpoint,
+               entry => entry);
 
-         var enumerated = inputs.ToList();
-         storageBatch.AddressForInputs.AddRange(enumerated);
-         utxoCache.RemoveFromCache(enumerated);
+         utxoCache.RemoveFromCache(inputs.Values);
+
+         List<AddressForOutput> outputsFromStore = FetchOutputs(notFoundOutputs);
+
+         foreach (AddressForOutput outputFromStore in outputsFromStore)
+         {
+            if (inputs.TryGetValue(outputFromStore.Outpoint, out AddressForInput input))
+            {
+               input.Address = outputFromStore.Address;
+               input.Value = outputFromStore.Value;
+            }
+            else
+            {
+               // output not found
+               
+            }
+         }
+
+         storageBatch.AddressForInputs.AddRange(inputs.Values);
+
       }
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
@@ -164,5 +189,15 @@ namespace Blockcore.Indexer.Storage.Mongo
       }
 
       public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item) => throw new System.NotImplementedException();
+
+      private List<AddressForOutput> FetchOutputs(List<string> outputs)
+      {
+         FilterDefinitionBuilder<AddressForOutput> builder = Builders<AddressForOutput>.Filter;
+         FilterDefinition<AddressForOutput> filter = builder.In(output => output.Outpoint, outputs);
+
+         var res =  data.AddressForOutput.Find(filter).ToList();
+
+         return res;
+      }
    }
 }

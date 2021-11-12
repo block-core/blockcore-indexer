@@ -11,7 +11,7 @@ namespace Blockcore.Indexer.Operations
    {
       int CacheSize { get; }
 
-      UtxoCacheItem GetOrFetch(string outpoint, bool addToCache = false);
+      UtxoCacheItem GetOne(string outpoint);
       void AddToCache(IEnumerable<AddressForOutput> outputs);
 
       void RemoveFromCache(IEnumerable<AddressForInput> inputs);

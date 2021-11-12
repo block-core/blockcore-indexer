@@ -19,46 +19,27 @@ namespace Blockcore.Indexer.Operations.Types
 
    public class UtxoCache : IUtxoCache
    {
-      private readonly IStorage storage;
       private readonly ILogger<UtxoCache> logger;
       private readonly ConcurrentDictionary<string, UtxoCacheItem> cache;
 
       private readonly int maxItemInCache = 30_000_000;
 
-      public UtxoCache(IStorage storage, ILogger<UtxoCache> logger)
+      public UtxoCache(ILogger<UtxoCache> logger)
       {
-         this.storage = storage;
          this.logger = logger;
          cache = new ConcurrentDictionary<string, UtxoCacheItem>();
       }
 
       public int CacheSize { get { return cache.Count; } }
 
-      public UtxoCacheItem GetOrFetch(string outpoint, bool addToCache = false)
+      public UtxoCacheItem GetOne(string outpoint)
       {
          if (cache.TryGetValue(outpoint, out UtxoCacheItem utxo))
          {
             return new UtxoCacheItem { Value = utxo.Value, Address = utxo.Address };
          }
 
-         // todo: move this to the storage interface
-         var data = (MongoData)storage;
-         IMongoQueryable<AddressForOutput> query = data.AddressForOutput.AsQueryable()
-            .Where(w => w.Outpoint == outpoint);
-         AddressForOutput output = query.FirstOrDefault();
-
-         if (output == null)
-         {
-            //throw new ApplicationException("output not found");
-            return null;
-         }
-
-         var ret = new UtxoCacheItem {Value = output.Value, Address = output.Address};
-
-         if (addToCache)
-            cache.TryAdd(outpoint, ret);
-
-         return ret;
+         return null;
       }
 
       public void AddToCache(IEnumerable<AddressForOutput> outputs)
