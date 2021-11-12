@@ -11,46 +11,54 @@ using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Operations.Types
 {
+   public class UtxoCacheItem
+   {
+      public string Address { get; set; }
+      public long Value { get; set; }
+   }
+
    public class UtxoCache : IUtxoCache
    {
       private readonly IStorage storage;
       private readonly ILogger<UtxoCache> logger;
-      private readonly ConcurrentDictionary<string, AddressForOutput> cache;
+      private readonly ConcurrentDictionary<string, UtxoCacheItem> cache;
 
-      private readonly int maxItemInCache = 10_000_000;
+      private readonly int maxItemInCache = 30_000_000;
 
       public UtxoCache(IStorage storage, ILogger<UtxoCache> logger)
       {
          this.storage = storage;
          this.logger = logger;
-         cache = new ConcurrentDictionary<string, AddressForOutput>();
+         cache = new ConcurrentDictionary<string, UtxoCacheItem>();
       }
 
       public int CacheSize { get { return cache.Count; } }
 
-      public AddressForOutput GetOrFetch(string outpoint, bool addToCache = false)
+      public UtxoCacheItem GetOrFetch(string outpoint, bool addToCache = false)
       {
-         if (cache.TryGetValue(outpoint, out AddressForOutput utxo))
+         if (cache.TryGetValue(outpoint, out UtxoCacheItem utxo))
          {
-            return utxo;
+            return new UtxoCacheItem { Value = utxo.Value, Address = utxo.Address };
          }
 
+         // todo: move this to the storage interface
          var data = (MongoData)storage;
-
          IMongoQueryable<AddressForOutput> query = data.AddressForOutput.AsQueryable()
             .Where(w => w.Outpoint == outpoint);
-
          AddressForOutput output = query.FirstOrDefault();
 
          if (output == null)
          {
-            throw new ApplicationException("output not found");
+            //throw new ApplicationException("output not found");
+            return null;
          }
 
-         if (addToCache)
-            cache.TryAdd(outpoint, output);
+         var ret = new UtxoCacheItem {Value = output.Value, Address = output.Address};
 
-         return output;
+         if (addToCache)
+            cache.TryAdd(outpoint, ret);
+
+         return ret;
       }
 
       public void AddToCache(IEnumerable<AddressForOutput> outputs)
@@ -58,7 +66,7 @@ namespace Blockcore.Indexer.Operations.Types
          int maxToAdd = maxItemInCache - cache.Count;
          foreach (AddressForOutput output in outputs.Take(maxToAdd))
          {
-            cache.TryAdd(output.Outpoint, output);
+            cache.TryAdd(output.Outpoint, new UtxoCacheItem { Value = output.Value, Address = output.Address });
          }
       }
 

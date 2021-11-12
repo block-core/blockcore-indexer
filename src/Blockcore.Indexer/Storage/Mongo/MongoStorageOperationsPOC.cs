@@ -59,24 +59,23 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
 
          IEnumerable<AddressForOutput> outputs = item.Transactions.SelectMany((trx, i) =>
-            trx.Outputs.Select((output,index) =>
+            trx.Outputs.Select((output, index) =>
+            {
+               ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
+               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.TxOutType.ToString() : null;
+
+               return new AddressForOutput
                {
-                  ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
-                  string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.TxOutType.ToString() : null;
-                  
-                  return new AddressForOutput
-                  {
-                     Address = addr,
-                     Outpoint = $"{trx.GetHash()}-{index}",
-                     BlockIndex = item.BlockInfo.Height,
-                     Value = output.Value,
-                     ScriptHex = output.ScriptPubKey.ToHex(),
-                     CoinBase = trx.IsCoinBase,
-                     CoinStake = syncConnection.Network.Consensus.IsProofOfStake && trx.IsCoinStake,
-                  };
-               })
-               .Where(addr => addr.Address != null));
-          
+                  Address = addr,
+                  Outpoint = $"{trx.GetHash()}-{index}",
+                  BlockIndex = item.BlockInfo.Height,
+                  Value = output.Value,
+                  ScriptHex = output.ScriptPubKey.ToHex(),
+                  CoinBase = trx.IsCoinBase,
+                  CoinStake = syncConnection.Network.Consensus.IsProofOfStake && trx.IsCoinStake,
+               };
+            }));
+
 
          storageBatch.AddressForOutputs.AddRange(outputs);
          utxoCache.AddToCache(storageBatch.AddressForOutputs);
@@ -88,23 +87,21 @@ namespace Blockcore.Indexer.Storage.Mongo
                {
                   string inputsOuput = $"{input.PrevOut.Hash}-{input.PrevOut.N}";
 
-                  AddressForOutput utxo = utxoCache.GetOrFetch(inputsOuput);
+                  UtxoCacheItem utxo = utxoCache.GetOrFetch(inputsOuput);
 
                   return new AddressForInput()
                   {
-                     Value = utxo.Value,
-                     Address = utxo.Address,
+                     Value = utxo?.Value ?? 0,
+                     Address = utxo?.Address,
                      Outpoint = inputsOuput,
                      TrxHash = trx.GetHash().ToString(),
                      BlockIndex = item.BlockInfo.Height,
                   };
-               }))
-            .Where(addr => addr.Address != null);
+               }));
 
          var enumerated = inputs.ToList();
          storageBatch.AddressForInputs.AddRange(enumerated);
          utxoCache.RemoveFromCache(enumerated);
-
       }
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
