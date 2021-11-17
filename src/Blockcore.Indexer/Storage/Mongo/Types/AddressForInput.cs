@@ -6,7 +6,6 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
    {
       public string Outpoint { get; set; }
 
-      //public List<string> Addresses { get; set; }
       public string Address { get; set; }
 
       public long Value { get; set; }

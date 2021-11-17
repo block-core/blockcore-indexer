@@ -20,9 +20,9 @@ namespace Blockcore.Indexer.Tests
 
          TxOut output1 = transaction.Outputs[0];
          TxIn input1 = transaction.Inputs[0];
-         string[] address = ScriptToAddressParser.GetAddress(connection.Network, output1.ScriptPubKey);
+         var outputTemplte = ScriptToAddressParser.GetAddress(connection.Network, output1.ScriptPubKey);
 
-         Assert.Equal("CTdmGuyx1DM2uWLSNR9LyHP7m6SE45n4z8", address[0]);
+         Assert.Equal("CTdmGuyx1DM2uWLSNR9LyHP7m6SE45n4z8", outputTemplte.Addresses[0]);
          Assert.Equal(199991620, output1.Value.Satoshi);
 
          string sender = ScriptToAddressParser.GetSignerAddress(connection.Network, input1.ScriptSig);

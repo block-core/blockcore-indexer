@@ -1,24 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
-using Blockcore.Consensus.ScriptInfo;
-using Blockcore.Consensus.TransactionInfo;
+using Blockcore.Consensus;
 using Blockcore.Indexer.Crypto;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
 using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
-using Blockcore.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 using NBitcoin;
-using NBitcoin.Crypto;
 
 namespace Blockcore.Indexer.Storage.Mongo
 {
@@ -79,9 +72,6 @@ namespace Blockcore.Indexer.Storage.Mongo
 
 
          storageBatch.AddressForOutputs.AddRange(outputs);
-         utxoCache.AddToCache(storageBatch.AddressForOutputs);
-
-         var notFoundOutputs = new List<string>();
 
          var inputs = item.Transactions
             .Where(t => t.IsCoinBase == false)
@@ -90,43 +80,15 @@ namespace Blockcore.Indexer.Storage.Mongo
                {
                   string inputsOuput = $"{input.PrevOut.Hash}-{input.PrevOut.N}";
 
-                  UtxoCacheItem utxo = utxoCache.GetOne(inputsOuput);
-
-                  if(utxo == null)
-                     notFoundOutputs.Add(inputsOuput);
-
                   return new AddressForInput()
                   {
-                     Value = utxo?.Value ?? 0,
-                     Address = utxo?.Address,
                      Outpoint = inputsOuput,
                      TrxHash = trx.GetHash().ToString(),
                      BlockIndex = item.BlockInfo.Height,
                   };
-               })).ToDictionary(
-               entry => entry.Outpoint,
-               entry => entry);
+               })).ToList();
 
-         utxoCache.RemoveFromCache(inputs.Values);
-
-         List<AddressForOutput> outputsFromStore = FetchOutputs(notFoundOutputs);
-
-         foreach (AddressForOutput outputFromStore in outputsFromStore)
-         {
-            if (inputs.TryGetValue(outputFromStore.Outpoint, out AddressForInput input))
-            {
-               input.Address = outputFromStore.Address;
-               input.Value = outputFromStore.Value;
-            }
-            else
-            {
-               // output not found
-               
-            }
-         }
-
-         storageBatch.AddressForInputs.AddRange(inputs.Values);
-
+         storageBatch.AddressForInputs.AddRange(inputs);
       }
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
@@ -169,7 +131,10 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          });
 
+         Task.WaitAll(t1, t2, t3, t4, t5);
+
          string lastBlockHash = null;
+         long blockIndex = 0;
          var markBlocksAsComplete = new List<UpdateOneModel<MapBlock>>();
          foreach (MapBlock mapBlock in storageBatch.MapBlocks.Values.OrderBy(b => b.BlockIndex))
          {
@@ -178,26 +143,21 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             markBlocksAsComplete.Add(new UpdateOneModel<MapBlock>(filter, update));
             lastBlockHash = mapBlock.BlockHash;
+            blockIndex = mapBlock.BlockIndex;
          }
-
-         Task.WaitAll(t1, t2, t3, t4, t5);
 
          // mark each block is complete
          data.MapBlock.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
 
-         return data.BlockByHash(lastBlockHash);
+         var block = data.BlockByIndex(blockIndex);
+
+         if (block.BlockHash != lastBlockHash)
+            throw new ArgumentException(
+               $"Expected hash {lastBlockHash} for block {blockIndex} but was {block.BlockHash}");
+
+         return block;
       }
 
       public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item) => throw new System.NotImplementedException();
-
-      private List<AddressForOutput> FetchOutputs(List<string> outputs)
-      {
-         FilterDefinitionBuilder<AddressForOutput> builder = Builders<AddressForOutput>.Filter;
-         FilterDefinition<AddressForOutput> filter = builder.In(output => output.Outpoint, outputs);
-
-         var res =  data.AddressForOutput.Find(filter).ToList();
-
-         return res;
-      }
    }
 }

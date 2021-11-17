@@ -1,4 +1,5 @@
 using Blockcore.Indexer.Crypto;
+using Blockcore.Indexer.Storage.Types;
 
 namespace Blockcore.Indexer.Sync
 {
@@ -103,13 +104,13 @@ namespace Blockcore.Indexer.Sync
 
             log.LogDebug($"Rewinding block {block.BlockIndex}({block.BlockHash})");
 
-            storage.DeleteBlock(block.BlockHash);
+            storage.DeleteBlockAsync(block.BlockHash);
          }
       }
 
-      public Storage.Types.SyncBlockInfo RewindToLastCompletedBlock()
+      public async Task<SyncBlockInfo> RewindToLastCompletedBlockAsync()
       {
-         Storage.Types.SyncBlockInfo lastBlock = storage.GetLatestBlock();
+         SyncBlockInfo lastBlock = storage.GetLatestBlock();
 
          if (lastBlock == null)
             return null;
@@ -118,7 +119,7 @@ namespace Blockcore.Indexer.Sync
          {
             log.LogDebug($"Rewinding block {lastBlock.BlockIndex}({lastBlock.BlockHash})");
 
-            storage.DeleteBlock(lastBlock.BlockHash);
+            await storage.DeleteBlockAsync(lastBlock.BlockHash);
             lastBlock = storage.BlockByIndex(lastBlock.BlockIndex - 1);
          }
 

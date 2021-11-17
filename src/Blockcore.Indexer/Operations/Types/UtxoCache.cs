@@ -22,7 +22,7 @@ namespace Blockcore.Indexer.Operations.Types
       private readonly ILogger<UtxoCache> logger;
       private readonly ConcurrentDictionary<string, UtxoCacheItem> cache;
 
-      private readonly int maxItemInCache = 30_000_000;
+      private readonly int maxItemInCache = 0;
 
       public UtxoCache(ILogger<UtxoCache> logger)
       {

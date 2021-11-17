@@ -797,24 +797,32 @@ namespace Blockcore.Indexer.Storage.Mongo
          public List<MapTransactionAddress> Ouputs = new List<MapTransactionAddress>();
       }
 
-      public void DeleteBlock(string blockHash)
+      public async Task DeleteBlockAsync(string blockHash)
       {
          SyncBlockInfo block = BlockByHash(blockHash);
 
          // delete the outputs
-         FilterDefinition<MapTransactionAddress> addrFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         MapTransactionAddress.DeleteMany(addrFilter);
+         // FilterDefinition<MapTransactionAddress> addrFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         // MapTransactionAddress.DeleteMany(addrFilter);
+
+         FilterDefinition<AddressForInput> addrForInputFilter = Builders<AddressForInput>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         var input = AddressForInput.DeleteManyAsync(addrForInputFilter);
+
+         FilterDefinition<AddressForOutput> addrForOutputFilter = Builders<AddressForOutput>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         var output = AddressForOutput.DeleteManyAsync(addrForOutputFilter);
 
          // delete the transaction
          FilterDefinition<MapTransactionBlock> transactionFilter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
-         MapTransactionBlock.DeleteMany(transactionFilter);
+         var transactions = MapTransactionBlock.DeleteManyAsync(transactionFilter);
 
-         // delete computed
-         FilterDefinition<MapTransactionAddressComputed> addrCompFilter = Builders<MapTransactionAddressComputed>.Filter.Eq(addr => addr.ComputedBlockIndex, block.BlockIndex);
-         MapTransactionAddressComputed.DeleteMany(addrCompFilter);
+         await Task.WhenAll(input, output, transactions);
 
-         FilterDefinition<MapTransactionAddressHistoryComputed> addrCompHistFilter = Builders<MapTransactionAddressHistoryComputed>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         MapTransactionAddressHistoryComputed.DeleteMany(addrCompHistFilter);
+         // // delete computed
+         // FilterDefinition<MapTransactionAddressComputed> addrCompFilter = Builders<MapTransactionAddressComputed>.Filter.Eq(addr => addr.ComputedBlockIndex, block.BlockIndex);
+         // MapTransactionAddressComputed.DeleteMany(addrCompFilter);
+         //
+         // FilterDefinition<MapTransactionAddressHistoryComputed> addrCompHistFilter = Builders<MapTransactionAddressHistoryComputed>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         // MapTransactionAddressHistoryComputed.DeleteMany(addrCompHistFilter);
 
          // mark transactions that are spent by the block as unspent
          // todo: enable this code

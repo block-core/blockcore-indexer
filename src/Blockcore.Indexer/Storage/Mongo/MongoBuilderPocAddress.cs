@@ -98,7 +98,9 @@ namespace Blockcore.Indexer.Storage.Mongo
          //IndexKeysDefinition<AddressTransaction> addressIndex = Builders<AddressTransaction>.IndexKeys.Ascending(blk => blk.Address);
          //mongoData.AddressTransaction.Indexes.CreateOne(addressIndex);
 
-         mongoData.AddressForOutput.Indexes.CreateOne(Builders<AddressForOutput>.IndexKeys.Ascending(blk => blk.Outpoint));
+         // mongoData.AddressForOutput.Indexes.CreateOne(
+         //    Builders<AddressForOutput>.IndexKeys.Ascending(blk => blk.hashedOutpoint),
+         //    new CreateIndexOptions { Unique = true });
 
          return Task.FromResult(1);
       }

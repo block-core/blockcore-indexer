@@ -53,7 +53,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          Runner.SyncingBlocks.PullingTip = null;
          Runner.SyncingBlocks.StoreTip = null;
 
-         Runner.SyncingBlocks.StoreTip = syncOperations.RewindToLastCompletedBlock();
+         Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToLastCompletedBlockAsync();
 
          if (Runner.SyncingBlocks.StoreTip == null)
          {
