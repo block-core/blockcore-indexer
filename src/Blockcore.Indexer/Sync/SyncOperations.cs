@@ -104,7 +104,7 @@ namespace Blockcore.Indexer.Sync
 
             log.LogDebug($"Rewinding block {block.BlockIndex}({block.BlockHash})");
 
-            storage.DeleteBlockAsync(block.BlockHash);
+            await storage.DeleteBlockAsync(block.BlockHash);
          }
       }
 

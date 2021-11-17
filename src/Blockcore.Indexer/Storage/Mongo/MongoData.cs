@@ -806,14 +806,14 @@ namespace Blockcore.Indexer.Storage.Mongo
          // MapTransactionAddress.DeleteMany(addrFilter);
 
          FilterDefinition<AddressForInput> addrForInputFilter = Builders<AddressForInput>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         var input = AddressForInput.DeleteManyAsync(addrForInputFilter);
+         Task<DeleteResult> input = AddressForInput.DeleteManyAsync(addrForInputFilter);
 
          FilterDefinition<AddressForOutput> addrForOutputFilter = Builders<AddressForOutput>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         var output = AddressForOutput.DeleteManyAsync(addrForOutputFilter);
+         Task<DeleteResult> output = AddressForOutput.DeleteManyAsync(addrForOutputFilter);
 
          // delete the transaction
          FilterDefinition<MapTransactionBlock> transactionFilter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
-         var transactions = MapTransactionBlock.DeleteManyAsync(transactionFilter);
+         Task<DeleteResult> transactions = MapTransactionBlock.DeleteManyAsync(transactionFilter);
 
          await Task.WhenAll(input, output, transactions);
 

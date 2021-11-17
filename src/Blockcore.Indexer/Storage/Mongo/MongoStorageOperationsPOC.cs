@@ -150,11 +150,12 @@ namespace Blockcore.Indexer.Storage.Mongo
          // mark each block is complete
          data.MapBlock.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
 
-         var block = data.BlockByIndex(blockIndex);
+         SyncBlockInfo block = data.BlockByIndex(blockIndex);
 
          if (block.BlockHash != lastBlockHash)
-            throw new ArgumentException(
-               $"Expected hash {lastBlockHash} for block {blockIndex} but was {block.BlockHash}");
+         {
+            throw new ArgumentException($"Expected hash {lastBlockHash} for block {blockIndex} but was {block.BlockHash}");
+         }
 
          return block;
       }
