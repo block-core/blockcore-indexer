@@ -61,7 +61,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                return new AddressForOutput
                {
                   Address = addr,
-                  Outpoint = $"{trx.GetHash()}-{index}",
+                  Outpoint = new Outpoint{TransactionId = trx.GetHash().ToString(), OutputIndex = index},
                   BlockIndex = item.BlockInfo.Height,
                   Value = output.Value,
                   ScriptHex = output.ScriptPubKey.ToHex(),
@@ -78,11 +78,12 @@ namespace Blockcore.Indexer.Storage.Mongo
             .SelectMany((trx, trxIndex) =>
                trx.Inputs.Select((input, inputIndex) =>
                {
-                  string inputsOuput = $"{input.PrevOut.Hash}-{input.PrevOut.N}";
-
                   return new AddressForInput()
                   {
-                     Outpoint = inputsOuput,
+                     Outpoint = new Outpoint
+                     {
+                        TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
+                     },
                      TrxHash = trx.GetHash().ToString(),
                      BlockIndex = item.BlockInfo.Height,
                   };

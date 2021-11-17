@@ -4,7 +4,7 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
 {
    public class AddressForOutput
    {
-      public string Outpoint { get; set; }
+      public Outpoint Outpoint { get; set; }
 
       public string Address { get; set; }
 

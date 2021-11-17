@@ -47,7 +47,7 @@ namespace Blockcore.Indexer.Operations.Types
          int maxToAdd = maxItemInCache - cache.Count;
          foreach (AddressForOutput output in outputs.Take(maxToAdd))
          {
-            cache.TryAdd(output.Outpoint, new UtxoCacheItem { Value = output.Value, Address = output.Address });
+            cache.TryAdd($"{output.Outpoint.TransactionId}-{output.Outpoint.OutputIndex}", new UtxoCacheItem { Value = output.Value, Address = output.Address });
          }
       }
 
@@ -55,7 +55,7 @@ namespace Blockcore.Indexer.Operations.Types
       {
          foreach (AddressForInput output in inputs)
          {
-            cache.TryRemove(output.Outpoint, out _);
+            cache.TryRemove($"{output.Outpoint.TransactionId}-{output.Outpoint.OutputIndex}", out _);
          }
       }
    }
