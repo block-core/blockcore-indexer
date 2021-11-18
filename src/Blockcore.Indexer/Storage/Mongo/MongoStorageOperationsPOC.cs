@@ -160,6 +160,9 @@ namespace Blockcore.Indexer.Storage.Mongo
          return block;
       }
 
-      public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item) => throw new System.NotImplementedException();
+      public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
+      {
+         return null;
+      }
    }
 }

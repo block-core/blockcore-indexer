@@ -73,7 +73,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return false;
          }
 
-         if (Runner.SyncingBlocks.ReorgMode)
+         if (Runner.SyncingBlocks.ReorgMode ||
+             Runner.SyncingBlocks.IndexMode)
          {
             return false;
          }

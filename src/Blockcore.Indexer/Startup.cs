@@ -63,6 +63,8 @@ namespace Blockcore.Indexer
          services.AddScoped<TaskRunner, BlockStore>();
          services.AddScoped<TaskStarter, BlockStartup>();
 
+         services.AddScoped<TaskRunner, BlockIndexer>();
+
          services.AddResponseCompression();
          services.AddMemoryCache();
          services.AddHostedService<SyncServer>();

@@ -67,6 +67,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return false;
          }
 
+         if (Runner.SyncingBlocks.IndexMode)
+         {
+            return false;
+         }
+
          if (TryDequeue(out StorageBatch item))
          {
             // check all blocks are consecutive and start from the last block in store.
