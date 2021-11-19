@@ -9,6 +9,7 @@ using Blockcore.Indexer.Operations.Types;
 using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Sync.SyncTasks;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using NBitcoin;
@@ -19,14 +20,21 @@ namespace Blockcore.Indexer.Storage.Mongo
    {
       private readonly SyncConnection syncConnection;
       readonly IUtxoCache utxoCache;
+      readonly SyncingBlocks syncingBlocks;
       readonly IndexerSettings configuration;
       private readonly System.Diagnostics.Stopwatch watch;
       private readonly MongoData data;
 
-      public MongoStorageOperationsPOC(SyncConnection syncConnection,IStorage storage, IUtxoCache utxoCache, IOptions<IndexerSettings> configuration)
+      public MongoStorageOperationsPOC(
+         SyncConnection syncConnection,
+         IStorage storage,
+         IUtxoCache utxoCache,
+         IOptions<IndexerSettings> configuration,
+         SyncingBlocks syncingBlocks)
       {
          this.syncConnection = syncConnection;
          this.utxoCache = utxoCache;
+         this.syncingBlocks = syncingBlocks;
          this.configuration = configuration.Value;
          data = (MongoData)storage;
          watch = new System.Diagnostics.Stopwatch();
@@ -124,7 +132,8 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
             catch (MongoBulkWriteException mbwex)
             {
-               // transactions are a special case where we ignore if key is already present
+               // transactions are a special case they are not deleted from store in case of reorgs
+               // because they will just be included in another blocks, so we ignore if key is already present
                if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
                {
                   throw;
@@ -132,7 +141,18 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          });
 
-         Task.WaitAll(t1, t2, t3, t4, t5);
+         Task.WaitAll(t3, t4);
+
+         var t6 = Task.Run(() =>
+         {
+            if (syncingBlocks.IndexModeCompleted)
+            {
+               PipelineDefinition<AddressForInput, AddressForInput> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
+               data.AddressForInput.Aggregate(pipeline);
+            }
+         });
+
+         Task.WaitAll(t1, t2, t3, t4, t5, t6);
 
          string lastBlockHash = null;
          long blockIndex = 0;

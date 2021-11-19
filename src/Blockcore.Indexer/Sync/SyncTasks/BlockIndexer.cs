@@ -6,6 +6,7 @@ using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo;
 using Blockcore.Indexer.Storage.Mongo.Types;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Sync.SyncTasks
@@ -19,9 +20,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
    using Microsoft.Extensions.Logging;
    using Microsoft.Extensions.Options;
 
-   /// <summary>
-   /// The block sync.
-   /// </summary>
    public class BlockIndexer : TaskRunner
    {
       private readonly IndexerSettings config;
@@ -39,14 +37,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private MongoData mongoData;
 
-      private bool completed;
-
       Task indexingTask;
       Task indexingCompletTask;
 
-      /// <summary>
-      /// Initializes a new instance of the <see cref="BlockPuller"/> class.
-      /// </summary>
       public BlockIndexer(
          IOptions<IndexerSettings> configuration,
          ISyncOperations syncOperations,
@@ -105,10 +98,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          if (indexingTask == null)
          {
             // build indexing tasks
+            watch.Reset();
 
             indexingTask = Task.Run(async () =>
                {
-                  log.LogDebug($"Creating {nameof(MapBlock)}.{nameof(MapBlock.BlockHash)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(MapBlock)}.{nameof(MapBlock.BlockHash)}");
 
                   await mongoData.MapBlock.Indexes
                      .CreateOneAsync(new CreateIndexModel<MapBlock>(Builders<MapBlock>
@@ -116,7 +110,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating {nameof(MapTransactionBlock)}.{nameof(MapTransactionBlock.BlockIndex)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(MapTransactionBlock)}.{nameof(MapTransactionBlock.BlockIndex)}");
 
                   await mongoData.MapTransactionBlock.Indexes
                      .CreateOneAsync(new CreateIndexModel<MapTransactionBlock>(Builders<MapTransactionBlock>
@@ -124,7 +118,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating {nameof(MapTransactionBlock)}.{nameof(MapTransactionBlock.TransactionId)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(MapTransactionBlock)}.{nameof(MapTransactionBlock.TransactionId)}");
 
                   await mongoData.MapTransactionBlock.Indexes
                      .CreateOneAsync(new CreateIndexModel<MapTransactionBlock>(Builders<MapTransactionBlock>
@@ -132,7 +126,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                })
                .ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating {nameof(AddressForOutput)}.{nameof(AddressForOutput.BlockIndex)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(AddressForOutput)}.{nameof(AddressForOutput.BlockIndex)}");
 
                   await mongoData.AddressForOutput.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressForOutput>(Builders<AddressForOutput>
@@ -140,7 +134,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating {nameof(AddressForOutput)}.{nameof(AddressForOutput.Outpoint)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(AddressForOutput)}.{nameof(AddressForOutput.Outpoint)}");
 
                   await mongoData.AddressForOutput.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressForOutput>(Builders<AddressForOutput>
@@ -148,7 +142,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating {nameof(AddressForOutput)}.{nameof(AddressForOutput.Address)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(AddressForOutput)}.{nameof(AddressForOutput.Address)}");
 
                   await mongoData.AddressForOutput.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressForOutput>(Builders<AddressForOutput>
@@ -156,7 +150,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                })
                .ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating {nameof(AddressForInput)}.{nameof(AddressForInput.BlockIndex)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(AddressForInput)}.{nameof(AddressForInput.BlockIndex)}");
 
                   await mongoData.AddressForInput.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressForInput>(Builders<AddressForInput>
@@ -164,7 +158,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating {nameof(AddressForInput)}.{nameof(AddressForInput.Outpoint)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(AddressForInput)}.{nameof(AddressForInput.Outpoint)}");
 
                   await mongoData.AddressForInput.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressForInput>(Builders<AddressForInput>
@@ -172,13 +166,21 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating {nameof(AddressForInput)}.{nameof(AddressForInput.Address)} indexes");
+                  log.LogDebug($"Creating indexes on {nameof(AddressForInput)}.{nameof(AddressForInput.Address)}");
 
                   await mongoData.AddressForInput.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressForInput>(Builders<AddressForInput>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
-               }).ContinueWith(task =>
+               }).ContinueWith(async task =>
+               {
+                  log.LogDebug($"Updating data on {nameof(AddressForInput)}.{nameof(AddressForInput.Address)} and {nameof(AddressForInput)}.{nameof(AddressForInput.Value)}");
+
+                  PipelineDefinition<AddressForInput, AddressForInput> pipeline = BuildInputsAddressUpdatePiepline();
+
+                  await mongoData.AddressForInput.AggregateAsync(pipeline);
+               })
+               .ContinueWith(task =>
                {
                   indexingCompletTask = task;
                });
@@ -188,15 +190,65 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             if (indexingCompletTask != null && indexingCompletTask.IsCompleted)
             {
                Runner.SyncingBlocks.IndexMode = false;
+               Runner.SyncingBlocks.IndexModeCompleted = true;
+
+               log.LogDebug($"Indexing completed");
 
                Abort = true;
                return true;
             }
 
-            log.LogDebug($"Indexing tables...");
+            log.LogDebug($"Indexing tables time passed {watch.Elapsed}");
          }
 
          return await Task.FromResult(false);
+      }
+
+      /// <summary>
+      /// Update all addresses on the inputs table with the address and value form the outputs table 
+      /// Build a mongodb pipeline that will:
+      /// - iterate over all inputs
+      /// - filter all addresses that are not null
+      /// - match with outputs table to find the address and value an input is spending from
+      /// - update the input with the address and value
+      /// </summary>
+      public static PipelineDefinition<AddressForInput, AddressForInput> BuildInputsAddressUpdatePiepline()
+      {
+         PipelineDefinition<AddressForInput,AddressForInput> pipline = new []
+         {
+            new BsonDocument("$match",
+               new BsonDocument("Address", BsonNull.Value)),
+            new BsonDocument("$lookup",
+               new BsonDocument
+               {
+                  { "from", "AddressForOutput" },
+                  { "localField", "Outpoint" },
+                  { "foreignField", "Outpoint" },
+                  { "as", "output" }
+               }),
+            new BsonDocument("$unwind",
+               new BsonDocument("path", "$output")),
+            new BsonDocument("$project",
+               new BsonDocument
+               {
+                  { "_id", "$_id" },
+                  { "Outpoint", "$Outpoint" },
+                  { "Address", "$output.Address" },
+                  { "BlockIndex", "$BlockIndex" },
+                  { "TrxHash", "$TrxHash" },
+                  { "Value", "$output.Value" }
+               }),
+            new BsonDocument("$merge",
+               new BsonDocument
+               {
+                  { "into", "AddressForInput" },
+                  { "on", "_id" },
+                  { "whenMatched", "merge" },
+                  { "whenNotMatched", "insert" }
+               })
+         };
+
+         return pipline;
       }
    }
 }
