@@ -102,10 +102,13 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             long totalBlocks = insertStats.Sum((tuple => tuple.count));
             double totalSeconds = insertStats.Sum((tuple => tuple.seconds));
-            double avgBlocks = totalBlocks / totalSeconds;
-            double avgSeconds = totalSeconds / totalBlocks;
+            double avgBlocksPerSecond = totalBlocks / totalSeconds;
+            double avgSecondsPerBlock = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.SyncingBlocks.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, avg insert {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b)");
+            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.SyncingBlocks.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, avg insert {avgBlocksPerSecond:0.00}b/s ({avgSecondsPerBlock:0.00}s/b)");
+
+            foreach (MapBlock mapBlocksValue in item.MapBlocks.Values)
+               syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(avgBlocksPerSecond), mapBlocksValue.BlockSize));
 
             var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
             Runner.Get<Notifier>().Enqueue(notifications);

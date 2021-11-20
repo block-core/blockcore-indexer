@@ -617,6 +617,12 @@ namespace Blockcore.Indexer.Storage.Mongo
       /// </summary>
       private AddressComputed ComputeAddressBalance(string address)
       {
+         if (syncingBlocks.IndexModeCompleted == false)
+         {
+            // do not compute tables if indexes have not run.
+            throw new ApplicationException("node in syncing process");
+         }
+
          FilterDefinition<AddressComputed> addrFilter = Builders<AddressComputed>.Filter
             .Where(f => f.Address == address);
          AddressComputed addressComputed = AddressComputed.Find(addrFilter).FirstOrDefault();
