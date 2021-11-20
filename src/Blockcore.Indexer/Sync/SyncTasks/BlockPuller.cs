@@ -130,9 +130,14 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          bool ibd = Runner.SyncingBlocks.ChainTipHeight - nextBlock.Height > 20;
 
-         if (!ibd || currentStorageBatch.MapBlocks.Count >= 10000 || currentStorageBatch.TotalSize > 5000000) // 5000000) // 10000000) todo: add this to config
+         if (!ibd || currentStorageBatch.MapBlocks.Count >= 10000 || currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
          {
-            log.LogDebug($"Puller - blocks={currentStorageBatch.MapBlocks.Count}, height = {nextBlock.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}.");
+            long totalBlocks = currentStorageBatch.MapBlocks.Count;
+            double totalSeconds = watchBatch.Elapsed.TotalSeconds;
+            double avgBlocks = totalBlocks / totalSeconds;
+            double avgSeconds = totalSeconds / totalBlocks;
+
+            log.LogDebug($"Puller - blocks={currentStorageBatch.MapBlocks.Count}, height = {nextBlock.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds} avg fetch {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b).");
 
             Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
             currentStorageBatch = new StorageBatch();

@@ -105,7 +105,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             double avgBlocks = totalBlocks / totalSeconds;
             double avgSeconds = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, utxocache={utxoCache.CacheSize}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.SyncingBlocks.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, avg insert {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b)");
+            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.SyncingBlocks.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, avg insert {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b)");
 
             var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
             Runner.Get<Notifier>().Enqueue(notifications);
