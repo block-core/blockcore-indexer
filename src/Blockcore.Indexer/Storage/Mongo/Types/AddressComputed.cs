@@ -2,11 +2,12 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
 {
    using System.Collections.Generic;
 
-   public class MapTransactionAddressComputed
+   public class AddressComputed
    {
       public string Id { get; set; }
 
-      public List<string> Addresses { get; set; }
+      //public List<string> Addresses { get; set; }
+      public string Address { get; set; }
 
       public long Available { get; set; }
 

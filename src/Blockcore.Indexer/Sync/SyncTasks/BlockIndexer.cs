@@ -35,7 +35,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
-      private MongoData mongoData;
+      private readonly MongoData mongoData;
 
       Task indexingTask;
       Task indexingCompletTask;
@@ -172,7 +172,28 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                      .CreateOneAsync(new CreateIndexModel<AddressForInput>(Builders<AddressForInput>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
-               }).ContinueWith(async task =>
+               }).ContinueWith(task =>
+               {
+                  // run this indexes together because they data store should be empty they will complete fast
+
+                  log.LogDebug($"Creating indexes on {nameof(AddressComputed)}.{nameof(AddressComputed.Address)}");
+
+                  IndexKeysDefinition<AddressComputed> addrComp = Builders<AddressComputed>.IndexKeys.Ascending(i => i.Address);
+                  mongoData.AddressComputed.Indexes.CreateOne(addrComp);
+
+                  log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputed)}.{nameof(AddressHistoryComputed.BlockIndex)}");
+
+                  IndexKeysDefinition<AddressHistoryComputed> addrHistory1 = Builders<AddressHistoryComputed>.IndexKeys.Descending(i => i.BlockIndex);
+                  mongoData.AddressHistoryComputed.Indexes.CreateOne(addrHistory1);
+
+                  log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputed)}.{nameof(AddressHistoryComputed.Position)}");
+
+                  IndexKeysDefinition<AddressHistoryComputed> addrHistory2 = Builders<AddressHistoryComputed>.IndexKeys.Descending(i => i.Position);
+                  mongoData.AddressHistoryComputed.Indexes.CreateOne(addrHistory2);
+
+               })
+
+               .ContinueWith(async task =>
                {
                   log.LogDebug($"Updating data on {nameof(AddressForInput)}.{nameof(AddressForInput.Address)} and {nameof(AddressForInput)}.{nameof(AddressForInput.Value)}");
 

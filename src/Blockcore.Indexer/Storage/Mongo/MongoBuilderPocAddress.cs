@@ -54,6 +54,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionBlock>(cm =>
             {
                cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
                //cm.MapIdMember(c => c.TransactionId);
             });
          }
@@ -81,9 +82,27 @@ namespace Blockcore.Indexer.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForInput>(cm =>
             {
                cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
             });
          }
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressComputed)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressComputed>(cm =>
+            {
+               cm.AutoMap();
+               cm.MapIdMember(c => c.Id);
+            });
+         }
+
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressHistoryComputed)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressHistoryComputed>(cm =>
+            {
+               cm.AutoMap();
+               cm.MapIdMember(c => c.Id);
+            });
+         }
 
 
          // indexes

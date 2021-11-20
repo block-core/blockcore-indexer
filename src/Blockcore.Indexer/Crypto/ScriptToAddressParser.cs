@@ -72,7 +72,7 @@ namespace Blockcore.Indexer.Crypto
                return new ScriptOutputTemplte
                {
                   TxOutType = template.Type,
-                  Addresses = new[] {hotPubKeyHash.GetAddress(network).ToString(), coldPubKeyHash.GetAddress(network).ToString(),}
+                  Addresses = new[] { coldPubKeyHash.GetAddress(network).ToString(), hotPubKeyHash.GetAddress(network).ToString()}
                };
             }
 
