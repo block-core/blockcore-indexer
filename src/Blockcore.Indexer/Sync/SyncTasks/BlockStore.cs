@@ -28,7 +28,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       readonly IUtxoCache utxoCache;
 
       private readonly System.Diagnostics.Stopwatch watch;
-      private readonly Queue<(long count, long size, double seconds)> insertStats;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockStore"/> class.
@@ -48,7 +47,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          this.utxoCache = utxoCache;
          log = logger;
          watch = Stopwatch.Start();
-         insertStats = new Queue<(long count, long size, double seconds)>();
       }
 
       /// <inheritdoc />
@@ -95,20 +93,15 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             if (Runner.SyncingBlocks.StoreTip == null)
                throw new ApplicationException("Store tip was not persisted");
 
-            insertStats.Enqueue((item.MapBlocks.Count, item.TotalSize, watch.Elapsed.TotalSeconds));
+            long totalBlocks = item.MapBlocks.Count;// insertStats.Sum((tuple => tuple.count));
+            double totalSeconds = watch.Elapsed.TotalSeconds;// insertStats.Sum((tuple => tuple.seconds));
+            double blocksPerSecond = totalBlocks / totalSeconds;
+            double secondsPerBlock = totalSeconds / totalBlocks;
 
-            if (insertStats.Count > 100)
-               insertStats.Dequeue();
-
-            long totalBlocks = insertStats.Sum((tuple => tuple.count));
-            double totalSeconds = insertStats.Sum((tuple => tuple.seconds));
-            double avgBlocksPerSecond = totalBlocks / totalSeconds;
-            double avgSecondsPerBlock = totalSeconds / totalBlocks;
-
-            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.SyncingBlocks.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, avg insert {avgBlocksPerSecond:0.00}b/s ({avgSecondsPerBlock:0.00}s/b)");
+            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.SyncingBlocks.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
 
             foreach (MapBlock mapBlocksValue in item.MapBlocks.Values)
-               syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(avgBlocksPerSecond), mapBlocksValue.BlockSize));
+               syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(blocksPerSecond), mapBlocksValue.BlockSize));
 
             var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
             Runner.Get<Notifier>().Enqueue(notifications);

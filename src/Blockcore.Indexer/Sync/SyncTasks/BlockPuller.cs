@@ -134,10 +134,10 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             long totalBlocks = currentStorageBatch.MapBlocks.Count;
             double totalSeconds = watchBatch.Elapsed.TotalSeconds;
-            double avgBlocks = totalBlocks / totalSeconds;
-            double avgSeconds = totalSeconds / totalBlocks;
+            double blocksPerSecond = totalBlocks / totalSeconds;
+            double secondsPerBlock = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Puller - blocks={currentStorageBatch.MapBlocks.Count}, height = {nextBlock.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds} avg fetch {avgBlocks:0.00}b/s ({avgSeconds:0.00}s/b).");
+            log.LogDebug($"Puller - blocks={currentStorageBatch.MapBlocks.Count}, height = {nextBlock.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b).");
 
             Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
             currentStorageBatch = new StorageBatch();
