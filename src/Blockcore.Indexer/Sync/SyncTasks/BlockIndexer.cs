@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Client.Types;
@@ -39,6 +40,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       Task indexingTask;
       Task indexingCompletTask;
+      bool initialized;
 
       public BlockIndexer(
          IOptions<IndexerSettings> configuration,
@@ -85,6 +87,19 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return false;
          }
 
+         if (initialized == false)
+         {
+            initialized = true;
+
+            List<IndexView> indexes = mongoData.GetCurrentIndexes();
+            if (indexes.Any())
+            {
+               // if indexes are currently running go directly in to index mode
+               Runner.SyncingBlocks.IndexMode = true;
+               return false;
+            }
+         }
+
          if (Runner.SyncingBlocks.IndexMode == false)
          {
             if (Runner.SyncingBlocks.IbdMode() == true)
@@ -95,10 +110,26 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             Runner.SyncingBlocks.IndexMode = true;
          }
 
+         List<IndexView> ops = mongoData.GetCurrentIndexes();
+
+         if (ops.Any())
+         {
+            var stringBuilder = new StringBuilder();
+            foreach (IndexView op in ops)
+            {
+               stringBuilder.AppendLine(op.Command + op.Msg);
+               
+            }
+
+            log.LogDebug(stringBuilder.ToString());
+
+            return false;
+         }
+
          if (indexingTask == null)
          {
             // build indexing tasks
-            watch.Reset();
+            watch.Restart();
 
             indexingTask = Task.Run(async () =>
                {
@@ -172,25 +203,28 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                      .CreateOneAsync(new CreateIndexModel<AddressForInput>(Builders<AddressForInput>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
-               }).ContinueWith(task =>
+               }).ContinueWith(async task =>
                {
                   // run this indexes together because they data store should be empty they will complete fast
 
                   log.LogDebug($"Creating indexes on {nameof(AddressComputed)}.{nameof(AddressComputed.Address)}");
 
-                  IndexKeysDefinition<AddressComputed> addrComp = Builders<AddressComputed>.IndexKeys.Ascending(i => i.Address);
-                  mongoData.AddressComputed.Indexes.CreateOne(addrComp);
+                  await mongoData.AddressComputed.Indexes
+                     .CreateOneAsync(new CreateIndexModel<AddressComputed>(Builders<AddressComputed>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+
 
                   log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputed)}.{nameof(AddressHistoryComputed.BlockIndex)}");
 
-                  IndexKeysDefinition<AddressHistoryComputed> addrHistory1 = Builders<AddressHistoryComputed>.IndexKeys.Descending(i => i.BlockIndex);
-                  mongoData.AddressHistoryComputed.Indexes.CreateOne(addrHistory1);
+                  await mongoData.AddressHistoryComputed.Indexes
+                     .CreateOneAsync(new CreateIndexModel<AddressHistoryComputed>(Builders<AddressHistoryComputed>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
 
                   log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputed)}.{nameof(AddressHistoryComputed.Position)}");
 
-                  IndexKeysDefinition<AddressHistoryComputed> addrHistory2 = Builders<AddressHistoryComputed>.IndexKeys.Descending(i => i.Position);
-                  mongoData.AddressHistoryComputed.Indexes.CreateOne(addrHistory2);
-
+                  await mongoData.AddressHistoryComputed.Indexes
+                     .CreateOneAsync(new CreateIndexModel<AddressHistoryComputed>(Builders<AddressHistoryComputed>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Position)));
                })
 
                .ContinueWith(async task =>

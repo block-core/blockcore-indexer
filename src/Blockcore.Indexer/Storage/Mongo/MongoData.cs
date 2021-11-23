@@ -14,9 +14,9 @@ using Blockcore.Indexer.Operations.Types;
 using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
-using Blockcore.Indexer.Sync.SyncTasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using NBitcoin.DataEncoders;
 
@@ -63,6 +63,52 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          // Make sure we only create a single instance of the watcher.
          watch = Stopwatch.Start();
+      }
+
+      public List<IndexView> GetCurrentIndexes()
+      {
+            IMongoDatabase db = mongoClient.GetDatabase("admin");
+            var command = new BsonDocument {
+               { "currentOp", "1"},
+            };
+            BsonDocument currentOp = db.RunCommand<BsonDocument>(command);
+
+            var inproc = currentOp.GetElement(0);
+            var arr = inproc.Value as BsonArray;
+
+            var ret = new List<IndexView>();
+
+            foreach (BsonValue bsonValue in arr)
+            {
+               var desc = bsonValue.AsBsonDocument?.GetElement("desc");
+               if (desc != null)
+               {
+                  bool track = desc?.Value.AsString.Contains("IndexBuildsCoordinatorMongod") ?? false;
+
+                  if (track)
+                  {
+                     var indexed = new IndexView {Msg = bsonValue.AsBsonDocument?.GetElement("msg").Value.ToString()};
+
+                     BsonElement? commandElement = bsonValue.AsBsonDocument?.GetElement("command");
+
+                     string dbName = string.Empty;
+                     if (commandElement.HasValue)
+                     {
+                        var bsn = commandElement.Value.Value.AsBsonDocument;
+                        dbName = bsn.GetElement("$db").Value.ToString();
+                        indexed.Command = $"{bsn.GetElement(0).Value}-{bsn.GetElement(1).Value}";
+                     }
+
+                     if (dbName == mongoDatabase.DatabaseNamespace.DatabaseName)
+                     {
+                        ret.Add(indexed);
+                     }
+
+                  }
+               }
+            }
+
+            return ret;
       }
 
       public IMongoCollection<AddressForOutput> AddressForOutput
