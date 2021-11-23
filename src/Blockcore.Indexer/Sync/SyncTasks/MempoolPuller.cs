@@ -22,6 +22,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly System.Diagnostics.Stopwatch watch;
 
+      bool initialized;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="MempoolPuller"/> class.
       /// </summary>
@@ -57,13 +59,20 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          if (Runner.SyncingBlocks.ChainTipHeight == 0 ||
              Runner.SyncingBlocks.StoreTip == null ||
-             Runner.SyncingBlocks.StoreTip.BlockIndex + 10 < Runner.SyncingBlocks.ChainTipHeight)
+             Runner.SyncingBlocks.IndexModeCompleted == false ||
+             Runner.SyncingBlocks.IbdMode())
          {
             // Don't sync mempool until api is at tip
             return false;
          }
 
-         // TODO: refactor and check the mempool logic
+         if (initialized == false)
+         {
+            initialized = true;
+
+            // read build mempool memory view
+            syncOperations.InitializeMmpool();
+         }
 
          watch.Restart();
 

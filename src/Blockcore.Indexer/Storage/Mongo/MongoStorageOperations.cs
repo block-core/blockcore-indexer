@@ -86,7 +86,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public InsertStats InsertTransactions(SyncBlockTransactionsOperation item)
       {
-         var stats = new InsertStats { Items = new List<MapTransactionAddress>() };
+         var stats = new InsertStats();//{ Items = new List<MapTransactionAddress>() };
 
          if (item.BlockInfo != null)
          {
@@ -166,7 +166,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                      if (itemsInner.Any())
                      {
-                        stats.Items.AddRange(itemsInner);
+                        //stats.Items.AddRange(itemsInner);
                         stats.InputsOutputs += ops.Count;
                         data.MapTransactionAddress.BulkWrite(ops.Values, writeOptions);
                      }
@@ -230,7 +230,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             // add to the list for later to use on the notification task.
             var inputs = CreateInputs(-1, item.Transactions).ToList();
-            stats.Items.AddRange(inputs);
+            //stats.Items.AddRange(inputs);
          }
 
          return stats;
@@ -238,7 +238,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
       {
-         var stats = new InsertStats { Items = new List<MapTransactionAddress>() };
+         var stats = new InsertStats();//{ Items = new List<MapTransactionAddress>() };
 
          // memory transaction push in to the pool.
          item.Transactions.ForEach(t =>
@@ -254,7 +254,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          // add to the list for later to use on the notification task.
          var inputs = CreateInputs(-1, item.Transactions).ToList();
-         stats.Items.AddRange(inputs);
+        // stats.Items.AddRange(inputs);
 
          return stats;
       }

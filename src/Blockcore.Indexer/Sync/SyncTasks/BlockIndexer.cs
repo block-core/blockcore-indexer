@@ -225,6 +225,24 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   await mongoData.AddressHistoryComputed.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressHistoryComputed>(Builders<AddressHistoryComputed>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Position)));
+
+                  log.LogDebug($"Creating indexes on {nameof(Mempool)}.{nameof(Mempool.TransactionId)}");
+
+                  await mongoData.Mempool.Indexes
+                     .CreateOneAsync(new CreateIndexModel<Mempool>(Builders<Mempool>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.TransactionId)));
+
+                  log.LogDebug($"Creating indexes on {nameof(Mempool)}.{nameof(Mempool.AddressOutputs)}");
+
+                  await mongoData.Mempool.Indexes
+                     .CreateOneAsync(new CreateIndexModel<Mempool>(Builders<Mempool>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.AddressOutputs)));
+
+                  log.LogDebug($"Creating indexes on {nameof(Mempool)}.{nameof(Mempool.AddressInputs)}");
+
+                  await mongoData.Mempool.Indexes
+                     .CreateOneAsync(new CreateIndexModel<Mempool>(Builders<Mempool>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.AddressInputs)));
                })
 
                .ContinueWith(async task =>

@@ -191,6 +191,14 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
+      public IMongoCollection<Mempool> Mempool
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<Mempool>("Mempool");
+         }
+      }
+
       public ConcurrentDictionary<string, Transaction> MemoryTransactions { get; set; }
 
       public QueryTransaction GetTransaction(string transactionId)
