@@ -22,13 +22,6 @@ using NBitcoin.DataEncoders;
 
 namespace Blockcore.Indexer.Storage.Mongo
 {
-   public enum TransactionUsedFilter
-   {
-      All = 0,
-      Spent = 1,
-      Unspent = 2
-   }
-
    public class MongoData : IStorage
    {
       private readonly ILogger<MongoStorageOperations> log;
@@ -44,8 +37,6 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       private readonly ChainSettings chainConfiguration;
 
-      private readonly System.Diagnostics.Stopwatch watch;
-
       public MongoData(ILogger<MongoStorageOperations> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, SyncingBlocks syncingBlocks)
       {
          configuration = nakoConfiguration.Value;
@@ -59,9 +50,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          string dbName = configuration.DatabaseNameSubfix ? "Blockchain" + this.chainConfiguration.Symbol : "Blockchain";
 
          mongoDatabase = mongoClient.GetDatabase(dbName);
-
-         // Make sure we only create a single instance of the watcher.
-         watch = Stopwatch.Start();
       }
 
       public List<IndexView> GetCurrentIndexes()
@@ -72,14 +60,14 @@ namespace Blockcore.Indexer.Storage.Mongo
             };
             BsonDocument currentOp = db.RunCommand<BsonDocument>(command);
 
-            var inproc = currentOp.GetElement(0);
+            BsonElement inproc = currentOp.GetElement(0);
             var arr = inproc.Value as BsonArray;
 
             var ret = new List<IndexView>();
 
             foreach (BsonValue bsonValue in arr)
             {
-               var desc = bsonValue.AsBsonDocument?.GetElement("desc");
+               BsonElement? desc = bsonValue.AsBsonDocument?.GetElement("desc");
                if (desc != null)
                {
                   bool track = desc?.Value.AsString.Contains("IndexBuildsCoordinatorMongod") ?? false;
@@ -93,7 +81,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                      string dbName = string.Empty;
                      if (commandElement.HasValue)
                      {
-                        var bsn = commandElement.Value.Value.AsBsonDocument;
+                        BsonDocument bsn = commandElement.Value.Value.AsBsonDocument;
                         dbName = bsn.GetElement("$db").Value.ToString();
                         indexed.Command = $"{bsn.GetElement(0).Value}-{bsn.GetElement(1).Value}";
                      }
@@ -286,11 +274,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          return MapBlock.Find(filter).ToList().Select(Convert).FirstOrDefault();
       }
 
-      public void InsertBlock(MapBlock info)
-      {
-         MapBlock.InsertOne(info);
-      }
-
       /// <summary>
       /// Inserts or updates a peer info instance. Returns the number of modified entries.
       /// </summary>
@@ -318,51 +301,14 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          return MapTransaction.Find(filter).ToList().Select(t => new SyncRawTransaction { TransactionHash = trxHash, RawTransaction = t.RawTransaction }).FirstOrDefault();
       }
-
-      public void InsertTransaction(MapTransaction info)
-      {
-         MapTransaction.InsertOne(info);
-      }
-
-      public void CompleteBlock(string blockHash)
-      {
-         FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(blockInfo => blockInfo.BlockHash, blockHash);
-         UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
-         MapBlock.UpdateOne(filter, update);
-      }
-
-      public void MarkOutput(string transaction, int index, string spendingTransactionId, long spendingBlockIndex)
-      {
-         FilterDefinition<MapTransactionAddress> filter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.Id, string.Format("{0}-{1}", transaction, index));
-         UpdateDefinition<MapTransactionAddress> update = Builders<MapTransactionAddress>.Update
-             .Set(blockInfo => blockInfo.SpendingTransactionId, spendingTransactionId)
-             .Set(blockInfo => blockInfo.SpendingBlockIndex, spendingBlockIndex);
-
-         MapTransactionAddress.UpdateOne(filter, update);
-      }
-
-      public AddressForOutput GetTransactionOutput(string transaction, int index)
-      {
-         FilterDefinition<AddressForOutput> filter = Builders<AddressForOutput>.Filter.Eq(addr => addr.Outpoint, new Outpoint {TransactionId = transaction, OutputIndex = index});
-
-         return AddressForOutput.Find(filter).ToList().FirstOrDefault();
-      }
-
+      
       public AddressForInput GetTransactionInput(string transaction, int index)
       {
          FilterDefinition<AddressForInput> filter = Builders<AddressForInput>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
 
          return AddressForInput.Find(filter).ToList().FirstOrDefault();
       }
-
-
-      public MapTransactionAddress GetSpendingTransaction(string transaction, int index)
-      {
-         FilterDefinition<MapTransactionAddress> filter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.Id, string.Format("{0}-{1}", transaction, index));
-
-         return MapTransactionAddress.Find(filter).ToList().FirstOrDefault();
-      }
-
+      
       public SyncTransactionInfo BlockTransactionGet(string transactionId)
       {
          FilterDefinition<MapTransactionBlock> filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.TransactionId, transactionId);
@@ -621,7 +567,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       }
 
       /// <summary>
-      /// Calculates the balance for specified address. When confirmations is 0 (default), then all transactions (excluding mempool) will be counted.
+      /// Calculates the balance for specified address.
       /// </summary>
       /// <param name="address"></param>
       public QueryAddress AddressBalance(string address)
@@ -948,7 +894,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          // delete the block itself is done last
          FilterDefinition<MapBlock> blockFilter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
-         MapBlock.DeleteOne(blockFilter);
+         await MapBlock.DeleteOneAsync(blockFilter);
       }
 
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)
@@ -1043,69 +989,6 @@ namespace Blockcore.Indexer.Storage.Mongo
             Version = block.Version,
             SyncComplete = block.SyncComplete
          };
-      }
-
-      ///<Summary>
-      /// Gets the transaction value and adds it to the balance of corresponding address in MapRichlist.
-      /// If the address doesnt exist, it creates a new entry.
-      ///</Summary>
-      public void AddBalanceRichlist(MapTransactionAddress transaction)
-      {
-         List<string> addresses = transaction.Addresses;
-         long value = transaction.Value;
-
-         foreach (string address in addresses)
-         {
-            var data = new MapRichlist
-            {
-               Address = address,
-               Balance = value,
-            };
-            FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
-            UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
-
-            if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
-            {
-               MapRichlist.InsertOne(data);
-            }
-         }
-      }
-
-      ///<Summary>
-      /// Gets the transaction value and substracts it from the balance of corresponding address in MapRichlist.
-      ///</Summary>
-      public void RemoveBalanceRichlist(MapTransactionAddress transaction)
-      {
-         string transactionhash = transaction.Id;
-         SyncTransactionItems item = TransactionItemsGet(transactionhash.Split('-')[0]);
-         if (item != null)
-         {
-            SyncTransactionItemOutput output = item.Outputs[Int32.Parse(transactionhash.Split('-')[1])];
-            string address = output.Address;
-
-            if (address != null)
-            {
-               long value = 0;
-
-               if (output.SpentInTransaction != null)
-               {
-                  value = output.Value * -1;
-               }
-               var data = new MapRichlist
-               {
-                  Address = address,
-                  Balance = value,
-               };
-
-               FilterDefinition<MapRichlist> filter = Builders<MapRichlist>.Filter.Eq(address => address.Address, address);
-               UpdateDefinition<MapRichlist> update = Builders<MapRichlist>.Update.Inc("Balance", value);
-
-               if (MapRichlist.UpdateOne(filter, update).MatchedCount == 0)
-               {
-                  MapRichlist.InsertOne(data);
-               }
-            }
-         }
       }
    }
 }
