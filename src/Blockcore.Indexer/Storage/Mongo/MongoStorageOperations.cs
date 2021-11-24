@@ -244,7 +244,18 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          }
 
-         data.Mempool.InsertMany(mempool, new InsertManyOptions { IsOrdered = false });
+         try
+         {
+            data.Mempool.InsertMany(mempool, new InsertManyOptions { IsOrdered = false });
+         }
+         catch (MongoBulkWriteException mbwex)
+         {
+            // if a mempool trx already exists in mempool ignore it
+            if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
+            {
+               throw;
+            }
+         }
 
          foreach (Mempool mempooltrx in mempool)
             globalState.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
