@@ -89,7 +89,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          watch.Stop();
 
-         log.LogDebug($"Seconds = {watch.Elapsed.TotalSeconds} - New Transactions = {pool.Transactions.Count}");
+         log.LogDebug($"Mempool - New Transactions = {pool.Transactions.Count}, Seconds = {watch.Elapsed.TotalSeconds}");
 
          return await Task.FromResult(false);
       }
