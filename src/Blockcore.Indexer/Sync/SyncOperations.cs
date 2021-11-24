@@ -1,5 +1,8 @@
 using Blockcore.Indexer.Crypto;
+using Blockcore.Indexer.Storage.Mongo;
+using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Sync
 {
@@ -35,24 +38,38 @@ namespace Blockcore.Indexer.Sync
       private readonly System.Diagnostics.Stopwatch watch;
 
       private readonly IMemoryCache cache;
+      readonly SyncingBlocks syncingyncingBlocks;
 
       private readonly MemoryCacheEntryOptions cacheOptions;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncOperations"/> class.
       /// </summary>
-      public SyncOperations(IStorage storage, ILogger<SyncOperations> logger, IOptions<IndexerSettings> configuration, IMemoryCache cache)
+      public SyncOperations(IStorage storage, ILogger<SyncOperations> logger, IOptions<IndexerSettings> configuration, IMemoryCache cache, SyncingBlocks syncingyncingBlocks)
       {
          this.configuration = configuration.Value;
          log = logger;
          this.storage = storage;
          this.cache = cache;
+         this.syncingyncingBlocks = syncingyncingBlocks;
 
          // Register the cold staking template.
          StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
 
          watch = Stopwatch.Start();
          cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheKeys.BlockCountTime);
+      }
+
+      public void InitializeMmpool()
+      {
+         var data = (MongoData)storage;
+
+         var allitems = data.Mempool.AsQueryable().ToList();
+
+         foreach (Mempool allitem in allitems)
+         {
+            syncingyncingBlocks.LocalMempoolView.TryAdd(allitem.TransactionId, string.Empty);
+         }
       }
 
       public long GetBlockCount(BitcoinClient client)
@@ -133,13 +150,29 @@ namespace Blockcore.Indexer.Sync
          IEnumerable<string> memPool = client.GetRawMemPool();
 
          var currentMemoryPool = new HashSet<string>(memPool);
-         var currentTable = new HashSet<string>(syncingBlocks.LocalMempoolView);
+         var currentTable = new HashSet<string>(syncingBlocks.LocalMempoolView.Keys);
 
          var newTransactions = currentMemoryPool.Except(currentTable).ToList();
          var deleteTransaction = currentTable.Except(currentMemoryPool).ToList();
 
-         syncingBlocks.LocalMempoolView.AddRange(newTransactions);
-         deleteTransaction.ForEach(t => syncingBlocks.LocalMempoolView.Remove(t));
+         // limit to 1k trx per loop
+         newTransactions = newTransactions.Take(1000).ToList();
+
+         // entries deleted from mempool on the node
+         // we also delete it in our store
+         if (deleteTransaction.Any())
+         {
+            var toRemoveFromMempool = deleteTransaction;
+
+            FilterDefinitionBuilder<Mempool> builder = Builders<Mempool>.Filter;
+            FilterDefinition<Mempool> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
+
+            var data = (MongoData)storage;
+            data.Mempool.DeleteMany(filter);
+
+            foreach (string mempooltrx in toRemoveFromMempool)
+               syncingBlocks.LocalMempoolView.Remove(mempooltrx, out _);
+         }
 
          return new SyncPoolTransactions { Transactions = newTransactions };
       }

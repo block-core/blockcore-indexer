@@ -59,7 +59,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          string dbName = configuration.DatabaseNameSubfix ? "Blockchain" + this.chainConfiguration.Symbol : "Blockchain";
 
          mongoDatabase = mongoClient.GetDatabase(dbName);
-         MemoryTransactions = new ConcurrentDictionary<string, Transaction>();
 
          // Make sure we only create a single instance of the watcher.
          watch = Stopwatch.Start();
@@ -191,7 +190,13 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
-      public ConcurrentDictionary<string, Transaction> MemoryTransactions { get; set; }
+      public IMongoCollection<Mempool> Mempool
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<Mempool>("Mempool");
+         }
+      }
 
       public QueryTransaction GetTransaction(string transactionId)
       {
@@ -623,6 +628,8 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          AddressComputed addressComputed = ComputeAddressBalance(address);
 
+         List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
+
          return new QueryAddress
          {
             Address = address,
@@ -634,8 +641,41 @@ namespace Blockcore.Indexer.Storage.Mongo
             TotalReceivedCount = addressComputed.CountReceived,
             TotalSentCount = addressComputed.CountSent,
             TotalStakeCount = addressComputed.CountStaked,
-            TotalMineCount = addressComputed.CountMined
+            TotalMineCount = addressComputed.CountMined,
+            PendingSent = mempoolAddressBag.Sum(s => s.AmountInInputs),
+            PendingReceived = mempoolAddressBag.Sum(s => s.AmountInOutputs)
          };
+      }
+
+      private List<MapMempoolAddressBag> MempoolBalance(string address)
+      {
+         var mapMempoolAddressBag = new List<MapMempoolAddressBag>();
+
+         if (syncingBlocks.LocalMempoolView.IsEmpty)
+            return mapMempoolAddressBag;
+
+         IQueryable<Mempool> mempoolForAddress = Mempool.AsQueryable()
+            .Where(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address));
+
+         foreach (Mempool mempool in mempoolForAddress)
+         {
+            var bag = new MapMempoolAddressBag();
+            foreach (MempoolOutput mempoolOutput in mempool.Outputs)
+            {
+               if (mempoolOutput.Address == address)
+                  bag.AmountInOutputs += mempoolOutput.Value;
+            }
+
+            foreach (MempoolInput mempoolInput in mempool.Inputs)
+            {
+               if (mempoolInput.Address == address)
+                  bag.AmountInInputs += mempoolInput.Value;
+            }
+
+            mapMempoolAddressBag.Add(bag);
+         }
+
+         return mapMempoolAddressBag;
       }
 
       /// <summary>
@@ -865,6 +905,13 @@ namespace Blockcore.Indexer.Storage.Mongo
          return addressComputed;
       }
 
+      private class MapMempoolAddressBag
+      {
+         public long AmountInInputs;
+         public long AmountInOutputs;
+         public Mempool Mempool;
+      }
+
       private class MapAddressBag
       {
          public long BlockIndex;
@@ -906,14 +953,14 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)
       {
-         ICollection<Transaction> list = MemoryTransactions.Values;
+         ICollection<Mempool> list = Mempool.AsQueryable().Skip(offset).Take(limit).ToList();
 
-         List<QueryTransaction> retList = new List<QueryTransaction>();
+         var retList = new List<QueryTransaction>();
 
-         foreach (Transaction trx in list.Skip(offset - 1).Take(limit)) // 1 based index, so we'll subtract one.
+         foreach (Mempool trx in list) // 1 based index, so we'll subtract one.
          {
-            string transactionId = trx.GetHash().ToString();
-            SyncTransactionItems transactionItems = TransactionItemsGet(transactionId, trx);
+            string transactionId = trx.TransactionId;
+            SyncTransactionItems transactionItems = TransactionItemsGet(transactionId);
 
             var result = new QueryTransaction
             {
@@ -966,7 +1013,8 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public int GetMemoryTransactionsCount()
       {
-         return MemoryTransactions.Values.Count;
+         return syncingBlocks.LocalMempoolView.Count;
+         //return (int)Mempool.CountDocuments(FilterDefinition<Mempool>.Empty);
       }
 
       private SyncBlockInfo Convert(MapBlock block)
@@ -995,144 +1043,6 @@ namespace Blockcore.Indexer.Storage.Mongo
             Version = block.Version,
             SyncComplete = block.SyncComplete
          };
-      }
-
-      private AddressBalance GetTransactionsByAddress(long confirmations, long blockIndex, string address)
-      {
-         // Create a query against transactions on the specified address.
-         IQueryable<MapTransactionAddress> filter = null;// AddressTransactionFilter(address, 0);
-
-         // Calculate the minimum height to get confirmations required.
-         long height = blockIndex - confirmations;
-
-         // Check if BlockIndex is lower or equal to height. Height is (Tip - Confirmations).
-         long confirmed = filter.Where(s => s.BlockIndex <= height).Sum(s => s.Value);
-
-         // Check if BlockIndex is higher than the height. Height is (Tip - Confirmations).
-         long unconfirmed = filter.Where(s => s.BlockIndex > height).Sum(s => s.Value);
-
-         long sent = filter.Where(s => s.SpendingTransactionId != null).Sum(s => s.Value);
-         long available = confirmed - sent;
-
-         var balance = new AddressBalance
-         {
-            Address = address,
-            Available = available,
-            Received = confirmed,
-            Sent = sent,
-            Unconfirmed = unconfirmed
-         };
-
-         return balance;
-      }
-
-      private IEnumerable<SyncTransactionAddressItem> SelectAddressWithPool(SyncBlockInfo current, string address, bool availableOnly)
-      {
-         FilterDefinitionBuilder<MapTransactionAddress> builder = Builders<MapTransactionAddress>.Filter;
-         var addressFiler = new List<string> { address };
-         FilterDefinition<MapTransactionAddress> filter = builder.AnyIn(transactionAddress => transactionAddress.Addresses, addressFiler);
-
-         if (availableOnly)
-         {
-            // we only want spendable transactions
-            filter = filter & builder.Eq(info => info.SpendingTransactionId, null);
-         }
-
-         watch.Restart();
-
-         SortDefinition<MapTransactionAddress> sort = Builders<MapTransactionAddress>.Sort.Descending(info => info.BlockIndex);
-
-         var addrs = MapTransactionAddress.Find(filter).Sort(sort).ToList();
-
-         watch.Stop();
-
-         // log.LogInformation($"Select: Seconds = {watch.Elapsed.TotalSeconds} - UnspentOnly = {availableOnly} - Addr = {address} - Items = {addrs.Count()}");
-
-         // this creates a copy of the collection (to avoid thread issues)
-         ICollection<Transaction> pool = MemoryTransactions.Values;
-
-         if (pool.Any())
-         {
-            // mark trx in output as spent if they exist in the pool
-            List<MapTransactionAddress> addrsupdate = addrs;
-            GetPoolOutputs(pool).ForEach(f =>
-            {
-               MapTransactionAddress adr = addrsupdate.FirstOrDefault(a => a.TransactionId == f.Item1.PrevOut.Hash.ToString() && a.Index == f.Item1.PrevOut.N);
-               if (adr != null)
-               {
-                  adr.SpendingTransactionId = f.Item2;
-               }
-            });
-
-            // if only spendable transactions are to be returned we need to remove
-            // any that have been marked as spent by a transaction in the pool
-            if (availableOnly)
-            {
-               addrs = addrs.Where(d => d.SpendingTransactionId == null).ToList();
-            }
-
-            // add all pool transactions to main output
-            var paddr = PoolToMapTransactionAddress(pool, address).ToList();
-            addrs = addrs.OrderByDescending(s => s.BlockIndex).Concat(paddr).ToList();
-         }
-
-         // map to return type and calculate confirmations
-         return addrs.Select(s => new SyncTransactionAddressItem
-         {
-            Address = address,
-            Index = s.Index,
-            TransactionHash = s.TransactionId,
-            BlockIndex = s.BlockIndex == -1 ? default(long?) : s.BlockIndex,
-            Value = s.Value,
-            Confirmations = s.BlockIndex == -1 ? 0 : current.BlockIndex - s.BlockIndex + 1,
-            SpendingTransactionHash = s.SpendingTransactionId,
-            SpendingBlockIndex = s.SpendingBlockIndex,
-            CoinBase = s.CoinBase,
-            CoinStake = s.CoinStake,
-            ScriptHex = new Script(Encoders.Hex.DecodeData(s.ScriptHex)).ToString(),
-            Type = StandardScripts.GetTemplateFromScriptPubKey(new Script(Encoders.Hex.DecodeData(s.ScriptHex)))?.Type.ToString(),
-            Time = s.BlockIndex == -1 ? UnixUtils.DateToUnixTimestamp(DateTime.UtcNow) : BlockByIndex(s.BlockIndex).BlockTime
-         });
-      }
-
-      private IEnumerable<Tuple<TxIn, string>> GetPoolOutputs(IEnumerable<Transaction> pool)
-      {
-         return pool.SelectMany(s => s.Inputs.Select(v => new Tuple<TxIn, string>(v, s.GetHash().ToString())));
-      }
-
-      private IEnumerable<MapTransactionAddress> PoolToMapTransactionAddress(IEnumerable<Transaction> pool, string address)
-      {
-         foreach (Transaction transaction in pool)
-         {
-            Transaction rawTransaction = transaction;
-
-            int index = 0;
-            foreach (TxOut output in rawTransaction.Outputs)
-            {
-               string[] addressIndex = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.Addresses;
-
-               if (addressIndex == null)
-                  continue;
-
-               if (address == addressIndex.FirstOrDefault())
-                  continue;
-
-               string id = rawTransaction.GetHash().ToString();
-
-               yield return new MapTransactionAddress
-               {
-                  Id = string.Format("{0}-{1}", id, index),
-                  TransactionId = id,
-                  Value = output.Value,
-                  Index = index++,
-                  Addresses = new List<string> { address },
-                  ScriptHex = output.ScriptPubKey.ToHex(),
-                  BlockIndex = -1,
-                  CoinBase = rawTransaction.IsCoinBase,
-                  CoinStake = rawTransaction.IsCoinStake,
-               };
-            }
-         }
       }
 
       ///<Summary>

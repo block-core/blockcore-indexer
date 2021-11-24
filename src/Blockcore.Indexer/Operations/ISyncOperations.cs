@@ -44,5 +44,7 @@ namespace Blockcore.Indexer.Operations
       /// Gets the height of the last block on the node.
       /// </summary>
       long GetBlockCount(BitcoinClient client);
+
+      void InitializeMmpool();
    }
 }

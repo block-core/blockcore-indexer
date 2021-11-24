@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Operations.Types
+namespace Blockcore.Indexer.Operations.Types
 {
    #region Using Directives
 
@@ -27,6 +27,6 @@
       /// <summary>
       /// Gets or sets the items.
       /// </summary>
-      public List<MapTransactionAddress> Items { get; set; }
+      public List<Mempool> Items { get; set; }
    }
 }
