@@ -95,7 +95,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressHistoryComputed)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(                                                             AddressHistoryComputed)))
          {
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressHistoryComputed>(cm =>
             {
