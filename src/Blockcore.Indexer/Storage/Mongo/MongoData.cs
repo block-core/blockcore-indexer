@@ -14,9 +14,9 @@ using Blockcore.Indexer.Operations.Types;
 using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
-using Blockcore.Indexer.Sync.SyncTasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using NBitcoin.DataEncoders;
 
@@ -65,6 +65,68 @@ namespace Blockcore.Indexer.Storage.Mongo
          watch = Stopwatch.Start();
       }
 
+      public List<IndexView> GetCurrentIndexes()
+      {
+            IMongoDatabase db = mongoClient.GetDatabase("admin");
+            var command = new BsonDocument {
+               { "currentOp", "1"},
+            };
+            BsonDocument currentOp = db.RunCommand<BsonDocument>(command);
+
+            var inproc = currentOp.GetElement(0);
+            var arr = inproc.Value as BsonArray;
+
+            var ret = new List<IndexView>();
+
+            foreach (BsonValue bsonValue in arr)
+            {
+               var desc = bsonValue.AsBsonDocument?.GetElement("desc");
+               if (desc != null)
+               {
+                  bool track = desc?.Value.AsString.Contains("IndexBuildsCoordinatorMongod") ?? false;
+
+                  if (track)
+                  {
+                     var indexed = new IndexView {Msg = bsonValue.AsBsonDocument?.GetElement("msg").Value.ToString()};
+
+                     BsonElement? commandElement = bsonValue.AsBsonDocument?.GetElement("command");
+
+                     string dbName = string.Empty;
+                     if (commandElement.HasValue)
+                     {
+                        var bsn = commandElement.Value.Value.AsBsonDocument;
+                        dbName = bsn.GetElement("$db").Value.ToString();
+                        indexed.Command = $"{bsn.GetElement(0).Value}-{bsn.GetElement(1).Value}";
+                     }
+
+                     if (dbName == mongoDatabase.DatabaseNamespace.DatabaseName)
+                     {
+                        ret.Add(indexed);
+                     }
+
+                  }
+               }
+            }
+
+            return ret;
+      }
+
+      public IMongoCollection<AddressForOutput> AddressForOutput
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<AddressForOutput>("AddressForOutput");
+         }
+      }
+
+      public IMongoCollection<AddressForInput> AddressForInput
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<AddressForInput>("AddressForInput");
+         }
+      }
+
       public IMongoCollection<MapTransactionAddress> MapTransactionAddress
       {
          get
@@ -73,19 +135,19 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
-      public IMongoCollection<MapTransactionAddressComputed> MapTransactionAddressComputed
+      public IMongoCollection<AddressComputed> AddressComputed
       {
          get
          {
-            return mongoDatabase.GetCollection<MapTransactionAddressComputed>("MapTransactionAddressComputed");
+            return mongoDatabase.GetCollection<AddressComputed>("AddressComputed");
          }
       }
 
-      public IMongoCollection<MapTransactionAddressHistoryComputed> MapTransactionAddressHistoryComputed
+      public IMongoCollection<AddressHistoryComputed> AddressHistoryComputed
       {
          get
          {
-            return mongoDatabase.GetCollection<MapTransactionAddressHistoryComputed>("MapTransactionAddressHistoryComputed");
+            return mongoDatabase.GetCollection<AddressHistoryComputed>("AddressHistoryComputed");
          }
       }
 
@@ -192,9 +254,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          // page using the block height as paging counter
          SyncBlockInfo storeTip = syncingBlocks.StoreTip;
-         long total = storeTip != null ?
-            storeTip.BlockIndex :
-            MapBlock.Find(Builders<MapBlock>.Filter.Empty).CountDocuments() - 1;
+         long total = storeTip?.BlockIndex ?? MapBlock.Find(Builders<MapBlock>.Filter.Empty).CountDocuments() - 1;
 
          if (total == -1) total = 0;
 
@@ -276,6 +336,21 @@ namespace Blockcore.Indexer.Storage.Mongo
          MapTransactionAddress.UpdateOne(filter, update);
       }
 
+      public AddressForOutput GetTransactionOutput(string transaction, int index)
+      {
+         FilterDefinition<AddressForOutput> filter = Builders<AddressForOutput>.Filter.Eq(addr => addr.Outpoint, new Outpoint {TransactionId = transaction, OutputIndex = index});
+
+         return AddressForOutput.Find(filter).ToList().FirstOrDefault();
+      }
+
+      public AddressForInput GetTransactionInput(string transaction, int index)
+      {
+         FilterDefinition<AddressForInput> filter = Builders<AddressForInput>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
+
+         return AddressForInput.Find(filter).ToList().FirstOrDefault();
+      }
+
+
       public MapTransactionAddress GetSpendingTransaction(string transaction, int index)
       {
          FilterDefinition<MapTransactionAddress> filter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.Id, string.Format("{0}-{1}", transaction, index));
@@ -353,7 +428,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             }).ToList(),
             Outputs = transaction.Outputs.Select((output, index) => new SyncTransactionItemOutput
             {
-               Address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.FirstOrDefault(),
+               Address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.Addresses?.FirstOrDefault(),
                Index = index,
                Value = output.Value,
                OutputType = StandardScripts.GetTemplateFromScriptPubKey(output.ScriptPubKey)?.Type.ToString(),
@@ -363,13 +438,13 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          foreach (SyncTransactionItemInput input in ret.Inputs)
          {
-            input.InputAddress = GetSpendingTransaction(input.PreviousTransactionHash, input.PreviousIndex)?.Addresses.FirstOrDefault();
+            input.InputAddress = GetTransactionInput(input.PreviousTransactionHash, input.PreviousIndex)?.Address;
          }
 
          // try to fetch spent outputs
          foreach (SyncTransactionItemOutput output in ret.Outputs)
          {
-            output.SpentInTransaction = GetSpendingTransaction(transactionId, output.Index)?.SpendingTransactionId;
+            output.SpentInTransaction = GetTransactionInput(transactionId, output.Index)?.TrxHash;
          }
 
          return ret;
@@ -489,10 +564,10 @@ namespace Blockcore.Indexer.Storage.Mongo
       public QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit)
       {
          // make sure fields are computed
-         MapTransactionAddressComputed addressComputed = ComputeAddressBalance(address);
+         AddressComputed addressComputed = ComputeAddressBalance(address);
 
-         IQueryable<MapTransactionAddressHistoryComputed> filter = MapTransactionAddressHistoryComputed.AsQueryable()
-            .Where(t => t.Addresses.Contains(address));
+         IQueryable<AddressHistoryComputed> filter = AddressHistoryComputed.AsQueryable()
+            .Where(t => t.Address == address);
 
          SyncBlockInfo storeTip = syncingBlocks.StoreTip;
          if (storeTip == null)
@@ -546,7 +621,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       /// <param name="address"></param>
       public QueryAddress AddressBalance(string address)
       {
-         MapTransactionAddressComputed addressComputed = ComputeAddressBalance(address);
+         AddressComputed addressComputed = ComputeAddressBalance(address);
 
          return new QueryAddress
          {
@@ -586,16 +661,22 @@ namespace Blockcore.Indexer.Storage.Mongo
       ///    on the block height, if the version currently in disk is not the same as when the row was read
       ///    another process already calculated the latest additional entries
       /// </summary>
-      private MapTransactionAddressComputed ComputeAddressBalance(string address)
+      private AddressComputed ComputeAddressBalance(string address)
       {
-         FilterDefinition<MapTransactionAddressComputed> addrFilter = Builders<MapTransactionAddressComputed>.Filter
-            .Where(f => f.Addresses.Contains(address));
-         MapTransactionAddressComputed addressComputed = MapTransactionAddressComputed.Find(addrFilter).FirstOrDefault();
+         if (syncingBlocks.IndexModeCompleted == false)
+         {
+            // do not compute tables if indexes have not run.
+            throw new ApplicationException("node in syncing process");
+         }
+
+         FilterDefinition<AddressComputed> addrFilter = Builders<AddressComputed>.Filter
+            .Where(f => f.Address == address);
+         AddressComputed addressComputed = AddressComputed.Find(addrFilter).FirstOrDefault();
 
          if (addressComputed == null)
          {
-            addressComputed = new MapTransactionAddressComputed() { Id = address, Addresses = new List<string> { address }, ComputedBlockIndex = 0 };
-            MapTransactionAddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
+            addressComputed = new AddressComputed() { Id = address, Address = address, ComputedBlockIndex = 0 };
+            AddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
          }
 
          SyncBlockInfo storeTip = syncingBlocks.StoreTip;
@@ -605,25 +686,33 @@ namespace Blockcore.Indexer.Storage.Mongo
          long currentHeight = addressComputed.ComputedBlockIndex;
          long tipHeight = storeTip.BlockIndex;
 
-         IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
-            .Where(t => t.Addresses.Contains(address))
-            .Where(b => (b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight)
-                        || (b.SpendingBlockIndex > currentHeight && b.SpendingBlockIndex <= tipHeight));
+         //IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
+         //   .Where(t => t.Addresses.Contains(address))
+         //   .Where(b => (b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight)
+         //               || (b.SpendingBlockIndex > currentHeight && b.SpendingBlockIndex <= tipHeight));
+
+         IQueryable<AddressForOutput> filterOutputs = AddressForOutput.AsQueryable()
+            .Where(t => t.Address == address)
+            .Where(b => b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight);
+
+         IQueryable<AddressForInput> filterInputs = AddressForInput.AsQueryable()
+            .Where(t => t.Address == address)
+            .Where(b => b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight);
 
          long countReceived = 0, countSent = 0, countStaked = 0, countMined = 0;
          long received = 0, sent = 0, staked = 0, mined = 0;
          long maxHeight = 0;
 
-         var history = new Dictionary<string, MapTransactionAddressHistoryComputed>();
-         var transcations = new Dictionary<string, MapTransactionAddressBag>();
+         var history = new Dictionary<string, AddressHistoryComputed>();
+         var transcations = new Dictionary<string, MapAddressBag>();
 
-         foreach (MapTransactionAddress item in filter)
+         foreach (AddressForOutput item in filterOutputs)
          {
             if (item.BlockIndex > currentHeight && item.BlockIndex <= tipHeight)
             {
                maxHeight = Math.Max(maxHeight, item.BlockIndex);
 
-               if (transcations.TryGetValue(item.TransactionId, out MapTransactionAddressBag current))
+               if (transcations.TryGetValue(item.Outpoint.TransactionId, out MapAddressBag current))
                {
                   current.CoinBase = item.CoinBase;
                   current.CoinStake = item.CoinStake;
@@ -631,36 +720,39 @@ namespace Blockcore.Indexer.Storage.Mongo
                }
                else
                {
-                  var bag = new MapTransactionAddressBag { BlockIndex = item.BlockIndex, CoinBase = item.CoinBase, CoinStake = item.CoinStake };
+                  var bag = new MapAddressBag {BlockIndex = item.BlockIndex, CoinBase = item.CoinBase, CoinStake = item.CoinStake};
                   bag.Ouputs.Add(item);
-                  transcations.Add(item.TransactionId, bag);
+                  transcations.Add(item.Outpoint.TransactionId, bag);
                }
             }
+         }
 
-            if (item.SpendingTransactionId != null && item.SpendingBlockIndex > currentHeight && item.SpendingBlockIndex <= tipHeight)
+         foreach (AddressForInput item in filterInputs)
+         {
+            if (item.BlockIndex > currentHeight && item.BlockIndex <= tipHeight)
             {
-               maxHeight = Math.Max(maxHeight, item.SpendingBlockIndex.Value);
+               maxHeight = Math.Max(maxHeight, item.BlockIndex);
 
-               if (transcations.TryGetValue(item.SpendingTransactionId, out MapTransactionAddressBag current))
+               if (transcations.TryGetValue(item.TrxHash, out MapAddressBag current))
                {
                   current.Inputs.Add(item);
                }
                else
                {
-                  var bag = new MapTransactionAddressBag { BlockIndex = item.SpendingBlockIndex.Value };
+                  var bag = new MapAddressBag { BlockIndex = item.BlockIndex };
                   bag.Inputs.Add(item);
-                  transcations.Add(item.SpendingTransactionId, bag);
+                  transcations.Add(item.TrxHash, bag);
                }
             }
          }
 
          if (transcations.Any())
          {
-            foreach (KeyValuePair<string, MapTransactionAddressBag> item in transcations.OrderBy(o => o.Value.BlockIndex))
+            foreach (KeyValuePair<string, MapAddressBag> item in transcations.OrderBy(o => o.Value.BlockIndex))
             {
-               var historyItem = new MapTransactionAddressHistoryComputed
+               var historyItem = new AddressHistoryComputed
                {
-                  Addresses = addressComputed.Addresses,
+                  Address = addressComputed.Address,
                   TransactionId = item.Key,
                   BlockIndex = item.Value.BlockIndex,
                   Id = $"{item.Key}-{address}",
@@ -668,10 +760,10 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                history.Add(item.Key, historyItem);
 
-               foreach (MapTransactionAddress output in item.Value.Ouputs)
+               foreach (AddressForOutput output in item.Value.Ouputs)
                   historyItem.AmountInOutputs += output.Value;
 
-               foreach (MapTransactionAddress output in item.Value.Inputs)
+               foreach (AddressForInput output in item.Value.Inputs)
                   historyItem.AmountInInputs += output.Value;
 
                if (item.Value.CoinBase)
@@ -712,7 +804,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             // each entry is assigned an incremental id to improve efficiency of paging.
             long position = addressComputed.CountSent + addressComputed.CountReceived + addressComputed.CountStaked + addressComputed.CountMined;
-            foreach (MapTransactionAddressHistoryComputed historyValue in history.Values.OrderBy(o => o.BlockIndex))
+            foreach (AddressHistoryComputed historyValue in history.Values.OrderBy(o => o.BlockIndex))
             {
                historyValue.Position = ++position;
             }
@@ -738,14 +830,14 @@ namespace Blockcore.Indexer.Storage.Mongo
                // only push to store if the same version of computed bloc index is present (meaning entry was not modified)
                // block height must change if new trx are added so use it to apply OCC (Optimistic Concurrency Control)
                // to determine if a newer entry was pushed to store.
-               FilterDefinition<MapTransactionAddressComputed> updateFilter = Builders<MapTransactionAddressComputed>.Filter
-                  .Where(f => f.Addresses.Contains(address) && f.ComputedBlockIndex == currentHeight);
+               FilterDefinition<AddressComputed> updateFilter = Builders<AddressComputed>.Filter
+                  .Where(f => f.Address == address && f.ComputedBlockIndex == currentHeight);
 
                // update the computed address entry, this will throw if a newer version is in store
-               MapTransactionAddressComputed.ReplaceOne(updateFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
+               AddressComputed.ReplaceOne(updateFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
 
                // if we managed to update the address we can safely insert history
-               MapTransactionAddressHistoryComputed.InsertMany(history.Values, new InsertManyOptions { IsOrdered = false });
+               AddressHistoryComputed.InsertMany(history.Values, new InsertManyOptions { IsOrdered = false });
             }
             catch (MongoWriteException nwe)
             {
@@ -755,7 +847,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                }
 
                // address was already modified fetch the latest version
-               addressComputed = MapTransactionAddressComputed.Find(addrFilter).FirstOrDefault();
+               addressComputed = AddressComputed.Find(addrFilter).FirstOrDefault();
             }
             catch (MongoBulkWriteException mbwex)
             {
@@ -773,47 +865,39 @@ namespace Blockcore.Indexer.Storage.Mongo
          return addressComputed;
       }
 
-      private class MapTransactionAddressBag
+      private class MapAddressBag
       {
          public long BlockIndex;
          public bool CoinBase;
          public bool CoinStake;
 
-         public List<MapTransactionAddress> Inputs = new List<MapTransactionAddress>();
-         public List<MapTransactionAddress> Ouputs = new List<MapTransactionAddress>();
+         public List<AddressForInput> Inputs = new List<AddressForInput>();
+         public List<AddressForOutput> Ouputs = new List<AddressForOutput>();
       }
 
-      public void DeleteBlock(string blockHash)
+      public async Task DeleteBlockAsync(string blockHash)
       {
          SyncBlockInfo block = BlockByHash(blockHash);
 
-         // delete the outputs
-         FilterDefinition<MapTransactionAddress> addrFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         MapTransactionAddress.DeleteMany(addrFilter);
+         FilterDefinition<AddressForInput> addrForInputFilter = Builders<AddressForInput>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         Task<DeleteResult> input = AddressForInput.DeleteManyAsync(addrForInputFilter);
+
+         FilterDefinition<AddressForOutput> addrForOutputFilter = Builders<AddressForOutput>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         Task<DeleteResult> output = AddressForOutput.DeleteManyAsync(addrForOutputFilter);
 
          // delete the transaction
          FilterDefinition<MapTransactionBlock> transactionFilter = Builders<MapTransactionBlock>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
-         MapTransactionBlock.DeleteMany(transactionFilter);
+         Task<DeleteResult> transactions = MapTransactionBlock.DeleteManyAsync(transactionFilter);
 
          // delete computed
-         FilterDefinition<MapTransactionAddressComputed> addrCompFilter = Builders<MapTransactionAddressComputed>.Filter.Eq(addr => addr.ComputedBlockIndex, block.BlockIndex);
-         MapTransactionAddressComputed.DeleteMany(addrCompFilter);
+         FilterDefinition<AddressComputed> addrCompFilter = Builders<AddressComputed>.Filter.Eq(addr => addr.ComputedBlockIndex, block.BlockIndex);
+         Task<DeleteResult> addressComputed = AddressComputed.DeleteManyAsync(addrCompFilter);
 
-         FilterDefinition<MapTransactionAddressHistoryComputed> addrCompHistFilter = Builders<MapTransactionAddressHistoryComputed>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         MapTransactionAddressHistoryComputed.DeleteMany(addrCompHistFilter);
+         // delete computed history
+         FilterDefinition<AddressHistoryComputed> addrCompHistFilter = Builders<AddressHistoryComputed>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         Task<DeleteResult> addressHistoryComputed = AddressHistoryComputed.DeleteManyAsync(addrCompHistFilter);
 
-         // mark transactions that are spent by the block as unspent
-         // todo: enable this code
-         // do we really need this? its most likely an output that
-         // is reorged will be spent in another block and will be picked
-         // later when syncing the new block and override the previous value
-
-         //FilterDefinition<MapTransactionAddress> addrUpdateFilter = Builders<MapTransactionAddress>.Filter.Eq(addr => addr.SpendingBlockIndex, block.BlockIndex);
-         //UpdateDefinition<MapTransactionAddress> update = Builders<MapTransactionAddress>.Update
-         //   .Set(blockInfo => blockInfo.SpendingTransactionId, null)
-         //   .Set(blockInfo => blockInfo.SpendingBlockIndex, null);
-
-         //MapTransactionAddress.UpdateMany(addrUpdateFilter, update, new UpdateOptions());
+         await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed);
 
          // delete the block itself is done last
          FilterDefinition<MapBlock> blockFilter = Builders<MapBlock>.Filter.Eq(info => info.BlockHash, blockHash);
@@ -1025,7 +1109,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             int index = 0;
             foreach (TxOut output in rawTransaction.Outputs)
             {
-               string[] addressIndex = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
+               string[] addressIndex = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.Addresses;
 
                if (addressIndex == null)
                   continue;

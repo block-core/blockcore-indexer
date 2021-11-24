@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Blockcore.Indexer.Storage
 {
    using System;
@@ -62,7 +64,7 @@ namespace Blockcore.Indexer.Storage
 
       //string GetSpendingTransaction(string transaction, int index);
 
-      void DeleteBlock(string blockHash);
+      Task DeleteBlockAsync(string blockHash);
 
       //IEnumerable<NBitcoin.Transaction> GetMemoryTransactions();
    }

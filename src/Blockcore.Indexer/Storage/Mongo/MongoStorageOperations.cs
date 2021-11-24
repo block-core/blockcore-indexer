@@ -370,7 +370,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          data.InsertBlock(blockInfo);
       }
 
-      private MapBlock CreateMapBlock(BlockInfo block)
+      public static MapBlock CreateMapBlock(BlockInfo block)
       {
          return new MapBlock
          {
@@ -449,7 +449,8 @@ namespace Blockcore.Indexer.Storage.Mongo
             {
                TxOut output = rawTransaction.Outputs[index];
 
-               string[] address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
+               ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
+               string[] address = res != null ? res.Addresses ?? new []{ res.TxOutType.ToString()} : null;
 
                if (address == null)
                   continue;

@@ -38,7 +38,7 @@ namespace Blockcore.Indexer.Operations
       /// <summary>
       /// Delete all blocks that are not complete
       /// </summary>
-      Storage.Types.SyncBlockInfo RewindToLastCompletedBlock();
+      Task<Storage.Types.SyncBlockInfo> RewindToLastCompletedBlockAsync();
 
       /// <summary>
       /// Gets the height of the last block on the node.

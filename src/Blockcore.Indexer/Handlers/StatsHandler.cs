@@ -152,6 +152,19 @@ namespace Blockcore.Indexer.Api.Handlers
                long totalSize = syncConnection.RecentItems.Sum(s => s.Size);
                stats.AvgBlockSizeKb = Math.Round((double)totalSize / syncConnection.RecentItems.Count, 0);
 
+               //var groupedByMin = syncConnection.RecentItems
+               //   //.GroupBy(g => g.Inserted.Hour + g.Inserted.Minute)
+               //   .OrderByDescending(o => o.Inserted)
+               //   .GroupBy(g => g.Inserted.Minute)
+               //   .Take(10)
+               //   .ToDictionary(s => s.Key,
+               //      s => s.ToList().Count);
+
+               //int totalBlocks = groupedByMin.Skip(1).Take(5).Sum(s => s.Value);
+               //int totalSecondsPerBlok = groupedByMin.Skip(1).Take(5).Count();
+
+               //stats.BlocksPerMinute = (int)Math.Round((double)totalBlocks / totalSecondsPerBlok);
+
                stats.BlocksPerMinute = syncConnection.RecentItems.Count(w => w.Inserted > DateTime.UtcNow.AddMinutes(-1));
             }
          }

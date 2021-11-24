@@ -1,0 +1,188 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Blockcore.Consensus;
+using Blockcore.Indexer.Crypto;
+using Blockcore.Indexer.Operations;
+using Blockcore.Indexer.Operations.Types;
+using Blockcore.Indexer.Settings;
+using Blockcore.Indexer.Storage.Mongo.Types;
+using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Sync.SyncTasks;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using NBitcoin;
+
+namespace Blockcore.Indexer.Storage.Mongo
+{
+   public class MongoStorageOperationsPOC : IStorageOperations
+   {
+      private readonly SyncConnection syncConnection;
+      readonly IUtxoCache utxoCache;
+      readonly SyncingBlocks syncingBlocks;
+      readonly IndexerSettings configuration;
+      private readonly System.Diagnostics.Stopwatch watch;
+      private readonly MongoData data;
+
+      public MongoStorageOperationsPOC(
+         SyncConnection syncConnection,
+         IStorage storage,
+         IUtxoCache utxoCache,
+         IOptions<IndexerSettings> configuration,
+         SyncingBlocks syncingBlocks)
+      {
+         this.syncConnection = syncConnection;
+         this.utxoCache = utxoCache;
+         this.syncingBlocks = syncingBlocks;
+         this.configuration = configuration.Value;
+         data = (MongoData)storage;
+         watch = new System.Diagnostics.Stopwatch();
+      }
+
+      public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
+      {
+         storageBatch.TotalSize += item.BlockInfo.Size;
+         storageBatch.MapBlocks.Add(item.BlockInfo.Height, MongoStorageOperations.CreateMapBlock(item.BlockInfo));
+
+         storageBatch.MapTransactionBlocks.AddRange(item.Transactions.Select(s => new MapTransactionBlock
+         {
+            BlockIndex = item.BlockInfo.Height,
+            TransactionId = s.GetHash().ToString()
+         }));
+
+         if (configuration.StoreRawTransactions)
+         {
+            storageBatch.MapTransactions.AddRange(item.Transactions.Select(t => new MapTransaction
+            {
+               TransactionId = t.GetHash().ToString(),
+               RawTransaction = t.ToBytes(syncConnection.Network.Consensus.ConsensusFactory)
+            }));
+         }
+
+         IEnumerable<AddressForOutput> outputs = item.Transactions.SelectMany((trx, i) =>
+            trx.Outputs.Select((output, index) =>
+            {
+               ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
+               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.TxOutType.ToString() : null;
+
+               return new AddressForOutput
+               {
+                  Address = addr,
+                  Outpoint = new Outpoint{TransactionId = trx.GetHash().ToString(), OutputIndex = index},
+                  BlockIndex = item.BlockInfo.Height,
+                  Value = output.Value,
+                  ScriptHex = output.ScriptPubKey.ToHex(),
+                  CoinBase = trx.IsCoinBase,
+                  CoinStake = syncConnection.Network.Consensus.IsProofOfStake && trx.IsCoinStake,
+               };
+            }));
+
+
+         storageBatch.AddressForOutputs.AddRange(outputs);
+
+         var inputs = item.Transactions
+            .Where(t => t.IsCoinBase == false)
+            .SelectMany((trx, trxIndex) =>
+               trx.Inputs.Select((input, inputIndex) =>
+               {
+                  return new AddressForInput()
+                  {
+                     Outpoint = new Outpoint
+                     {
+                        TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
+                     },
+                     TrxHash = trx.GetHash().ToString(),
+                     BlockIndex = item.BlockInfo.Height,
+                  };
+               })).ToList();
+
+         storageBatch.AddressForInputs.AddRange(inputs);
+      }
+
+      public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
+      {
+         var t1 = Task.Run(() =>
+         {
+            data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions {IsOrdered = false });
+         });
+
+         var t2 = Task.Run(() =>
+         {
+            data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
+         });
+
+         var t3 = Task.Run(() =>
+         {
+            data.AddressForOutput.InsertMany(storageBatch.AddressForOutputs, new InsertManyOptions {IsOrdered = false});
+         });
+
+         var t4 = Task.Run(() =>
+         {
+            if (storageBatch.AddressForInputs.Any())
+               data.AddressForInput.InsertMany(storageBatch.AddressForInputs, new InsertManyOptions {IsOrdered = false});
+         });
+
+         var t5 = Task.Run(() =>
+         {
+            try
+            {
+               if (storageBatch.MapTransactions.Any())
+                  data.MapTransaction.InsertMany(storageBatch.MapTransactions, new InsertManyOptions {IsOrdered = false});
+            }
+            catch (MongoBulkWriteException mbwex)
+            {
+               // transactions are a special case they are not deleted from store in case of reorgs
+               // because they will just be included in another blocks, so we ignore if key is already present
+               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
+               {
+                  throw;
+               }
+            }
+         });
+
+         Task.WaitAll(t3, t4);
+
+         var t6 = Task.Run(() =>
+         {
+            if (syncingBlocks.IndexModeCompleted)
+            {
+               PipelineDefinition<AddressForInput, AddressForInput> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
+               data.AddressForInput.Aggregate(pipeline);
+            }
+         });
+
+         Task.WaitAll(t1, t2, t3, t4, t5, t6);
+
+         string lastBlockHash = null;
+         long blockIndex = 0;
+         var markBlocksAsComplete = new List<UpdateOneModel<MapBlock>>();
+         foreach (MapBlock mapBlock in storageBatch.MapBlocks.Values.OrderBy(b => b.BlockIndex))
+         {
+            FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
+            UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
+
+            markBlocksAsComplete.Add(new UpdateOneModel<MapBlock>(filter, update));
+            lastBlockHash = mapBlock.BlockHash;
+            blockIndex = mapBlock.BlockIndex;
+         }
+
+         // mark each block is complete
+         data.MapBlock.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
+
+         SyncBlockInfo block = data.BlockByIndex(blockIndex);
+
+         if (block.BlockHash != lastBlockHash)
+         {
+            throw new ArgumentException($"Expected hash {lastBlockHash} for block {blockIndex} but was {block.BlockHash}");
+         }
+
+         return block;
+      }
+
+      public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
+      {
+         return null;
+      }
+   }
+}

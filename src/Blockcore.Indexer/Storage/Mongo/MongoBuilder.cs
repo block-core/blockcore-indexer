@@ -62,18 +62,18 @@ namespace Blockcore.Indexer.Storage.Mongo
                 });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransactionAddressComputed)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressComputed)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionAddressComputed>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressComputed>(cm =>
             {
                cm.AutoMap();
                cm.MapIdMember(c => c.Id);
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransactionAddressHistoryComputed)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressHistoryComputed)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionAddressHistoryComputed>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressHistoryComputed>(cm =>
             {
                cm.AutoMap();
                cm.MapIdMember(c => c.Id);
@@ -128,17 +128,17 @@ namespace Blockcore.Indexer.Storage.Mongo
          IndexKeysDefinition<MapRichlist> richListIndex = Builders<MapRichlist>.IndexKeys.Ascending(i => i.Balance);
          mongoData.MapRichlist.Indexes.CreateOne(richListIndex);
 
-         IndexKeysDefinition<MapTransactionAddressComputed> addrComp = Builders<MapTransactionAddressComputed>.IndexKeys.Ascending(i => i.Addresses);
-         mongoData.MapTransactionAddressComputed.Indexes.CreateOne(addrComp);
+         IndexKeysDefinition<AddressComputed> addrComp = Builders<AddressComputed>.IndexKeys.Ascending(i => i.Address);
+         mongoData.AddressComputed.Indexes.CreateOne(addrComp);
 
          //IndexKeysDefinition<MapTransactionAddressHistoryComputed> addrHistory = Builders<MapTransactionAddressHistoryComputed>.IndexKeys.Ascending(i => i.BlockIndex);
          //mongoData.MapTransactionAddressHistoryComputed.Indexes.CreateOne(addrHistory);
 
-         IndexKeysDefinition<MapTransactionAddressHistoryComputed> addrHistory1 = Builders<MapTransactionAddressHistoryComputed>.IndexKeys.Descending(i => i.BlockIndex);
-         mongoData.MapTransactionAddressHistoryComputed.Indexes.CreateOne(addrHistory1);
+         IndexKeysDefinition<AddressHistoryComputed> addrHistory1 = Builders<AddressHistoryComputed>.IndexKeys.Descending(i => i.BlockIndex);
+         mongoData.AddressHistoryComputed.Indexes.CreateOne(addrHistory1);
 
-         IndexKeysDefinition<MapTransactionAddressHistoryComputed> addrHistory2 = Builders<MapTransactionAddressHistoryComputed>.IndexKeys.Descending(i => i.Position);
-         mongoData.MapTransactionAddressHistoryComputed.Indexes.CreateOne(addrHistory2);
+         IndexKeysDefinition<AddressHistoryComputed> addrHistory2 = Builders<AddressHistoryComputed>.IndexKeys.Descending(i => i.Position);
+         mongoData.AddressHistoryComputed.Indexes.CreateOne(addrHistory2);
 
          return Task.FromResult(1);
       }

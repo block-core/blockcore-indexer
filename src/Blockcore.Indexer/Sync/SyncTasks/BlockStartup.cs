@@ -53,13 +53,15 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          Runner.SyncingBlocks.PullingTip = null;
          Runner.SyncingBlocks.StoreTip = null;
 
-         Runner.SyncingBlocks.StoreTip = syncOperations.RewindToLastCompletedBlock();
+         Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToLastCompletedBlockAsync();
 
          if (Runner.SyncingBlocks.StoreTip == null)
          {
             // No blocks in store start from zero
             // push the genesis block to store
-            string genesisHash = client.GetblockHash(0);
+            int start = 0;
+            string genesisHash = await client.GetblockHashAsync(start);
+
 
             log.LogDebug($"Processing genesis hash = {genesisHash}");
 

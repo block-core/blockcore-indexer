@@ -44,8 +44,9 @@ namespace Blockcore.Indexer
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
          services.AddSingleton<IStorage, MongoData>();
-         services.AddSingleton<IStorageOperations, MongoStorageOperations>();
-         services.AddSingleton<TaskStarter, MongoBuilder>();
+         services.AddSingleton<IUtxoCache, UtxoCache>();
+         services.AddSingleton<IStorageOperations, MongoStorageOperationsPOC>();
+         services.AddSingleton<TaskStarter, MongoBuilderPocAddress>();
          services.AddTransient<SyncServer>();
          services.AddSingleton<SyncConnection>();
          services.AddSingleton<ISyncOperations, SyncOperations>();
@@ -60,7 +61,11 @@ namespace Blockcore.Indexer
 
          services.AddScoped<TaskRunner, BlockPuller>();
          services.AddScoped<TaskRunner, BlockStore>();
-         services.AddScoped<TaskStarter, BlockStartup>();
+          services.AddScoped<TaskStarter, BlockStartup>();
+
+         services.AddScoped<TaskRunner, BlockIndexer>();
+
+         services.AddScoped<TaskRunner, RichListSync>();
 
          services.AddResponseCompression();
          services.AddMemoryCache();
