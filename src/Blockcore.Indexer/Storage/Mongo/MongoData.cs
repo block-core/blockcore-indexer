@@ -207,6 +207,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             {
                CoinBase = i.InputCoinBase,
                InputAddress = i.InputAddress,
+               InputAmount = i.InputAmount,
                InputIndex = i.PreviousIndex,
                InputTransactionId = i.PreviousTransactionHash,
                ScriptSig = i.ScriptSig,
@@ -300,7 +301,14 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          return AddressForInput.Find(filter).ToList().FirstOrDefault();
       }
-      
+
+      public AddressForOutput GetTransactionOutput(string transaction, int index)
+      {
+         FilterDefinition<AddressForOutput> filter = Builders<AddressForOutput>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
+
+         return AddressForOutput.Find(filter).ToList().FirstOrDefault();
+      }
+
       public SyncTransactionInfo BlockTransactionGet(string transactionId)
       {
          FilterDefinition<MapTransactionBlock> filter = Builders<MapTransactionBlock>.Filter.Eq(info => info.TransactionId, transactionId);
@@ -381,7 +389,9 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          foreach (SyncTransactionItemInput input in ret.Inputs)
          {
-            input.InputAddress = GetTransactionInput(input.PreviousTransactionHash, input.PreviousIndex)?.Address;
+            AddressForOutput addressForOutput = GetTransactionOutput(input.PreviousTransactionHash, input.PreviousIndex);
+            input.InputAddress = addressForOutput?.Address;
+            input.InputAmount = addressForOutput?.Value ?? 0;
          }
 
          // try to fetch spent outputs
@@ -911,6 +921,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                {
                   CoinBase = i.InputCoinBase,
                   InputAddress = i.InputAddress,
+                  InputAmount = i.InputAmount,
                   InputIndex = i.PreviousIndex,
                   InputTransactionId = i.PreviousTransactionHash,
                   ScriptSig = i.ScriptSig,
