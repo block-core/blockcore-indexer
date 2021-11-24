@@ -70,11 +70,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       private bool CanRunRichListSync()
       {
          return !(//sync with other runners
-            !Runner.SyncingBlocks.IndexModeCompleted ||
-                  Runner.SyncingBlocks.Blocked ||
-                  Runner.SyncingBlocks.ReorgMode ||
-                  Runner.SyncingBlocks.StoreTip == null ||
-                  Runner.SyncingBlocks.IndexMode||
+            !Runner.GlobalState.IndexModeCompleted ||
+                  Runner.GlobalState.Blocked ||
+                  Runner.GlobalState.ReorgMode ||
+                  Runner.GlobalState.StoreTip == null ||
+                  Runner.GlobalState.IndexMode||
             //local state valid
             syncInProgress ||
                   lastSync.AddHours(1) > DateTime.UtcNow);

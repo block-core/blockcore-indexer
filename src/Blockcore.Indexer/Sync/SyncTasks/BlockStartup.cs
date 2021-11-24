@@ -50,12 +50,12 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       {
          Client.BitcoinClient client = Client.CryptoClientFactory.Create(connection);
 
-         Runner.SyncingBlocks.PullingTip = null;
-         Runner.SyncingBlocks.StoreTip = null;
+         Runner.GlobalState.PullingTip = null;
+         Runner.GlobalState.StoreTip = null;
 
-         Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToLastCompletedBlockAsync();
+         Runner.GlobalState.StoreTip = await syncOperations.RewindToLastCompletedBlockAsync();
 
-         if (Runner.SyncingBlocks.StoreTip == null)
+         if (Runner.GlobalState.StoreTip == null)
          {
             // No blocks in store start from zero
             // push the genesis block to store
@@ -70,13 +70,13 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             StorageBatch genesisBatch = new StorageBatch();
             storageOperations.AddToStorageBatch(genesisBatch, block);
-            Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
+            Runner.GlobalState.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
          }
 
-         BlockInfo fetchedBlock = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
+         BlockInfo fetchedBlock = await client.GetBlockAsync(Runner.GlobalState.StoreTip.BlockHash);
          if (fetchedBlock == null)
          {
-            Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToBestChain(connection);
+            Runner.GlobalState.StoreTip = await syncOperations.RewindToBestChain(connection);
          }
       }
    }

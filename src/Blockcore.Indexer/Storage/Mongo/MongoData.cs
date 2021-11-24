@@ -31,19 +31,19 @@ namespace Blockcore.Indexer.Storage.Mongo
       private readonly IMongoDatabase mongoDatabase;
 
       private readonly SyncConnection syncConnection;
-      private readonly SyncingBlocks syncingBlocks;
+      private readonly GlobalState globalState;
 
       private readonly IndexerSettings configuration;
 
       private readonly ChainSettings chainConfiguration;
 
-      public MongoData(ILogger<MongoStorageOperations> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, SyncingBlocks syncingBlocks)
+      public MongoData(ILogger<MongoStorageOperations> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState)
       {
          configuration = nakoConfiguration.Value;
          this.chainConfiguration = chainConfiguration.Value;
 
          syncConnection = connection;
-         this.syncingBlocks = syncingBlocks;
+         this.globalState = globalState;
          log = logger;
          mongoClient = new MongoClient(configuration.ConnectionString.Replace("{Symbol}", this.chainConfiguration.Symbol.ToLower()));
 
@@ -246,7 +246,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       public QueryResult<SyncBlockInfo> Blocks(int offset, int limit)
       {
          // page using the block height as paging counter
-         SyncBlockInfo storeTip = syncingBlocks.StoreTip;
+         SyncBlockInfo storeTip = globalState.StoreTip;
          long total = storeTip?.BlockIndex ?? MapBlock.Find(Builders<MapBlock>.Filter.Empty).CountDocuments() - 1;
 
          if (total == -1) total = 0;
@@ -319,7 +319,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             return null;
          }
 
-         SyncBlockInfo current = syncingBlocks.StoreTip;// GetLatestBlock();
+         SyncBlockInfo current = globalState.StoreTip;// GetLatestBlock();
 
          SyncBlockInfo blk = BlockByIndex(trx.BlockIndex);
 
@@ -520,7 +520,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          IQueryable<AddressHistoryComputed> filter = AddressHistoryComputed.AsQueryable()
             .Where(t => t.Address == address);
 
-         SyncBlockInfo storeTip = syncingBlocks.StoreTip;
+         SyncBlockInfo storeTip = globalState.StoreTip;
          if (storeTip == null)
          {
             // this can happen if node is in the middle of reorg
@@ -554,7 +554,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             Value = item.AmountInOutputs - item.AmountInInputs,
             EntryType = item.EntryType,
             TransactionHash = item.TransactionId,
-            Confirmations = syncingBlocks.StoreTip.BlockIndex + 1 - item.BlockIndex
+            Confirmations = globalState.StoreTip.BlockIndex + 1 - item.BlockIndex
          });
 
          return new QueryResult<QueryAddressItem>
@@ -597,7 +597,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          var mapMempoolAddressBag = new List<MapMempoolAddressBag>();
 
-         if (syncingBlocks.LocalMempoolView.IsEmpty)
+         if (globalState.LocalMempoolView.IsEmpty)
             return mapMempoolAddressBag;
 
          IQueryable<Mempool> mempoolForAddress = Mempool.AsQueryable()
@@ -649,7 +649,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       /// </summary>
       private AddressComputed ComputeAddressBalance(string address)
       {
-         if (syncingBlocks.IndexModeCompleted == false)
+         if (globalState.IndexModeCompleted == false)
          {
             // do not compute tables if indexes have not run.
             throw new ApplicationException("node in syncing process");
@@ -665,17 +665,12 @@ namespace Blockcore.Indexer.Storage.Mongo
             AddressComputed.ReplaceOne(addrFilter, addressComputed, new ReplaceOptions { IsUpsert = true });
          }
 
-         SyncBlockInfo storeTip = syncingBlocks.StoreTip;
+         SyncBlockInfo storeTip = globalState.StoreTip;
          if (storeTip == null)
             return addressComputed; // this can happen if node is in the middle of reorg
 
          long currentHeight = addressComputed.ComputedBlockIndex;
          long tipHeight = storeTip.BlockIndex;
-
-         //IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
-         //   .Where(t => t.Addresses.Contains(address))
-         //   .Where(b => (b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight)
-         //               || (b.SpendingBlockIndex > currentHeight && b.SpendingBlockIndex <= tipHeight));
 
          IQueryable<AddressForOutput> filterOutputs = AddressForOutput.AsQueryable()
             .Where(t => t.Address == address)
@@ -959,7 +954,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public int GetMemoryTransactionsCount()
       {
-         return syncingBlocks.LocalMempoolView.Count;
+         return globalState.LocalMempoolView.Count;
          //return (int)Mempool.CountDocuments(FilterDefinition<Mempool>.Empty);
       }
 

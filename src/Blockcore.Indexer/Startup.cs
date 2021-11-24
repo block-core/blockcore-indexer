@@ -53,7 +53,7 @@ namespace Blockcore.Indexer
          services.AddSingleton<IPagingHelper, PagingHelper>();
          services.AddScoped<Runner>();
 
-         services.AddSingleton<SyncingBlocks>();
+         services.AddSingleton<GlobalState>();
 
          services.AddScoped<TaskRunner, MempoolPuller>();
          services.AddScoped<TaskRunner, Notifier>();

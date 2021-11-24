@@ -21,7 +21,7 @@ namespace Blockcore.Indexer.Storage.Mongo
    public class MongoStorageOperations : IStorageOperations
    {
       private readonly SyncConnection syncConnection;
-      readonly SyncingBlocks syncingBlocks;
+      readonly GlobalState globalState;
       readonly IndexerSettings configuration;
       private readonly MongoData data;
 
@@ -30,10 +30,10 @@ namespace Blockcore.Indexer.Storage.Mongo
          IStorage storage,
          IUtxoCache utxoCache,
          IOptions<IndexerSettings> configuration,
-         SyncingBlocks syncingBlocks)
+         GlobalState globalState)
       {
          this.syncConnection = syncConnection;
-         this.syncingBlocks = syncingBlocks;
+         this.globalState = globalState;
          this.configuration = configuration.Value;
          data = (MongoData)storage;
       }
@@ -100,11 +100,11 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
       {
-         if (syncingBlocks.IndexModeCompleted)
+         if (globalState.IndexModeCompleted)
          {
-            if (syncingBlocks.IbdMode() == false)
+            if (globalState.IbdMode() == false)
             {
-               if (syncingBlocks.LocalMempoolView.Any())
+               if (globalState.LocalMempoolView.Any())
                {
                   var toRemoveFromMempool = storageBatch.MapTransactionBlocks.Select(s => s.TransactionId).ToList();
 
@@ -114,7 +114,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                   data.Mempool.DeleteMany(filter);
 
                   foreach (string mempooltrx in toRemoveFromMempool)
-                     syncingBlocks.LocalMempoolView.Remove(mempooltrx, out _);
+                     globalState.LocalMempoolView.Remove(mempooltrx, out _);
                }
             }
          }
@@ -162,7 +162,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          var t6 = Task.Run(() =>
          {
-            if (syncingBlocks.IndexModeCompleted)
+            if (globalState.IndexModeCompleted)
             {
                PipelineDefinition<AddressForInput, AddressForInput> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
                data.AddressForInput.Aggregate(pipeline);
@@ -247,7 +247,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          data.Mempool.InsertMany(mempool, new InsertManyOptions { IsOrdered = false });
 
          foreach (Mempool mempooltrx in mempool)
-            syncingBlocks.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
+            globalState.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
 
          return new InsertStats {Items = mempool};
       }

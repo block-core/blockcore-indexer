@@ -52,15 +52,15 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return true;
          }
 
-         if (Runner.SyncingBlocks.Blocked)
+         if (Runner.GlobalState.Blocked)
          {
             return false;
          }
 
-         if (Runner.SyncingBlocks.ChainTipHeight == 0 ||
-             Runner.SyncingBlocks.StoreTip == null ||
-             Runner.SyncingBlocks.IndexModeCompleted == false ||
-             Runner.SyncingBlocks.IbdMode())
+         if (Runner.GlobalState.ChainTipHeight == 0 ||
+             Runner.GlobalState.StoreTip == null ||
+             Runner.GlobalState.IndexModeCompleted == false ||
+             Runner.GlobalState.IbdMode())
          {
             // Don't sync mempool until api is at tip
             return false;
@@ -76,7 +76,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          watch.Restart();
 
-         SyncPoolTransactions pool = syncOperations.FindPoolTransactions(syncConnection, Runner.SyncingBlocks);
+         SyncPoolTransactions pool = syncOperations.FindPoolTransactions(syncConnection);
 
          if (!pool.Transactions.Any())
          {

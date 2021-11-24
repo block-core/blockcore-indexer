@@ -72,17 +72,17 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return true;
          }
 
-         if (Runner.SyncingBlocks.Blocked)
+         if (Runner.GlobalState.Blocked)
          {
             return false;
          }
 
-         if (Runner.SyncingBlocks.ReorgMode)
+         if (Runner.GlobalState.ReorgMode)
          {
             return false;
          }
 
-         if (Runner.SyncingBlocks.StoreTip == null)
+         if (Runner.GlobalState.StoreTip == null)
          {
             return false;
          }
@@ -95,19 +95,19 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             if (indexes.Any())
             {
                // if indexes are currently running go directly in to index mode
-               Runner.SyncingBlocks.IndexMode = true;
+               Runner.GlobalState.IndexMode = true;
                return false;
             }
          }
 
-         if (Runner.SyncingBlocks.IndexMode == false)
+         if (Runner.GlobalState.IndexMode == false)
          {
-            if (Runner.SyncingBlocks.IbdMode() == true)
+            if (Runner.GlobalState.IbdMode() == true)
             {
                return false;
             }
 
-            Runner.SyncingBlocks.IndexMode = true;
+            Runner.GlobalState.IndexMode = true;
          }
 
          List<IndexView> ops = mongoData.GetCurrentIndexes();
@@ -262,8 +262,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             if (indexingCompletTask != null && indexingCompletTask.IsCompleted)
             {
-               Runner.SyncingBlocks.IndexMode = false;
-               Runner.SyncingBlocks.IndexModeCompleted = true;
+               Runner.GlobalState.IndexMode = false;
+               Runner.GlobalState.IndexModeCompleted = true;
 
                log.LogDebug($"Indexing completed");
 
