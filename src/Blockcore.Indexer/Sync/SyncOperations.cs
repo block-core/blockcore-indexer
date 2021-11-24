@@ -164,7 +164,7 @@ namespace Blockcore.Indexer.Sync
          // we also delete it in our store
          if (deleteTransaction.Any())
          {
-            var toRemoveFromMempool = deleteTransaction;
+            List<string> toRemoveFromMempool = deleteTransaction;
 
             FilterDefinitionBuilder<Mempool> builder = Builders<Mempool>.Filter;
             FilterDefinition<Mempool> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);

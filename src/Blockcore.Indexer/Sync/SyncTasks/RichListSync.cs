@@ -46,7 +46,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             watch.Restart();
 
-            var pipeline = BuildRichListComputingAndTableUpdatePipeline();
+            PipelineDefinition<MapBlock, object> pipeline = BuildRichListComputingAndTableUpdatePipeline();
 
             await mongoData.MapBlock.AggregateAsync(pipeline);
 

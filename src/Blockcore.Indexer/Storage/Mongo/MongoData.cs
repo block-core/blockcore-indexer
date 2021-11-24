@@ -114,14 +114,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
-      public IMongoCollection<MapTransactionAddress> MapTransactionAddress
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<MapTransactionAddress>("MapTransactionAddress");
-         }
-      }
-
       public IMongoCollection<AddressComputed> AddressComputed
       {
          get
