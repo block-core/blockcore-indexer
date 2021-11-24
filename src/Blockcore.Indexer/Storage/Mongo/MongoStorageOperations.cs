@@ -91,10 +91,10 @@ namespace Blockcore.Indexer.Storage.Mongo
          if (item.BlockInfo != null)
          {
             // remove all transactions from the memory pool
-            item.Transactions.ForEach(t =>
-                {
-                   data.MemoryTransactions.TryRemove(t.GetHash().ToString(), out Transaction outer);
-                });
+            //item.Transactions.ForEach(t =>
+            //    {
+            //       data.MemoryTransactions.TryRemove(t.GetHash().ToString(), out Transaction outer);
+            //    });
 
             // break the work in to batches of transactions
             var queue = new Queue<Transaction>(item.Transactions);
@@ -217,12 +217,12 @@ namespace Blockcore.Indexer.Storage.Mongo
          else
          {
             // memory transaction push in to the pool.
-            item.Transactions.ForEach(t =>
-            {
-               data.MemoryTransactions.TryAdd(t.GetHash().ToString(), t);
-            });
+            //item.Transactions.ForEach(t =>
+            //{
+            //   data.MemoryTransactions.TryAdd(t.GetHash().ToString(), t);
+            //});
 
-            stats.Transactions = data.MemoryTransactions.Count();
+           // stats.Transactions = data.MemoryTransactions.Count();
 
             // todo: for accuracy - remove transactions from the mongo memory pool that are not anymore in the syncing pool
             // remove all transactions from the memory pool
@@ -241,12 +241,12 @@ namespace Blockcore.Indexer.Storage.Mongo
          var stats = new InsertStats();//{ Items = new List<MapTransactionAddress>() };
 
          // memory transaction push in to the pool.
-         item.Transactions.ForEach(t =>
-         {
-            data.MemoryTransactions.TryAdd(t.GetHash().ToString(), t);
-         });
+         //item.Transactions.ForEach(t =>
+         //{
+         //   data.MemoryTransactions.TryAdd(t.GetHash().ToString(), t);
+         //});
 
-         stats.Transactions = data.MemoryTransactions.Count();
+         //stats.Transactions = data.MemoryTransactions.Count();
 
          // todo: for accuracy - remove transactions from the mongo memory pool that are not anymore in the syncing pool
          // remove all transactions from the memory pool
@@ -311,14 +311,14 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
       {
-         if (!data.MemoryTransactions.IsEmpty)
-         {
-            // remove all transactions from the memory pool
-            storageBatch.MapTransactions.ForEach(t =>
-            {
-               data.MemoryTransactions.TryRemove(t.TransactionId, out Transaction outer);
-            });
-         }
+         //if (!data.MemoryTransactions.IsEmpty)
+         //{
+         //   // remove all transactions from the memory pool
+         //   storageBatch.MapTransactions.ForEach(t =>
+         //   {
+         //      data.MemoryTransactions.TryRemove(t.TransactionId, out Transaction outer);
+         //   });
+         //}
 
          data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions { IsOrdered = false });
          data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
