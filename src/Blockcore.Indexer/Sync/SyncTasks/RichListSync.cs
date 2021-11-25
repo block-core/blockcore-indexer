@@ -171,9 +171,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             //sum the values for all addresses order by value desc
             new BsonDocument("$group",
-               new BsonDocument { { "_id", "$_id" }, { "Value", new BsonDocument("$sum", "$Value") } }),
-            new BsonDocument("$match", new BsonDocument("Value",new BsonDocument("$gt",0))),
-            new BsonDocument("$sort", new BsonDocument("Value", -1)),
+               new BsonDocument { { "_id", "$_id" }, { "Balance", new BsonDocument("$sum", "$Value") } }),
+            new BsonDocument("$match", new BsonDocument("Balance",new BsonDocument("$gt",0))),
+            new BsonDocument("$sort", new BsonDocument("Balance", -1)),
             new BsonDocument("$limit", 250),
 
             //output to rich list and replace existing

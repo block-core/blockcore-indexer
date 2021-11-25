@@ -179,7 +179,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          get
          {
-            return mongoDatabase.GetCollection<MapRichlist>("MapRichlist");
+            return mongoDatabase.GetCollection<MapRichlist>("RichList");
          }
       }
 
