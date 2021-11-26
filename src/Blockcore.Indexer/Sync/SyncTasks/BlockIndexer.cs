@@ -197,11 +197,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating indexes on {nameof(AddressForInput)}.{nameof(AddressForInput.Address)}");
+                  //log.LogDebug($"Creating indexes on {nameof(AddressForInput)}.{nameof(AddressForInput.Address)}");
 
-                  await mongoData.AddressForInput.Indexes
-                     .CreateOneAsync(new CreateIndexModel<AddressForInput>(Builders<AddressForInput>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+                  //await mongoData.AddressForInput.Indexes
+                  //   .CreateOneAsync(new CreateIndexModel<AddressForInput>(Builders<AddressForInput>
+                  //      .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
                }).ContinueWith(async task =>
                {
@@ -212,7 +212,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   await mongoData.AddressComputed.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressComputed>(Builders<AddressComputed>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
-
 
                   log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputed)}.{nameof(AddressHistoryComputed.BlockIndex)}");
 
@@ -262,16 +261,30 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             if (indexingCompletTask != null && indexingCompletTask.IsCompleted)
             {
-               Runner.GlobalState.IndexMode = false;
-               Runner.GlobalState.IndexModeCompleted = true;
+               IQueryable<AddressForInput> addressNulls = mongoData.AddressForInput.AsQueryable()
+                  .OrderBy(b =>b.BlockIndex)
+                  .Where(w => w.Address == null).Take(10);
 
-               log.LogDebug($"Indexing completed");
+               long toCopyLeft = 0;
+               if (addressNulls.Any())
+               {
+                  log.LogDebug($"Copying input addresses, count left = {toCopyLeft},time passed {watch.Elapsed}");
+               }
+               else
+               {
+                  Runner.GlobalState.IndexMode = false;
+                  Runner.GlobalState.IndexModeCompleted = true;
 
-               Abort = true;
-               return true;
+                  log.LogDebug($"Indexing completed");
+
+                  Abort = true;
+                  return true;
+               }
             }
-
-            log.LogDebug($"Indexing tables time passed {watch.Elapsed}");
+            else
+            {
+               log.LogDebug($"Indexing tables time passed {watch.Elapsed}");
+            }
          }
 
          return await Task.FromResult(false);
