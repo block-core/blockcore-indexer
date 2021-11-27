@@ -22,13 +22,6 @@ using NBitcoin.DataEncoders;
 
 namespace Blockcore.Indexer.Storage.Mongo
 {
-   public enum TransactionUsedFilter
-   {
-      All = 0,
-      Spent = 1,
-      Unspent = 2
-   }
-
    public class MongoData : IStorage
    {
       private readonly ILogger<MongoStorageOperations> log;
@@ -686,16 +679,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          long currentHeight = addressComputed.ComputedBlockIndex;
          long tipHeight = storeTip.BlockIndex;
 
-         //IQueryable<MapTransactionAddress> filter = MapTransactionAddress.AsQueryable()
-         //   .Where(t => t.Addresses.Contains(address))
-         //   .Where(b => (b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight)
-         //               || (b.SpendingBlockIndex > currentHeight && b.SpendingBlockIndex <= tipHeight));
-
-         IQueryable<AddressForOutput> filterOutputs = AddressForOutput.AsQueryable()
+         var filterOutputs = AddressForOutput.AsQueryable()
             .Where(t => t.Address == address)
             .Where(b => b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight);
 
-         IQueryable<AddressForInput> filterInputs = AddressForInput.AsQueryable()
+         var filterInputs = AddressForInput.AsQueryable()
             .Where(t => t.Address == address)
             .Where(b => b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight);
 
@@ -994,6 +982,43 @@ namespace Blockcore.Indexer.Storage.Mongo
             Bits = block.Bits,
             Version = block.Version,
             SyncComplete = block.SyncComplete
+         };
+      }
+
+      public QueryResult<UnspentOutputsView> GetUnspentTransactionsByAddress(string address ,long confirmations, int offset, int limit)
+      {
+         var list = AddressForOutput.Aggregate()
+            .Match(_ => _.Address.Equals(address))
+            .Sort(new BsonDocumentSortDefinition<AddressForOutput>(new BsonDocument("BlockIndex",-1)))
+            .Lookup(nameof(AddressForInput),
+               new StringFieldDefinition<AddressForOutput>(nameof(Outpoint)),
+               new StringFieldDefinition<BsonDocument>(nameof(Outpoint)),
+               new StringFieldDefinition<BsonDocument>("Inputs"))
+            .Match(_ => _["Inputs"] == new BsonArray())
+            .Skip(offset * limit)
+            .Limit(limit)
+            .ToList()
+            .Select(_ => new UnspentOutputsView
+            {
+               Address = _["Address"].AsString,
+               Outpoint = new Outpoint
+               {
+                  OutputIndex = _["Outpoint"]["OutputIndex"].AsInt32,
+                  TransactionId = _["Outpoint"]["TransactionId"].AsString,
+               }  ,
+               Value = _["Value"].AsInt64,
+               BlockIndex = _["BlockIndex"].AsInt64,
+               CoinBase = _["CoinBase"].AsBoolean,
+               CoinStake = _["CoinStake"].AsBoolean,
+               ScriptHex = _["ScriptHex"].AsString
+            });
+
+         return new QueryResult<UnspentOutputsView>
+         {
+            Items = list,
+            Total = list.Count(),
+            Offset = offset,
+            Limit = limit
          };
       }
 

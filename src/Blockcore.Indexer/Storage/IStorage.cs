@@ -42,6 +42,8 @@ namespace Blockcore.Indexer.Storage
 
       long TotalBalance();
 
+      QueryResult<UnspentOutputsView> GetUnspentTransactionsByAddress(string address,long confirmations, int offset, int limit);
+
       //IEnumerable<SyncBlockInfo> BlockGetCompleteBlockCount(int count);
 
       //SyncBlockInfo BlockByHash(string blockHash);

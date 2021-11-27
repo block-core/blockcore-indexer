@@ -97,7 +97,7 @@ namespace Blockcore.Indexer.Api.Handlers
       [Route("address/{address}/transactions/unspent")]
       public IActionResult GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return OkPaging(storage.AddressHistory(address, offset, limit));
+         return OkPaging(storage.GetUnspentTransactionsByAddress(address, confirmations, offset, limit));
       }
 
       /// <summary>
