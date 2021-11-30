@@ -18,6 +18,8 @@ namespace Blockcore.Indexer.Storage.Types
 
       public string InputAddress { get; set; }
 
+      public long InputAmount { get; set; }
+
       public string InputType { get; set; }
 
       #endregion

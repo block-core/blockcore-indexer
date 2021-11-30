@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using Blockcore.Indexer.Client;
@@ -42,6 +43,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       Task indexingCompletTask;
       bool initialized;
 
+      long? inputCopyLastBlockHeight;
+
       public BlockIndexer(
          IOptions<IndexerSettings> configuration,
          ISyncOperations syncOperations,
@@ -72,17 +75,17 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return true;
          }
 
-         if (Runner.SyncingBlocks.Blocked)
+         if (Runner.GlobalState.Blocked)
          {
             return false;
          }
 
-         if (Runner.SyncingBlocks.ReorgMode)
+         if (Runner.GlobalState.ReorgMode)
          {
             return false;
          }
 
-         if (Runner.SyncingBlocks.StoreTip == null)
+         if (Runner.GlobalState.StoreTip == null)
          {
             return false;
          }
@@ -95,19 +98,19 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             if (indexes.Any())
             {
                // if indexes are currently running go directly in to index mode
-               Runner.SyncingBlocks.IndexMode = true;
+               Runner.GlobalState.IndexMode = true;
                return false;
             }
          }
 
-         if (Runner.SyncingBlocks.IndexMode == false)
+         if (Runner.GlobalState.IndexMode == false)
          {
-            if (Runner.SyncingBlocks.IbdMode() == true)
+            if (Runner.GlobalState.IbdMode() == true)
             {
                return false;
             }
 
-            Runner.SyncingBlocks.IndexMode = true;
+            Runner.GlobalState.IndexMode = true;
          }
 
          List<IndexView> ops = mongoData.GetCurrentIndexes();
@@ -213,7 +216,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                      .CreateOneAsync(new CreateIndexModel<AddressComputed>(Builders<AddressComputed>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
-
                   log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputed)}.{nameof(AddressHistoryComputed.BlockIndex)}");
 
                   await mongoData.AddressHistoryComputed.Indexes
@@ -247,11 +249,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                .ContinueWith(async task =>
                {
-                  log.LogDebug($"Updating data on {nameof(AddressForInput)}.{nameof(AddressForInput.Address)} and {nameof(AddressForInput)}.{nameof(AddressForInput.Value)}");
+                  //log.LogDebug($"Updating data on {nameof(AddressForInput)}.{nameof(AddressForInput.Address)} and {nameof(AddressForInput)}.{nameof(AddressForInput.Value)}");
 
-                  PipelineDefinition<AddressForInput, AddressForInput> pipeline = BuildInputsAddressUpdatePiepline();
+                  //PipelineDefinition<AddressForInput, AddressForInput> pipeline = BuildInputsAddressUpdatePiepline();
 
-                  await mongoData.AddressForInput.AggregateAsync(pipeline);
+                  //await mongoData.AddressForInput.AggregateAsync(pipeline);
                })
                .ContinueWith(task =>
                {
@@ -262,16 +264,82 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             if (indexingCompletTask != null && indexingCompletTask.IsCompleted)
             {
-               Runner.SyncingBlocks.IndexMode = false;
-               Runner.SyncingBlocks.IndexModeCompleted = true;
+               if (inputCopyLastBlockHeight == null)
+               {
+                  IQueryable<AddressForInput> addressNulls = mongoData.AddressForInput.AsQueryable()
+                     .OrderBy(b => b.BlockIndex)
+                     .Where(w => w.Address == null).Take(1);
+                  
+                  if (addressNulls.Any())
+                  {
+                     inputCopyLastBlockHeight = addressNulls.First().BlockIndex;
+                  }
+               }
 
-               log.LogDebug($"Indexing completed");
+               if (inputCopyLastBlockHeight != null)
+               {
+                  long blocksToCopy = 10;
+                  watch.Restart();
 
-               Abort = true;
-               return true;
+                  long startHeigt = inputCopyLastBlockHeight.Value;
+                  var tasks = new List<Task>();
+                  var exec = new List<(long last, long blc)>();
+                  for (int i = 0; i < 10; i++)
+                  {
+                     exec.Add((inputCopyLastBlockHeight.Value, blocksToCopy));
+                     inputCopyLastBlockHeight += blocksToCopy;
+                  }
+
+                  foreach ((long last, long blc) valueTuple in exec)
+                  {
+                     tasks.Add(Task.Run(async () =>
+                     {
+                        PipelineDefinition<AddressForInput, AddressForInput> pipeline = BuildInputsAddressUpdatePiepline((int)valueTuple.last, (int)valueTuple.blc);
+
+                        await mongoData.AddressForInput.AggregateAsync(pipeline);
+
+                     }));
+                  }
+
+                  Task.WaitAll(tasks.ToArray());
+
+                  double totalSeconds = watch.Elapsed.TotalSeconds;
+                  long totalBlocks = exec.Sum(s => s.blc);
+                  double blocksPerSecond = totalBlocks / totalSeconds;
+
+                  log.LogDebug($"Copied input addresses for {totalBlocks} blocks, from height {startHeigt} to height {startHeigt + totalBlocks}, Seconds = {totalSeconds} - {blocksPerSecond:0.00}b/s");
+
+
+
+                  //double blocksPerSecond = blocksToCopy / totalSeconds;
+                  //double secondsPerBlock = totalSeconds / blocksToCopy;
+
+                  //log.LogDebug($"Copied input addresses, from height {inputCopyLastBlockHeight} to height {inputCopyLastBlockHeight + blocksToCopy}, Seconds = {totalSeconds} - {blocksPerSecond:0.00}b/s");
+
+                  //inputCopyLastBlockHeight += blocksToCopy;
+
+                  if (inputCopyLastBlockHeight >= Runner.GlobalState.StoreTip.BlockIndex)
+                  {
+                     inputCopyLastBlockHeight = null;
+                  }
+
+                  return true;
+               }
+               else
+               {
+                  Runner.GlobalState.IndexMode = false;
+                  Runner.GlobalState.IndexModeCompleted = true;
+
+                  log.LogDebug($"Indexing completed");
+
+                  Abort = true;
+                  return true;
+               }
             }
-
-            log.LogDebug($"Indexing tables time passed {watch.Elapsed}");
+            else
+            {
+               log.LogDebug($"Indexing tables time passed {watch.Elapsed}");
+            }
          }
 
          return await Task.FromResult(false);
@@ -285,18 +353,42 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       /// - match with outputs table to find the address and value an input is spending from
       /// - update the input with the address and value
       /// </summary>
-      public static PipelineDefinition<AddressForInput, AddressForInput> BuildInputsAddressUpdatePiepline()
+      public static PipelineDefinition<AddressForInput, AddressForInput> BuildInputsAddressUpdatePiepline(int fromBlockIndex = 0, int? blocksToTake = int.MaxValue)
       {
-         PipelineDefinition<AddressForInput,AddressForInput> pipline = new []
+         PipelineDefinition<AddressForInput, AddressForInput> pipline = new[]
          {
             new BsonDocument("$match",
-               new BsonDocument("Address", BsonNull.Value)),
+               new BsonDocument
+               {
+                  { "BlockIndex",
+                     new BsonDocument
+                     {
+                        { "$gte", fromBlockIndex },
+                        { "$lt", fromBlockIndex + blocksToTake }
+                     } },
+                  { "Address", BsonNull.Value }
+               }),
+            new BsonDocument("$project",
+               new BsonDocument
+               {
+                  { "_id", "$_id" },
+                  { "Outpoint", "$Outpoint" },
+               }),
             new BsonDocument("$lookup",
                new BsonDocument
                {
                   { "from", "AddressForOutput" },
                   { "localField", "Outpoint" },
                   { "foreignField", "Outpoint" },
+                  { "pipeline", new BsonArray
+                     {
+                        new BsonDocument("$project",
+                           new BsonDocument
+                           {
+                              { "Address", "$Address" },
+                              { "Value", "$Value" }
+                           })
+                     } },
                   { "as", "output" }
                }),
             new BsonDocument("$unwind",
@@ -305,10 +397,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                new BsonDocument
                {
                   { "_id", "$_id" },
-                  { "Outpoint", "$Outpoint" },
                   { "Address", "$output.Address" },
-                  { "BlockIndex", "$BlockIndex" },
-                  { "TrxHash", "$TrxHash" },
                   { "Value", "$output.Value" }
                }),
             new BsonDocument("$merge",

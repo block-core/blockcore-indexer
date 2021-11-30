@@ -5,8 +5,6 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
    public class AddressHistoryComputed
    {
       public string Id { get; set; }
-
-      //public List<string> Addresses { get; set; }
       public string Address { get; set; }
 
       public string EntryType { get; set; }

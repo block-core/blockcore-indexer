@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Extensions;
 using Blockcore.Indexer.Storage.Types;
 
 namespace Blockcore.Indexer.Operations.Types
 {
-   public class SyncingBlocks
+   /// <summary>
+   /// Represent a the state of the node.
+   /// </summary>
+   public class GlobalState
    {
       /// <summary>
       /// The last block that is persisted to disk and is in completed mode.

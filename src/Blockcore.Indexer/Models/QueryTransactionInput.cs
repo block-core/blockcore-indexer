@@ -11,6 +11,7 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       /// Gets or sets the addresses.
       /// </summary>
       public string InputAddress { get; set; }
+      public long InputAmount { get; set; }
 
       /// <summary>
       /// Gets or sets the coinbase id the transaction is the first transaction 'coinbase'.
