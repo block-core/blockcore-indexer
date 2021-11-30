@@ -246,15 +246,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                      .CreateOneAsync(new CreateIndexModel<Mempool>(Builders<Mempool>
                         .IndexKeys.Ascending(trxBlk => trxBlk.AddressInputs)));
                })
-
-               .ContinueWith(async task =>
-               {
-                  //log.LogDebug($"Updating data on {nameof(AddressForInput)}.{nameof(AddressForInput.Address)} and {nameof(AddressForInput)}.{nameof(AddressForInput.Value)}");
-
-                  //PipelineDefinition<AddressForInput, AddressForInput> pipeline = BuildInputsAddressUpdatePiepline();
-
-                  //await mongoData.AddressForInput.AggregateAsync(pipeline);
-               })
                .ContinueWith(task =>
                {
                   indexingCompletTask = task;
@@ -266,9 +257,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             {
                if (inputCopyLastBlockHeight == null)
                {
-                  IQueryable<AddressForInput> addressNulls = mongoData.AddressForInput.AsQueryable()
+                  var addressNulls = mongoData.AddressForInput.AsQueryable()
                      .OrderBy(b => b.BlockIndex)
-                     .Where(w => w.Address == null).Take(1);
+                     .Where(w => w.Address == null).Take(1).ToList();
                   
                   if (addressNulls.Any())
                   {
@@ -278,13 +269,13 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                if (inputCopyLastBlockHeight != null)
                {
-                  long blocksToCopy = 10;
+                  long blocksToCopy = 5;
                   watch.Restart();
 
                   long startHeigt = inputCopyLastBlockHeight.Value;
                   var tasks = new List<Task>();
                   var exec = new List<(long last, long blc)>();
-                  for (int i = 0; i < 10; i++)
+                  for (int i = 0; i < 5; i++)
                   {
                      exec.Add((inputCopyLastBlockHeight.Value, blocksToCopy));
                      inputCopyLastBlockHeight += blocksToCopy;
@@ -307,16 +298,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   long totalBlocks = exec.Sum(s => s.blc);
                   double blocksPerSecond = totalBlocks / totalSeconds;
 
-                  log.LogDebug($"Copied input addresses for {totalBlocks} blocks, from height {startHeigt} to height {startHeigt + totalBlocks}, Seconds = {totalSeconds} - {blocksPerSecond:0.00}b/s");
-
-
-
-                  //double blocksPerSecond = blocksToCopy / totalSeconds;
-                  //double secondsPerBlock = totalSeconds / blocksToCopy;
-
-                  //log.LogDebug($"Copied input addresses, from height {inputCopyLastBlockHeight} to height {inputCopyLastBlockHeight + blocksToCopy}, Seconds = {totalSeconds} - {blocksPerSecond:0.00}b/s");
-
-                  //inputCopyLastBlockHeight += blocksToCopy;
+                  log.LogDebug($"Indexer - Copied input addresses for {totalBlocks} blocks, from height {startHeigt} to height {startHeigt + totalBlocks}, Seconds = {totalSeconds} - {blocksPerSecond:0.00}b/s");
 
                   if (inputCopyLastBlockHeight >= Runner.GlobalState.StoreTip.BlockIndex)
                   {
@@ -330,7 +312,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   Runner.GlobalState.IndexMode = false;
                   Runner.GlobalState.IndexModeCompleted = true;
 
-                  log.LogDebug($"Indexing completed");
+                  log.LogDebug($"Indexer - Indexing completed");
 
                   Abort = true;
                   return true;
@@ -338,7 +320,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             }
             else
             {
-               log.LogDebug($"Indexing tables time passed {watch.Elapsed}");
+               log.LogDebug($"Indexer - Indexing tables time passed {watch.Elapsed}");
             }
          }
 
