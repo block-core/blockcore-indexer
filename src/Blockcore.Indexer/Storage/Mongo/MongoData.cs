@@ -52,7 +52,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          string dbName = configuration.DatabaseNameSubfix ? "Blockchain" + this.chainConfiguration.Symbol : "Blockchain";
 
          mongoDatabase = mongoClient.GetDatabase(dbName);
-         MemoryTransactions = new ConcurrentDictionary<string, Transaction>();
 
          // Make sure we only create a single instance of the watcher.
          watch = Stopwatch.Start();
@@ -184,7 +183,13 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
-      public ConcurrentDictionary<string, Transaction> MemoryTransactions { get; set; }
+      public IMongoCollection<Mempool> Mempool
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<Mempool>("Mempool");
+         }
+      }
 
       public QueryTransaction GetTransaction(string transactionId)
       {
@@ -616,6 +621,8 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          AddressComputed addressComputed = ComputeAddressBalance(address);
 
+         List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
+
          return new QueryAddress
          {
             Address = address,
@@ -627,8 +634,41 @@ namespace Blockcore.Indexer.Storage.Mongo
             TotalReceivedCount = addressComputed.CountReceived,
             TotalSentCount = addressComputed.CountSent,
             TotalStakeCount = addressComputed.CountStaked,
-            TotalMineCount = addressComputed.CountMined
+            TotalMineCount = addressComputed.CountMined,
+            PendingSent = mempoolAddressBag.Sum(s => s.AmountInInputs),
+            PendingReceived = mempoolAddressBag.Sum(s => s.AmountInOutputs)
          };
+      }
+
+      private List<MapMempoolAddressBag> MempoolBalance(string address)
+      {
+         var mapMempoolAddressBag = new List<MapMempoolAddressBag>();
+
+         if (syncingBlocks.LocalMempoolView.IsEmpty)
+            return mapMempoolAddressBag;
+
+         IQueryable<Mempool> mempoolForAddress = Mempool.AsQueryable()
+            .Where(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address));
+
+         foreach (Mempool mempool in mempoolForAddress)
+         {
+            var bag = new MapMempoolAddressBag();
+            foreach (MempoolOutput mempoolOutput in mempool.Outputs)
+            {
+               if (mempoolOutput.Address == address)
+                  bag.AmountInOutputs += mempoolOutput.Value;
+            }
+
+            foreach (MempoolInput mempoolInput in mempool.Inputs)
+            {
+               if (mempoolInput.Address == address)
+                  bag.AmountInInputs += mempoolInput.Value;
+            }
+
+            mapMempoolAddressBag.Add(bag);
+         }
+
+         return mapMempoolAddressBag;
       }
 
       /// <summary>
@@ -853,6 +893,13 @@ namespace Blockcore.Indexer.Storage.Mongo
          return addressComputed;
       }
 
+      private class MapMempoolAddressBag
+      {
+         public long AmountInInputs;
+         public long AmountInOutputs;
+         public Mempool Mempool;
+      }
+
       private class MapAddressBag
       {
          public long BlockIndex;
@@ -894,14 +941,14 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)
       {
-         ICollection<Transaction> list = MemoryTransactions.Values;
+         ICollection<Mempool> list = Mempool.AsQueryable().Skip(offset).Take(limit).ToList();
 
-         List<QueryTransaction> retList = new List<QueryTransaction>();
+         var retList = new List<QueryTransaction>();
 
-         foreach (Transaction trx in list.Skip(offset - 1).Take(limit)) // 1 based index, so we'll subtract one.
+         foreach (Mempool trx in list) // 1 based index, so we'll subtract one.
          {
-            string transactionId = trx.GetHash().ToString();
-            SyncTransactionItems transactionItems = TransactionItemsGet(transactionId, trx);
+            string transactionId = trx.TransactionId;
+            SyncTransactionItems transactionItems = TransactionItemsGet(transactionId);
 
             var result = new QueryTransaction
             {
@@ -954,7 +1001,8 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public int GetMemoryTransactionsCount()
       {
-         return MemoryTransactions.Values.Count;
+         return syncingBlocks.LocalMempoolView.Count;
+         //return (int)Mempool.CountDocuments(FilterDefinition<Mempool>.Empty);
       }
 
       private SyncBlockInfo Convert(MapBlock block)
@@ -1160,7 +1208,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          }
       }
-
+      
       ///<Summary>
       /// Gets the transaction value and adds it to the balance of corresponding address in MapRichlist.
       /// If the address doesnt exist, it creates a new entry.

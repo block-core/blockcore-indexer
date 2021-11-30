@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Consensus;
+using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Crypto;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
@@ -102,6 +103,25 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
       {
+         if (syncingBlocks.IndexModeCompleted)
+         {
+            if (syncingBlocks.IbdMode() == false)
+            {
+               if (syncingBlocks.LocalMempoolView.Any())
+               {
+                  var toRemoveFromMempool = storageBatch.MapTransactionBlocks.Select(s => s.TransactionId).ToList();
+
+                  FilterDefinitionBuilder<Mempool> builder = Builders<Mempool>.Filter;
+                  FilterDefinition<Mempool> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
+
+                  data.Mempool.DeleteMany(filter);
+
+                  foreach (string mempooltrx in toRemoveFromMempool)
+                     syncingBlocks.LocalMempoolView.Remove(mempooltrx, out _);
+               }
+            }
+         }
+
          var t1 = Task.Run(() =>
          {
             data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions {IsOrdered = false });
@@ -182,7 +202,67 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
       {
-         return null;
+         var mempool = new List<Mempool>();
+         var inputs = new Dictionary<string, (MempoolInput mempoolInput, Mempool mempool)>();
+
+         foreach (Transaction itemTransaction in item.Transactions)
+         {
+            var mempoolEntry = new Mempool() {TransactionId = itemTransaction.GetHash().ToString()};
+            mempool.Add(mempoolEntry);
+
+            foreach (TxOut transactionOutput in itemTransaction.Outputs)
+            {
+               ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, transactionOutput.ScriptPubKey);
+               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.TxOutType.ToString() : null;
+
+               if (addr != null)
+               {
+                  var output = new MempoolOutput {Value = transactionOutput.Value, ScriptHex = transactionOutput.ScriptPubKey.ToHex(), Address = addr};
+                  mempoolEntry.Outputs.Add(output);
+                  mempoolEntry.AddressOutputs.Add(addr);
+               }
+            }
+
+            foreach (TxIn transactionInput in itemTransaction.Inputs)
+            {
+               var input = new MempoolInput {Outpoint = new Outpoint {OutputIndex = (int)transactionInput.PrevOut.N, TransactionId = transactionInput.PrevOut.Hash.ToString()}};
+               mempoolEntry.Inputs.Add(input);
+               inputs.Add($"{input.Outpoint.TransactionId}-{input.Outpoint.OutputIndex}", (input, mempoolEntry));
+            }
+         }
+
+         List<AddressForOutput> outputsFromStore = FetchOutputs(inputs.Values.Select(s => s.mempoolInput.Outpoint).ToList());
+
+         foreach (AddressForOutput outputFromStore in outputsFromStore)
+         {
+            if (inputs.TryGetValue($"{outputFromStore.Outpoint.TransactionId}-{outputFromStore.Outpoint.OutputIndex}", out (MempoolInput mempoolInput, Mempool mempool) input))
+            {
+               input.mempoolInput.Address = outputFromStore.Address;
+               input.mempoolInput.Value = outputFromStore.Value;
+               input.mempool.AddressInputs.Add(outputFromStore.Address);
+            }
+            else
+            {
+               // output not found
+            }
+         }
+
+         data.Mempool.InsertMany(mempool, new InsertManyOptions { IsOrdered = false });
+
+         foreach (Mempool mempooltrx in mempool)
+            syncingBlocks.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
+
+         return new InsertStats {Items = mempool};
+      }
+
+      private List<AddressForOutput> FetchOutputs(List<Outpoint> outputs)
+      {
+         FilterDefinitionBuilder<AddressForOutput> builder = Builders<AddressForOutput>.Filter;
+         FilterDefinition<AddressForOutput> filter = builder.In(output => output.Outpoint, outputs);
+
+         var res = data.AddressForOutput.Find(filter).ToList();
+
+         return res;
       }
    }
 }

@@ -49,5 +49,9 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       public long TotalStakeCount { get; set; }
 
       public long TotalMineCount { get; set; }
+
+      public long PendingSent { get; set; }
+
+      public long PendingReceived { get; set; }
    }
 }

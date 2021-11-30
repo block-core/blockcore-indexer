@@ -104,6 +104,14 @@ namespace Blockcore.Indexer.Storage.Mongo
             });
          }
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(Mempool)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<Mempool>(cm =>
+            {
+               cm.AutoMap();
+            });
+         }
+
 
          // indexes
          log.LogTrace("MongoBuilder: Creating indexes");

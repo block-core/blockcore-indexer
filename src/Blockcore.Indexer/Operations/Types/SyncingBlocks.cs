@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Extensions;
@@ -50,7 +51,10 @@ namespace Blockcore.Indexer.Operations.Types
       /// </summary>
       public bool Blocked { get; set; }
 
-      public List<string> LocalMempoolView { get; set; } = new List<string>();
+      /// <summary>
+      /// This represents an a memory view of all mempool transactions in store
+      /// </summary>
+      public ConcurrentDictionary<string, string> LocalMempoolView { get; set; } = new ConcurrentDictionary<string, string>();
 
       /// <summary>
       /// Indicates is the last persisted tip is in initial block download mode.
