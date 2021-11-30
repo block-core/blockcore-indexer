@@ -52,20 +52,20 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       /// <inheritdoc />
       public override async Task<bool> OnExecute()
       {
-         if (Runner.SyncingBlocks.ReorgMode == true)
+         if (Runner.GlobalState.ReorgMode == true)
          {
             // null the store tip so the document count will be taken form disk
-            Runner.SyncingBlocks.StoreTip = null;
+            Runner.GlobalState.StoreTip = null;
 
             // rewind the data in store
-            Runner.SyncingBlocks.StoreTip = await syncOperations.RewindToBestChain(syncConnection);
-            Runner.SyncingBlocks.PullingTip = null;
+            Runner.GlobalState.StoreTip = await syncOperations.RewindToBestChain(syncConnection);
+            Runner.GlobalState.PullingTip = null;
             Queue.Clear();
-            Runner.SyncingBlocks.ReorgMode = false;
+            Runner.GlobalState.ReorgMode = false;
             return false;
          }
 
-         if (Runner.SyncingBlocks.IndexMode)
+         if (Runner.GlobalState.IndexMode)
          {
             return false;
          }
@@ -73,7 +73,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          if (TryDequeue(out StorageBatch item))
          {
             // check all blocks are consecutive and start from the last block in store.
-            string prevHash = Runner.SyncingBlocks.StoreTip.BlockHash;
+            string prevHash = Runner.GlobalState.StoreTip.BlockHash;
             foreach (MapBlock mapBlock in item.MapBlocks.Values.OrderBy(b => b.BlockIndex))
             {
                if (mapBlock.PreviousBlockHash != prevHash)
@@ -86,11 +86,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             watch.Restart();
 
-            Runner.SyncingBlocks.StoreTip = storageOperations.PushStorageBatch(item);
+            Runner.GlobalState.StoreTip = storageOperations.PushStorageBatch(item);
 
             watch.Stop();
 
-            if (Runner.SyncingBlocks.StoreTip == null)
+            if (Runner.GlobalState.StoreTip == null)
                throw new ApplicationException("Store tip was not persisted");
 
             long totalBlocks = item.MapBlocks.Count;// insertStats.Sum((tuple => tuple.count));
@@ -98,7 +98,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             double blocksPerSecond = totalBlocks / totalSeconds;
             double secondsPerBlock = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.SyncingBlocks.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
+            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
 
             foreach (MapBlock mapBlocksValue in item.MapBlocks.Values)
                syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(blocksPerSecond), mapBlocksValue.BlockSize));

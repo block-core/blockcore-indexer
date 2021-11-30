@@ -35,28 +35,30 @@ namespace Blockcore.Indexer.Sync
 
       private readonly IndexerSettings configuration;
 
-      private readonly System.Diagnostics.Stopwatch watch;
-
       private readonly IMemoryCache cache;
-      readonly SyncingBlocks syncingyncingBlocks;
+      readonly GlobalState globalState;
 
       private readonly MemoryCacheEntryOptions cacheOptions;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncOperations"/> class.
       /// </summary>
-      public SyncOperations(IStorage storage, ILogger<SyncOperations> logger, IOptions<IndexerSettings> configuration, IMemoryCache cache, SyncingBlocks syncingyncingBlocks)
+      public SyncOperations(
+         IStorage storage,
+         ILogger<SyncOperations> logger,
+         IOptions<IndexerSettings> configuration,
+         IMemoryCache cache,
+         GlobalState globalState)
       {
          this.configuration = configuration.Value;
          log = logger;
          this.storage = storage;
          this.cache = cache;
-         this.syncingyncingBlocks = syncingyncingBlocks;
+         this.globalState = globalState;
 
          // Register the cold staking template.
          StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
 
-         watch = Stopwatch.Start();
          cacheOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(CacheKeys.BlockCountTime);
       }
 
@@ -68,7 +70,7 @@ namespace Blockcore.Indexer.Sync
 
          foreach (Mempool allitem in allitems)
          {
-            syncingyncingBlocks.LocalMempoolView.TryAdd(allitem.TransactionId, string.Empty);
+            globalState.LocalMempoolView.TryAdd(allitem.TransactionId, string.Empty);
          }
       }
 
@@ -85,9 +87,9 @@ namespace Blockcore.Indexer.Sync
          return cacheEntry;
       }
 
-      public SyncPoolTransactions FindPoolTransactions(SyncConnection connection, SyncingBlocks container)
+      public SyncPoolTransactions FindPoolTransactions(SyncConnection connection)
       {
-         return FindPoolInternal(connection, container);
+         return FindPoolInternal(connection);
       }
 
       public SyncBlockTransactionsOperation SyncPool(SyncConnection connection, SyncPoolTransactions poolTransactions)
@@ -143,14 +145,14 @@ namespace Blockcore.Indexer.Sync
          return lastBlock;
       }
 
-      private SyncPoolTransactions FindPoolInternal(SyncConnection connection, SyncingBlocks syncingBlocks)
+      private SyncPoolTransactions FindPoolInternal(SyncConnection connection)
       {
          BitcoinClient client = CryptoClientFactory.Create(connection);
 
          IEnumerable<string> memPool = client.GetRawMemPool();
 
          var currentMemoryPool = new HashSet<string>(memPool);
-         var currentTable = new HashSet<string>(syncingBlocks.LocalMempoolView.Keys);
+         var currentTable = new HashSet<string>(globalState.LocalMempoolView.Keys);
 
          var newTransactions = currentMemoryPool.Except(currentTable).ToList();
          var deleteTransaction = currentTable.Except(currentMemoryPool).ToList();
@@ -162,7 +164,7 @@ namespace Blockcore.Indexer.Sync
          // we also delete it in our store
          if (deleteTransaction.Any())
          {
-            var toRemoveFromMempool = deleteTransaction;
+            List<string> toRemoveFromMempool = deleteTransaction;
 
             FilterDefinitionBuilder<Mempool> builder = Builders<Mempool>.Filter;
             FilterDefinition<Mempool> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
@@ -171,7 +173,7 @@ namespace Blockcore.Indexer.Sync
             data.Mempool.DeleteMany(filter);
 
             foreach (string mempooltrx in toRemoveFromMempool)
-               syncingBlocks.LocalMempoolView.Remove(mempooltrx, out _);
+               globalState.LocalMempoolView.Remove(mempooltrx, out _);
          }
 
          return new SyncPoolTransactions { Transactions = newTransactions };

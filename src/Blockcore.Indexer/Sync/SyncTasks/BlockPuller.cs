@@ -63,7 +63,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return true;
          }
 
-         if (Runner.SyncingBlocks.Blocked)
+         if (Runner.GlobalState.Blocked)
          {
             return false;
          }
@@ -73,8 +73,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             return false;
          }
 
-         if (Runner.SyncingBlocks.ReorgMode ||
-             Runner.SyncingBlocks.IndexMode)
+         if (Runner.GlobalState.ReorgMode ||
+             Runner.GlobalState.IndexMode)
          {
             return false;
          }
@@ -83,17 +83,17 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          BitcoinClient client = CryptoClientFactory.Create(syncConnection);
 
-         if (Runner.SyncingBlocks.PullingTip == null)
+         if (Runner.GlobalState.PullingTip == null)
          {
             // start pulling blocks form this tip
-            Runner.SyncingBlocks.PullingTip = await client.GetBlockAsync(Runner.SyncingBlocks.StoreTip.BlockHash);
+            Runner.GlobalState.PullingTip = await client.GetBlockAsync(Runner.GlobalState.StoreTip.BlockHash);
             currentStorageBatch = new StorageBatch();
 
-            log.LogDebug($"Fetching block started at block {Runner.SyncingBlocks.PullingTip.Height}({Runner.SyncingBlocks.PullingTip.Hash})");
+            log.LogDebug($"Fetching block started at block {Runner.GlobalState.PullingTip.Height}({Runner.GlobalState.PullingTip.Hash})");
          }
 
          // fetch the next block form the fullnode
-         string nextHash = await client.GetblockHashAsync(Runner.SyncingBlocks.PullingTip.Height + 1);
+         string nextHash = await client.GetblockHashAsync(Runner.GlobalState.PullingTip.Height + 1);
 
          if (string.IsNullOrEmpty(nextHash))
          {
@@ -102,17 +102,17 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          }
 
          // update the chains tip
-         Runner.SyncingBlocks.ChainTipHeight = syncOperations.GetBlockCount(client);
+         Runner.GlobalState.ChainTipHeight = syncOperations.GetBlockCount(client);
 
          BlockInfo nextBlock = await client.GetBlockAsync(nextHash);
 
          // check if the next block prev hash is the same as our current tip
-         if (nextBlock.PreviousBlockHash != Runner.SyncingBlocks.PullingTip.Hash)
+         if (nextBlock.PreviousBlockHash != Runner.GlobalState.PullingTip.Hash)
          {
-            log.LogDebug($"Reorg detected on block = {Runner.SyncingBlocks.PullingTip.Height} - ({Runner.SyncingBlocks.PullingTip.Hash})");
+            log.LogDebug($"Reorg detected on block = {Runner.GlobalState.PullingTip.Height} - ({Runner.GlobalState.PullingTip.Hash})");
 
             // reorgs are sorted at the store task
-            Runner.SyncingBlocks.ReorgMode = true;
+            Runner.GlobalState.ReorgMode = true;
             return false;
          }
 
@@ -128,7 +128,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          watch.Stop();
 
-         bool ibd = Runner.SyncingBlocks.ChainTipHeight - nextBlock.Height > 20;
+         bool ibd = Runner.GlobalState.ChainTipHeight - nextBlock.Height > 20;
 
          if (!ibd || currentStorageBatch.MapBlocks.Count >= 10000 || currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
          {
@@ -145,7 +145,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             watchBatch.Restart();
          }
 
-         Runner.SyncingBlocks.PullingTip = nextBlock;
+         Runner.GlobalState.PullingTip = nextBlock;
 
          return await Task.FromResult(true);
       }
