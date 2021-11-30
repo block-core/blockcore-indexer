@@ -27,6 +27,6 @@ namespace Blockcore.Indexer.Operations.Types
       /// <summary>
       /// Gets or sets the items.
       /// </summary>
-      public List<Mempool> Items { get; set; }
+      public List<MempoolTable> Items { get; set; }
    }
 }

@@ -21,7 +21,7 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
       public Outpoint Outpoint { get; set; }
    }
 
-   public class Mempool
+   public class MempoolTable
    {
       public string Id { get; set; }
 

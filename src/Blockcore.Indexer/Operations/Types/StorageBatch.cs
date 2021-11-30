@@ -12,10 +12,10 @@ namespace Blockcore.Indexer.Operations.Types
    public class StorageBatch
    {
       public long TotalSize { get; set; }
-      public List<MapTransactionBlock> MapTransactionBlocks { get; set; } = new List<MapTransactionBlock>();
-      public Dictionary<long, MapBlock> MapBlocks { get; set; } = new Dictionary<long, MapBlock>();
-      public List<MapTransaction> MapTransactions { get; set; } = new List<MapTransaction>();
-      public List<AddressForOutput> AddressForOutputs { get; set; } = new List<AddressForOutput>();
-      public List<AddressForInput> AddressForInputs { get; set; } = new List<AddressForInput>();
+      public List<TransactionBlockTable> TransactionBlockTable { get; set; } = new List<TransactionBlockTable>();
+      public Dictionary<long, BlockTable> BlockTable { get; set; } = new Dictionary<long, BlockTable>();
+      public List<TransactionTable> TransactionTable { get; set; } = new List<TransactionTable>();
+      public List<OutputTable> OutputTable { get; set; } = new List<OutputTable>();
+      public List<InputTable> InputTable { get; set; } = new List<InputTable>();
    }
 }

@@ -181,7 +181,7 @@ namespace Blockcore.Indexer.Api.Handlers
          {
             if (wallet.Address != null && wallet.Address.Length > 0)
             {
-               List<Storage.Mongo.Types.MapRichlist> balances = storage.AddressBalances(wallet.Address);
+               List<Storage.Mongo.Types.RichlistTable> balances = storage.AddressBalances(wallet.Address);
                long balance = balances.Sum(b => b.Balance);
                wallet.Balance = balance;
             }
@@ -207,7 +207,7 @@ namespace Blockcore.Indexer.Api.Handlers
             }
          }
 
-         List<Storage.Mongo.Types.MapRichlist> balances = storage.AddressBalances(listOfAddress);
+         List<Storage.Mongo.Types.RichlistTable> balances = storage.AddressBalances(listOfAddress);
          long walletBalances = balances.Sum(b => b.Balance);
 
          long circulatingSupply = totalBalance - walletBalances;

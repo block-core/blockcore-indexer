@@ -130,14 +130,14 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          bool ibd = Runner.GlobalState.ChainTipHeight - nextBlock.Height > 20;
 
-         if (!ibd || currentStorageBatch.MapBlocks.Count >= 10000 || currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
+         if (!ibd || currentStorageBatch.BlockTable.Count >= 10000 || currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
          {
-            long totalBlocks = currentStorageBatch.MapBlocks.Count;
+            long totalBlocks = currentStorageBatch.BlockTable.Count;
             double totalSeconds = watchBatch.Elapsed.TotalSeconds;
             double blocksPerSecond = totalBlocks / totalSeconds;
             double secondsPerBlock = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Puller - blocks={currentStorageBatch.MapBlocks.Count}, height = {nextBlock.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b).");
+            log.LogDebug($"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {nextBlock.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b).");
 
             Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
             currentStorageBatch = new StorageBatch();

@@ -68,7 +68,7 @@ namespace Blockcore.Indexer.Sync
 
          var allitems = data.Mempool.AsQueryable().ToList();
 
-         foreach (Mempool allitem in allitems)
+         foreach (MempoolTable allitem in allitems)
          {
             globalState.LocalMempoolView.TryAdd(allitem.TransactionId, string.Empty);
          }
@@ -166,8 +166,8 @@ namespace Blockcore.Indexer.Sync
          {
             List<string> toRemoveFromMempool = deleteTransaction;
 
-            FilterDefinitionBuilder<Mempool> builder = Builders<Mempool>.Filter;
-            FilterDefinition<Mempool> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
+            FilterDefinitionBuilder<MempoolTable> builder = Builders<MempoolTable>.Filter;
+            FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
 
             var data = (MongoData)storage;
             data.Mempool.DeleteMany(filter);

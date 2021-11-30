@@ -42,18 +42,18 @@ namespace Blockcore.Indexer.Operations.Types
          return null;
       }
 
-      public void AddToCache(IEnumerable<AddressForOutput> outputs)
+      public void AddToCache(IEnumerable<OutputTable> outputs)
       {
          int maxToAdd = maxItemInCache - cache.Count;
-         foreach (AddressForOutput output in outputs.Take(maxToAdd))
+         foreach (OutputTable output in outputs.Take(maxToAdd))
          {
             cache.TryAdd($"{output.Outpoint.TransactionId}-{output.Outpoint.OutputIndex}", new UtxoCacheItem { Value = output.Value, Address = output.Address });
          }
       }
 
-      public void RemoveFromCache(IEnumerable<AddressForInput> inputs)
+      public void RemoveFromCache(IEnumerable<InputTable> inputs)
       {
-         foreach (AddressForInput output in inputs)
+         foreach (InputTable output in inputs)
          {
             cache.TryRemove($"{output.Outpoint.TransactionId}-{output.Outpoint.OutputIndex}", out _);
          }

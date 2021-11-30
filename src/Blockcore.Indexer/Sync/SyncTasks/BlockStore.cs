@@ -74,7 +74,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             // check all blocks are consecutive and start from the last block in store.
             string prevHash = Runner.GlobalState.StoreTip.BlockHash;
-            foreach (MapBlock mapBlock in item.MapBlocks.Values.OrderBy(b => b.BlockIndex))
+            foreach (BlockTable mapBlock in item.BlockTable.Values.OrderBy(b => b.BlockIndex))
             {
                if (mapBlock.PreviousBlockHash != prevHash)
                {
@@ -93,14 +93,14 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             if (Runner.GlobalState.StoreTip == null)
                throw new ApplicationException("Store tip was not persisted");
 
-            long totalBlocks = item.MapBlocks.Count;// insertStats.Sum((tuple => tuple.count));
+            long totalBlocks = item.BlockTable.Count;// insertStats.Sum((tuple => tuple.count));
             double totalSeconds = watch.Elapsed.TotalSeconds;// insertStats.Sum((tuple => tuple.seconds));
             double blocksPerSecond = totalBlocks / totalSeconds;
             double secondsPerBlock = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Store - blocks={item.MapBlocks.Count}, outputs={item.AddressForOutputs.Count}, inputs={item.AddressForInputs.Count}, trx={item.MapTransactionBlocks.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
+            log.LogDebug($"Store - blocks={item.BlockTable.Count}, outputs={item.OutputTable.Count}, inputs={item.InputTable.Count}, trx={item.TransactionBlockTable.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
 
-            foreach (MapBlock mapBlocksValue in item.MapBlocks.Values)
+            foreach (BlockTable mapBlocksValue in item.BlockTable.Values)
                syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(blocksPerSecond), mapBlocksValue.BlockSize));
 
             var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
