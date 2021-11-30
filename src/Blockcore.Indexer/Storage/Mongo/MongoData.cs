@@ -989,6 +989,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          var list = AddressForOutput.Aggregate()
             .Match(_ => _.Address.Equals(address))
+            .Match(_ => _.BlockIndex <= syncingBlocks.StoreTip.BlockIndex - confirmations)
             .Sort(new BsonDocumentSortDefinition<AddressForOutput>(new BsonDocument("BlockIndex",-1)))
             .Lookup(nameof(AddressForInput),
                new StringFieldDefinition<AddressForOutput>(nameof(Outpoint)),
