@@ -158,7 +158,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          get
          {
-            return mongoDatabase.GetCollection<MapRichlist>("MapRichlist");
+            return mongoDatabase.GetCollection<MapRichlist>("RichList");
          }
       }
 
@@ -294,7 +294,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          return MapTransaction.Find(filter).ToList().Select(t => new SyncRawTransaction { TransactionHash = trxHash, RawTransaction = t.RawTransaction }).FirstOrDefault();
       }
-      
+
       public AddressForInput GetTransactionInput(string transaction, int index)
       {
          FilterDefinition<AddressForInput> filter = Builders<AddressForInput>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
@@ -674,11 +674,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          long currentHeight = addressComputed.ComputedBlockIndex;
          long tipHeight = storeTip.BlockIndex;
 
-         IQueryable<AddressForOutput> filterOutputs = AddressForOutput.AsQueryable()
+         var filterOutputs = AddressForOutput.AsQueryable()
             .Where(t => t.Address == address)
             .Where(b => b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight);
 
-         IQueryable<AddressForInput> filterInputs = AddressForInput.AsQueryable()
+         var filterInputs = AddressForInput.AsQueryable()
             .Where(t => t.Address == address)
             .Where(b => b.BlockIndex > currentHeight && b.BlockIndex <= tipHeight);
 
@@ -986,6 +986,57 @@ namespace Blockcore.Indexer.Storage.Mongo
             Bits = block.Bits,
             Version = block.Version,
             SyncComplete = block.SyncComplete
+         };
+      }
+
+      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address ,long confirmations, int offset, int limit)
+      {
+         var totalTask = Task.Run(() => AddressForOutput.Aggregate()
+            .Match(_ => _.Address.Equals(address))
+            .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
+            .Lookup(nameof(AddressForInput),
+               new StringFieldDefinition<AddressForOutput>(nameof(Outpoint)),
+               new StringFieldDefinition<BsonDocument>(nameof(Outpoint)),
+               new StringFieldDefinition<BsonDocument>("Inputs"))
+            .Match(_ => _["Inputs"] == new BsonArray())
+            .Count()
+            .Single());
+
+         var selectedTask = Task.Run(() => AddressForOutput.Aggregate()
+            .Match(_ => _.Address.Equals(address))
+            .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
+            .Sort(new BsonDocumentSortDefinition<AddressForOutput>(new BsonDocument("BlockIndex",-1)))
+            .Lookup(nameof(AddressForInput),
+               new StringFieldDefinition<AddressForOutput>(nameof(Outpoint)),
+               new StringFieldDefinition<BsonDocument>(nameof(Outpoint)),
+               new StringFieldDefinition<BsonDocument>("Inputs"))
+            .Match(_ => _["Inputs"] == new BsonArray())
+            .Skip(offset * limit)
+            .Limit(limit)
+            .ToList()
+            .Select(_ => new UnspentOutputsView
+            {
+               Address = _["Address"].AsString,
+               Outpoint = new Outpoint
+               {
+                  OutputIndex = _["Outpoint"]["OutputIndex"].AsInt32,
+                  TransactionId = _["Outpoint"]["TransactionId"].AsString,
+               }  ,
+               Value = _["Value"].AsInt64,
+               BlockIndex = _["BlockIndex"].AsInt64,
+               CoinBase = _["CoinBase"].AsBoolean,
+               CoinStake = _["CoinStake"].AsBoolean,
+               ScriptHex = _["ScriptHex"].AsString
+            }));
+
+         await Task.WhenAll(totalTask, selectedTask);
+
+         return new QueryResult<UnspentOutputsView>
+         {
+            Items = selectedTask.Result,
+            Total = totalTask.Result.Count,
+            Offset = offset,
+            Limit = limit
          };
       }
    }
