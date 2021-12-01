@@ -177,7 +177,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             new BsonDocument("$limit", 250),
 
             //output to rich list and replace existing
-            new BsonDocument("$out", "RichList")
+            new BsonDocument("$out", mongoData.RichlistTable.CollectionNamespace.CollectionName)
          };
       }
    }

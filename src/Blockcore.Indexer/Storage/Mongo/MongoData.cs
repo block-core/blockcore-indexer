@@ -158,7 +158,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          get
          {
-            return mongoDatabase.GetCollection<RichlistTable>("Richlist");
+            return mongoDatabase.GetCollection<RichlistTable>("RichList");
          }
       }
 
