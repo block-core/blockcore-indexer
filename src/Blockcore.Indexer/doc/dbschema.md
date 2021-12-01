@@ -6,16 +6,22 @@ https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexe
 And the indexer builder here  
 https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexer/Storage/Mongo/MongoBuilder.cs
 
-**There are currently 4 tables:**
+**List of tables the indexer uses:**
 
-`MapBlock` - Stores information about a block and creates an index based on the block hash and block height.  
+`Block` - Stores information about a block and creates an index based on the block hash and block height.  
 
-`MapTransaction` - Stores the serialized raw trasnaction and index by the transaction hash (it's optional and transactions will be stored in this table if the config falg `StoreRawTransactions` is true otherwise trx will be pulled using RPC.  
+`Transaction` - Stores the serialized raw trasnaction and index by the transaction hash (it's optional and transactions will be stored in this table if the config falg `StoreRawTransactions` is true otherwise trx will be pulled using RPC.  
 
-`MapTransactionBlock` - Stores a link between a block height and a transaction.  
+`TransactionBlock` - Stores a mapping between a block height and a transaction.  
 
-`MapTransactionAddress` - Stores spent and unspent TXOs related to an address, if the TXO is spent the `SpendingTransactionId` field has will be updated, to calculate the total balance of an address the entire UTXO set needs to be fetched and then sumall entreis where the spending hash is set to null.  
+`Output` - Stores information about outputs (this includes the script in hex format, block index, amount, if its a coinbase or coinstake, and the address), indexed on block index, outpoint and address.
 
-TODO:
+`Input` - Stores information about inputs (this includes the trx hash the input appeared in and the output, amount and address its spending from) indexed on block index, outpoint and address. on the initial sync the address and amount fields are empty, they get populated when sync is complete and indexes are built by scanning the entire blockchian and copying info form the output.
 
-`MapTransactionAddressComputed` -  A computed data of an adddess balance, this will be calculated on demand and be built per address, when an address has additional UTXOs only the diff form the block height of computation will be taken and recomputed, if a reorg happens the entry will be delted if the fork is bellow the first TXO.
+`AddressComputed` - A computed table that gets popoulated on demand when an address balance is queried, the balance is calculated and stored to this table. entries in this table are deleted if an address that was updated was part of a reorg.
+
+`AddressHistoryComputed` -  A computed table that gets popoulated on demand when an address balance and history is queried, intputs and outputs are aggregated to transactions and stored as history in this table. entries in this table are deleted if an address that was updated was part of a reorg. this table uses a position field that is an incremental number unique to an address and is used for paging on address history. 
+
+`Mempool` - Stores information about transactions found in the node mempool, when a transaction is included in a block its deleted from this table.
+
+`RichList` - Stores the last 250 most rich addresses found on the blockchain. this is computed as a background job that run periodically.
