@@ -294,7 +294,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          return MapTransaction.Find(filter).ToList().Select(t => new SyncRawTransaction { TransactionHash = trxHash, RawTransaction = t.RawTransaction }).FirstOrDefault();
       }
-      
+
       public AddressForInput GetTransactionInput(string transaction, int index)
       {
          FilterDefinition<AddressForInput> filter = Builders<AddressForInput>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
@@ -989,9 +989,20 @@ namespace Blockcore.Indexer.Storage.Mongo
          };
       }
 
-      public QueryResult<UnspentOutputsView> GetUnspentTransactionsByAddress(string address ,long confirmations, int offset, int limit)
+      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address ,long confirmations, int offset, int limit)
       {
-         var list = AddressForOutput.Aggregate()
+         var totalTask = Task.Run(() => AddressForOutput.Aggregate()
+            .Match(_ => _.Address.Equals(address))
+            .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
+            .Lookup(nameof(AddressForInput),
+               new StringFieldDefinition<AddressForOutput>(nameof(Outpoint)),
+               new StringFieldDefinition<BsonDocument>(nameof(Outpoint)),
+               new StringFieldDefinition<BsonDocument>("Inputs"))
+            .Match(_ => _["Inputs"] == new BsonArray())
+            .Count()
+            .Single());
+
+         var selectedTask = Task.Run(() => AddressForOutput.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
             .Sort(new BsonDocumentSortDefinition<AddressForOutput>(new BsonDocument("BlockIndex",-1)))
@@ -1016,12 +1027,14 @@ namespace Blockcore.Indexer.Storage.Mongo
                CoinBase = _["CoinBase"].AsBoolean,
                CoinStake = _["CoinStake"].AsBoolean,
                ScriptHex = _["ScriptHex"].AsString
-            });
+            }));
+
+         await Task.WhenAll(totalTask, selectedTask);
 
          return new QueryResult<UnspentOutputsView>
          {
-            Items = list,
-            Total = list.Count(),
+            Items = selectedTask.Result,
+            Total = totalTask.Result.Count,
             Offset = offset,
             Limit = limit
          };

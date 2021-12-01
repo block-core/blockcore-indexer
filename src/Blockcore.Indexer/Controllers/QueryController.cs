@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 using Blockcore.Indexer.Paging;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo;
@@ -95,9 +96,11 @@ namespace Blockcore.Indexer.Api.Handlers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/unspent")]
-      public IActionResult GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
+      public async Task<IActionResult> GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return OkPaging(storage.GetUnspentTransactionsByAddress(address, confirmations, offset, limit));
+         var result = await storage.GetUnspentTransactionsByAddressAsync(address, confirmations, offset, limit);
+
+         return OkPaging(result);
       }
 
       /// <summary>
