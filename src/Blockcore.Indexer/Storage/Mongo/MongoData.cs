@@ -991,23 +991,23 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address ,long confirmations, int offset, int limit)
       {
-         var totalTask = Task.Run(() => AddressForOutput.Aggregate()
+         var totalTask = Task.Run(() => OutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
-            .Lookup(nameof(AddressForInput),
-               new StringFieldDefinition<AddressForOutput>(nameof(Outpoint)),
+            .Lookup(InputTable.CollectionNamespace.CollectionName,
+               new StringFieldDefinition<OutputTable>(nameof(Outpoint)),
                new StringFieldDefinition<BsonDocument>(nameof(Outpoint)),
                new StringFieldDefinition<BsonDocument>("Inputs"))
             .Match(_ => _["Inputs"] == new BsonArray())
             .Count()
             .Single());
 
-         var selectedTask = Task.Run(() => AddressForOutput.Aggregate()
+         var selectedTask = Task.Run(() => OutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
-            .Sort(new BsonDocumentSortDefinition<AddressForOutput>(new BsonDocument("BlockIndex",-1)))
-            .Lookup(nameof(AddressForInput),
-               new StringFieldDefinition<AddressForOutput>(nameof(Outpoint)),
+            .Sort(new BsonDocumentSortDefinition<OutputTable>(new BsonDocument("BlockIndex",-1)))
+            .Lookup(InputTable.CollectionNamespace.CollectionName,
+               new StringFieldDefinition<OutputTable>(nameof(Outpoint)),
                new StringFieldDefinition<BsonDocument>(nameof(Outpoint)),
                new StringFieldDefinition<BsonDocument>("Inputs"))
             .Match(_ => _["Inputs"] == new BsonArray())
