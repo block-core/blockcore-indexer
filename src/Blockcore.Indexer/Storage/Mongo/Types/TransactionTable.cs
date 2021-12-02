@@ -1,8 +1,8 @@
 namespace Blockcore.Indexer.Storage.Mongo.Types
 {
-   public class MapTransactionBlock
+   public class TransactionTable
    {
-      public long BlockIndex { get; set; }
+      public byte[] RawTransaction { get; set; }
 
       public string TransactionId { get; set; }
    }

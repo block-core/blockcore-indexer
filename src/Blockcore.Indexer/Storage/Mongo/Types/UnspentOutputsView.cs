@@ -1,6 +1,6 @@
 namespace Blockcore.Indexer.Storage.Mongo.Types
 {
-   public class UnspentOutputsView : AddressForOutput
+   public class UnspentOutputsView : OutputTable
    {
 
    }

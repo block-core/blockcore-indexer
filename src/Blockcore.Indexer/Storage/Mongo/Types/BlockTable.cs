@@ -1,6 +1,6 @@
 namespace Blockcore.Indexer.Storage.Mongo.Types
 {
-   public class MapBlock
+   public class BlockTable
    {
       public string BlockHash { get; set; }
 

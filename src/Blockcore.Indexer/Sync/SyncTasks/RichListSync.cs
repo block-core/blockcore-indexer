@@ -46,9 +46,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
             watch.Restart();
 
-            PipelineDefinition<MapBlock, object> pipeline = BuildRichListComputingAndTableUpdatePipeline();
+            PipelineDefinition<BlockTable, object> pipeline = BuildRichListComputingAndTableUpdatePipeline();
 
-            await mongoData.MapBlock.AggregateAsync(pipeline);
+            await mongoData.BlockTable.AggregateAsync(pipeline);
 
             watch.Stop();
             log.LogDebug($"Finished updating rich list in {watch.Elapsed}");
@@ -80,7 +80,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   lastSync.AddHours(1) > DateTime.UtcNow);
       }
 
-      private PipelineDefinition<MapBlock,object> BuildRichListComputingAndTableUpdatePipeline()
+      private PipelineDefinition<BlockTable,object> BuildRichListComputingAndTableUpdatePipeline()
       {
          return new[]
          {
@@ -92,7 +92,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             new BsonDocument("$lookup",
                new BsonDocument
                {
-                  { "from", "AddressForOutput" },
+                  { "from", "Output" },
                   {
                      "pipeline", new BsonArray(new List<BsonDocument>
                      {
@@ -100,7 +100,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                         new BsonDocument("$lookup",
                            new BsonDocument
                            {
-                              { "from", "AddressForOutput" },
+                              { "from", "Output" },
                               { "localField", "_id" },
                               { "foreignField", "Address" },
                               {
@@ -128,14 +128,14 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             new BsonDocument("$lookup",
                new BsonDocument
                {
-                  { "from", "AddressForInput" },
+                  { "from", "Input" },
                   {
                      "pipeline", new BsonArray(new List<BsonDocument>
                      {
                         new BsonDocument("$group", new BsonDocument("_id", "$Address")),
                         new BsonDocument("$lookup", new BsonDocument
                         {
-                           { "from", "AddressForInput" },
+                           { "from", "Input" },
                            { "localField", "_id" },
                            { "foreignField", "Address" },
                            {
@@ -177,7 +177,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             new BsonDocument("$limit", 250),
 
             //output to rich list and replace existing
-            new BsonDocument("$out", "RichList")
+            new BsonDocument("$out", mongoData.RichlistTable.CollectionNamespace.CollectionName)
          };
       }
    }

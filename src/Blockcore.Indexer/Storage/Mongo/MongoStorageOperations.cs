@@ -41,9 +41,9 @@ namespace Blockcore.Indexer.Storage.Mongo
       public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
       {
          storageBatch.TotalSize += item.BlockInfo.Size;
-         storageBatch.MapBlocks.Add(item.BlockInfo.Height, MongoStorageOperations.CreateMapBlock(item.BlockInfo));
+         storageBatch.BlockTable.Add(item.BlockInfo.Height, MongoStorageOperations.CreateMapBlock(item.BlockInfo));
 
-         storageBatch.MapTransactionBlocks.AddRange(item.Transactions.Select(s => new MapTransactionBlock
+         storageBatch.TransactionBlockTable.AddRange(item.Transactions.Select(s => new TransactionBlockTable
          {
             BlockIndex = item.BlockInfo.Height,
             TransactionId = s.GetHash().ToString()
@@ -51,20 +51,20 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          if (configuration.StoreRawTransactions)
          {
-            storageBatch.MapTransactions.AddRange(item.Transactions.Select(t => new MapTransaction
+            storageBatch.TransactionTable.AddRange(item.Transactions.Select(t => new TransactionTable
             {
                TransactionId = t.GetHash().ToString(),
                RawTransaction = t.ToBytes(syncConnection.Network.Consensus.ConsensusFactory)
             }));
          }
 
-         IEnumerable<AddressForOutput> outputs = item.Transactions.SelectMany((trx, i) =>
+         IEnumerable<OutputTable> outputs = item.Transactions.SelectMany((trx, i) =>
             trx.Outputs.Select((output, index) =>
             {
                ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
                string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.TxOutType.ToString() : "none";
 
-               return new AddressForOutput
+               return new OutputTable
                {
                   Address = addr,
                   Outpoint = new Outpoint{TransactionId = trx.GetHash().ToString(), OutputIndex = index},
@@ -77,14 +77,14 @@ namespace Blockcore.Indexer.Storage.Mongo
             }));
 
 
-         storageBatch.AddressForOutputs.AddRange(outputs);
+         storageBatch.OutputTable.AddRange(outputs);
 
          var inputs = item.Transactions
             .Where(t => t.IsCoinBase == false)
             .SelectMany((trx, trxIndex) =>
                trx.Inputs.Select((input, inputIndex) =>
                {
-                  return new AddressForInput()
+                  return new InputTable()
                   {
                      Outpoint = new Outpoint
                      {
@@ -95,7 +95,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                   };
                })).ToList();
 
-         storageBatch.AddressForInputs.AddRange(inputs);
+         storageBatch.InputTable.AddRange(inputs);
       }
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
@@ -106,10 +106,10 @@ namespace Blockcore.Indexer.Storage.Mongo
             {
                if (globalState.LocalMempoolView.Any())
                {
-                  var toRemoveFromMempool = storageBatch.MapTransactionBlocks.Select(s => s.TransactionId).ToList();
+                  var toRemoveFromMempool = storageBatch.TransactionBlockTable.Select(s => s.TransactionId).ToList();
 
-                  FilterDefinitionBuilder<Mempool> builder = Builders<Mempool>.Filter;
-                  FilterDefinition<Mempool> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
+                  FilterDefinitionBuilder<MempoolTable> builder = Builders<MempoolTable>.Filter;
+                  FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
 
                   data.Mempool.DeleteMany(filter);
 
@@ -121,31 +121,31 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          var t1 = Task.Run(() =>
          {
-            data.MapBlock.InsertMany(storageBatch.MapBlocks.Values, new InsertManyOptions {IsOrdered = false });
+            data.BlockTable.InsertMany(storageBatch.BlockTable.Values, new InsertManyOptions {IsOrdered = false });
          });
 
          var t2 = Task.Run(() =>
          {
-            data.MapTransactionBlock.InsertMany(storageBatch.MapTransactionBlocks, new InsertManyOptions { IsOrdered = false });
+            data.TransactionBlockTable.InsertMany(storageBatch.TransactionBlockTable, new InsertManyOptions { IsOrdered = false });
          });
 
          var t3 = Task.Run(() =>
          {
-            data.AddressForOutput.InsertMany(storageBatch.AddressForOutputs, new InsertManyOptions {IsOrdered = false});
+            data.OutputTable.InsertMany(storageBatch.OutputTable, new InsertManyOptions {IsOrdered = false});
          });
 
          var t4 = Task.Run(() =>
          {
-            if (storageBatch.AddressForInputs.Any())
-               data.AddressForInput.InsertMany(storageBatch.AddressForInputs, new InsertManyOptions {IsOrdered = false});
+            if (storageBatch.InputTable.Any())
+               data.InputTable.InsertMany(storageBatch.InputTable, new InsertManyOptions {IsOrdered = false});
          });
 
          var t5 = Task.Run(() =>
          {
             try
             {
-               if (storageBatch.MapTransactions.Any())
-                  data.MapTransaction.InsertMany(storageBatch.MapTransactions, new InsertManyOptions {IsOrdered = false});
+               if (storageBatch.TransactionTable.Any())
+                  data.TransactionTable.InsertMany(storageBatch.TransactionTable, new InsertManyOptions {IsOrdered = false});
             }
             catch (MongoBulkWriteException mbwex)
             {
@@ -164,8 +164,8 @@ namespace Blockcore.Indexer.Storage.Mongo
          {
             if (globalState.IndexModeCompleted)
             {
-               PipelineDefinition<AddressForInput, AddressForInput> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
-               data.AddressForInput.Aggregate(pipeline);
+               PipelineDefinition<InputTable, InputTable> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
+               data.InputTable.Aggregate(pipeline);
             }
          });
 
@@ -173,19 +173,19 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          string lastBlockHash = null;
          long blockIndex = 0;
-         var markBlocksAsComplete = new List<UpdateOneModel<MapBlock>>();
-         foreach (MapBlock mapBlock in storageBatch.MapBlocks.Values.OrderBy(b => b.BlockIndex))
+         var markBlocksAsComplete = new List<UpdateOneModel<BlockTable>>();
+         foreach (BlockTable mapBlock in storageBatch.BlockTable.Values.OrderBy(b => b.BlockIndex))
          {
-            FilterDefinition<MapBlock> filter = Builders<MapBlock>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
-            UpdateDefinition<MapBlock> update = Builders<MapBlock>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
+            FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
+            UpdateDefinition<BlockTable> update = Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
 
-            markBlocksAsComplete.Add(new UpdateOneModel<MapBlock>(filter, update));
+            markBlocksAsComplete.Add(new UpdateOneModel<BlockTable>(filter, update));
             lastBlockHash = mapBlock.BlockHash;
             blockIndex = mapBlock.BlockIndex;
          }
 
          // mark each block is complete
-         data.MapBlock.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
+         data.BlockTable.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
 
          SyncBlockInfo block = data.BlockByIndex(blockIndex);
 
@@ -199,12 +199,12 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
       {
-         var mempool = new List<Mempool>();
-         var inputs = new Dictionary<string, (MempoolInput mempoolInput, Mempool mempool)>();
+         var mempool = new List<MempoolTable>();
+         var inputs = new Dictionary<string, (MempoolInput mempoolInput, MempoolTable mempool)>();
 
          foreach (Transaction itemTransaction in item.Transactions)
          {
-            var mempoolEntry = new Mempool() {TransactionId = itemTransaction.GetHash().ToString()};
+            var mempoolEntry = new MempoolTable() {TransactionId = itemTransaction.GetHash().ToString()};
             mempool.Add(mempoolEntry);
 
             foreach (TxOut transactionOutput in itemTransaction.Outputs)
@@ -228,11 +228,11 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          }
 
-         List<AddressForOutput> outputsFromStore = FetchOutputs(inputs.Values.Select(s => s.mempoolInput.Outpoint).ToList());
+         List<OutputTable> outputsFromStore = FetchOutputs(inputs.Values.Select(s => s.mempoolInput.Outpoint).ToList());
 
-         foreach (AddressForOutput outputFromStore in outputsFromStore)
+         foreach (OutputTable outputFromStore in outputsFromStore)
          {
-            if (inputs.TryGetValue($"{outputFromStore.Outpoint.TransactionId}-{outputFromStore.Outpoint.OutputIndex}", out (MempoolInput mempoolInput, Mempool mempool) input))
+            if (inputs.TryGetValue($"{outputFromStore.Outpoint.TransactionId}-{outputFromStore.Outpoint.OutputIndex}", out (MempoolInput mempoolInput, MempoolTable mempool) input))
             {
                input.mempoolInput.Address = outputFromStore.Address;
                input.mempoolInput.Value = outputFromStore.Value;
@@ -257,25 +257,25 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
          }
 
-         foreach (Mempool mempooltrx in mempool)
+         foreach (MempoolTable mempooltrx in mempool)
             globalState.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
 
          return new InsertStats {Items = mempool};
       }
 
-      private List<AddressForOutput> FetchOutputs(List<Outpoint> outputs)
+      private List<OutputTable> FetchOutputs(List<Outpoint> outputs)
       {
-         FilterDefinitionBuilder<AddressForOutput> builder = Builders<AddressForOutput>.Filter;
-         FilterDefinition<AddressForOutput> filter = builder.In(output => output.Outpoint, outputs);
+         FilterDefinitionBuilder<OutputTable> builder = Builders<OutputTable>.Filter;
+         FilterDefinition<OutputTable> filter = builder.In(output => output.Outpoint, outputs);
 
-         var res = data.AddressForOutput.Find(filter).ToList();
+         var res = data.OutputTable.Find(filter).ToList();
 
          return res;
       }
 
-      public static MapBlock CreateMapBlock(BlockInfo block)
+      public static BlockTable CreateMapBlock(BlockInfo block)
       {
-         return new MapBlock
+         return new BlockTable
          {
             BlockIndex = block.Height,
             BlockHash = block.Hash,

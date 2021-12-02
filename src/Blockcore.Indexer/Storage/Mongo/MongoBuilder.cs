@@ -39,9 +39,9 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          log.LogTrace("MongoBuilder: Creating mappings");
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapBlock)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(BlockTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapBlock>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<BlockTable>(cm =>
             {
                cm.AutoMap();
                //cm.MapIdMember(c => c.BlockHash);
@@ -49,9 +49,9 @@ namespace Blockcore.Indexer.Storage.Mongo
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransactionBlock)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(TransactionBlockTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransactionBlock>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<TransactionBlockTable>(cm =>
             {
                cm.AutoMap();
                cm.SetIgnoreExtraElements(true);
@@ -59,54 +59,54 @@ namespace Blockcore.Indexer.Storage.Mongo
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MapTransaction)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(TransactionTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MapTransaction>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<TransactionTable>(cm =>
             {
                cm.AutoMap();
                cm.MapIdMember(c => c.TransactionId);
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressForOutput)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(OutputTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForOutput>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<OutputTable>(cm =>
             {
                cm.AutoMap();
                cm.SetIgnoreExtraElements(true);
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressForInput)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(InputTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressForInput>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<InputTable>(cm =>
             {
                cm.AutoMap();
                cm.SetIgnoreExtraElements(true);
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressComputed)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressComputedTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressComputed>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressComputedTable>(cm =>
             {
                cm.AutoMap();
                cm.MapIdMember(c => c.Id);
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressHistoryComputed)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressHistoryComputedTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressHistoryComputed>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressHistoryComputedTable>(cm =>
             {
                cm.AutoMap();
                cm.MapIdMember(c => c.Id);
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(Mempool)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MempoolTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<Mempool>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MempoolTable>(cm =>
             {
                cm.AutoMap();
             });

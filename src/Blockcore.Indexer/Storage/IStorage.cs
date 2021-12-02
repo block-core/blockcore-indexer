@@ -34,11 +34,11 @@ namespace Blockcore.Indexer.Storage
 
       SyncBlockInfo BlockByIndex(long blockIndex);
 
-      QueryResult<MapRichlist> Richlist(int offset, int limit);
+      QueryResult<RichlistTable> Richlist(int offset, int limit);
 
-      MapRichlist RichlistBalance(string address);
+      RichlistTable RichlistBalance(string address);
 
-      List<MapRichlist> AddressBalances(IEnumerable<string> addresses);
+      List<RichlistTable> AddressBalances(IEnumerable<string> addresses);
 
       long TotalBalance();
 

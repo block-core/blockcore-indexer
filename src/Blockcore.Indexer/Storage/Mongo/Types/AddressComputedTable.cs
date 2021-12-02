@@ -2,7 +2,7 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
 {
    using System.Collections.Generic;
 
-   public class AddressComputed
+   public class AddressComputedTable
    {
       public string Id { get; set; }
 
