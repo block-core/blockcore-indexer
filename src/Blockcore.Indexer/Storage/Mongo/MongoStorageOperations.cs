@@ -124,16 +124,19 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          var t1 = Task.Run(() =>
          {
+            if (storageBatch.BlockTable.Values.Any())
             data.BlockTable.InsertMany(storageBatch.BlockTable.Values, new InsertManyOptions {IsOrdered = false });
          });
 
          var t2 = Task.Run(() =>
          {
+            if (storageBatch.TransactionBlockTable.Any())
             data.TransactionBlockTable.InsertMany(storageBatch.TransactionBlockTable, new InsertManyOptions { IsOrdered = false });
          });
 
          var t3 = Task.Run(() =>
          {
+            if (storageBatch.OutputTable.Any())
             data.OutputTable.InsertMany(storageBatch.OutputTable, new InsertManyOptions {IsOrdered = false});
          });
 

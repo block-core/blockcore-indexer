@@ -1,0 +1,59 @@
+{
+   "Chain": {
+      "Name": "Your Custom Blockchain",
+      "Symbol": "Cirrus",
+      "Description": "Stratis sidechain",
+      "Url": "https://www.blockcore.net/",
+      "Logo": "https://www.blockcore.net/assets/blockcore-256x256.png",
+      "Icon": "https://www.blockcore.net/assets/blockcore-256x256.png",
+      "Color": "#f3b623"
+   },
+   "Network": {
+      "NetworkConsensusFactoryType": "Cirrus.SmartContractConsensusFactory, Cirrus",
+      "NetworkPubkeyAddressPrefix": 0,
+      "NetworkScriptAddressPrefix": 5,
+      "NetworkWitnessPrefix": "coin",
+      "P2PPort": 26179,
+      "RPCPort": 26175,
+      "APIPort": 38223
+   },
+   "Indexer": {
+      "StoreRawTransactions": true
+   },
+   "Explorer": {
+      "Indexer": {
+         "ApiUrl": "http://localhost:9910/api",
+         "DocUrl": "http://localhost:9910/docs"
+      },
+      "Currency": {
+         "ApiUrl": "https://api.coincap.io/v2/rates",
+         "AutoConvert": false
+      },
+      "Ticker": {
+         "WebUrl": "https://coinpaprika.com/coin/btc-bitcoin/",
+         "ApiUrl": "https://api.coinpaprika.com/v1/tickers/btc-bitcoin?quotes=USD,BTC",
+         "PricePath": "quotes.BTC.price",
+         "PricePathBTC": "quotes.BTC.price",
+         "PricePathUSD": "quotes.USD.price",
+         "PercentagePath": "quotes.BTC.percent_change_1h",
+         "IsBitcoinPrice": true
+      },
+      "Setup": {
+         "Title": "Your Blockchain Explorer",
+         "Footer": "Blockchain for Blockcore. Empowering developers to make custom blockchains.",
+         "Links": [
+            {
+               "icon": "fab fa-github",
+               "url": "https://github.com/block-core"
+            },
+            {
+               "icon": "fas fa-link",
+               "url": "https://www.blockcore.net/"
+            }
+         ]
+      },
+      "Features": {
+         "POSWeight": false
+      }
+   }
+}
