@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Blockcore.Consensus;
 using Blockcore.Consensus.TransactionInfo;
-using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Crypto;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
@@ -25,6 +23,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       readonly IScriptInterpeter scriptInterpeter;
       readonly IndexerSettings configuration;
       private readonly MongoData data;
+      readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
 
       public MongoStorageOperations(
          SyncConnection syncConnection,
@@ -32,11 +31,13 @@ namespace Blockcore.Indexer.Storage.Mongo
          IUtxoCache utxoCache,
          IOptions<IndexerSettings> configuration,
          GlobalState globalState,
+         IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
          IScriptInterpeter scriptInterpeter)
       {
          this.syncConnection = syncConnection;
          this.globalState = globalState;
          this.scriptInterpeter = scriptInterpeter;
+         this.mongoBlockToStorageBlock = mongoBlockToStorageBlock;
          this.configuration = configuration.Value;
          data = (MongoData)storage;
       }
@@ -44,7 +45,7 @@ namespace Blockcore.Indexer.Storage.Mongo
       public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
       {
          storageBatch.TotalSize += item.BlockInfo.Size;
-         storageBatch.BlockTable.Add(item.BlockInfo.Height, MongoStorageOperations.CreateMapBlock(item.BlockInfo));
+         storageBatch.BlockTable.Add(item.BlockInfo.Height, mongoBlockToStorageBlock.Map(item.BlockInfo));
 
          storageBatch.TransactionBlockTable.AddRange(item.Transactions.Select(s => new TransactionBlockTable
          {
@@ -277,34 +278,6 @@ namespace Blockcore.Indexer.Storage.Mongo
          var res = data.OutputTable.Find(filter).ToList();
 
          return res;
-      }
-
-      public static BlockTable CreateMapBlock(BlockInfo block)
-      {
-         return new BlockTable
-         {
-            BlockIndex = block.Height,
-            BlockHash = block.Hash,
-            BlockSize = block.Size,
-            BlockTime = block.Time,
-            NextBlockHash = block.NextBlockHash,
-            PreviousBlockHash = block.PreviousBlockHash,
-            TransactionCount = block.Transactions.Count(),
-            Bits = block.Bits,
-            Confirmations = block.Confirmations,
-            Merkleroot = block.Merkleroot,
-            Nonce = block.Nonce,
-            ChainWork = block.ChainWork,
-            Difficulty = block.Difficulty,
-            PosBlockSignature = block.PosBlockSignature,
-            PosBlockTrust = block.PosBlockTrust,
-            PosChainTrust = block.PosChainTrust,
-            PosFlags = block.PosFlags,
-            PosHashProof = block.PosHashProof,
-            PosModifierv2 = block.PosModifierv2,
-            Version = block.Version,
-            SyncComplete = false
-         };
       }
    }
 }
