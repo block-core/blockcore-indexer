@@ -93,7 +93,9 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          }
 
          // fetch the next block form the fullnode
-         string nextHash = await client.GetblockHashAsync(Runner.GlobalState.PullingTip.Height + 1);
+         //string nextHash = await client.GetblockHashAsync(Runner.GlobalState.PullingTip.Height + 1);
+
+         string nextHash = await NextHashAsync(client, Runner.GlobalState.PullingTip.Height + 1);
 
          if (string.IsNullOrEmpty(nextHash))
          {
@@ -148,6 +150,27 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          Runner.GlobalState.PullingTip = nextBlock;
 
          return await Task.FromResult(true);
+      }
+
+      private async Task<string> NextHashAsync(BitcoinClient client, long height)
+      {
+         // ugly hack for now
+
+         try
+         {
+            string nextHash = await client.GetblockHashAsync(height);
+
+            return nextHash;
+         }
+         catch (Exception e)
+         {
+            if (e.Message.Contains("Block height out of range"))
+            {
+               return null;
+            }
+
+            throw;
+         }
       }
    }
 }
