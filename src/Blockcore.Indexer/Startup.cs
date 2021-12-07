@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Blockcore.Indexer.Api.Handlers;
 using Blockcore.Indexer.Crypto;
+using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Extensions;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
@@ -130,6 +131,7 @@ namespace Blockcore.Indexer
          }));
 
          services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
+         services.AddSingleton<ICryptoClientFactory, CryptoClientFactory>();
       }
 
       public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

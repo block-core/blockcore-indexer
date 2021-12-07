@@ -34,6 +34,8 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private StorageBatch currentStorageBatch;
 
+      readonly ICryptoClientFactory clientFactory;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockPuller"/> class.
       /// </summary>
@@ -42,11 +44,13 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          ISyncOperations syncOperations,
          SyncConnection syncConnection,
          ILogger<BlockPuller> logger,
-         IStorageOperations storageOperations)
+         IStorageOperations storageOperations,
+         ICryptoClientFactory clientFactory)
           : base(configuration, logger)
       {
          log = logger;
          this.storageOperations = storageOperations;
+         this.clientFactory = clientFactory;
          this.syncConnection = syncConnection;
          this.syncOperations = syncOperations;
          config = configuration.Value;
@@ -81,7 +85,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
          watch.Restart();
 
-         BitcoinClient client = CryptoClientFactory.Create(syncConnection);
+         BitcoinClient client = clientFactory.Create(syncConnection);
 
          if (Runner.GlobalState.PullingTip == null)
          {

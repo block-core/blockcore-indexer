@@ -40,6 +40,8 @@ namespace Blockcore.Indexer.Sync
 
       private readonly MemoryCacheEntryOptions cacheOptions;
 
+      readonly ICryptoClientFactory clientFactory;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncOperations"/> class.
       /// </summary>
@@ -48,13 +50,14 @@ namespace Blockcore.Indexer.Sync
          ILogger<SyncOperations> logger,
          IOptions<IndexerSettings> configuration,
          IMemoryCache cache,
-         GlobalState globalState)
+         GlobalState globalState, ICryptoClientFactory clientFactory)
       {
          this.configuration = configuration.Value;
          log = logger;
          this.storage = storage;
          this.cache = cache;
          this.globalState = globalState;
+         this.clientFactory = clientFactory;
 
          // Register the cold staking template.
          StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
@@ -104,7 +107,7 @@ namespace Blockcore.Indexer.Sync
 
       public async Task<Storage.Types.SyncBlockInfo> RewindToBestChain(SyncConnection connection)
       {
-         BitcoinClient client = CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          while (true)
          {
@@ -147,7 +150,7 @@ namespace Blockcore.Indexer.Sync
 
       private SyncPoolTransactions FindPoolInternal(SyncConnection connection)
       {
-         BitcoinClient client = CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          IEnumerable<string> memPool = client.GetRawMemPool();
 
@@ -221,7 +224,7 @@ namespace Blockcore.Indexer.Sync
 
       private SyncBlockTransactionsOperation SyncPoolInternal(SyncConnection connection, SyncPoolTransactions poolTransactions)
       {
-         BitcoinClient client = CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          SyncBlockTransactionsOperation returnBlock = SyncBlockTransactions(client, connection, poolTransactions.Transactions, false);
 
@@ -230,7 +233,7 @@ namespace Blockcore.Indexer.Sync
 
       private SyncBlockTransactionsOperation SyncBlockInternal(SyncConnection connection, BlockInfo block)
       {
-         BitcoinClient client = CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          string hex = client.GetBlockHex(block.Hash);
 

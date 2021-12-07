@@ -24,16 +24,13 @@ namespace Blockcore.Indexer.Storage.Mongo
       readonly IScriptInterpeter scriptInterpeter;
 
       private readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
-      public MongoData(ILogger<MongoDb> dbLogger,
-         SyncConnection connection,
-         IOptions<IndexerSettings> nakoConfiguration,
-         IOptions<ChainSettings> chainConfiguration,
-         GlobalState globalState,
-         IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
-         IScriptInterpeter scriptInterpeter)
+      readonly ICryptoClientFactory clientFactory;
+      public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState,
+         IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,IScriptInterpeter scriptInterpeter)
          : base(dbLogger,  connection, nakoConfiguration, chainConfiguration, globalState)
       {
          this.mongoBlockToStorageBlock = mongoBlockToStorageBlock;
+         this.clientFactory = clientFactory;
          this.scriptInterpeter = scriptInterpeter;
       }
 
@@ -336,7 +333,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             if (rawtrx == null)
             {
-               BitcoinClient client = CryptoClientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
+               BitcoinClient client = clientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
 
                Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
 

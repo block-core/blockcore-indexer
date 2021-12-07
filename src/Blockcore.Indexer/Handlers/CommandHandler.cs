@@ -13,13 +13,15 @@
       private readonly SyncConnection syncConnection;
 
       private readonly IStorage storage;
+      readonly ICryptoClientFactory clientFactory;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsHandler"/> class.
       /// </summary>
-      public CommandHandler(SyncConnection connection, IStorage storage)
+      public CommandHandler(SyncConnection connection, IStorage storage, ICryptoClientFactory clientFactory)
       {
          this.storage = storage;
+         this.clientFactory = clientFactory;
          syncConnection = connection;
       }
 
@@ -29,7 +31,7 @@
          // todo: check how a failure is porpageted
 
          SyncConnection connection = syncConnection;
-         BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         BitcoinClient client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
          string trxid = await client.SentRawTransactionAsync(transactionHex);
          return trxid;
       }

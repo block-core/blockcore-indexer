@@ -1,3 +1,4 @@
+using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Client.Types;
 
 namespace Blockcore.Indexer.Sync.SyncTasks
@@ -18,6 +19,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       private readonly SyncConnection connection;
       private readonly IStorageOperations storageOperations;
+      readonly ICryptoClientFactory clientFactory;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockStartup"/> class.
@@ -26,11 +28,12 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          ILogger<BlockStartup> logger,
          ISyncOperations syncOperations,
          SyncConnection syncConnection,
-         IStorageOperations storageOperations)
+         IStorageOperations storageOperations, ICryptoClientFactory clientFactory)
           : base(logger)
       {
          connection = syncConnection;
          this.storageOperations = storageOperations;
+         this.clientFactory = clientFactory;
          this.syncOperations = syncOperations;
          log = logger;
       }
@@ -48,7 +51,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
       public override async Task OnExecute()
       {
-         Client.BitcoinClient client = Client.CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          Runner.GlobalState.PullingTip = null;
          Runner.GlobalState.StoreTip = null;
