@@ -32,18 +32,26 @@ namespace Blockcore.Indexer.Storage.Mongo
 
       private readonly SyncConnection syncConnection;
       private readonly GlobalState globalState;
+      readonly IScriptInterpeter scriptInterpeter;
 
       private readonly IndexerSettings configuration;
 
       private readonly ChainSettings chainConfiguration;
 
-      public MongoData(ILogger<MongoStorageOperations> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState)
+      public MongoData(
+         ILogger<MongoStorageOperations> logger,
+         SyncConnection connection,
+         IOptions<IndexerSettings> nakoConfiguration,
+         IOptions<ChainSettings> chainConfiguration,
+         GlobalState globalState,
+         IScriptInterpeter scriptInterpeter)
       {
          configuration = nakoConfiguration.Value;
          this.chainConfiguration = chainConfiguration.Value;
 
          syncConnection = connection;
          this.globalState = globalState;
+         this.scriptInterpeter = scriptInterpeter;
          log = logger;
          mongoClient = new MongoClient(configuration.ConnectionString.Replace("{Symbol}", this.chainConfiguration.Symbol.ToLower()));
 
@@ -374,12 +382,12 @@ namespace Blockcore.Indexer.Storage.Mongo
                PreviousIndex = (int)v.PrevOut.N,
                WitScript = v.WitScript.ToScript().ToHex(),
                ScriptSig = v.ScriptSig.ToHex(),
-               InputAddress = ScriptToAddressParser.GetSignerAddress(syncConnection.Network, v.ScriptSig),
+               InputAddress = scriptInterpeter.GetSignerAddress(syncConnection.Network, v.ScriptSig),
                SequenceLock = v.Sequence.ToString(),
             }).ToList(),
             Outputs = transaction.Outputs.Select((output, index) => new SyncTransactionItemOutput
             {
-               Address = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey)?.Addresses?.FirstOrDefault(),
+               Address = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey)?.Addresses?.FirstOrDefault(),
                Index = index,
                Value = output.Value,
                OutputType = StandardScripts.GetTemplateFromScriptPubKey(output.ScriptPubKey)?.Type.ToString(),
