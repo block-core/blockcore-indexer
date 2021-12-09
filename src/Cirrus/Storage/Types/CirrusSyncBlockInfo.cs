@@ -7,6 +7,6 @@ namespace Cirrus.Storage.Types
    {
       public uint256 HashStateRoot { get; set; }
       public uint256 ReceiptRoot{ get; set; }
-      public byte[] Bloom { get; set; }
+      public Bloom Bloom { get; set; }
    }
 }

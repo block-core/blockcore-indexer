@@ -1,9 +1,8 @@
 using Blockcore.Consensus.BlockInfo;
-using Blockcore.Features.PoA;
 
 namespace Cirrus
 {
-   public class SmartContractConsensusFactory : PoAConsensusFactory
+   public class SmartContractConsensusFactory : CollateralPoAConsensusFactory
    {
       /// <inheritdoc />
       public override BlockHeader CreateBlockHeader()

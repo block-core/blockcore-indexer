@@ -4,6 +4,7 @@ using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
+using Cirrus.Client.Types;
 using Cirrus.Storage.Mongo.Types;
 using Cirrus.Storage.Types;
 using NBitcoin;
@@ -42,9 +43,9 @@ namespace Cirrus.Storage
             Bits = derived.Bits,
             Version = derived.Version,
             SyncComplete = derived.SyncComplete,
-            Bloom = derived.Bloom,
-            ReceiptRoot = new uint256(derived.ReceiptRoot),
-            HashStateRoot = new uint256(derived.HashStateRoot)
+            Bloom = derived.Bloom == null ? new Bloom() : new Bloom(derived.Bloom),
+            ReceiptRoot = derived.ReceiptRoot == null ? null : new uint256(derived.ReceiptRoot),
+            HashStateRoot = derived.HashStateRoot == null ? null : new uint256(derived.HashStateRoot)
          };
       }
 
@@ -78,9 +79,9 @@ namespace Cirrus.Storage
             PosModifierv2 = block.PosModifierv2,
             Version = block.Version,
             SyncComplete = false,
-            Bloom = block.Bloom,
-            ReceiptRoot = block.ReceiptRoot,
-            HashStateRoot = block.HashStateRoot
+            Bloom = block.Bloom == null ? null : Convert.FromBase64String(block.Bloom), //TODO check what is returned from the client
+            ReceiptRoot = block.ReceiptRoot == null ? null : Convert.FromBase64String(block.ReceiptRoot),
+            HashStateRoot = block.HashStateRoot == null ? null :  Convert.FromBase64String(block.HashStateRoot)
          };
       }
    }

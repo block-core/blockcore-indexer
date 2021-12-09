@@ -1,6 +1,12 @@
+using System.Linq;
 using Blockcore.Indexer;
+using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Storage;
+using Blockcore.Indexer.Storage.Mongo;
+using Blockcore.Indexer.Sync.SyncTasks;
+using Cirrus.Client;
 using Cirrus.Storage;
+using Cirrus.Storage.Mongo;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -25,6 +31,13 @@ namespace Cirrus
 
          services.Replace(new ServiceDescriptor(typeof(IMapMongoBlockToStorageBlock), typeof(CirrusBlockMapping),
             ServiceLifetime.Transient));
+
+         services.Replace(new ServiceDescriptor(typeof(ICryptoClientFactory), typeof(CirrusClientFactory),
+            ServiceLifetime.Singleton));
+
+         var dercriptor = services.First(_ => _.ImplementationType == typeof(MongoBuilder));
+         services.Remove(dercriptor);
+         services.AddSingleton<TaskStarter, CirrusMongoBuilder>();
       }
 
 
