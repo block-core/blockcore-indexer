@@ -246,7 +246,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                   await mongoData.AddressUtxoComputedTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressUtxoComputedTable>(Builders<AddressUtxoComputedTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint)));
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint), new CreateIndexOptions {Unique = true}));
 
                   log.LogDebug($"Creating indexes on {nameof(AddressUtxoComputedTable)}.{nameof(AddressUtxoComputedTable.Address)}");
 
@@ -255,7 +255,6 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
                   // --mempool
-
                   log.LogDebug($"Creating indexes on {nameof(MempoolTable)}.{nameof(MempoolTable.TransactionId)}");
 
                   await mongoData.Mempool.Indexes

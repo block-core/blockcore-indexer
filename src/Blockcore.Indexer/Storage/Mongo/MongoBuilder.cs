@@ -104,6 +104,15 @@ namespace Blockcore.Indexer.Storage.Mongo
             });
          }
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(AddressUtxoComputedTable)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<AddressUtxoComputedTable>(cm =>
+            {
+               cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
+            });
+         }
+
          if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(MempoolTable)))
          {
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MempoolTable>(cm =>

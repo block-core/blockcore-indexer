@@ -1077,7 +1077,39 @@ namespace Blockcore.Indexer.Storage.Mongo
          };
       }
 
-      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address ,long confirmations, int offset, int limit)
+      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
+      {
+         // make sure fields are computed
+         AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
+
+         IEnumerable<UnspentOutputsView> utxos = AddressUtxoComputedTable.AsQueryable()
+            .Where(utxo => utxo.Address == address)
+            .OrderByDescending(utxo => utxo.BlockIndex)
+            .Skip(offset * limit)
+            .Take(limit)
+            .ToList()
+            .Select(utxo => new UnspentOutputsView
+            {
+               Address = utxo.Address,
+               Outpoint = utxo.Outpoint,
+               Value = utxo.Value,
+               BlockIndex = utxo.BlockIndex,
+               CoinBase = utxo.CoinBase,
+               CoinStake = utxo.CoinStake,
+               ScriptHex = utxo.ScriptHex
+            });
+
+         return new QueryResult<UnspentOutputsView>
+         {
+            Items = utxos,
+            Total = addressComputedTable.CountUtxo,
+            Offset = offset,
+            Limit = limit
+         };
+
+      }
+
+      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync_Old(string address, long confirmations, int offset, int limit)
       {
          var totalTask = Task.Run(() => OutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
