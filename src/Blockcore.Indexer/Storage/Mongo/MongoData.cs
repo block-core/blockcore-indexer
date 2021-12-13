@@ -971,7 +971,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          FilterDefinition<AddressHistoryComputedTable> addrCompHistFilter = Builders<AddressHistoryComputedTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
          Task<DeleteResult> addressHistoryComputed = AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
 
-         await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed);
+         // delete computed utxo
+         FilterDefinition<AddressUtxoComputedTable> addrCompUtxoFilter = Builders<AddressUtxoComputedTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         Task<DeleteResult> addressUtxoComputed = AddressUtxoComputedTable.DeleteManyAsync(addrCompUtxoFilter);
+
+         await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed);
 
          // delete the block itself is done last
          FilterDefinition<BlockTable> blockFilter = Builders<BlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
