@@ -519,6 +519,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          // make sure fields are computed
          AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
 
+
          IQueryable<AddressHistoryComputedTable> filter = AddressHistoryComputedTable.AsQueryable()
             .Where(t => t.Address == address);
 
@@ -558,6 +559,12 @@ namespace Blockcore.Indexer.Storage.Mongo
             TransactionHash = item.TransactionId,
             Confirmations = globalState.StoreTip.BlockIndex + 1 - item.BlockIndex
          });
+
+         if (offset == total)
+         {
+            // TODO: add mempool in to history only when the page is the tip (offset = 1 or total) with zero confirmations 
+            // List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
+         }
 
          return new QueryResult<QueryAddressItem>
          {
