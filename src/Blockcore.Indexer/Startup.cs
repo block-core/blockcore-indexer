@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Blockcore.Indexer.Api.Handlers;
+using Blockcore.Indexer.Crypto;
 using Blockcore.Indexer.Extensions;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
@@ -54,6 +55,8 @@ namespace Blockcore.Indexer
          services.AddScoped<Runner>();
 
          services.AddSingleton<GlobalState>();
+         services.AddSingleton<IScriptInterpeter, ScriptToAddressParser>();
+
 
          services.AddScoped<TaskRunner, MempoolPuller>();
          services.AddScoped<TaskRunner, Notifier>();
