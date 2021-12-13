@@ -907,8 +907,11 @@ namespace Blockcore.Indexer.Storage.Mongo
                      utxoEntriesToModify.Add(toDelete.Key, new DeleteOneModel<AddressUtxoComputedTable>(filter));
                   }
 
-                  // if we managed to update the address we can safely insert history
-                  AddressUtxoComputedTable.BulkWrite(utxoEntriesToModify.Values, new BulkWriteOptions {IsOrdered = false});
+                  if (utxoEntriesToModify.Values.Any())
+                  {
+                     // if we managed to update the address we can safely insert history
+                     AddressUtxoComputedTable.BulkWrite(utxoEntriesToModify.Values, new BulkWriteOptions {IsOrdered = false});
+                  }
                }
                catch (MongoBulkWriteException mbwex)
                {
