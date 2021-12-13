@@ -9,7 +9,6 @@ using Cirrus.Storage;
 using Cirrus.Storage.Mongo;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -38,6 +37,11 @@ namespace Cirrus
          var dercriptor = services.First(_ => _.ImplementationType == typeof(MongoBuilder));
          services.Remove(dercriptor);
          services.AddSingleton<TaskStarter, CirrusMongoBuilder>();
+
+
+         services.AddMvc()
+            .AddApplicationPart(typeof(Startup).Assembly)
+            .AddControllersAsServices();
       }
 
 
@@ -49,8 +53,6 @@ namespace Cirrus
          app.UseCors("IndexerPolicy");
 
          app.UseResponseCompression();
-
-         //app.UseMvc();
 
          app.UseDefaultFiles();
 
@@ -73,22 +75,6 @@ namespace Cirrus
          {
             endpoints.MapControllers();
          });
-      }
-
-      /// <summary>
-      /// Hide Stratis related endpoints in Swagger shown due to using Nuget packages
-      /// in WebApi project for serialization.
-      /// </summary>
-      public class ActionHidingConvention : IActionModelConvention
-      {
-         public void Apply(ActionModel action)
-         {
-            // Replace with any logic you want
-            if (!action.Controller.DisplayName.Contains("Blockcore.Indexer"))
-            {
-               action.ApiExplorer.IsVisible = false;
-            }
-         }
       }
    }
 }
