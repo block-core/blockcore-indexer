@@ -22,6 +22,7 @@ namespace Blockcore.Indexer.Storage.Mongo
    {
       private readonly SyncConnection syncConnection;
       readonly GlobalState globalState;
+      readonly IScriptInterpeter scriptInterpeter;
       readonly IndexerSettings configuration;
       private readonly MongoData data;
 
@@ -30,10 +31,12 @@ namespace Blockcore.Indexer.Storage.Mongo
          IStorage storage,
          IUtxoCache utxoCache,
          IOptions<IndexerSettings> configuration,
-         GlobalState globalState)
+         GlobalState globalState,
+         IScriptInterpeter scriptInterpeter)
       {
          this.syncConnection = syncConnection;
          this.globalState = globalState;
+         this.scriptInterpeter = scriptInterpeter;
          this.configuration = configuration.Value;
          data = (MongoData)storage;
       }
@@ -61,8 +64,8 @@ namespace Blockcore.Indexer.Storage.Mongo
          IEnumerable<OutputTable> outputs = item.Transactions.SelectMany((trx, i) =>
             trx.Outputs.Select((output, index) =>
             {
-               ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, output.ScriptPubKey);
-               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.TxOutType.ToString() : "none";
+               ScriptOutputInfo res = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey);
+               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType.ToString() : "none";
 
                return new OutputTable
                {
@@ -209,8 +212,8 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             foreach (TxOut transactionOutput in itemTransaction.Outputs)
             {
-               ScriptOutputTemplte res = ScriptToAddressParser.GetAddress(syncConnection.Network, transactionOutput.ScriptPubKey);
-               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.TxOutType.ToString() : null;
+               ScriptOutputInfo res = scriptInterpeter.InterpretScript(syncConnection.Network, transactionOutput.ScriptPubKey);
+               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType.ToString() : null;
 
                if (addr != null)
                {
