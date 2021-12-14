@@ -39,7 +39,7 @@ namespace Cirrus
          services.AddSingleton<TaskStarter, CirrusMongoBuilder>();
 
 
-         services.AddMvc()
+         services.AddControllers()
             .AddApplicationPart(typeof(Startup).Assembly)
             .AddControllersAsServices();
       }
