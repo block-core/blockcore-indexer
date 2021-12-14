@@ -1082,10 +1082,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          // make sure fields are computed
          AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
 
+         long total = addressComputedTable.CountUtxo;
+
          IEnumerable<UnspentOutputsView> utxos = AddressUtxoComputedTable.AsQueryable()
             .Where(utxo => utxo.Address == address)
-            .OrderByDescending(utxo => utxo.BlockIndex)
-            .Skip(offset * limit)
+            .Skip(offset)
             .Take(limit)
             .ToList()
             .Select(utxo => new UnspentOutputsView
@@ -1102,7 +1103,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          return new QueryResult<UnspentOutputsView>
          {
             Items = utxos,
-            Total = addressComputedTable.CountUtxo,
+            Total = total,
             Offset = offset,
             Limit = limit
          };
