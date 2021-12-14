@@ -44,6 +44,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       bool initialized;
 
       long? inputCopyLastBlockHeight;
+      bool? inputAddressIndexCompleted;
 
       public BlockIndexer(
          IOptions<IndexerSettings> configuration,
@@ -200,11 +201,11 @@ namespace Blockcore.Indexer.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.Address)}");
+                  //log.LogDebug($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.Address)}");
 
-                  await mongoData.InputTable.Indexes
-                     .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+                  //await mongoData.InputTable.Indexes
+                  //   .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
+                  //      .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
                }).ContinueWith(async task =>
                {
@@ -255,7 +256,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          {
             if (indexingCompletTask != null && indexingCompletTask.IsCompleted)
             {
-               if (inputCopyLastBlockHeight == null)
+               if (inputAddressIndexCompleted == null && inputCopyLastBlockHeight == null)
                {
                   var addressNulls = mongoData.InputTable.AsQueryable()
                      .OrderBy(b => b.BlockIndex)
@@ -309,6 +310,29 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                }
                else
                {
+                  if (inputAddressIndexCompleted == null)
+                  {
+                     inputAddressIndexCompleted = false;
+
+                     indexingCompletTask = Task.Run(async () =>
+                       {
+                          log.LogDebug($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.Address)}");
+
+                          await mongoData.InputTable.Indexes
+                             .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
+                                .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+
+                          inputAddressIndexCompleted = true;
+                       });
+
+                     return true;
+                  }
+
+                  if (inputAddressIndexCompleted == false)
+                  {
+                     return true;
+                  }
+
                   Runner.GlobalState.IndexMode = false;
                   Runner.GlobalState.IndexModeCompleted = true;
 
