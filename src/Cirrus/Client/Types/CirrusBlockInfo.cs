@@ -5,11 +5,11 @@ namespace Cirrus.Client.Types
 {
    public class CirrusBlockInfo : BlockInfo
    {
-      [JsonProperty("HashStateRoot")]
-      public string HashStateRoot { get; set; }
-      [JsonProperty("ReceiptRoot")]
-      public string ReceiptRoot{ get; set; }
-      [JsonProperty("Bloom")]
-      public string Bloom { get; set; }
+
+      public byte[] HashStateRoot { get; set; }
+
+      public byte[] ReceiptRoot{ get; set; }
+
+      public byte[] Bloom { get; set; }
    }
 }

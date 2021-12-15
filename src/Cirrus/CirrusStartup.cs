@@ -38,6 +38,8 @@ namespace Cirrus
          services.Remove(dercriptor);
          services.AddSingleton<TaskStarter, CirrusMongoBuilder>();
 
+         services.Replace(new ServiceDescriptor(typeof(ISyncBlockTransactionOperationBuilder), typeof(CirrusSyncBlockTransactionOperationBuilder),
+            ServiceLifetime.Singleton));
 
          services.AddControllers()
             .AddApplicationPart(typeof(Startup).Assembly)

@@ -132,6 +132,7 @@ namespace Blockcore.Indexer
 
          services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
          services.AddSingleton<ICryptoClientFactory, CryptoClientFactory>();
+         services.AddSingleton<ISyncBlockTransactionOperationBuilder, SyncBlockTransactionOperationBuilder>();
       }
 
       public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

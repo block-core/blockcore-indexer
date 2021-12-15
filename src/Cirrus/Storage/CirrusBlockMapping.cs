@@ -79,9 +79,9 @@ namespace Cirrus.Storage
             PosModifierv2 = block.PosModifierv2,
             Version = block.Version,
             SyncComplete = false,
-            Bloom = block.Bloom == null ? null : Convert.FromBase64String(block.Bloom), //TODO check what is returned from the client
-            ReceiptRoot = block.ReceiptRoot == null ? null : Convert.FromBase64String(block.ReceiptRoot),
-            HashStateRoot = block.HashStateRoot == null ? null :  Convert.FromBase64String(block.HashStateRoot)
+            Bloom = block.Bloom == null ? null : block.Bloom,
+            ReceiptRoot = block.ReceiptRoot == null ? null : block.ReceiptRoot,
+            HashStateRoot = block.HashStateRoot == null ? null :  block.HashStateRoot
          };
       }
    }

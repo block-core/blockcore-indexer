@@ -42,6 +42,8 @@ namespace Blockcore.Indexer.Sync
 
       readonly ICryptoClientFactory clientFactory;
 
+      readonly ISyncBlockTransactionOperationBuilder transactionOperationBuilder;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncOperations"/> class.
       /// </summary>
@@ -50,7 +52,8 @@ namespace Blockcore.Indexer.Sync
          ILogger<SyncOperations> logger,
          IOptions<IndexerSettings> configuration,
          IMemoryCache cache,
-         GlobalState globalState, ICryptoClientFactory clientFactory)
+         GlobalState globalState, ICryptoClientFactory clientFactory,
+         ISyncBlockTransactionOperationBuilder blockInfoEnrichment)
       {
          this.configuration = configuration.Value;
          log = logger;
@@ -58,6 +61,7 @@ namespace Blockcore.Indexer.Sync
          this.cache = cache;
          this.globalState = globalState;
          this.clientFactory = clientFactory;
+         transactionOperationBuilder = blockInfoEnrichment;
 
          // Register the cold staking template.
          StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
@@ -244,7 +248,7 @@ namespace Blockcore.Indexer.Sync
             blockItemTransaction.PrecomputeHash(false, true);
          }
 
-         var returnBlock = new SyncBlockTransactionsOperation { BlockInfo = block, Transactions = blockItem.Transactions };
+         var returnBlock = transactionOperationBuilder.BuildFromClientData(block, blockItem);
 
          return returnBlock;
       }
