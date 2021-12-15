@@ -138,6 +138,15 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
+      public IMongoCollection<AddressUtxoComputedTable> AddressUtxoComputedTable
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<AddressUtxoComputedTable>("AddressUtxoComputedTable");
+         }
+      }
+
+
       public IMongoCollection<TransactionBlockTable> TransactionBlockTable
       {
          get
@@ -703,6 +712,8 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          var history = new Dictionary<string, AddressHistoryComputedTable>();
          var transcations = new Dictionary<string, MapAddressBag>();
+         var utxoToAdd = new Dictionary<string, AddressUtxoComputedTable>();
+         var utxoToDelete = new Dictionary<string, Outpoint>();
 
          foreach (OutputTable item in filterOutputs)
          {
@@ -722,6 +733,9 @@ namespace Blockcore.Indexer.Storage.Mongo
                   bag.Ouputs.Add(item);
                   transcations.Add(item.Outpoint.TransactionId, bag);
                }
+
+               // add to the utxo table
+               utxoToAdd.Add(item.Outpoint.ToString(), new AddressUtxoComputedTable {Outpoint = item.Outpoint, BlockIndex = item.BlockIndex, Address = item.Address, CoinBase = item.CoinBase, CoinStake = item.CoinStake, ScriptHex = item.ScriptHex, Value = item.Value});
             }
          }
 
@@ -740,6 +754,13 @@ namespace Blockcore.Indexer.Storage.Mongo
                   var bag = new MapAddressBag { BlockIndex = item.BlockIndex };
                   bag.Inputs.Add(item);
                   transcations.Add(item.TrxHash, bag);
+               }
+
+               // remove from the utxo table
+               if (!utxoToAdd.Remove(item.Outpoint.ToString()))
+               {
+                  // if not found in memory we need to delete form disk
+                  utxoToDelete.Add(item.Outpoint.ToString(), item.Outpoint);
                }
             }
          }
@@ -816,6 +837,8 @@ namespace Blockcore.Indexer.Storage.Mongo
             addressComputedTable.CountSent += countSent;
             addressComputedTable.CountStaked += countStaked;
             addressComputedTable.CountMined += countMined;
+            addressComputedTable.CountUtxo = addressComputedTable.CountUtxo - utxoToDelete.Count + utxoToAdd.Count;
+
             addressComputedTable.ComputedBlockIndex = maxHeight; // the last block a trx was received to this address
 
             if (addressComputedTable.Available < 0)
@@ -833,9 +856,6 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                // update the computed address entry, this will throw if a newer version is in store
                AddressComputedTable.ReplaceOne(updateFilter, addressComputedTable, new ReplaceOptions { IsUpsert = true });
-
-               // if we managed to update the address we can safely insert history
-               AddressHistoryComputedTable.InsertMany(history.Values, new InsertManyOptions { IsOrdered = false });
             }
             catch (MongoWriteException nwe)
             {
@@ -846,18 +866,67 @@ namespace Blockcore.Indexer.Storage.Mongo
 
                // address was already modified fetch the latest version
                addressComputedTable = AddressComputedTable.Find(addrFilter).FirstOrDefault();
+
+               return addressComputedTable;
             }
-            catch (MongoBulkWriteException mbwex)
+
+            var historyTask = Task.Run(() =>
             {
-               // in cases of reorgs trx are not deleted from the store,
-               // if a trx is already written and we attempt to write it again
-               // the write will fail and throw, so we ignore such errors.
-               // (IsOrdered = false will attempt all entries and only throw when done)
-               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
+               try
                {
-                  throw;
+                  // if we managed to update the address we can safely insert history
+                  AddressHistoryComputedTable.InsertMany(history.Values, new InsertManyOptions {IsOrdered = false});
                }
-            }
+               catch (MongoBulkWriteException mbwex)
+               {
+                  // in cases of reorgs trx are not deleted from the store,
+                  // if a trx is already written and we attempt to write it again
+                  // the write will fail and throw, so we ignore such errors.
+                  // (IsOrdered = false will attempt all entries and only throw when done)
+                  if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
+                  {
+                     throw;
+                  }
+               }
+            });
+
+            var utxoTask = Task.Run(() =>
+            {
+               try
+               {
+                  var utxoEntriesToModify = new Dictionary<string, WriteModel<AddressUtxoComputedTable>>();
+
+                  foreach (KeyValuePair<string, AddressUtxoComputedTable> utxoComputedTable in utxoToAdd)
+                  {
+                     utxoEntriesToModify.Add(utxoComputedTable.Key, new InsertOneModel<AddressUtxoComputedTable>(utxoComputedTable.Value));
+                  }
+
+                  foreach (KeyValuePair<string, Outpoint> toDelete in utxoToDelete)
+                  {
+                     FilterDefinition<AddressUtxoComputedTable> filter = Builders<AddressUtxoComputedTable>.Filter.Eq(entry => entry.Outpoint, toDelete.Value);
+                     utxoEntriesToModify.Add(toDelete.Key, new DeleteOneModel<AddressUtxoComputedTable>(filter));
+                  }
+
+                  if (utxoEntriesToModify.Values.Any())
+                  {
+                     // if we managed to update the address we can safely insert history
+                     AddressUtxoComputedTable.BulkWrite(utxoEntriesToModify.Values, new BulkWriteOptions {IsOrdered = false});
+                  }
+               }
+               catch (MongoBulkWriteException mbwex)
+               {
+                  // in cases of reorgs trx are not deleted from the store,
+                  // if a trx is already written and we attempt to write it again
+                  // the write will fail and throw, so we ignore such errors.
+                  // (IsOrdered = false will attempt all entries and only throw when done)
+                  if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
+                  {
+                     throw;
+                  }
+               }
+            });
+
+            Task.WaitAll(historyTask, utxoTask);
          }
 
          return addressComputedTable;
@@ -902,7 +971,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          FilterDefinition<AddressHistoryComputedTable> addrCompHistFilter = Builders<AddressHistoryComputedTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
          Task<DeleteResult> addressHistoryComputed = AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
 
-         await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed);
+         // delete computed utxo
+         FilterDefinition<AddressUtxoComputedTable> addrCompUtxoFilter = Builders<AddressUtxoComputedTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         Task<DeleteResult> addressUtxoComputed = AddressUtxoComputedTable.DeleteManyAsync(addrCompUtxoFilter);
+
+         await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed);
 
          // delete the block itself is done last
          FilterDefinition<BlockTable> blockFilter = Builders<BlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
@@ -1004,7 +1077,40 @@ namespace Blockcore.Indexer.Storage.Mongo
          };
       }
 
-      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address ,long confirmations, int offset, int limit)
+      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
+      {
+         // make sure fields are computed
+         AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
+
+         long total = addressComputedTable.CountUtxo;
+
+         IEnumerable<UnspentOutputsView> utxos = AddressUtxoComputedTable.AsQueryable()
+            .Where(utxo => utxo.Address == address)
+            .Skip(offset)
+            .Take(limit)
+            .ToList()
+            .Select(utxo => new UnspentOutputsView
+            {
+               Address = utxo.Address,
+               Outpoint = utxo.Outpoint,
+               Value = utxo.Value,
+               BlockIndex = utxo.BlockIndex,
+               CoinBase = utxo.CoinBase,
+               CoinStake = utxo.CoinStake,
+               ScriptHex = utxo.ScriptHex
+            });
+
+         return new QueryResult<UnspentOutputsView>
+         {
+            Items = utxos,
+            Total = total,
+            Offset = offset,
+            Limit = limit
+         };
+
+      }
+
+      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync_Old(string address, long confirmations, int offset, int limit)
       {
          var totalTask = Task.Run(() => OutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))

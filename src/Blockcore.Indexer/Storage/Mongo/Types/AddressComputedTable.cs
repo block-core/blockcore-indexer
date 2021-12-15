@@ -27,5 +27,7 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
       public long CountStaked { get; set; }
 
       public long CountMined { get; set; }
+      
+      public long CountUtxo { get; set; }
    }
 }

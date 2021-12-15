@@ -216,6 +216,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                      .CreateOneAsync(new CreateIndexModel<AddressComputedTable>(Builders<AddressComputedTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
+                  // --- history
                   log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputedTable)}.{nameof(AddressHistoryComputedTable.BlockIndex)}");
 
                   await mongoData.AddressHistoryComputedTable.Indexes
@@ -228,6 +229,32 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                      .CreateOneAsync(new CreateIndexModel<AddressHistoryComputedTable>(Builders<AddressHistoryComputedTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Position)));
 
+                  log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputedTable)}.{nameof(AddressHistoryComputedTable.Address)}");
+
+                  await mongoData.AddressHistoryComputedTable.Indexes
+                     .CreateOneAsync(new CreateIndexModel<AddressHistoryComputedTable>(Builders<AddressHistoryComputedTable>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+
+                  // -- utxo
+                  log.LogDebug($"Creating indexes on {nameof(AddressUtxoComputedTable)}.{nameof(AddressUtxoComputedTable.BlockIndex)}");
+
+                  await mongoData.AddressUtxoComputedTable.Indexes
+                     .CreateOneAsync(new CreateIndexModel<AddressUtxoComputedTable>(Builders<AddressUtxoComputedTable>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+
+                  log.LogDebug($"Creating indexes on {nameof(AddressUtxoComputedTable)}.{nameof(AddressUtxoComputedTable.Outpoint)}");
+
+                  await mongoData.AddressUtxoComputedTable.Indexes
+                     .CreateOneAsync(new CreateIndexModel<AddressUtxoComputedTable>(Builders<AddressUtxoComputedTable>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint), new CreateIndexOptions {Unique = true}));
+
+                  log.LogDebug($"Creating indexes on {nameof(AddressUtxoComputedTable)}.{nameof(AddressUtxoComputedTable.Address)}");
+
+                  await mongoData.AddressUtxoComputedTable.Indexes
+                     .CreateOneAsync(new CreateIndexModel<AddressUtxoComputedTable>(Builders<AddressUtxoComputedTable>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+
+                  // --mempool
                   log.LogDebug($"Creating indexes on {nameof(MempoolTable)}.{nameof(MempoolTable.TransactionId)}");
 
                   await mongoData.Mempool.Indexes
