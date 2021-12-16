@@ -7,7 +7,7 @@ namespace Blockcore.Indexer.Storage
 {
    public class MapMongoBlockToStorageBlock : IMapMongoBlockToStorageBlock
    {
-      public SyncBlockInfo Map(MapBlock block) => new SyncBlockInfo
+      public SyncBlockInfo Map(BlockTable block) => new SyncBlockInfo
       {
          BlockIndex = block.BlockIndex,
          BlockSize = block.BlockSize,
@@ -33,8 +33,8 @@ namespace Blockcore.Indexer.Storage
       };
 
 
-      public MapBlock Map(BlockInfo block) =>
-         new MapBlock
+      public BlockTable Map(BlockInfo block) =>
+         new BlockTable
          {
             BlockIndex = block.Height,
             BlockHash = block.Hash,

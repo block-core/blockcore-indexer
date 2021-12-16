@@ -13,7 +13,7 @@ namespace Cirrus.Storage
 {
    public class CirrusBlockMapping : IMapMongoBlockToStorageBlock
    {
-      public SyncBlockInfo Map(MapBlock block)
+      public SyncBlockInfo Map(BlockTable block)
       {
          var derived = block as CirrusBlock;
 
@@ -49,7 +49,7 @@ namespace Cirrus.Storage
          };
       }
 
-      public MapBlock Map(BlockInfo blockInfo)
+      public BlockTable Map(BlockInfo blockInfo)
       {
          var block = blockInfo as CirrusBlockInfo;
 

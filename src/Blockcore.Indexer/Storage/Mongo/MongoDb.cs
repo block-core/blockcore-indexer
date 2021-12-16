@@ -39,67 +39,67 @@ namespace Blockcore.Indexer.Storage.Mongo
       }
 
 
-      public IMongoCollection<AddressForOutput> AddressForOutput
+      public IMongoCollection<OutputTable> OutputTable
       {
          get
          {
-            return mongoDatabase.GetCollection<AddressForOutput>("AddressForOutput");
+            return mongoDatabase.GetCollection<OutputTable>("Output");
          }
       }
 
-      public IMongoCollection<AddressForInput> AddressForInput
+      public IMongoCollection<InputTable> InputTable
       {
          get
          {
-            return mongoDatabase.GetCollection<AddressForInput>("AddressForInput");
+            return mongoDatabase.GetCollection<InputTable>("Input");
          }
       }
 
-      public IMongoCollection<AddressComputed> AddressComputed
+      public IMongoCollection<AddressComputedTable> AddressComputedTable
       {
          get
          {
-            return mongoDatabase.GetCollection<AddressComputed>("AddressComputed");
+            return mongoDatabase.GetCollection<AddressComputedTable>("AddressComputed");
          }
       }
 
-      public IMongoCollection<AddressHistoryComputed> AddressHistoryComputed
+      public IMongoCollection<AddressHistoryComputedTable> AddressHistoryComputedTable
       {
          get
          {
-            return mongoDatabase.GetCollection<AddressHistoryComputed>("AddressHistoryComputed");
+            return mongoDatabase.GetCollection<AddressHistoryComputedTable>("AddressHistoryComputed");
          }
       }
 
-      public IMongoCollection<MapTransactionBlock> MapTransactionBlock
+      public IMongoCollection<TransactionBlockTable> TransactionBlockTable
       {
          get
          {
-            return mongoDatabase.GetCollection<MapTransactionBlock>("MapTransactionBlock");
+            return mongoDatabase.GetCollection<TransactionBlockTable>("TransactionBlock");
          }
       }
 
-      public IMongoCollection<MapTransaction> MapTransaction
+      public IMongoCollection<TransactionTable> TransactionTable
       {
          get
          {
-            return mongoDatabase.GetCollection<MapTransaction>("MapTransaction");
+            return mongoDatabase.GetCollection<TransactionTable>("Transaction");
          }
       }
 
-      public IMongoCollection<MapBlock> MapBlock
+      public IMongoCollection<BlockTable> BlockTable
       {
          get
          {
-            return mongoDatabase.GetCollection<MapBlock>("MapBlock");
+            return mongoDatabase.GetCollection<BlockTable>("Block");
          }
       }
 
-      public IMongoCollection<MapRichlist> MapRichlist
+      public IMongoCollection<RichlistTable> RichlistTable
       {
          get
          {
-            return mongoDatabase.GetCollection<MapRichlist>("RichList");
+            return mongoDatabase.GetCollection<RichlistTable>("RichList");
          }
       }
 
@@ -111,11 +111,11 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
-      public IMongoCollection<Mempool> Mempool
+      public IMongoCollection<MempoolTable> Mempool
       {
          get
          {
-            return mongoDatabase.GetCollection<Mempool>("Mempool");
+            return mongoDatabase.GetCollection<MempoolTable>("Mempool");
          }
       }
    }

@@ -47,7 +47,7 @@ namespace Blockcore.Indexer.Storage.Mongo
                //cm.MapIdMember(c => c.BlockHash);
                cm.MapIdMember(c => c.BlockIndex);
                cm.SetIsRootClass(true);
-               cm.SetDiscriminator(nameof(MapBlock));
+               cm.SetDiscriminator(nameof(BlockTable));
             });
          }
 

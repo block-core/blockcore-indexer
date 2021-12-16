@@ -6,7 +6,7 @@ namespace Blockcore.Indexer.Storage
 {
    public interface IMapMongoBlockToStorageBlock
    {
-      SyncBlockInfo Map(MapBlock block);
-      MapBlock Map(BlockInfo blockInfo);
+      SyncBlockInfo Map(BlockTable block);
+      BlockTable Map(BlockInfo blockInfo);
    }
 }
