@@ -71,6 +71,14 @@ namespace Blockcore.Indexer.Storage.Mongo
          }
       }
 
+      public IMongoCollection<AddressUtxoComputedTable> AddressUtxoComputedTable
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<AddressUtxoComputedTable>("AddressUtxoComputedTable");
+         }
+      }
+
       public IMongoCollection<TransactionBlockTable> TransactionBlockTable
       {
          get
