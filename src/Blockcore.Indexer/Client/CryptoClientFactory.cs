@@ -13,12 +13,16 @@ namespace Blockcore.Indexer.Client
    /// <summary>
    ///  a factory to create clients.
    /// </summary>
-   public class CryptoClientFactory
+   public class CryptoClientFactory : ICryptoClientFactory
    {
       /// <summary>
       ///     Defines a cache object to hold storage sources.
       /// </summary>
       private static readonly MemoryCache Cache = new MemoryCache(new MemoryCacheOptions());
+
+      BitcoinClient ICryptoClientFactory.Create(SyncConnection connection) => Create(connection);
+
+      BitcoinClient ICryptoClientFactory.Create(string connection, int port, string user, string encPass, bool secure) => Create(connection, port, user, encPass, secure);
 
       /// <summary>
       /// A static method to create a client.

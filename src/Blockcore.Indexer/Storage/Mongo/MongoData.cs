@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,7 +8,6 @@ using Blockcore.Indexer.Api.Handlers.Types;
 using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Crypto;
-using Blockcore.Indexer.Extensions;
 using Blockcore.Indexer.Operations.Types;
 using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage.Mongo.Types;
@@ -18,46 +16,22 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using NBitcoin.DataEncoders;
 
 namespace Blockcore.Indexer.Storage.Mongo
 {
-   public class MongoData : IStorage
+   public class MongoData : MongoDb, IStorage
    {
-      private readonly ILogger<MongoStorageOperations> log;
-
-      private readonly MongoClient mongoClient;
-
-      private readonly IMongoDatabase mongoDatabase;
-
-      private readonly SyncConnection syncConnection;
-      private readonly GlobalState globalState;
       readonly IScriptInterpeter scriptInterpeter;
 
-      private readonly IndexerSettings configuration;
-
-      private readonly ChainSettings chainConfiguration;
-
-      public MongoData(
-         ILogger<MongoStorageOperations> logger,
-         SyncConnection connection,
-         IOptions<IndexerSettings> nakoConfiguration,
-         IOptions<ChainSettings> chainConfiguration,
-         GlobalState globalState,
-         IScriptInterpeter scriptInterpeter)
+      private readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
+      readonly ICryptoClientFactory clientFactory;
+      public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState,
+         IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,IScriptInterpeter scriptInterpeter)
+         : base(dbLogger,  connection, nakoConfiguration, chainConfiguration, globalState)
       {
-         configuration = nakoConfiguration.Value;
-         this.chainConfiguration = chainConfiguration.Value;
-
-         syncConnection = connection;
-         this.globalState = globalState;
+         this.mongoBlockToStorageBlock = mongoBlockToStorageBlock;
+         this.clientFactory = clientFactory;
          this.scriptInterpeter = scriptInterpeter;
-         log = logger;
-         mongoClient = new MongoClient(configuration.ConnectionString.Replace("{Symbol}", this.chainConfiguration.Symbol.ToLower()));
-
-         string dbName = configuration.DatabaseNameSubfix ? "Blockchain" + this.chainConfiguration.Symbol : "Blockchain";
-
-         mongoDatabase = mongoClient.GetDatabase(dbName);
       }
 
       public List<IndexView> GetCurrentIndexes()
@@ -104,95 +78,6 @@ namespace Blockcore.Indexer.Storage.Mongo
             }
 
             return ret;
-      }
-
-      public IMongoCollection<OutputTable> OutputTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<OutputTable>("Output");
-         }
-      }
-
-      public IMongoCollection<InputTable> InputTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<InputTable>("Input");
-         }
-      }
-
-      public IMongoCollection<AddressComputedTable> AddressComputedTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<AddressComputedTable>("AddressComputed");
-         }
-      }
-
-      public IMongoCollection<AddressHistoryComputedTable> AddressHistoryComputedTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<AddressHistoryComputedTable>("AddressHistoryComputed");
-         }
-      }
-
-      public IMongoCollection<AddressUtxoComputedTable> AddressUtxoComputedTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<AddressUtxoComputedTable>("AddressUtxoComputedTable");
-         }
-      }
-
-
-      public IMongoCollection<TransactionBlockTable> TransactionBlockTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<TransactionBlockTable>("TransactionBlock");
-         }
-      }
-
-      public IMongoCollection<TransactionTable> TransactionTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<TransactionTable>("Transaction");
-         }
-      }
-
-      public IMongoCollection<BlockTable> BlockTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<BlockTable>("Block");
-         }
-      }
-
-      public IMongoCollection<RichlistTable> RichlistTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<RichlistTable>("RichList");
-         }
-      }
-
-      public IMongoCollection<PeerInfo> Peer
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<PeerInfo>("Peer");
-         }
-      }
-
-      public IMongoCollection<MempoolTable> Mempool
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<MempoolTable>("Mempool");
-         }
       }
 
       public QueryTransaction GetTransaction(string transactionId)
@@ -265,7 +150,7 @@ namespace Blockcore.Indexer.Storage.Mongo
             offset = (int)total;
 
          IQueryable<BlockTable> filter = BlockTable.AsQueryable().Where(w => w.BlockIndex <= offset && w.BlockIndex > offset - limit);
-         IEnumerable<SyncBlockInfo> list = filter.ToList().Select(Convert);
+         IEnumerable<SyncBlockInfo> list = filter.ToList().Select(mongoBlockToStorageBlock.Map);
 
          return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
       }
@@ -274,14 +159,14 @@ namespace Blockcore.Indexer.Storage.Mongo
       {
          FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(info => info.BlockIndex, blockIndex);
 
-         return BlockTable.Find(filter).ToList().Select(Convert).FirstOrDefault();
+         return BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
       }
 
       public SyncBlockInfo BlockByHash(string blockHash)
       {
          FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
 
-         return BlockTable.Find(filter).ToList().Select(Convert).FirstOrDefault();
+         return BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
       }
 
       /// <summary>
@@ -311,7 +196,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          return TransactionTable.Find(filter).ToList().Select(t => new SyncRawTransaction { TransactionHash = trxHash, RawTransaction = t.RawTransaction }).FirstOrDefault();
       }
-      
+
       public InputTable GetTransactionInput(string transaction, int index)
       {
          FilterDefinition<InputTable> filter = Builders<InputTable>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
@@ -359,7 +244,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
             if (rawtrx == null)
             {
-               BitcoinClient client = CryptoClientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
+               BitcoinClient client = clientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
 
                Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
 
@@ -579,7 +464,7 @@ namespace Blockcore.Indexer.Storage.Mongo
 
          if (offset == total)
          {
-            // TODO: add mempool in to history only when the page is the tip (offset = 1 or total) with zero confirmations 
+            // TODO: add mempool in to history only when the page is the tip (offset = 1 or total) with zero confirmations
             // List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
          }
 
@@ -1049,35 +934,7 @@ namespace Blockcore.Indexer.Storage.Mongo
          //return (int)Mempool.CountDocuments(FilterDefinition<Mempool>.Empty);
       }
 
-      private SyncBlockInfo Convert(BlockTable block)
-      {
-         return new SyncBlockInfo
-         {
-            BlockIndex = block.BlockIndex,
-            BlockSize = block.BlockSize,
-            BlockHash = block.BlockHash,
-            BlockTime = block.BlockTime,
-            NextBlockHash = block.NextBlockHash,
-            PreviousBlockHash = block.PreviousBlockHash,
-            TransactionCount = block.TransactionCount,
-            Nonce = block.Nonce,
-            ChainWork = block.ChainWork,
-            Difficulty = block.Difficulty,
-            Merkleroot = block.Merkleroot,
-            PosModifierv2 = block.PosModifierv2,
-            PosHashProof = block.PosHashProof,
-            PosFlags = block.PosFlags,
-            PosChainTrust = block.PosChainTrust,
-            PosBlockTrust = block.PosBlockTrust,
-            PosBlockSignature = block.PosBlockSignature,
-            Confirmations = block.Confirmations,
-            Bits = block.Bits,
-            Version = block.Version,
-            SyncComplete = block.SyncComplete
-         };
-      }
-
-      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
+      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address ,long confirmations, int offset, int limit)
       {
          // make sure fields are computed
          AddressComputedTable addressComputedTable = ComputeAddressBalance(address);

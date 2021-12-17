@@ -151,7 +151,7 @@ namespace Blockcore.Indexer.Client
       }
 
       /// <inheritdoc />
-      public async Task<BlockInfo> GetBlockAsync(string hash)
+      public virtual async Task<BlockInfo> GetBlockAsync(string hash)
       {
          return await CallAsync<BlockInfo>("getblock", hash);
       }
@@ -492,7 +492,7 @@ namespace Blockcore.Indexer.Client
       /// <summary>
       /// Make a call to crypto API.
       /// </summary>
-      private async Task<T> CallAsync<T>(string method, params object[] parameters)
+      protected async Task<T> CallAsync<T>(string method, params object[] parameters)
       {
          var rpcReq = new JsonRpcRequest(1, method, parameters);
 

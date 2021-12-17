@@ -34,6 +34,8 @@ namespace Blockcore.Indexer.Api.Handlers
 
       private readonly NetworkSettings networkConfig;
 
+      readonly ICryptoClientFactory clientFactory;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsHandler"/> class.
       /// </summary>
@@ -41,9 +43,11 @@ namespace Blockcore.Indexer.Api.Handlers
          SyncConnection connection, IStorage storage,
          IOptions<NetworkSettings> networkConfig,
          IOptions<IndexerSettings> configuration,
-         IOptions<ChainSettings> chainConfiguration)
+         IOptions<ChainSettings> chainConfiguration,
+         ICryptoClientFactory clientFactory)
       {
          this.storage = storage;
+         this.clientFactory = clientFactory;
          syncConnection = connection;
          this.configuration = configuration.Value;
          this.chainConfiguration = chainConfiguration.Value;
@@ -53,7 +57,7 @@ namespace Blockcore.Indexer.Api.Handlers
       public async Task<StatsConnection> StatsConnection()
       {
          SyncConnection connection = syncConnection;
-         BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         BitcoinClient client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
 
          int clientConnection = await client.GetConnectionCountAsync();
          return new StatsConnection { Connections = clientConnection };
@@ -121,7 +125,7 @@ namespace Blockcore.Indexer.Api.Handlers
       public async Task<Statistics> Statistics()
       {
          SyncConnection connection = syncConnection;
-         BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         BitcoinClient client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
          var stats = new Statistics { Symbol = syncConnection.Symbol };
 
          try
@@ -179,7 +183,7 @@ namespace Blockcore.Indexer.Api.Handlers
       public async Task<List<PeerInfo>> Peers()
       {
          SyncConnection connection = syncConnection;
-         BitcoinClient client = CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         BitcoinClient client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
          var res = (await client.GetPeerInfo()).ToList();
 
          res.ForEach(p =>

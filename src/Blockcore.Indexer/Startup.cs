@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Blockcore.Indexer.Api.Handlers;
 using Blockcore.Indexer.Crypto;
+using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Extensions;
 using Blockcore.Indexer.Operations;
 using Blockcore.Indexer.Operations.Types;
@@ -36,10 +37,15 @@ namespace Blockcore.Indexer
 
       public void ConfigureServices(IServiceCollection services)
       {
-         services.Configure<ChainSettings>(Configuration.GetSection("Chain"));
-         services.Configure<NetworkSettings>(Configuration.GetSection("Network"));
-         services.Configure<IndexerSettings>(Configuration.GetSection("Indexer"));
-         services.Configure<InsightSettings>(Configuration.GetSection("Insight"));
+         AddIndexerServices(services, Configuration);
+      }
+
+      public static void AddIndexerServices(IServiceCollection services, IConfiguration configuration)
+      {
+         services.Configure<ChainSettings>(configuration.GetSection("Chain"));
+         services.Configure<NetworkSettings>(configuration.GetSection("Network"));
+         services.Configure<IndexerSettings>(configuration.GetSection("Indexer"));
+         services.Configure<InsightSettings>(configuration.GetSection("Insight"));
 
          // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
@@ -64,7 +70,7 @@ namespace Blockcore.Indexer
 
          services.AddScoped<TaskRunner, BlockPuller>();
          services.AddScoped<TaskRunner, BlockStore>();
-          services.AddScoped<TaskStarter, BlockStartup>();
+         services.AddScoped<TaskStarter, BlockStartup>();
 
          services.AddScoped<TaskRunner, BlockIndexer>();
 
@@ -80,7 +86,8 @@ namespace Blockcore.Indexer
             options.Conventions.Add(new ActionHidingConvention());
          }).AddJsonOptions(options =>
          {
-            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, allowIntegerValues: false));
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase,
+               allowIntegerValues: false));
          }).AddNewtonsoftJson(options =>
          {
             options.SerializerSettings.FloatFormatHandling = FloatFormatHandling.DefaultValue;
@@ -88,11 +95,11 @@ namespace Blockcore.Indexer
          });
 
          services.AddSwaggerGen(
-             options =>
-             {
-                string assemblyVersion = typeof(Startup).Assembly.GetName().Version.ToString();
+            options =>
+            {
+               string assemblyVersion = typeof(Startup).Assembly.GetName().Version.ToString();
 
-                options.SwaggerDoc("indexer",
+               options.SwaggerDoc("indexer",
                   new OpenApiInfo
                   {
                      Title = "Blockcore Indexer API",
@@ -105,23 +112,27 @@ namespace Blockcore.Indexer
                      }
                   });
 
-                // integrate xml comments
-                if (File.Exists(XmlCommentsFilePath))
-                {
-                   options.IncludeXmlComments(XmlCommentsFilePath);
-                }
+               // integrate xml comments
+               if (File.Exists(XmlCommentsFilePath))
+               {
+                  options.IncludeXmlComments(XmlCommentsFilePath);
+               }
 
-                options.EnableAnnotations();
-             });
+               options.EnableAnnotations();
+            });
 
          services.AddSwaggerGenNewtonsoftSupport(); // explicit opt-in - needs to be placed after AddSwaggerGen()
 
          services.AddCors(o => o.AddPolicy("IndexerPolicy", builder =>
          {
             builder.AllowAnyOrigin()
-                      .AllowAnyMethod()
-                      .AllowAnyHeader();
+               .AllowAnyMethod()
+               .AllowAnyHeader();
          }));
+
+         services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
+         services.AddSingleton<ICryptoClientFactory, CryptoClientFactory>();
+         services.AddSingleton<ISyncBlockTransactionOperationBuilder, SyncBlockTransactionOperationBuilder>();
       }
 
       public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

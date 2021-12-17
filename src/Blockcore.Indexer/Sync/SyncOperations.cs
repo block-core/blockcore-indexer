@@ -40,6 +40,10 @@ namespace Blockcore.Indexer.Sync
 
       private readonly MemoryCacheEntryOptions cacheOptions;
 
+      readonly ICryptoClientFactory clientFactory;
+
+      readonly ISyncBlockTransactionOperationBuilder transactionOperationBuilder;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="SyncOperations"/> class.
       /// </summary>
@@ -48,13 +52,16 @@ namespace Blockcore.Indexer.Sync
          ILogger<SyncOperations> logger,
          IOptions<IndexerSettings> configuration,
          IMemoryCache cache,
-         GlobalState globalState)
+         GlobalState globalState, ICryptoClientFactory clientFactory,
+         ISyncBlockTransactionOperationBuilder blockInfoEnrichment)
       {
          this.configuration = configuration.Value;
          log = logger;
          this.storage = storage;
          this.cache = cache;
          this.globalState = globalState;
+         this.clientFactory = clientFactory;
+         transactionOperationBuilder = blockInfoEnrichment;
 
          // Register the cold staking template.
          StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
@@ -104,7 +111,7 @@ namespace Blockcore.Indexer.Sync
 
       public async Task<Storage.Types.SyncBlockInfo> RewindToBestChain(SyncConnection connection)
       {
-         BitcoinClient client = CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          while (true)
          {
@@ -147,7 +154,7 @@ namespace Blockcore.Indexer.Sync
 
       private SyncPoolTransactions FindPoolInternal(SyncConnection connection)
       {
-         BitcoinClient client = CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          IEnumerable<string> memPool = client.GetRawMemPool();
 
@@ -221,7 +228,7 @@ namespace Blockcore.Indexer.Sync
 
       private SyncBlockTransactionsOperation SyncPoolInternal(SyncConnection connection, SyncPoolTransactions poolTransactions)
       {
-         BitcoinClient client = CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          SyncBlockTransactionsOperation returnBlock = SyncBlockTransactions(client, connection, poolTransactions.Transactions, false);
 
@@ -230,7 +237,7 @@ namespace Blockcore.Indexer.Sync
 
       private SyncBlockTransactionsOperation SyncBlockInternal(SyncConnection connection, BlockInfo block)
       {
-         BitcoinClient client = CryptoClientFactory.Create(connection);
+         BitcoinClient client = clientFactory.Create(connection);
 
          string hex = client.GetBlockHex(block.Hash);
 
@@ -241,7 +248,7 @@ namespace Blockcore.Indexer.Sync
             blockItemTransaction.PrecomputeHash(false, true);
          }
 
-         var returnBlock = new SyncBlockTransactionsOperation { BlockInfo = block, Transactions = blockItem.Transactions };
+         var returnBlock = transactionOperationBuilder.BuildFromClientData(block, blockItem);
 
          return returnBlock;
       }

@@ -1,5 +1,3 @@
-using NBitcoin;
-
 namespace Blockcore.Indexer.Operations.Types
 {
    using System.Collections.Generic;
