@@ -16,9 +16,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blockcore.Indexer.Tests", "src\Blockcore.Indexer.Tests\Blockcore.Indexer.Tests.csproj", "{F90920F8-D323-4A85-9CFE-5D4899AA3690}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blockcore.Indexer.Tests", "src\Blockcore.Indexer.Tests\Blockcore.Indexer.Tests.csproj", "{F90920F8-D323-4A85-9CFE-5D4899AA3690}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cirrus", "src\Cirrus\Cirrus.csproj", "{BF7D701B-2DA5-43A0-A4C5-4891088D2CD4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blockcore.Indexer.Cirrus", "src\Blockcore.Indexer.Cirrus\Blockcore.Indexer.Cirrus.csproj", "{BF7D701B-2DA5-43A0-A4C5-4891088D2CD4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
