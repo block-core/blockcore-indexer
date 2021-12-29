@@ -1,14 +1,23 @@
 {
   "$schema": "http://json.schemastore.org/launchsettings.json",
-  "profiles": {
-     "Cirrus": {
-        "commandName": "Project",
-        "commandLineArgs": "--chain=Cirrus --local",
-        "launchBrowser": true,
-        "environmentVariables": {
-           "ASPNETCORE_ENVIRONMENT": "Development"
-        },
-        "applicationUrl": "http://localhost:9910/"
-    }
-  }
+   "profiles": {
+      "CIRRUS (MAIN)": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=main --local",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
+      "CIRRUS (REGTEST)": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=regtest --local",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      }
+   }
 }

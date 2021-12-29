@@ -6,6 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <None Remove="CUSTOM.main.json" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="AutoMapper" Version="10.1.1" />
       <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
       <PackageReference Include="Blockcore.Core" Version="1.0.24" />
@@ -17,7 +21,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="CUSTOM.Cirrus.json">
+      <Content Include="CUSTOM.main.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="CUSTOM.regtest.json">
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
