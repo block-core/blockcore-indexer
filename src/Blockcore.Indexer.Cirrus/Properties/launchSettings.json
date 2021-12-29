@@ -18,6 +18,15 @@
             "ASPNETCORE_ENVIRONMENT": "Development"
          },
          "applicationUrl": "http://localhost:9910/"
+      },
+      "CIRRUS (TEST)": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=test --local",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
       }
    }
 }
