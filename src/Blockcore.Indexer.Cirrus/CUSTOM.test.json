@@ -1,7 +1,7 @@
 {
    "Chain": {
       "Name": "Your Custom Blockchain",
-      "Symbol": "CirrusRegTest",
+      "Symbol": "TCRS",
       "Description": "Stratis sidechain",
       "Url": "https://www.blockcore.net/",
       "Logo": "https://www.blockcore.net/assets/blockcore-256x256.png",
