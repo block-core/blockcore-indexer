@@ -34,8 +34,8 @@ namespace Cirrus
          services.Replace(new ServiceDescriptor(typeof(ICryptoClientFactory), typeof(CirrusClientFactory),
             ServiceLifetime.Singleton));
 
-         var dercriptor = services.First(_ => _.ImplementationType == typeof(MongoBuilder));
-         services.Remove(dercriptor);
+         ServiceDescriptor descriptor = services.First(_ => _.ImplementationType == typeof(MongoBuilder));
+         services.Remove(descriptor);
          services.AddSingleton<TaskStarter, CirrusMongoBuilder>();
 
          services.Replace(new ServiceDescriptor(typeof(ISyncBlockTransactionOperationBuilder), typeof(CirrusSyncBlockTransactionOperationBuilder),

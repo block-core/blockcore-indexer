@@ -32,6 +32,8 @@ jobs:
       PROJECT_NAME: 'Blockcore.Indexer'
       SOLUTION_PATH: 'Blockcore.Indexer.sln'
       PROJECT_PATH: 'src/Blockcore.Indexer/Blockcore.Indexer.csproj'
+      CIRRUS_NAME: 'Blockcore.Indexer.Cirrus'
+      CIRRUS_PATH: 'src/Blockcore.Indexer.Cirrus/Blockcore.Indexer.Cirrus.csproj'
       BUILD_CONFIGURATION: 'Release'
 
     steps:
@@ -65,13 +67,18 @@ jobs:
     # - name: Build
     #   run: dotnet build -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} /p:Version=${{ env.VERSION }} -v m ${{env.SOLUTION_PATH}}
 
-    - name: Publish
+    - name: Publish (Blockcore Indexer)
       run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} -r ${{matrix.runtime}} /p:Version=${{ env.VERSION }} -v m -o ./src/${{ env.PROJECT_NAME }}/bin/publish ${{env.PROJECT_PATH}}
+
+    - name: Publish (Cirrus Indexer)
+      run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} -r ${{matrix.runtime}} /p:Version=${{ env.VERSION }} -v m -o ./src/${{ env.CIRRUS_NAME }}/bin/publish ${{env.CIRRUS_PATH}}
 
     - name: Package Name
       run: |
         echo RELEASE_NAME=${{ env.PROJECT_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
         echo RELEASE_PATH=${{ env.PROJECT_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
+        echo RELEASE_CIRRUS_NAME=${{ env.CIRRUS_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
+        echo RELEASE_CIRRUS_PATH=${{ env.CIRRUS_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
       shell: bash
 
     - name: Package (Linux)
@@ -80,14 +87,21 @@ jobs:
         echo RELEASE_PATH=./src/${{env.PROJECT_NAME}}/bin/publish/${{env.RELEASE_NAME}} >> $GITHUB_ENV
         cd ./src/${{env.PROJECT_NAME}}/bin/publish/
         tar cvzf ${{env.RELEASE_NAME}} *
+        echo RELEASE_CIRRUS_PATH=./src/${{env.CIRRUS_NAME}}/bin/publish/${{env.RELEASE_CIRRUS_NAME}} >> $GITHUB_ENV
+        cd ./src/${{env.CIRRUS_NAME}}/bin/publish/
+        tar cvzf ${{env.RELEASE_CIRRUS_NAME}} *
 
     - name: Package (Windows)
       if: matrix.os == 'windows-latest'
-      run: Compress-Archive -Path .\src\${{env.PROJECT_NAME}}\bin\publish\* -DestinationPath .\${{env.RELEASE_NAME}}
+      run: |
+        Compress-Archive -Path .\src\${{env.PROJECT_NAME}}\bin\publish\* -DestinationPath .\${{env.RELEASE_NAME}}
+        Compress-Archive -Path .\src\${{env.CIRRUS_NAME}}\bin\publish\* -DestinationPath .\${{env.RELEASE_CIRRUS_NAME}}
 
     - name: Package (Mac)
       if: matrix.os == 'macos-latest'
-      run: zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
+      run: |
+        zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
+        zip -r ${{env.RELEASE_CIRRUS_NAME}} ./src/${{env.CIRRUS_NAME}}/bin/publish/
 
     #- run: mkdir -p path/to/artifact
     #- run: echo hello > path/to/artifact/world.txt
@@ -97,11 +111,16 @@ jobs:
         name: blockcore-indexer
         path: "${{env.RELEASE_PATH}}"
 
+    - uses: actions/upload-artifact@v1
+      with:
+        name: blockcore-cirrus-indexer
+        path: "${{env.RELEASE_CIRRUS_PATH}}"
+
     - name: Release
       uses: sondreb/action-release@master
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        files: "${{env.RELEASE_PATH}}"
+        files: "${{env.RELEASE_PATH}};${{env.RELEASE_CIRRUS_PATH}}"
         draft: true
         prerelease: false
         body: ''
