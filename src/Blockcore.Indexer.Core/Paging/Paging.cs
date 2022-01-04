@@ -43,11 +43,12 @@ namespace Blockcore.Indexer.Paging
 
       public PageLink Create(long offset, int limit, string rel)
       {
-         PageLink link = new PageLink();
-
-         link.Offset = offset;
-         link.Limit = limit;
-         link.Rel = rel;
+         PageLink link = new PageLink
+         {
+            Offset = offset,
+            Limit = limit,
+            Rel = rel
+         };
 
          // Make sure we update offset and limit
          list["offset"] = new StringValues(offset.ToString());

@@ -248,7 +248,7 @@ namespace Blockcore.Indexer.Sync
             blockItemTransaction.PrecomputeHash(false, true);
          }
 
-         var returnBlock = transactionOperationBuilder.BuildFromClientData(block, blockItem);
+         SyncBlockTransactionsOperation returnBlock = transactionOperationBuilder.BuildFromClientData(block, blockItem);
 
          return returnBlock;
       }
