@@ -38,4 +38,10 @@
       <ProjectReference Include="..\Blockcore.Indexer.Core\Blockcore.Indexer.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
