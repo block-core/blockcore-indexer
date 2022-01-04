@@ -27,13 +27,17 @@ jobs:
         env:
           VERSION: ${{ github.event.release.tag_name }}
 
-      - name: Build the Docker container image
+      - name: Build the Docker container image for Blockcore Indexer
         run: docker build -f "./src/Blockcore.Indexer/Dockerfile.Release" -t blockcore/indexer:latest -t blockcore/indexer:${{ github.event.release.tag_name }} --label "unstable=true" "."
+
+      - name: Build the Docker container image for Cirrus Indexer
+        run: docker build -f "./src/Blockcore.Indexer.Cirrus/Dockerfile.Release" -t blockcore/indexer-crs:latest -t blockcore/indexer-crs:${{ github.event.release.tag_name }} --label "unstable=true" "."
 
       - name: Login and Push to Docker Registry
         run: |
           docker login -u "sondreb" -p "${{secrets.DockerHubSecret}}"
           docker push --all-tags blockcore/indexer
+          docker push --all-tags blockcore/indexer-crs
 
       # - name: Login and Push to GitHub Docker Registry
       #   run: |
