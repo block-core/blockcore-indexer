@@ -1,7 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Version>1.0.25</Version>
-    <RuntimeFrameworkVersion>3.1.12</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>3.1.22</RuntimeFrameworkVersion>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Authors>Blockcore</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
