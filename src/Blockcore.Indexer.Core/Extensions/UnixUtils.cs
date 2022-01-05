@@ -1,7 +1,7 @@
-namespace Blockcore.Indexer.Extensions
-{
-   using System;
+using System;
 
+namespace Blockcore.Indexer.Core.Extensions
+{
    /// <summary>
    /// Internal class providing certain utility functions to other classes.
    /// </summary>

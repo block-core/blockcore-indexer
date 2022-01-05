@@ -1,10 +1,10 @@
-namespace Blockcore.Indexer.Extensions
-{
-   using System;
-   using System.Collections.Generic;
-   using System.Diagnostics;
-   using System.Linq;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
+namespace Blockcore.Indexer.Core.Extensions
+{
    /// <summary>
    /// This class defines extension methods.
    /// </summary>
@@ -14,13 +14,13 @@ namespace Blockcore.Indexer.Extensions
       /// <summary>
       /// Takes date input to API controllers and ensures they are UTC kind.
       ///
-      /// If the API query is specified with Z (Zulu/UTC), then .NET converts this automatically to local time. To make correct queries in database, these must be translated back 
+      /// If the API query is specified with Z (Zulu/UTC), then .NET converts this automatically to local time. To make correct queries in database, these must be translated back
       /// into universal time (UTC).
       ///
       /// Date inputs without Z, will be of kind unspecified and must be translated to UTC kind. If these are sent to database for query, they will be converted to local.
       ///
       /// The avoid conversion from unspecified, the global assumed kind can be set in Startup.cs:
-      /// 
+      ///
       /// services.AddControllers().AddNewtonsoftJson(options =>
       /// {
       ///       options.SerializerSettings.DateTimeZoneHandling = Newtonsoft.Json.DateTimeZoneHandling.Utc;

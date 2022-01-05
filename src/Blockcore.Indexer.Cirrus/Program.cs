@@ -1,4 +1,5 @@
 using Blockcore;
+using Blockcore.Indexer.Core.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 

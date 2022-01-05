@@ -1,6 +1,6 @@
 using Blockcore.Consensus.TransactionInfo;
-using Blockcore.Indexer.Crypto;
-using Blockcore.Indexer.Operations.Types;
+using Blockcore.Indexer.Core.Crypto;
+using Blockcore.Indexer.Core.Operations.Types;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;

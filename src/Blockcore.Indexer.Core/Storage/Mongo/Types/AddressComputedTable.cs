@@ -1,7 +1,5 @@
-namespace Blockcore.Indexer.Storage.Mongo.Types
+namespace Blockcore.Indexer.Core.Storage.Mongo.Types
 {
-   using System.Collections.Generic;
-
    public class AddressComputedTable
    {
       public string Id { get; set; }
@@ -27,7 +25,7 @@ namespace Blockcore.Indexer.Storage.Mongo.Types
       public long CountStaked { get; set; }
 
       public long CountMined { get; set; }
-      
+
       public long CountUtxo { get; set; }
    }
 }

@@ -1,10 +1,9 @@
-namespace Blockcore.Indexer.Client
+using System;
+using Blockcore.Indexer.Core.Extensions;
+using Newtonsoft.Json;
+
+namespace Blockcore.Indexer.Core.Client
 {
-   using System;
-   using Blockcore.Indexer.Extensions;
-   using Newtonsoft.Json;
-
-
    /// <summary>
    /// json Unix time converter.
    /// </summary>

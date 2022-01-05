@@ -1,9 +1,9 @@
 using System.Net;
 using System.Threading.Tasks;
-using Blockcore.Indexer.Client;
-using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Types;
+using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Client.Types;
 
 namespace Blockcore.Indexer.Cirrus.Client
 {

@@ -1,5 +1,5 @@
-using Blockcore.Indexer.Client;
-using Blockcore.Indexer.Operations.Types;
+using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Operations.Types;
 
 namespace Blockcore.Indexer.Cirrus.Client
 {

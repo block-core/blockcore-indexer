@@ -1,4 +1,4 @@
-namespace Blockcore.Indexer.Settings
+namespace Blockcore.Indexer.Core.Settings
 {
    public class ChainSettings
    {

@@ -1,16 +1,16 @@
-namespace Blockcore.Indexer.Sync
-{
-   using System;
-   using System.Linq;
-   using System.Threading;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Settings;
-   using Blockcore.Indexer.Sync.SyncTasks;
-   using Microsoft.Extensions.DependencyInjection;
-   using Microsoft.Extensions.Hosting;
-   using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Sync.SyncTasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
+namespace Blockcore.Indexer.Core.Sync
+{
    /// <summary>
    /// The processes responsible of triggering sync tasks.
    /// </summary>

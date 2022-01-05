@@ -1,8 +1,8 @@
-﻿namespace Blockcore.Indexer.Client.Types
+﻿using Newtonsoft.Json;
+
+namespace Blockcore.Indexer.Core.Client.Types
 {
    #region Using Directives
-
-   using Newtonsoft.Json;
 
    #endregion
 

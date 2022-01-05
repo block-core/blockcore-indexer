@@ -1,11 +1,9 @@
-using System.Linq;
+using System.Collections.Generic;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 
-namespace Blockcore.Indexer.Operations.Types
+namespace Blockcore.Indexer.Core.Operations.Types
 {
    #region Using Directives
-
-   using System.Collections.Generic;
-   using Blockcore.Indexer.Storage.Mongo.Types;
 
    #endregion Using Directives
 

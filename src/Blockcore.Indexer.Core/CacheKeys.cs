@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Blockcore.Indexer
+namespace Blockcore.Indexer.Core
 {
    public class CacheKeys
    {

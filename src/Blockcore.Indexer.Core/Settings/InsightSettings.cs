@@ -1,10 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Blockcore.Indexer.Models;
+using Blockcore.Indexer.Core.Models;
 
-namespace Blockcore.Indexer.Settings
+namespace Blockcore.Indexer.Core.Settings
 {
    public class InsightSettings
    {

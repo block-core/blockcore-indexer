@@ -1,10 +1,10 @@
-﻿namespace Blockcore.Indexer.Api.Handlers
-{
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Client;
-   using Blockcore.Indexer.Operations.Types;
-   using Blockcore.Indexer.Storage;
+﻿using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Storage;
 
+namespace Blockcore.Indexer.Core.Handlers
+{
    /// <summary>
    /// Handler to make get info about a blockchain.
    /// </summary>

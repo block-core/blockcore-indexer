@@ -1,12 +1,12 @@
-namespace Blockcore.Indexer.Sync.SyncTasks
-{
-   using System;
-   using System.Collections.Concurrent;
-   using System.Linq;
-   using Blockcore.Indexer.Settings;
-   using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
+using Blockcore.Indexer.Core.Settings;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
+{
    public abstract class TaskRunner<T> : TaskRunner, IBlockableItem
    {
       /// <summary>

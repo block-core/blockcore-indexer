@@ -1,15 +1,11 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Models;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 
-namespace Blockcore.Indexer.Storage
+namespace Blockcore.Indexer.Core.Storage
 {
-   using System;
-   using System.Collections.Generic;
-   using Blockcore.Indexer.Api.Handlers.Types;
-   using Blockcore.Indexer.Storage.Mongo;
-   using Blockcore.Indexer.Storage.Mongo.Types;
-   using Blockcore.Indexer.Storage.Types;
-   using NBitcoin;
-
    public interface IStorage
    {
       SyncBlockInfo GetLatestBlock();

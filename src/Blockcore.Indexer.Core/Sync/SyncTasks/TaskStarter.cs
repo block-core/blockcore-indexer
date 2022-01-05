@@ -1,11 +1,10 @@
-﻿namespace Blockcore.Indexer.Sync.SyncTasks
+﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
-   using System;
-   using System.Threading;
-   using System.Threading.Tasks;
-   using Microsoft.Extensions.Logging;
-
-
    public abstract class TaskStarter
    {
       private readonly ILogger log;

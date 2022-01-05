@@ -1,27 +1,21 @@
-using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using System.Text;
-using System.Threading;
-using Blockcore.Indexer.Client;
-using Blockcore.Indexer.Client.Types;
-using Blockcore.Indexer.Storage;
-using Blockcore.Indexer.Storage.Mongo;
-using Blockcore.Indexer.Storage.Mongo.Types;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Extensions;
+using Blockcore.Indexer.Core.Operations;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace Blockcore.Indexer.Sync.SyncTasks
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
-   using System.Linq;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Settings;
-   using Blockcore.Indexer.Extensions;
-   using Blockcore.Indexer.Operations;
-   using Blockcore.Indexer.Operations.Types;
-   using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
-
    public class BlockIndexer : TaskRunner
    {
       private readonly IndexerSettings config;
@@ -63,7 +57,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
          watch = Stopwatch.Start();
 
          mongoData = (MongoData)data;
-         
+
       }
 
       /// <inheritdoc />
@@ -121,7 +115,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             foreach (IndexView op in ops)
             {
                stringBuilder.AppendLine(op.Command + op.Msg);
-               
+
             }
 
             log.LogDebug(stringBuilder.ToString());
@@ -287,7 +281,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
                   var addressNulls = mongoData.InputTable.AsQueryable()
                      .OrderBy(b => b.BlockIndex)
                      .Where(w => w.Address == null).Take(1).ToList();
-                  
+
                   if (addressNulls.Any())
                   {
                      inputCopyLastBlockHeight = addressNulls.First().BlockIndex;
@@ -355,7 +349,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       }
 
       /// <summary>
-      /// Update all addresses on the inputs table with the address and value form the outputs table 
+      /// Update all addresses on the inputs table with the address and value form the outputs table
       /// Build a mongodb pipeline that will:
       /// - iterate over all inputs
       /// - filter all addresses that are not null

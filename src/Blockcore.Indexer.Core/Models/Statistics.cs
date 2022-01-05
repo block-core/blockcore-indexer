@@ -1,13 +1,12 @@
-namespace Blockcore.Indexer.Api.Handlers.Types
-{
-   using System;
-   using System.Collections.Generic;
-   using Blockcore.Indexer.Client.Types;
-   using Blockcore.Networks;
-   using NBitcoin;
-   using Newtonsoft.Json;
-   using Newtonsoft.Json.Converters;
+using System;
+using System.Collections.Generic;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Networks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
+namespace Blockcore.Indexer.Core.Models
+{
    public class CoinInfo
    {
       public long BlockHeight { get; set; }
@@ -27,7 +26,7 @@ namespace Blockcore.Indexer.Api.Handlers.Types
       /// <summary>
       /// Returns information and statistics returned directly from the node.
       /// </summary>
-      public Types.Statistics Node { get; set; }
+      public Statistics Node { get; set; }
 
       /// <summary>
       /// Returns the known network configuration. This information is retrieved from the network configuration, not from the node.

@@ -1,9 +1,9 @@
-using Blockcore.Indexer.Client;
+using Blockcore.Indexer.Core.Client;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Blockcore.Indexer.Api.Handlers
+namespace Blockcore.Indexer.Core.Controllers
 {
    [ApiController]
    [ApiExplorerSettings(IgnoreApi = true)]

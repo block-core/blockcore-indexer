@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
-using Blockcore.Indexer.Settings;
-using Blockcore.Indexer.Storage;
-using Blockcore.Indexer.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

@@ -1,9 +1,9 @@
-namespace Blockcore.Indexer.Operations.Types
-{
-   using System.Collections.Generic;
-   using Blockcore.Consensus.TransactionInfo;
-   using Blockcore.Indexer.Client.Types;
+using System.Collections.Generic;
+using Blockcore.Consensus.TransactionInfo;
+using Blockcore.Indexer.Core.Client.Types;
 
+namespace Blockcore.Indexer.Core.Operations.Types
+{
    /// <summary>
    /// The sync block info.
    /// </summary>

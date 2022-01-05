@@ -1,11 +1,11 @@
-﻿namespace Blockcore.Indexer.Client.Types
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Newtonsoft.Json;
+
+namespace Blockcore.Indexer.Core.Client.Types
 {
    #region Using Directives
-
-   using System.Collections.Generic;
-   using System.Linq;
-   using System.Text;
-   using Newtonsoft.Json;
 
    #endregion
 

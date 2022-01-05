@@ -2,18 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using Blockcore.Indexer.Models;
-using Blockcore.Indexer.Operations.Types;
-using Blockcore.Indexer.Paging;
-using Blockcore.Indexer.Settings;
-using Blockcore.Indexer.Storage;
-using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Core.Models;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Paging;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using NBitcoin;
 
-namespace Blockcore.Indexer.Api.Handlers
+namespace Blockcore.Indexer.Core.Controllers
 {
    /// <summary>
    /// Query against the blockchain, allowing looking of blocks, transactions and addresses.

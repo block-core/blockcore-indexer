@@ -1,11 +1,11 @@
 
-namespace Blockcore.Indexer.Api.Handlers
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Binding;
+using Blockcore.Indexer.Core.Handlers;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Blockcore.Indexer.Core.Controllers
 {
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Api.Binding;
-   using Microsoft.AspNetCore.Mvc;
-
-
    /// <summary>
    /// Controller to get some information about a coin.
    /// </summary>

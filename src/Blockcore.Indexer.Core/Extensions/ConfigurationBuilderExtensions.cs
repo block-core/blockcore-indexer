@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 
-namespace Blockcore
+namespace Blockcore.Indexer.Core.Extensions
 {
    // TODO: Move this class into Blockcore.Core. Until then, this must be kept in sync between Blockcore Indexer, Blockcore Explorer and Blockcore Insight.
    public static class ConfigurationBuilderExtensions

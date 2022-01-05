@@ -1,9 +1,5 @@
-using Blockcore.Indexer.Storage.Types;
-
-namespace Blockcore.Indexer.Api.Handlers.Types
+namespace Blockcore.Indexer.Core.Models
 {
-   using System.Collections.Generic;
-
    public class QueryAddress
    {
       /// <summary>

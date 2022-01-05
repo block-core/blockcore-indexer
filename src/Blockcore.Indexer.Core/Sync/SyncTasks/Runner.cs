@@ -1,14 +1,12 @@
-namespace Blockcore.Indexer.Sync.SyncTasks
-{
-   using System.Collections.Concurrent;
-   using System.Collections.Generic;
-   using System.Linq;
-   using System.Threading;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Extensions;
-   using Blockcore.Indexer.Operations.Types;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Extensions;
+using Blockcore.Indexer.Core.Operations.Types;
 
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
+{
    /// <summary>
    /// The runner.
    /// </summary>

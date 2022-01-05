@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Blockcore.Indexer.Settings;
-using Blockcore.Indexer.Storage;
-using Blockcore.Indexer.Storage.Mongo;
-using Blockcore.Indexer.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace Blockcore.Indexer.Sync.SyncTasks
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public class RichListSync : TaskRunner
    {

@@ -1,6 +1,6 @@
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace Blockcore.Indexer.Storage.Mongo.Types
+namespace Blockcore.Indexer.Core.Storage.Mongo.Types
 {
   public class RichlistTable
    {

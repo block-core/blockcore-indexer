@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Blockcore.Indexer.Paging;
+using Blockcore.Indexer.Core.Paging;
 using Xunit;
 
 namespace Blockcore.Indexer.Tests

@@ -1,13 +1,12 @@
-using Blockcore.Indexer.Client;
-using Blockcore.Indexer.Client.Types;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Operations;
+using Blockcore.Indexer.Core.Operations.Types;
+using Microsoft.Extensions.Logging;
 
-namespace Blockcore.Indexer.Sync.SyncTasks
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Operations;
-   using Blockcore.Indexer.Operations.Types;
-   using Microsoft.Extensions.Logging;
-
    /// <summary>
    /// The block re-org of the block chain.
    /// </summary>

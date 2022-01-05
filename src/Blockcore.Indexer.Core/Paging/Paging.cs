@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Web;
-using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Primitives;
 
-namespace Blockcore.Indexer.Paging
+namespace Blockcore.Indexer.Core.Paging
 {
    public delegate string RequestContextDelegate();
 

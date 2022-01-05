@@ -1,15 +1,10 @@
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Blockcore.Indexer.Storage;
-using Blockcore.Indexer.Storage.Mongo;
-using Blockcore.Indexer.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Microsoft.Extensions.Logging;
-using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 
-namespace Blockcore.Indexer.Operations.Types
+namespace Blockcore.Indexer.Core.Operations.Types
 {
    public class UtxoCacheItem
    {

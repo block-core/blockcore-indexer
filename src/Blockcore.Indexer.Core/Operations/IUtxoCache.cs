@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using Blockcore.Indexer.Operations.Types;
-using Blockcore.Indexer.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 
-namespace Blockcore.Indexer.Operations
+namespace Blockcore.Indexer.Core.Operations
 {
    /// <summary>
-   /// Maintain a cache of unspent outputs 
+   /// Maintain a cache of unspent outputs
    /// </summary>
    public interface IUtxoCache
    {

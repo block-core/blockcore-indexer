@@ -1,8 +1,8 @@
-﻿namespace Blockcore.Indexer.Client
+﻿using System;
+
+namespace Blockcore.Indexer.Core.Client
 {
    #region Using Directives
-
-   using System;
 
    #endregion
 

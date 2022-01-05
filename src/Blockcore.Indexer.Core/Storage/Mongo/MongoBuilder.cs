@@ -1,12 +1,11 @@
 using System.Threading.Tasks;
-using Blockcore.Indexer.Settings;
-using Blockcore.Indexer.Storage.Mongo.Types;
-using Blockcore.Indexer.Sync.SyncTasks;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 
-namespace Blockcore.Indexer.Storage.Mongo
+namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoBuilder : TaskStarter
    {

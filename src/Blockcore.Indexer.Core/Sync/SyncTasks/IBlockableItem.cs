@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Sync.SyncTasks
+﻿namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public interface IBlockableItem
    {

@@ -1,10 +1,10 @@
-﻿namespace Blockcore.Indexer.Api.Binding
-{
-   using System;
-   using System.IO;
-   using System.Threading.Tasks;
-   using Microsoft.AspNetCore.Mvc.ModelBinding;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
+namespace Blockcore.Indexer.Core.Binding
+{
    public class RawStringModelBinder : IModelBinder
    {
       /// <inheritdoc />
