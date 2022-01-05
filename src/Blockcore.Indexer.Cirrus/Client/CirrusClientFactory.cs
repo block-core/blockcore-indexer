@@ -1,7 +1,7 @@
 using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Operations.Types;
 
-namespace Cirrus.Client
+namespace Blockcore.Indexer.Cirrus.Client
 {
    public class CirrusClientFactory : ICryptoClientFactory
    {

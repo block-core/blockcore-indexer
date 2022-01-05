@@ -1,7 +1,7 @@
 using Blockcore.Indexer.Storage.Mongo.Types;
 using NBitcoin;
 
-namespace Cirrus.Storage.Mongo.Types
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
 {
    public class CirrusBlock : BlockTable
    {

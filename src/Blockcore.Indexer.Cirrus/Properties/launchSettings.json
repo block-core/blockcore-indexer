@@ -3,7 +3,7 @@
    "profiles": {
       "CIRRUS (MAIN)": {
          "commandName": "Project",
-         "commandLineArgs": "--chain=main --local",
+         //"commandLineArgs": "--chain=main --local",
          "launchBrowser": true,
          "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"

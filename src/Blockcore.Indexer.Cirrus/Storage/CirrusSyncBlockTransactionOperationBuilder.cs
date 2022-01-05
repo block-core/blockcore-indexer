@@ -3,9 +3,9 @@ using Blockcore.Consensus.BlockInfo;
 using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Operations.Types;
 using Blockcore.Indexer.Storage;
-using Cirrus.Client.Types;
+using Blockcore.Indexer.Cirrus.Client.Types;
 
-namespace Cirrus.Storage
+namespace Blockcore.Indexer.Cirrus.Storage
 {
    public class CirrusSyncBlockTransactionOperationBuilder : ISyncBlockTransactionOperationBuilder
    {

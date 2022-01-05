@@ -2,7 +2,7 @@ using Blockcore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Cirrus
+namespace Blockcore.Indexer.Cirrus
 {
    using System.Linq;
    using Microsoft.AspNetCore.Hosting;

@@ -1,7 +1,7 @@
 using Blockcore.Features.PoA;
 using NBitcoin;
 
-namespace Cirrus
+namespace Blockcore.Indexer.Cirrus
 {
    public class SmartContractPoABlockHeader : PoABlockHeader
    {

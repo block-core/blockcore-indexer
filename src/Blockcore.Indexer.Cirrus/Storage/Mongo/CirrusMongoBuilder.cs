@@ -2,11 +2,11 @@ using System.Threading.Tasks;
 using Blockcore.Indexer.Settings;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo;
-using Cirrus.Storage.Mongo.Types;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Cirrus.Storage.Mongo
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
    public class CirrusMongoBuilder : MongoBuilder
    {

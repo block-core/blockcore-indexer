@@ -1,6 +1,6 @@
 using Blockcore.Consensus.BlockInfo;
 
-namespace Cirrus
+namespace Blockcore.Indexer.Cirrus
 {
    public class SmartContractConsensusFactory : CollateralPoAConsensusFactory
    {

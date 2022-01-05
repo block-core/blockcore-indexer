@@ -1,4 +1,4 @@
-namespace Cirrus
+namespace Blockcore.Indexer.Cirrus
 {
    public class CirrusCollateralFederationMemberModel : Blockcore.Features.PoA.CollateralFederationMemberModel
    {

@@ -1,19 +1,18 @@
 using System.Linq;
-using Blockcore.Indexer;
+using Blockcore.Indexer.Cirrus.Client;
+using Blockcore.Indexer.Cirrus.Storage;
+using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Client;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo;
 using Blockcore.Indexer.Sync.SyncTasks;
-using Cirrus.Client;
-using Cirrus.Storage;
-using Cirrus.Storage.Mongo;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Cirrus
+namespace Blockcore.Indexer.Cirrus
 {
    public class CirrusStartup
    {

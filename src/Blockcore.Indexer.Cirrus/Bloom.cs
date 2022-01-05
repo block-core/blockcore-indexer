@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using NBitcoin;
 
-namespace Cirrus
+namespace Blockcore.Indexer.Cirrus
 {
     public class Bloom : IBitcoinSerializable
     {

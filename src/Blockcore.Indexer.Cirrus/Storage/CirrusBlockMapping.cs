@@ -4,12 +4,12 @@ using Blockcore.Indexer.Client.Types;
 using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Storage.Mongo.Types;
 using Blockcore.Indexer.Storage.Types;
-using Cirrus.Client.Types;
-using Cirrus.Storage.Mongo.Types;
-using Cirrus.Storage.Types;
+using Blockcore.Indexer.Cirrus.Client.Types;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using Blockcore.Indexer.Cirrus.Storage.Types;
 using NBitcoin;
 
-namespace Cirrus.Storage
+namespace Blockcore.Indexer.Cirrus.Storage
 {
    public class CirrusBlockMapping : IMapMongoBlockToStorageBlock
    {

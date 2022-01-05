@@ -4,7 +4,7 @@ using Blockcore.Features.PoA;
 using Blockcore.Utilities.JsonConverters;
 using NBitcoin;
 
-namespace Cirrus
+namespace Blockcore.Indexer.Cirrus
 {
    public class CollateralPoAConsensusFactory : PoAConsensusFactory
    {

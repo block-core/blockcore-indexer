@@ -1,7 +1,7 @@
 using Blockcore.Indexer.Storage.Types;
 using NBitcoin;
 
-namespace Cirrus.Storage.Types
+namespace Blockcore.Indexer.Cirrus.Storage.Types
 {
    public class CirrusSyncBlockInfo : SyncBlockInfo
    {

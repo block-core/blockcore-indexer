@@ -1,7 +1,7 @@
 using Blockcore.Indexer.Client.Types;
 using Newtonsoft.Json;
 
-namespace Cirrus.Client.Types
+namespace Blockcore.Indexer.Cirrus.Client.Types
 {
    public class CirrusBlockInfo : BlockInfo
    {
