@@ -244,7 +244,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
             if (rawtrx == null)
             {
-               BitcoinClient client = clientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
+               var client = clientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
 
                Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
 

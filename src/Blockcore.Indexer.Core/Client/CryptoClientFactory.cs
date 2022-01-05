@@ -19,9 +19,10 @@ namespace Blockcore.Indexer.Core.Client
       /// </summary>
       private static readonly MemoryCache Cache = new MemoryCache(new MemoryCacheOptions());
 
-      BitcoinClient ICryptoClientFactory.Create(SyncConnection connection) => Create(connection);
+      IBlockchainClient ICryptoClientFactory.Create(SyncConnection connection) => Create(connection);
 
-      BitcoinClient ICryptoClientFactory.Create(string connection, int port, string user, string encPass, bool secure) => Create(connection, port, user, encPass, secure);
+      IBlockchainClient ICryptoClientFactory.Create(string connection, int port, string user, string encPass,
+         bool secure) => Create(connection, port, user, encPass, secure);
 
       /// <summary>
       /// A static method to create a client.

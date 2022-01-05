@@ -31,7 +31,7 @@ namespace Blockcore.Indexer.Core.Handlers
          // todo: check how a failure is porpageted
 
          SyncConnection connection = syncConnection;
-         BitcoinClient client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         var client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
          string trxid = await client.SentRawTransactionAsync(transactionHex);
          return trxid;
       }

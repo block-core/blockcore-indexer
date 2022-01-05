@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 
 namespace Blockcore.Indexer.Core.Client
 {
-   public class BitcoinClient : IDisposable
+   public class BitcoinClient : IBlockchainClient, IDisposable
    {
       ///// <summary>
       ///// Initializes static members of the <see cref="BitcoinClient"/> class.
