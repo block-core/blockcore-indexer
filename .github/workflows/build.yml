@@ -87,6 +87,7 @@ jobs:
         echo RELEASE_PATH=./src/${{env.PROJECT_NAME}}/bin/publish/${{env.RELEASE_NAME}} >> $GITHUB_ENV
         cd ./src/${{env.PROJECT_NAME}}/bin/publish/
         tar cvzf ${{env.RELEASE_NAME}} *
+        cd ../../../../
         echo RELEASE_CIRRUS_PATH=./src/${{env.CIRRUS_NAME}}/bin/publish/${{env.RELEASE_CIRRUS_NAME}} >> $GITHUB_ENV
         cd ./src/${{env.CIRRUS_NAME}}/bin/publish/
         tar cvzf ${{env.RELEASE_CIRRUS_NAME}} *
