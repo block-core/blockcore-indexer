@@ -1,7 +1,7 @@
-namespace Blockcore.Indexer.Storage.Mongo.Types
-{
-   using System.Collections.Generic;
+using System.Collections.Generic;
 
+namespace Blockcore.Indexer.Core.Storage.Mongo.Types
+{
    public class MempoolOutput
    {
       public string ScriptHex { get; set; }

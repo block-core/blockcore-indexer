@@ -1,10 +1,10 @@
-namespace Blockcore.Indexer.Client.Types
-{
-   using System;
-   using System.Collections.Generic;
-   using MongoDB.Bson.Serialization.Attributes;
-   using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using MongoDB.Bson.Serialization.Attributes;
+using Newtonsoft.Json;
 
+namespace Blockcore.Indexer.Core.Client.Types
+{
    [BsonIgnoreExtraElements]
    public class PeerInfo
    {

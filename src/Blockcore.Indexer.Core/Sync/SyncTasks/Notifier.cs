@@ -1,20 +1,20 @@
-namespace Blockcore.Indexer.Sync.SyncTasks
-{
-   using System;
-   using System.Collections.Generic;
-   using System.Linq;
-   using System.Net.Http;
-   using System.Net.Http.Formatting;
-   using System.Net.Security;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Settings;
-   using Blockcore.Indexer.Extensions;
-   using Blockcore.Indexer.Operations.Types;
-   using Blockcore.Indexer.Storage;
-   using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
-   using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Formatting;
+using System.Net.Security;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Extensions;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
+{
    public class Notifier : TaskRunner<AddressNotifications>
    {
       private readonly ILogger<Notifier> log;
@@ -30,7 +30,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       private readonly System.Diagnostics.Stopwatch watch;
 
       /// <summary>
-      /// Initializes a new instance of the <see cref="Notifier"/> class. 
+      /// Initializes a new instance of the <see cref="Notifier"/> class.
       /// </summary>
       public Notifier(IOptions<IndexerSettings> configuration, IOptions<ChainSettings> chainConfiguration, ILogger<Notifier> logger, IStorage storage)
           : base(configuration, logger)
@@ -61,7 +61,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
             int sendCount = 0;
             do
             {
-               var addresses = Extensions.TakeAndRemove(queue, configuration.NotifyBatchCount).ToList();
+               var addresses = Extensions.Extensions.TakeAndRemove(queue, configuration.NotifyBatchCount).ToList();
 
                var coin = new CoinAddressInfo
                {

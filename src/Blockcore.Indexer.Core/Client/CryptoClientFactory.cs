@@ -1,9 +1,8 @@
-using Blockcore.Indexer.Operations.Types;
+using Blockcore.Indexer.Core.Operations.Types;
+using Microsoft.Extensions.Caching.Memory;
 
-namespace Blockcore.Indexer.Client
+namespace Blockcore.Indexer.Core.Client
 {
-   using Microsoft.Extensions.Caching.Memory;
-
    #region Using Directives
 
    // using System.Runtime.Caching;

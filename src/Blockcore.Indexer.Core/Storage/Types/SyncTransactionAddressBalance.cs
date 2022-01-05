@@ -1,7 +1,5 @@
-namespace Blockcore.Indexer.Storage.Types
+namespace Blockcore.Indexer.Core.Storage.Types
 {
-   using System.Collections.Generic;
-
    public class AddressBalance
    {
       public string Address { get; set; }

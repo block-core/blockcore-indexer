@@ -1,18 +1,17 @@
+using System;
 using System.Collections.Generic;
+using Blockcore.Consensus;
+using Blockcore.Consensus.BlockInfo;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Networks;
+using Microsoft.Extensions.Options;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 
-namespace Blockcore.Indexer.Operations.Types
+namespace Blockcore.Indexer.Core.Operations.Types
 {
-   using System;
-   using Blockcore.Consensus;
-   using Blockcore.Consensus.BlockInfo;
-   using Blockcore.Indexer.Settings;
-   using Blockcore.Networks;
-   using Microsoft.Extensions.Options;
-
    /// <summary>
-   /// Represents a minimal 
+   /// Represents a minimal
    /// </summary>
    public class NetworkConfig : Network
    {
@@ -22,7 +21,7 @@ namespace Blockcore.Indexer.Operations.Types
 
          var consensusFactory = (ConsensusFactory)Activator.CreateInstance(Type.GetType(networkConfig.NetworkConsensusFactoryType));
 
-         Consensus = new Consensus(
+         Consensus = new Consensus.Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: null,
                 coinType: 0,

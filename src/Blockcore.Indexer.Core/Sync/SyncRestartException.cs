@@ -1,7 +1,7 @@
-﻿namespace Blockcore.Indexer.Sync
-{
-   using System;
+﻿using System;
 
+namespace Blockcore.Indexer.Core.Sync
+{
    public class SyncRestartException : Exception
    {
       /// <summary>

@@ -1,7 +1,7 @@
-﻿namespace Blockcore.Indexer.Storage.Types
-{
-   using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
+namespace Blockcore.Indexer.Core.Storage.Types
+{
    public class SyncTransactionItems
    {
       public bool IsCoinbase { get; set; }

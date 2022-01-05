@@ -1,8 +1,8 @@
-﻿namespace Blockcore.Indexer.Client.Types
-{
-   using System.Collections.Generic;
-   using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
+namespace Blockcore.Indexer.Core.Client.Types
+{
    public class BlockInfo
    {
       [JsonProperty("bits")]

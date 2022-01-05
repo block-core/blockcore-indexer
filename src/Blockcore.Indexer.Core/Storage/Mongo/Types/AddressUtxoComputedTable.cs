@@ -1,7 +1,5 @@
-namespace Blockcore.Indexer.Storage.Mongo.Types
+namespace Blockcore.Indexer.Core.Storage.Mongo.Types
 {
-   using System.Collections.Generic;
-
    public class AddressUtxoComputedTable
    {
       public Outpoint Outpoint { get; set; }

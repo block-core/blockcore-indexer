@@ -4,20 +4,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
-using Blockcore.Indexer.Api.Handlers.Types;
-using Blockcore.Indexer.Client;
-using Blockcore.Indexer.Client.Types;
-using Blockcore.Indexer.Crypto;
-using Blockcore.Indexer.Operations.Types;
-using Blockcore.Indexer.Settings;
-using Blockcore.Indexer.Storage.Mongo.Types;
-using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Crypto;
+using Blockcore.Indexer.Core.Models;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace Blockcore.Indexer.Storage.Mongo
+namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoData : MongoDb, IStorage
    {

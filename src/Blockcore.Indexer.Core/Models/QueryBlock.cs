@@ -1,7 +1,7 @@
-namespace Blockcore.Indexer.Api.Handlers.Types
-{
-   using System.Collections.Generic;
+using System.Collections.Generic;
 
+namespace Blockcore.Indexer.Core.Models
+{
    public class QueryBlockResults
    {
       public IEnumerable<QueryBlock> Blocks { get; set; }

@@ -1,13 +1,12 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using Blockcore.Indexer.Paging;
-using Blockcore.Indexer.Storage;
-using Blockcore.Indexer.Storage.Mongo;
-using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Core.Paging;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Blockcore.Indexer.Api.Handlers
+namespace Blockcore.Indexer.Core.Controllers
 {
    /// <summary>
    /// Query against the blockchain, allowing looking of blocks, transactions and addresses.

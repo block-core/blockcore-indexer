@@ -1,4 +1,4 @@
-using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using NBitcoin;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Types

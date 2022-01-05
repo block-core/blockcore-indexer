@@ -1,12 +1,11 @@
-using Blockcore.Indexer.Client;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Operations.Types;
 
-namespace Blockcore.Indexer.Operations
+namespace Blockcore.Indexer.Core.Operations
 {
    #region Using Directives
-
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Operations.Types;
 
    #endregion Using Directives
 

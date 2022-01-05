@@ -1,9 +1,9 @@
-﻿namespace Blockcore.Indexer.Client.Types
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace Blockcore.Indexer.Core.Client.Types
 {
    #region Using Directives
-
-   using System.Collections.Generic;
-   using System.Linq;
 
    #endregion
 

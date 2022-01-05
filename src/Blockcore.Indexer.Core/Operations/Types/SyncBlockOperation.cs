@@ -1,8 +1,8 @@
-﻿namespace Blockcore.Indexer.Operations.Types
+﻿using Blockcore.Indexer.Core.Client.Types;
+
+namespace Blockcore.Indexer.Core.Operations.Types
 {
    #region Using Directives
-
-   using Blockcore.Indexer.Client.Types;
 
    #endregion
 

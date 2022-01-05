@@ -1,12 +1,12 @@
-namespace Blockcore.Indexer.Sync.SyncTasks
-{
-   using System;
-   using System.Threading;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Settings;
-   using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Settings;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
+{
    public abstract class TaskRunner
    {
       private readonly ILogger log;

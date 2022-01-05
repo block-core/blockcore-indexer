@@ -1,14 +1,14 @@
-namespace Blockcore.Indexer.Sync.SyncTasks
-{
-   using System.Linq;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Settings;
-   using Blockcore.Indexer.Extensions;
-   using Blockcore.Indexer.Operations;
-   using Blockcore.Indexer.Operations.Types;
-   using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
+using System.Linq;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Extensions;
+using Blockcore.Indexer.Core.Operations;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
+{
    public class MempoolPuller : TaskRunner
    {
       private readonly IndexerSettings config;

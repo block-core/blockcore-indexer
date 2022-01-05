@@ -1,8 +1,8 @@
-﻿namespace Blockcore.Indexer.Client
-{
-   using System;
-   using System.Net;
+﻿using System;
+using System.Net;
 
+namespace Blockcore.Indexer.Core.Client
+{
    /// <summary>
    /// The bit net client exception.
    /// </summary>

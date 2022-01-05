@@ -1,9 +1,9 @@
 using System;
 using Blockcore.Consensus.BlockInfo;
-using Blockcore.Indexer.Client.Types;
-using Blockcore.Indexer.Operations.Types;
-using Blockcore.Indexer.Storage;
 using Blockcore.Indexer.Cirrus.Client.Types;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Storage;
 
 namespace Blockcore.Indexer.Cirrus.Storage
 {

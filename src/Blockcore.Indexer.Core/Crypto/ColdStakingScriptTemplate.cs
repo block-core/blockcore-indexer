@@ -5,7 +5,7 @@ using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Networks;
 using NBitcoin;
 
-namespace Blockcore.Indexer.Crypto
+namespace Blockcore.Indexer.Core.Crypto
 {
 
    // TODO: This class was temporary move from Stratis.Bitcoin to support cold staking on the Blockcore Indexer.

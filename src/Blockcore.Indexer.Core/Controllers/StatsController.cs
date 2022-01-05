@@ -1,13 +1,14 @@
-namespace Blockcore.Indexer.Api.Handlers
-{
-   using System;
-   using System.Collections.Generic;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Extensions;
-   using Blockcore.Indexer.Storage;
-   using Blockcore.Indexer.Storage.Mongo;
-   using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Handlers;
+using Blockcore.Indexer.Core.Models;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
+using Microsoft.AspNetCore.Mvc;
 
+namespace Blockcore.Indexer.Core.Controllers
+{
    /// <summary>
    /// Controller to get some information about a coin.
    /// </summary>
@@ -39,14 +40,14 @@ namespace Blockcore.Indexer.Api.Handlers
       [Route("connections")]
       public async Task<IActionResult> Connections()
       {
-         Types.StatsConnection ret = await statsHandler.StatsConnection();
+         StatsConnection ret = await statsHandler.StatsConnection();
          return Ok(ret);
       }
 
       [HttpGet()]
       public async Task<IActionResult> Get()
       {
-         Types.Statistics ret = await statsHandler.Statistics();
+         Statistics ret = await statsHandler.Statistics();
          return Ok(ret);
       }
 
@@ -58,7 +59,7 @@ namespace Blockcore.Indexer.Api.Handlers
       [Route("info")]
       public async Task<IActionResult> Info()
       {
-         Types.CoinInfo ret = await statsHandler.CoinInformation();
+         CoinInfo ret = await statsHandler.CoinInformation();
          return Ok(ret);
       }
 

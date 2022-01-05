@@ -1,29 +1,25 @@
-using Blockcore.Indexer.Crypto;
-using Blockcore.Indexer.Storage.Mongo;
-using Blockcore.Indexer.Storage.Mongo.Types;
-using Blockcore.Indexer.Storage.Types;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Blockcore.Consensus.BlockInfo;
+using Blockcore.Consensus.ScriptInfo;
+using Blockcore.Consensus.TransactionInfo;
+using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Operations;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace Blockcore.Indexer.Sync
+namespace Blockcore.Indexer.Core.Sync
 {
-   using System.Collections.Generic;
-   using System.Linq;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Client;
-   using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Settings;
-   using Blockcore.Indexer.Extensions;
-   using Blockcore.Indexer.Operations;
-   using Blockcore.Indexer.Operations.Types;
-   using Blockcore.Indexer.Storage;
-   using Microsoft.Extensions.Caching.Memory;
-   using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
-   using NBitcoin;
-   using Blockcore.Consensus.TransactionInfo;
-   using Blockcore.Consensus.ScriptInfo;
-   using Blockcore.Consensus.BlockInfo;
-
    /// <summary>
    /// The CoinOperations interface.
    /// </summary>

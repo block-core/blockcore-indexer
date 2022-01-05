@@ -1,4 +1,4 @@
-using Blockcore.Indexer.Client.Types;
+using Blockcore.Indexer.Core.Client.Types;
 using Newtonsoft.Json;
 
 namespace Blockcore.Indexer.Cirrus.Client.Types

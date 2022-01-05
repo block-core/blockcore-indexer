@@ -1,22 +1,21 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Blockcore.Indexer.Api.Handlers;
-using Blockcore.Indexer.Client.Types;
-using Blockcore.Indexer.Extensions;
-using Blockcore.Indexer.Operations;
-using Blockcore.Indexer.Operations.Types;
-using Blockcore.Indexer.Settings;
-using Blockcore.Indexer.Storage;
-using Blockcore.Indexer.Storage.Mongo;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Extensions;
+using Blockcore.Indexer.Core.Handlers;
+using Blockcore.Indexer.Core.Operations;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Blockcore.Indexer.Sync.SyncTasks
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    /// <summary>
-   /// 
+   ///
    /// </summary>
    public class StatsSyncer : TaskRunner
    {
@@ -31,7 +30,7 @@ namespace Blockcore.Indexer.Sync.SyncTasks
       private readonly System.Diagnostics.Stopwatch watch;
 
       /// <summary>
-      /// 
+      ///
       /// </summary>
       public StatsSyncer(
          IOptions<IndexerSettings> configuration,

@@ -1,11 +1,11 @@
-namespace Blockcore.Indexer.Client
+using System.Linq;
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+
+namespace Blockcore.Indexer.Core.Client
 {
    #region Using Directives
-
-   using System.Linq;
-   using System.Net;
-   using System.Net.Security;
-   using System.Security.Cryptography.X509Certificates;
 
    #endregion
 

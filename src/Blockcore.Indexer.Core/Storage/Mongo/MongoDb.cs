@@ -1,12 +1,12 @@
-using Blockcore.Indexer.Client.Types;
-using Blockcore.Indexer.Operations.Types;
-using Blockcore.Indexer.Settings;
-using Blockcore.Indexer.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace Blockcore.Indexer.Storage.Mongo
+namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoDb
    {

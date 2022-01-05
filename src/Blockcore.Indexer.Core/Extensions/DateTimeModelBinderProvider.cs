@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Blockcore.Indexer.Extensions
+namespace Blockcore.Indexer.Core.Extensions
 {
    /// <summary>
    /// Ensures that the date supplied to the REST API is parsed to become an Kind.Utc instance.

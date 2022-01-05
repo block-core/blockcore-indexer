@@ -1,24 +1,23 @@
-namespace Blockcore.Indexer.Api.Handlers
-{
-   using System;
-   using System.Collections.Generic;
-   using System.Globalization;
-   using System.Linq;
-   using System.Net;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Api.Handlers.Types;
-   using Blockcore.Indexer.Client;
-   using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Settings;
-   using Blockcore.Indexer.Operations.Types;
-   using Blockcore.Indexer.Storage;
-   using Microsoft.Extensions.Options;
-   using Newtonsoft.Json;
-   using Blockcore.Indexer.Extensions;
-   using Blockcore.Networks;
-   using Blockcore.Consensus;
-   using Blockcore.Indexer.Storage.Types;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
+using Blockcore.Consensus;
+using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Extensions;
+using Blockcore.Indexer.Core.Models;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.Networks;
+using Microsoft.Extensions.Options;
 
+namespace Blockcore.Indexer.Core.Handlers
+{
    /// <summary>
    /// Handler to make get info about a blockchain.
    /// </summary>

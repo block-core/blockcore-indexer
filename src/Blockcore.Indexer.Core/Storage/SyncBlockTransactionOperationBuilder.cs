@@ -1,8 +1,8 @@
 using Blockcore.Consensus.BlockInfo;
-using Blockcore.Indexer.Client.Types;
-using Blockcore.Indexer.Operations.Types;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Operations.Types;
 
-namespace Blockcore.Indexer.Storage
+namespace Blockcore.Indexer.Core.Storage
 {
    public class SyncBlockTransactionOperationBuilder : ISyncBlockTransactionOperationBuilder
    {

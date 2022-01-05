@@ -1,3 +1,4 @@
+using Blockcore.Indexer.Core.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Blockcore.Indexer

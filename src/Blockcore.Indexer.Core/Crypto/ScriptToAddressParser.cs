@@ -2,7 +2,7 @@ using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Networks;
 using NBitcoin;
 
-namespace Blockcore.Indexer.Crypto
+namespace Blockcore.Indexer.Core.Crypto
 {
    public class ScriptOutputInfo
    {

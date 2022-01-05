@@ -1,19 +1,17 @@
+using System;
 using System.Collections.Generic;
-using Blockcore.Indexer.Storage.Mongo.Types;
+using System.Linq;
+using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Extensions;
+using Blockcore.Indexer.Core.Operations;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
-namespace Blockcore.Indexer.Sync.SyncTasks
+namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
-   using System;
-   using System.Linq;
-   using System.Threading.Tasks;
-   using Blockcore.Indexer.Client.Types;
-   using Blockcore.Indexer.Settings;
-   using Blockcore.Indexer.Extensions;
-   using Blockcore.Indexer.Operations;
-   using Blockcore.Indexer.Operations.Types;
-   using Microsoft.Extensions.Logging;
-   using Microsoft.Extensions.Options;
-
    /// <summary>
    /// The block sync.
    /// </summary>

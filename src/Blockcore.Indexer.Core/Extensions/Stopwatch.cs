@@ -1,4 +1,4 @@
-namespace Blockcore.Indexer.Extensions
+namespace Blockcore.Indexer.Core.Extensions
 {
    public class Stopwatch
    {

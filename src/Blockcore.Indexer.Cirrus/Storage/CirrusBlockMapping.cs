@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
-using Blockcore.Indexer.Client.Types;
-using Blockcore.Indexer.Storage;
-using Blockcore.Indexer.Storage.Mongo.Types;
-using Blockcore.Indexer.Storage.Types;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Cirrus.Storage.Types;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using NBitcoin;
 
 namespace Blockcore.Indexer.Cirrus.Storage

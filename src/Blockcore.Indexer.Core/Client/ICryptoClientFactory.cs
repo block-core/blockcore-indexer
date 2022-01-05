@@ -1,6 +1,6 @@
-using Blockcore.Indexer.Operations.Types;
+using Blockcore.Indexer.Core.Operations.Types;
 
-namespace Blockcore.Indexer.Client
+namespace Blockcore.Indexer.Core.Client
 {
    public interface ICryptoClientFactory
    {

@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Client.Types
+﻿namespace Blockcore.Indexer.Core.Client.Types
 {
    public class WorkInfo
    {

@@ -1,8 +1,8 @@
-namespace Blockcore.Indexer.Operations
-{
-   using Blockcore.Indexer.Operations.Types;
-   using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 
+namespace Blockcore.Indexer.Core.Operations
+{
    /// <summary>
    /// The StorageOperations interface.
    /// </summary>

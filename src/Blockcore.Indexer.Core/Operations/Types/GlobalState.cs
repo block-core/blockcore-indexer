@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Concurrent;
-using Blockcore.Indexer.Client.Types;
-using Blockcore.Indexer.Extensions;
-using Blockcore.Indexer.Storage.Types;
+using Blockcore.Indexer.Core.Client.Types;
+using Blockcore.Indexer.Core.Extensions;
+using Blockcore.Indexer.Core.Storage.Types;
 
-namespace Blockcore.Indexer.Operations.Types
+namespace Blockcore.Indexer.Core.Operations.Types
 {
    /// <summary>
    /// Represent a the state of the node.
