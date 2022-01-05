@@ -1,10 +1,10 @@
-﻿using Blockcore;
+using Blockcore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Cirrus
 {
-
+   using System.Linq;
    using Microsoft.AspNetCore.Hosting;
    using Microsoft.Extensions.Hosting;
 
@@ -29,6 +29,12 @@ namespace Cirrus
             })
             .ConfigureAppConfiguration(config =>
             {
+               // If there are no specific chain, e.g. "main" used when local, we'll force the CRS chain.
+               if (!string.Join(',', args).Contains("--chain"))
+               {
+                  args = args.Concat(new string[] { "--chain=CRS" }).ToArray();
+               }
+
                config.AddBlockcore("Blockore Indexer", args);
             })
             .ConfigureWebHostDefaults(webBuilder =>
