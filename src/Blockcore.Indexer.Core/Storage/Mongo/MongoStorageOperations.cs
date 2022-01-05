@@ -18,12 +18,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoStorageOperations : IStorageOperations
    {
-      private readonly SyncConnection syncConnection;
-      readonly GlobalState globalState;
-      readonly IScriptInterpeter scriptInterpeter;
-      readonly IndexerSettings configuration;
-      private readonly MongoData data;
-      readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
+      protected readonly SyncConnection syncConnection;
+      protected readonly GlobalState globalState;
+      protected readonly IScriptInterpeter scriptInterpeter;
+      protected readonly IndexerSettings configuration;
+      protected readonly MongoData data;
+      protected readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
 
       public MongoStorageOperations(
          SyncConnection syncConnection,
@@ -100,6 +100,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                })).ToList();
 
          storageBatch.InputTable.AddRange(inputs);
+
+         // allow any extensions to add ot the batch.
+         OnAddToStorageBatch(storageBatch, item);
       }
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
@@ -177,6 +180,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          });
 
          Task.WaitAll(t1, t2, t3, t4, t5, t6);
+
+         // allow any extensions to push to repo before we complete the block.
+         OnPushStorageBatch(storageBatch);
 
          string lastBlockHash = null;
          long blockIndex = 0;
@@ -268,6 +274,16 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             globalState.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
 
          return new InsertStats {Items = mempool};
+      }
+
+      protected virtual void OnAddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
+      {
+
+      }
+
+      protected virtual void OnPushStorageBatch(StorageBatch storageBatch)
+      {
+
       }
 
       private List<OutputTable> FetchOutputs(List<Outpoint> outputs)

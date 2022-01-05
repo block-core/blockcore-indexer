@@ -19,9 +19,9 @@ namespace Blockcore.Indexer.Core.Crypto
 
    public class ScriptToAddressParser : IScriptInterpeter
    {
-      public ScriptOutputInfo InterpretScript(Network network, Script script) => GetAddressInternal(network, script);
+      public virtual ScriptOutputInfo InterpretScript(Network network, Script script) => GetAddressInternal(network, script);
 
-      public string GetSignerAddress(Network network, Script script) => GetSignerAddressInternal(network, script);
+      public virtual string GetSignerAddress(Network network, Script script) => GetSignerAddressInternal(network, script);
 
       public static string GetSignerAddressInternal(Network network, Script script)
       {

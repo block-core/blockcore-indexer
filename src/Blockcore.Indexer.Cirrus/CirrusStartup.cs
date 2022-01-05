@@ -4,6 +4,8 @@ using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Client;
+using Blockcore.Indexer.Core.Crypto;
+using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
@@ -40,6 +42,10 @@ namespace Blockcore.Indexer.Cirrus
 
          services.Replace(new ServiceDescriptor(typeof(ISyncBlockTransactionOperationBuilder), typeof(CirrusSyncBlockTransactionOperationBuilder),
             ServiceLifetime.Singleton));
+
+         services.Replace(new ServiceDescriptor(typeof(IScriptInterpeter), typeof(CirrusScriptToAddressParser), ServiceLifetime.Singleton));
+
+         services.Replace(new ServiceDescriptor(typeof(IStorageOperations), typeof(CirrusMongoStorageOperations), ServiceLifetime.Singleton));
 
          services.AddControllers()
             .AddApplicationPart(typeof(Startup).Assembly)
