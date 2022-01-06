@@ -39,6 +39,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       long? inputCopyLastBlockHeight;
 
+      double totalSecondsToMerge = 0;
+
       public BlockIndexer(
          IOptions<IndexerSettings> configuration,
          ISyncOperations syncOperations,
@@ -150,7 +152,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.TransactionBlockTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<TransactionBlockTable>(Builders<TransactionBlockTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.TransactionId)));
+                        .IndexKeys.Hashed(trxBlk => trxBlk.TransactionId)));
                })
                .ContinueWith(async task =>
                {
@@ -166,7 +168,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.OutputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<OutputTable>(Builders<OutputTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint)));
+                        .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
 
                }).ContinueWith(async task =>
                {
@@ -190,7 +192,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.InputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint)));
+                        .IndexKeys.Hashed(_=> _.Outpoint)));
 
                }).ContinueWith(async task =>
                {
@@ -290,33 +292,25 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                if (inputCopyLastBlockHeight != null)
                {
-                  long blocksToCopy = 5;
+                  int blocksToCopy = 5;
                   watch.Restart();
 
                   long startHeigt = inputCopyLastBlockHeight.Value;
                   var tasks = new List<Task>();
-                  var exec = new List<(long last, long blc)>();
+
                   for (int i = 0; i < 5; i++)
                   {
-                     exec.Add((inputCopyLastBlockHeight.Value, blocksToCopy));
+                     PipelineDefinition<InputTable, InputTable> pipeline = BuildInputsAddressUpdatePiepline((int)inputCopyLastBlockHeight.Value, blocksToCopy);
+
+                     tasks.Add(mongoData.InputTable.AggregateAsync(pipeline));
+
                      inputCopyLastBlockHeight += blocksToCopy;
-                  }
-
-                  foreach ((long last, long blc) valueTuple in exec)
-                  {
-                     tasks.Add(Task.Run(async () =>
-                     {
-                        PipelineDefinition<InputTable, InputTable> pipeline = BuildInputsAddressUpdatePiepline((int)valueTuple.last, (int)valueTuple.blc);
-
-                        await mongoData.InputTable.AggregateAsync(pipeline);
-
-                     }));
                   }
 
                   Task.WaitAll(tasks.ToArray());
 
                   double totalSeconds = watch.Elapsed.TotalSeconds;
-                  long totalBlocks = exec.Sum(s => s.blc);
+                  long totalBlocks = inputCopyLastBlockHeight.Value - startHeigt;
                   double blocksPerSecond = totalBlocks / totalSeconds;
 
                   log.LogDebug($"Indexer - Copied input addresses for {totalBlocks} blocks, from height {startHeigt} to height {startHeigt + totalBlocks}, Seconds = {totalSeconds} - {blocksPerSecond:0.00}b/s");
@@ -326,6 +320,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                      inputCopyLastBlockHeight = null;
                   }
 
+                  totalSecondsToMerge += totalSeconds;
+
                   return true;
                }
                else
@@ -333,7 +329,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                   Runner.GlobalState.IndexMode = false;
                   Runner.GlobalState.IndexModeCompleted = true;
 
-                  log.LogDebug($"Indexer - Indexing completed");
+                  log.LogDebug($"Indexer - Indexing completed in {totalSecondsToMerge.ToString()}");
+
+                  totalSecondsToMerge = 0;
 
                   Abort = true;
                   return true;

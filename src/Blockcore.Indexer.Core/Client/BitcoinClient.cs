@@ -481,7 +481,7 @@ namespace Blockcore.Indexer.Core.Client
       {
          try
          {
-            return client.PostAsync(url, content).Result;
+            return client.PostAsync(url, content).GetAwaiter().GetResult();
          }
          catch (Exception ex)
          {
