@@ -84,7 +84,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
          watch.Restart();
 
-         BitcoinClient client = clientFactory.Create(syncConnection);
+         var client = clientFactory.Create(syncConnection);
 
          if (Runner.GlobalState.PullingTip == null)
          {

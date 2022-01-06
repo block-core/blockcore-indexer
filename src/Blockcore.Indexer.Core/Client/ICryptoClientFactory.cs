@@ -4,8 +4,8 @@ namespace Blockcore.Indexer.Core.Client
 {
    public interface ICryptoClientFactory
    {
-      BitcoinClient Create(string connection, int port, string user, string encPass, bool secure);
+      IBlockchainClient Create(string connection, int port, string user, string encPass, bool secure);
 
-      BitcoinClient Create(SyncConnection connection);
+      IBlockchainClient Create(SyncConnection connection);
    }
 }
