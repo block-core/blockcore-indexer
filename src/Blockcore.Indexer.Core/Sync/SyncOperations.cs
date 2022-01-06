@@ -77,7 +77,7 @@ namespace Blockcore.Indexer.Core.Sync
          }
       }
 
-      public long GetBlockCount(BitcoinClient client)
+      public long GetBlockCount(IBlockchainClient client)
       {
          if (!cache.TryGetValue(CacheKeys.BlockCount, out long cacheEntry))
          {
@@ -107,7 +107,7 @@ namespace Blockcore.Indexer.Core.Sync
 
       public async Task<Storage.Types.SyncBlockInfo> RewindToBestChain(SyncConnection connection)
       {
-         BitcoinClient client = clientFactory.Create(connection);
+         var client = clientFactory.Create(connection);
 
          while (true)
          {
@@ -150,7 +150,7 @@ namespace Blockcore.Indexer.Core.Sync
 
       private SyncPoolTransactions FindPoolInternal(SyncConnection connection)
       {
-         BitcoinClient client = clientFactory.Create(connection);
+         var client = clientFactory.Create(connection);
 
          IEnumerable<string> memPool = client.GetRawMemPool();
 
@@ -188,7 +188,7 @@ namespace Blockcore.Indexer.Core.Sync
          public DecodedRawTransaction result;
       }
 
-      private SyncBlockTransactionsOperation SyncBlockTransactions(BitcoinClient client, SyncConnection connection, IEnumerable<string> transactionsToSync, bool throwIfNotFound)
+      private SyncBlockTransactionsOperation SyncBlockTransactions(IBlockchainClient client, SyncConnection connection, IEnumerable<string> transactionsToSync, bool throwIfNotFound)
       {
          var itemList = transactionsToSync.Select(t => new tcalc { item = t }).ToList();
 
@@ -224,7 +224,7 @@ namespace Blockcore.Indexer.Core.Sync
 
       private SyncBlockTransactionsOperation SyncPoolInternal(SyncConnection connection, SyncPoolTransactions poolTransactions)
       {
-         BitcoinClient client = clientFactory.Create(connection);
+         var client = clientFactory.Create(connection);
 
          SyncBlockTransactionsOperation returnBlock = SyncBlockTransactions(client, connection, poolTransactions.Transactions, false);
 
@@ -233,7 +233,7 @@ namespace Blockcore.Indexer.Core.Sync
 
       private SyncBlockTransactionsOperation SyncBlockInternal(SyncConnection connection, BlockInfo block)
       {
-         BitcoinClient client = clientFactory.Create(connection);
+         var client = clientFactory.Create(connection);
 
          string hex = client.GetBlockHex(block.Hash);
 

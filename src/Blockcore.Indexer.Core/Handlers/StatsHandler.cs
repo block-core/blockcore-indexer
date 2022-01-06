@@ -56,7 +56,7 @@ namespace Blockcore.Indexer.Core.Handlers
       public async Task<StatsConnection> StatsConnection()
       {
          SyncConnection connection = syncConnection;
-         BitcoinClient client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         var client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
 
          int clientConnection = await client.GetConnectionCountAsync();
          return new StatsConnection { Connections = clientConnection };
@@ -124,7 +124,7 @@ namespace Blockcore.Indexer.Core.Handlers
       public async Task<Statistics> Statistics()
       {
          SyncConnection connection = syncConnection;
-         BitcoinClient client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         var client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
          var stats = new Statistics { Symbol = syncConnection.Symbol };
 
          try
@@ -182,7 +182,7 @@ namespace Blockcore.Indexer.Core.Handlers
       public async Task<List<PeerInfo>> Peers()
       {
          SyncConnection connection = syncConnection;
-         BitcoinClient client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         var client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
          var res = (await client.GetPeerInfo()).ToList();
 
          res.ForEach(p =>
