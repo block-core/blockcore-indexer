@@ -24,6 +24,16 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<CirrusBlock>();
          }
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(CirrusContractTable)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<CirrusContractTable>(cm =>
+            {
+               cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
+            });
+         }
+
+
          return Task.FromResult(1);
       }
    }
