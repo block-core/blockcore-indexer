@@ -9,7 +9,7 @@ namespace Blockcore.Indexer.Core.Client
       Task<string> SentRawTransactionAsync(string transactionHex);
       Task<int> GetConnectionCountAsync();
       Task<string> GetblockHashAsync(long blockIndex);
-      Task<BlockInfo> GetBlockAsync(string storeTipBlockHash);
+      Task<BlockInfo> GetBlockAsync(string blockHash);
       IEnumerable<string> GetRawMemPool();
       string GetBlockHex(string blockHash);
       DecodedRawTransaction GetRawTransaction(string itemItem, int verbose);
