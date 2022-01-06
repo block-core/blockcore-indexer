@@ -17,33 +17,39 @@ namespace Blockcore.Indexer.Core.Client
       /// <summary>
       ///     Defines a cache object to hold storage sources.
       /// </summary>
-      private static readonly MemoryCache Cache = new MemoryCache(new MemoryCacheOptions());
+      private readonly MemoryCache Cache = new MemoryCache(new MemoryCacheOptions());
 
-      IBlockchainClient ICryptoClientFactory.Create(SyncConnection connection) => Create(connection);
-
-      IBlockchainClient ICryptoClientFactory.Create(string connection, int port, string user, string encPass,
-         bool secure) => Create(connection, port, user, encPass, secure);
-
-      /// <summary>
-      /// A static method to create a client.
-      /// </summary>
-      public static BitcoinClient Create(string connection, int port, string user, string encPass, bool secure)
+      public IBlockchainClient Create(SyncConnection connection)
       {
-         // Put a lock on the cache to avoid creating random number of clients on startup.
+         return GetOrCreateBitcoinClient(connection.ServerDomain, connection.RpcAccessPort, connection.User,
+            connection.Password, connection.Secure);
+      }
+
+      public IBlockchainClient Create(string connection, int port, string user, string encPass,
+         bool secure)
+      {
+         return GetOrCreateBitcoinClient(connection, port, user, encPass, secure);
+      }
+
+
+      BitcoinClient GetOrCreateBitcoinClient(string connection, int port, string user, string encPass,
+         bool secure)
+      {
          lock (Cache)
          {
             // Set cache key name
             string cacheKey = string.Format("{0}:{1}:{2}:{3}", connection, port, user, secure);
-            return Cache.GetOrCreate(cacheKey, t => BitcoinClient.Create(connection, port, user, encPass, secure));
-         }
-      }
 
-      /// <summary>
-      /// A static method to create a client.
-      /// </summary>
-      public static BitcoinClient Create(SyncConnection connection)
-      {
-         return CryptoClientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+            if (Cache.TryGetValue(cacheKey, out BitcoinClient client))
+               return client;
+
+            client = BitcoinClient.Create(connection, port, user, encPass, secure);
+
+            Cache.Set(cacheKey, client);
+
+            return client;
+            //return Cache.GetOrCreate(cacheKey, t => BitcoinClient.Create(connection, port, user, encPass, secure));
+         }
       }
    }
 }
