@@ -244,7 +244,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
             if (rawtrx == null)
             {
-               var client = clientFactory.Create(syncConnection.ServerDomain, syncConnection.RpcAccessPort, syncConnection.User, syncConnection.Password, syncConnection.Secure);
+               var client = clientFactory.Create(syncConnection);
 
                Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
 
@@ -284,7 +284,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                Address = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey)?.Addresses?.FirstOrDefault(),
                Index = index,
                Value = output.Value,
-               OutputType = StandardScripts.GetTemplateFromScriptPubKey(output.ScriptPubKey)?.Type.ToString(),
+               OutputType = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey)?.ScriptType, // StandardScripts.GetTemplateFromScriptPubKey(output.ScriptPubKey)?.Type.ToString(),
                ScriptPubKey = output.ScriptPubKey.ToHex()
             }).ToList()
          };

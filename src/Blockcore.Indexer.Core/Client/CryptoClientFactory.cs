@@ -25,13 +25,6 @@ namespace Blockcore.Indexer.Core.Client
             connection.Password, connection.Secure);
       }
 
-      public IBlockchainClient Create(string connection, int port, string user, string encPass,
-         bool secure)
-      {
-         return GetOrCreateBitcoinClient(connection, port, user, encPass, secure);
-      }
-
-
       BitcoinClient GetOrCreateBitcoinClient(string connection, int port, string user, string encPass,
          bool secure)
       {

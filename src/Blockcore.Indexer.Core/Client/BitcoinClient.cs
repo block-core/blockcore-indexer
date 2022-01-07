@@ -74,7 +74,7 @@ namespace Blockcore.Indexer.Core.Client
       /// <summary>
       /// Gets or sets the client.
       /// </summary>
-      private HttpClient Client { get; set; }
+      protected HttpClient Client { get; set; }
 
       /// <summary>
       /// A static method to create a client.

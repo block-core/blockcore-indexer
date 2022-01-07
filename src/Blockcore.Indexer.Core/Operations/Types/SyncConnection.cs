@@ -87,6 +87,7 @@ namespace Blockcore.Indexer.Core.Operations.Types
 
          // Take the RPC Port from the Indexer configuration, if it is specified. Otherwise we'll use the default for this chain.
          RpcAccessPort = configuration.RpcAccessPort != 0 ? configuration.RpcAccessPort : networkConfiguration.RPCPort;
+         ApiAccessPort = networkConfiguration.APIPort;
 
          ServerDomain = configuration.RpcDomain.Replace("{Symbol}", chainConfiguration.Symbol.ToLower());
          User = configuration.RpcUser;
@@ -115,6 +116,8 @@ namespace Blockcore.Indexer.Core.Operations.Types
       public string Password { get; set; }
 
       public int RpcAccessPort { get; set; }
+
+      public int ApiAccessPort { get; set; }
 
       public bool Secure { get; set; }
 

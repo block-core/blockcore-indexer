@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Storage;
@@ -31,7 +31,7 @@ namespace Blockcore.Indexer.Core.Handlers
          // todo: check how a failure is porpageted
 
          SyncConnection connection = syncConnection;
-         var client = clientFactory.Create(connection.ServerDomain, connection.RpcAccessPort, connection.User, connection.Password, connection.Secure);
+         var client = clientFactory.Create(connection);
          string trxid = await client.SentRawTransactionAsync(transactionHex);
          return trxid;
       }

@@ -15,5 +15,7 @@ namespace Blockcore.Indexer.Core.Operations.Types
       public List<TransactionTable> TransactionTable { get; set; } = new List<TransactionTable>();
       public List<OutputTable> OutputTable { get; set; } = new List<OutputTable>();
       public List<InputTable> InputTable { get; set; } = new List<InputTable>();
+
+      public object ExtraData { get; set; }
    }
 }
