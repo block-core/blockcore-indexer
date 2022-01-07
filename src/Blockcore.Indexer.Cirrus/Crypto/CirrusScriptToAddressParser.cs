@@ -1,8 +1,8 @@
 using Blockcore.Consensus.ScriptInfo;
-using Blockcore.Indexer.Cirrus;
+using Blockcore.Indexer.Core.Crypto;
 using Blockcore.Networks;
 
-namespace Blockcore.Indexer.Core.Crypto
+namespace Blockcore.Indexer.Cirrus.Crypto
 {
    public class CirrusScriptToAddressParser : ScriptToAddressParser
    {

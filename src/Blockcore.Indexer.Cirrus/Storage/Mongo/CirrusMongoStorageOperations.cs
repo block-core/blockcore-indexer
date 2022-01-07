@@ -2,21 +2,21 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Consensus.TransactionInfo;
-using Blockcore.Indexer.Cirrus;
 using Blockcore.Indexer.Cirrus.Client;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Operations.Types;
-using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace Blockcore.Indexer.Core.Storage.Mongo
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
    public class CirrusMongoStorageOperations : MongoStorageOperations
    {
