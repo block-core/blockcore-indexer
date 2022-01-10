@@ -862,9 +862,17 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed);
 
+         // signal to any child classes to deleted a block.
+         await OnDeleteBlockAsync(block);
+
          // delete the block itself is done last
          FilterDefinition<BlockTable> blockFilter = Builders<BlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
          await BlockTable.DeleteOneAsync(blockFilter);
+      }
+
+      protected virtual async Task OnDeleteBlockAsync(SyncBlockInfo block)
+      {
+         await Task.CompletedTask;
       }
 
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)

@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -13,10 +14,16 @@ namespace Blockcore.Indexer.Cirrus.Client
    {
       readonly SyncConnection connection;
 
+      public Uri ApiUrl { get; set; }
+
       public CirrusClient(SyncConnection connection)
       : base(string.Format("{0}://{1}:{2}", connection.Secure ? "https" : "http", connection.ServerDomain, connection.RpcAccessPort), new NetworkCredential(connection.User, connection.Password))
       {
          this.connection = connection;
+
+         string url = string.Format("{0}://{1}:{2}", connection.Secure ? "https" : "http", connection.ServerDomain, connection.ApiAccessPort);
+         ApiUrl = new Uri(url);
+
       }
       public override async Task<BlockInfo> GetBlockAsync(string hash)
       {
@@ -30,10 +37,14 @@ namespace Blockcore.Indexer.Cirrus.Client
 
       public async Task<GetCodeResponse> GetContractCodeAsync(string hash)
       {
-         string url = string.Format("{0}://{1}:{2}", connection.Secure ? "https" : "http", connection.ServerDomain, connection.ApiAccessPort);
-
-         HttpResponseMessage httpResponse = await Client.GetAsync($"{url}/api/SmartContracts/code?address={hash}");
+         HttpResponseMessage httpResponse = await Client.GetAsync($"{ApiUrl}api/SmartContracts/code?address={hash}");
          return httpResponse.IsSuccessStatusCode ? await httpResponse.Content.ReadAsAsync<GetCodeResponse>() : null;
+      }
+
+      public async Task<ContractReceiptResponse> GetContractInfoAsync(string trxHash)
+      {
+         HttpResponseMessage httpResponse = await Client.GetAsync($"{ApiUrl}api/indexer/contract/info?txHash={trxHash}");
+         return httpResponse.IsSuccessStatusCode ? await httpResponse.Content.ReadAsAsync<ContractReceiptResponse>() : null;
       }
 
    }

@@ -1,6 +1,6 @@
 using Blockcore.Consensus.ScriptInfo;
 
-namespace Blockcore.Indexer.Cirrus
+namespace Blockcore.Indexer.Cirrus.Crypto
 {
     public static class SmartContractScript
     {

@@ -1,3 +1,4 @@
+using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using NBitcoin;
 
@@ -11,6 +12,11 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       public string TransactionId { get; set; }
 
       /// <summary>
+      /// State after execution.
+      /// </summary>
+      public string PostState { get; set; }
+
+      /// <summary>
       /// The block that this was confirmed in, this is to be able to reorg the data.
       /// </summary>
       public long BlockIndex { get; set; }
@@ -18,7 +24,17 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       /// <summary>
       /// The type of contract (this is normally taken from the assembly metadata).
       /// </summary>
-      public string ContractType { get; set; }
+      public string ContractOpcode { get; set; }
+
+      /// <summary>
+      /// The type of contract (this is normally taken from the assembly metadata).
+      /// </summary>
+      public string ContractCodeType { get; set; }
+
+      /// <summary>
+      /// The method that is executed on teh smart contract class.
+      /// </summary>
+      public string MethodName { get; set; }
 
       /// <summary>
       /// Was the contract executed successfully (i.e not run out foo gas).
@@ -50,5 +66,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       /// </summary>
       public string Error { get; set; }
 
+      public LogResponse[] Logs { get; set; }
    }
 }
