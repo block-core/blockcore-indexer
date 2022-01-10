@@ -61,27 +61,20 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
             if (smartContractTxOut != null)
             {
-               // this is a smart contract transaction
-
+               // is this a smart contract transaction
                if (smartContractTxOut.ScriptPubKey.IsSmartContractExec())
                {
-                  string contractType = smartContractTxOut.ScriptPubKey.IsSmartContractCreate() ? "create" :
+                  string contractOpcode = smartContractTxOut.ScriptPubKey.IsSmartContractCreate() ? "create" :
                      smartContractTxOut.ScriptPubKey.IsSmartContractCall() ? "call" : null;
 
-                  // fetch the create contract receipt
-                  ReceiptResponse receipt = cirrusClient.GetReceiptAsync(transaction.GetHash().ToString()).Result;
-
-                  // todo: later combine this two endpoint to a single endpoint
-                  string contractCodeType = null;
-                  if (receipt.Success)
-                  {
-                     contractCodeType = cirrusClient.GetContractCodeAsync(receipt.NewContractAddress ?? receipt.To).Result?.Type;
-                  }
+                  // fetch the contract receipt
+                  ContractReceiptResponse receipt = cirrusClient.GetContractInfoAsync(transaction.GetHash().ToString()).Result;
 
                   cirrusStorageBatch.CirrusContractTable.Add(new CirrusContractTable
                   {
-                     ContractType = contractType,
-                     ContractCodeType = contractCodeType,
+                     ContractOpcode = contractOpcode,
+                     ContractCodeType = receipt.ContractCodeType,
+                     MethodName = receipt.MethodName,
                      NewContractAddress = receipt.NewContractAddress,
                      FromAddress = receipt.From,
                      ToAddress = receipt.To,

@@ -24,12 +24,17 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       /// <summary>
       /// The type of contract (this is normally taken from the assembly metadata).
       /// </summary>
-      public string ContractType { get; set; }
+      public string ContractOpcode { get; set; }
 
       /// <summary>
       /// The type of contract (this is normally taken from the assembly metadata).
       /// </summary>
       public string ContractCodeType { get; set; }
+
+      /// <summary>
+      /// The method that is executed on teh smart contract class.
+      /// </summary>
+      public string MethodName { get; set; }
 
       /// <summary>
       /// Was the contract executed successfully (i.e not run out foo gas).

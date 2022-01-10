@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Models;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
@@ -8,6 +9,7 @@ using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
+using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -46,6 +48,15 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          }
       }
 
+      protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
+      {
+         // delete the contracts
+         FilterDefinition<CirrusContractTable> contractFilter = Builders<CirrusContractTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
+         Task<DeleteResult> contracts = CirrusContractTable.DeleteManyAsync(contractFilter);
+
+         await Task.WhenAll(contracts);
+      }
+
       public QueryAddressContract AddressContract(string address)
       {
          IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
@@ -56,18 +67,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          if (res.Count > 1)
             throw new ApplicationException("This is unexpected"); // todo: remove this temporary code
 
-         return res.Select(item => new QueryAddressContract
-         {
-            Success = item.Success,
-            NewContractAddress = item.NewContractAddress,
-            GasUsed = item.GasUsed,
-            FromAddress = item.FromAddress,
-            Error = item.Error,
-            ContractType = item.ContractType,
-            BlockIndex = item.BlockIndex,
-            ToAddress = item.ToAddress,
-            TransactionId = item.TransactionId
-         }).FirstOrDefault();
+         return res.Select(MapQueryAddressContract).FirstOrDefault();
       }
 
       public QueryAddressContract TransactionContract(string transacitonId)
@@ -80,18 +80,23 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          if (res.Count > 1)
             throw new ApplicationException("This is unexpected"); // todo: remove this temporary code
 
-         return res.Select(item => new QueryAddressContract
+         return res.Select(MapQueryAddressContract).FirstOrDefault();
+      }
+
+      private QueryAddressContract MapQueryAddressContract(CirrusContractTable item)
+      {
+         return new QueryAddressContract
          {
             Success = item.Success,
             NewContractAddress = item.NewContractAddress,
             GasUsed = item.GasUsed,
             FromAddress = item.FromAddress,
             Error = item.Error,
-            ContractType = item.ContractType,
+            ContractType = item.ContractOpcode,
             BlockIndex = item.BlockIndex,
             ToAddress = item.ToAddress,
             TransactionId = item.TransactionId
-         }).FirstOrDefault();
+         };
       }
 
    }
