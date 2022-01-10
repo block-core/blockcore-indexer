@@ -21,5 +21,9 @@
    <ItemGroup>
       <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
    </ItemGroup>
-
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+      <NoWarn>1591;1572;1573;1574;2007</NoWarn>
+      <DocumentationFile></DocumentationFile>
+      <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+   </PropertyGroup>
 </Project>

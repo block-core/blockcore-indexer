@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
    <ItemGroup>
-      <PackageReference Include="Blockcore.Core" Version="1.0.*" />
+      <PackageReference Include="Blockcore.Core" Version="1.1.*" />
       <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.7" />
       <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
       <PackageReference Include="Microsoft.Extensions.PlatformAbstractions" Version="1.1.0" />
@@ -10,5 +10,8 @@
       <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.2.3" />
       <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.2.3" />
       <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.2.3" />
+   </ItemGroup>
+   <ItemGroup>
+     <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
    </ItemGroup>
 </Project>
