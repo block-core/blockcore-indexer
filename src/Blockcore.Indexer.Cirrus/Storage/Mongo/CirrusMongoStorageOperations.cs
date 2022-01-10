@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Cirrus.Client;
 using Blockcore.Indexer.Cirrus.Client.Types;
+using Blockcore.Indexer.Cirrus.Crypto;
 using Blockcore.Indexer.Cirrus.Operations.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
@@ -62,21 +63,25 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             {
                // this is a smart contract transaction
 
-               if (smartContractTxOut.ScriptPubKey.IsSmartContractCreate())
+               if (smartContractTxOut.ScriptPubKey.IsSmartContractExec())
                {
+                  string contractType = smartContractTxOut.ScriptPubKey.IsSmartContractCreate() ? "create" :
+                     smartContractTxOut.ScriptPubKey.IsSmartContractCall() ? "call" : null;
+
                   // fetch the create contract receipt
                   ReceiptResponse receipt = cirrusClient.GetReceiptAsync(transaction.GetHash().ToString()).Result;
-                  
+
                   // todo: later combine this two endpoint to a single endpoint
-                  string contractType = null;
+                  string contractCodeType = null;
                   if (receipt.Success)
                   {
-                     contractType = cirrusClient.GetContractCodeAsync(receipt.NewContractAddress).Result?.Type;
+                     contractCodeType = cirrusClient.GetContractCodeAsync(receipt.NewContractAddress ?? receipt.To).Result?.Type;
                   }
 
                   cirrusStorageBatch.CirrusContractTable.Add(new CirrusContractTable
                   {
                      ContractType = contractType,
+                     ContractCodeType = contractCodeType,
                      NewContractAddress = receipt.NewContractAddress,
                      FromAddress = receipt.From,
                      ToAddress = receipt.To,
@@ -84,9 +89,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                      TransactionId = receipt.TransactionHash,
                      Success = receipt.Success,
                      Error = receipt.Error,
+                     PostState = receipt.PostState,
                      GasUsed = receipt.GasUsed,
+                     Logs = receipt.Logs
                   });
-
                }
             }
          }
