@@ -23,7 +23,6 @@ jobs:
             runtime: "osx-x64"
             extension: ".zip"
         node_version: [12.x]
-        dotnet_version: ['3.1.416']
       fail-fast: false
 
     runs-on: ${{ matrix.os }}
@@ -40,6 +39,12 @@ jobs:
 
     - uses: actions/checkout@v1
       name: Checkout
+
+    - name: Setup dotnet
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: | 
+          6.0.x
 
     - name: Setup Node.js (${{ matrix.node_version }})
       uses: actions/setup-node@v1
