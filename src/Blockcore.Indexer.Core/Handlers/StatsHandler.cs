@@ -56,7 +56,7 @@ namespace Blockcore.Indexer.Core.Handlers
       public async Task<StatsConnection> StatsConnection()
       {
          SyncConnection connection = syncConnection;
-         var client = clientFactory.Create(connection);
+         IBlockchainClient client = clientFactory.Create(connection);
 
          int clientConnection = await client.GetConnectionCountAsync();
          return new StatsConnection { Connections = clientConnection };
