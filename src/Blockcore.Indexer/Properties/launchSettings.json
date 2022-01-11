@@ -151,6 +151,24 @@
             "ASPNETCORE_ENVIRONMENT": "Development"
          },
          "applicationUrl": "http://localhost:9910/"
+      },
+      "SBC": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=SBC",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
+      "RSC": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=RSC",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
       }
    }
 }

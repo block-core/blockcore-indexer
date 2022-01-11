@@ -1,41 +1,43 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <PackageId>indexer.blockcore.net</PackageId>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
-    <UserSecretsId>7bd1d385-aa0f-4c2a-a842-f064d2cb4515</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..\..</DockerfileContext>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>Blockcore.Indexer.xml</DocumentationFile>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.3.261602">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Blockcore.Networks.Xds" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.Bitcoin" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.Impleum" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.OpenExo" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.Rutanio" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.Stratis" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.Strax" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.x42" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.City" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.BCP" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.X1" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.xRhodium" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.HomeCoin" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.SERF" Version="1.1.*" />
-    <PackageReference Include="Blockcore.Networks.xRhodium" Version="1.1.*" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Blockcore.Indexer.Core\Blockcore.Indexer.Core.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
-  </ItemGroup>
+   <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <PackageId>indexer.blockcore.net</PackageId>
+      <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+      <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+      <UserSecretsId>7bd1d385-aa0f-4c2a-a842-f064d2cb4515</UserSecretsId>
+      <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+      <DockerfileContext>..\..</DockerfileContext>
+      <GenerateDocumentationFile>true</GenerateDocumentationFile>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+      <DocumentationFile>Blockcore.Indexer.xml</DocumentationFile>
+   </PropertyGroup>
+   <ItemGroup>
+      <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.3.261602">
+         <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
+      <PackageReference Include="Blockcore.Networks.Xds" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.Bitcoin" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.Impleum" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.OpenExo" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.Rutanio" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.Stratis" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.Strax" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.x42" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.City" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.BCP" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.X1" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.xRhodium" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.HomeCoin" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.SERF" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.xRhodium" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.SeniorBlockCoin" Version="1.1.*" />
+      <PackageReference Include="Blockcore.Networks.RoyalSportsCity" Version="1.1.*" />
+   </ItemGroup>
+   <ItemGroup>
+      <ProjectReference Include="..\Blockcore.Indexer.Core\Blockcore.Indexer.Core.csproj" />
+   </ItemGroup>
+   <ItemGroup>
+      <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.1.1" />
+   </ItemGroup>
 </Project>
