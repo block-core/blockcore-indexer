@@ -126,60 +126,53 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          }
 
-         var t1 = Task.Run(() =>
-         {
-            if (storageBatch.BlockTable.Values.Any())
-            data.BlockTable.InsertMany(storageBatch.BlockTable.Values, new InsertManyOptions {IsOrdered = false });
-         });
+         var blockTableTask = storageBatch.BlockTable.Values.Any()
+               ? data.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values,
+                  new InsertManyOptions { IsOrdered = false })
+               : Task.CompletedTask;
 
-         var t2 = Task.Run(() =>
-         {
-            if (storageBatch.TransactionBlockTable.Any())
-            data.TransactionBlockTable.InsertMany(storageBatch.TransactionBlockTable, new InsertManyOptions { IsOrdered = false });
-         });
+         var transactionBlockTableTask = storageBatch.TransactionBlockTable.Any()
+            ? data.TransactionBlockTable.InsertManyAsync(storageBatch.TransactionBlockTable,
+               new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t3 = Task.Run(() =>
-         {
-            if (storageBatch.OutputTable.Any())
-            data.OutputTable.InsertMany(storageBatch.OutputTable, new InsertManyOptions {IsOrdered = false});
-         });
+         var outputTableTask = storageBatch.OutputTable.Any()
+            ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable, new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t4 = Task.Run(() =>
-         {
-            if (storageBatch.InputTable.Any())
-               data.InputTable.InsertMany(storageBatch.InputTable, new InsertManyOptions {IsOrdered = false});
-         });
+         var inputTableTask = storageBatch.InputTable.Any()
+            ? data.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t5 = Task.Run(() =>
+         var transactionTableTask = Task.CompletedTask;
+
+         try
          {
-            try
+            if (storageBatch.TransactionTable.Any())
+               transactionTableTask = data.TransactionTable.InsertManyAsync(storageBatch.TransactionTable,
+                  new InsertManyOptions { IsOrdered = false });
+         }
+         catch (MongoBulkWriteException mbwex)
+         {
+            // transactions are a special case they are not deleted from store in case of reorgs
+            // because they will just be included in another blocks, so we ignore if key is already present
+            if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
             {
-               if (storageBatch.TransactionTable.Any())
-                  data.TransactionTable.InsertMany(storageBatch.TransactionTable, new InsertManyOptions {IsOrdered = false});
+               throw;
             }
-            catch (MongoBulkWriteException mbwex)
-            {
-               // transactions are a special case they are not deleted from store in case of reorgs
-               // because they will just be included in another blocks, so we ignore if key is already present
-               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
-               {
-                  throw;
-               }
-            }
-         });
+         }
 
-         Task.WaitAll(t3, t4);
+         Task.WaitAll(outputTableTask, inputTableTask);
 
-         var t6 = Task.Run(() =>
+         var mergeAddressToInputTask = Task.CompletedTask;
+
+         if (globalState.IndexModeCompleted)
          {
-            if (globalState.IndexModeCompleted)
-            {
-               PipelineDefinition<InputTable, InputTable> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
-               data.InputTable.Aggregate(pipeline);
-            }
-         });
+            PipelineDefinition<InputTable, InputTable> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
+            mergeAddressToInputTask = data.InputTable.AggregateAsync(pipeline);
+         }
 
-         Task.WaitAll(t1, t2, t3, t4, t5, t6);
+         Task.WaitAll(blockTableTask, transactionBlockTableTask, outputTableTask, inputTableTask, transactionTableTask, mergeAddressToInputTask);
 
          // allow any extensions to push to repo before we complete the block.
          OnPushStorageBatch(storageBatch);
