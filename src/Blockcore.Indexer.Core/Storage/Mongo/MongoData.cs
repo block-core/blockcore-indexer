@@ -493,7 +493,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             Balance = addressComputedTable.Available,
             TotalReceived = addressComputedTable.Received,
             TotalStake = addressComputedTable.Staked,
-            TotalMine = addressComputedTable.CountMined,
+            TotalMine = addressComputedTable.Mined,
             TotalSent = addressComputedTable.Sent,
             TotalReceivedCount = addressComputedTable.CountReceived,
             TotalSentCount = addressComputedTable.CountSent,
