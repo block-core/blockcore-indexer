@@ -4,7 +4,7 @@ namespace Blockcore.Indexer.Cirrus.Models
    /// Fetch information about a smart contract represented by
    /// the contract address or the transaction the contract was created in.
    /// </summary>
-   public class QueryAddressContract
+   public class QueryContractCall
    {
       /// <summary>
       /// The transaction id where the contract was created in.
@@ -17,11 +17,6 @@ namespace Blockcore.Indexer.Cirrus.Models
       public long BlockIndex { get; set; }
 
       /// <summary>
-      /// The type of contract (this is normally taken from the assembly metadata).
-      /// </summary>
-      public string ContractType { get; set; }
-
-      /// <summary>
       /// Was the contract executed successfully (i.e not run out foo gas).
       /// </summary>
       public bool Success { get; set; }
@@ -32,6 +27,11 @@ namespace Blockcore.Indexer.Cirrus.Models
       public ulong GasUsed { get; set; }
 
       /// <summary>
+      /// The method that is executed on teh smart contract class.
+      /// </summary>
+      public string MethodName { get; set; }
+
+      /// <summary>
       /// The address that created the contract.
       /// </summary>
       public string FromAddress { get; set; }
@@ -40,11 +40,6 @@ namespace Blockcore.Indexer.Cirrus.Models
       /// Who is the recipient.
       /// </summary>
       public string ToAddress { get; set; }
-
-      /// <summary>
-      /// The contract address (if its a call then this is null and instead use the ToAddress)
-      /// </summary>
-      public string NewContractAddress { get; set; }
 
       /// <summary>
       /// Document any errors when executed. 

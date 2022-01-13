@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Models;
@@ -57,7 +58,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          await Task.WhenAll(contracts);
       }
 
-      public QueryAddressContract AddressContract(string address)
+      public QueryContractCreate ContractCreate(string address)
       {
          IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
             .Where(q => q.NewContractAddress == address);
@@ -67,10 +68,54 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          if (res.Count > 1)
             throw new ApplicationException("This is unexpected"); // todo: remove this temporary code
 
-         return res.Select(MapQueryAddressContract).FirstOrDefault();
+         return res.Select(item => new QueryContractCreate
+         {
+            Success = item.Success,
+            ContractAddress = item.NewContractAddress,
+            ContractCodeType = item.ContractCodeType,
+            GasUsed = item.GasUsed,
+            FromAddress = item.FromAddress,
+            Error = item.Error,
+            ContractOpcode = item.ContractOpcode,
+            BlockIndex = item.BlockIndex,
+            TransactionId = item.TransactionId
+         }).FirstOrDefault();
       }
 
-      public QueryAddressContract TransactionContract(string transacitonId)
+      public QueryResult<QueryContractCall> ContractCall(string address, int offset, int limit)
+      {
+         IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
+            .Where(q => q.ToAddress == address)
+            .Skip(offset)
+            .Take(limit);
+
+         int total = CirrusContractTable.AsQueryable()
+            .Where(q => q.ToAddress == address).Count();
+
+         var res = cirrusContract.ToList();
+
+         IEnumerable<QueryContractCall> transactions = res.Select(item => new QueryContractCall
+         {
+            Success = item.Success,
+            MethodName = item.MethodName,
+            ToAddress = item.NewContractAddress,
+            GasUsed = item.GasUsed,
+            FromAddress = item.FromAddress,
+            Error = item.Error,
+            BlockIndex = item.BlockIndex,
+            TransactionId = item.TransactionId
+         });
+
+         return new QueryResult<QueryContractCall>
+         {
+            Items = transactions,
+            Offset = offset,
+            Limit = limit,
+            Total = total
+         };
+      }
+
+      public QueryContractTransaction ContractTransaction(string transacitonId)
       {
          IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
             .Where(q => q.TransactionId == transacitonId);
@@ -80,24 +125,24 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          if (res.Count > 1)
             throw new ApplicationException("This is unexpected"); // todo: remove this temporary code
 
-         return res.Select(MapQueryAddressContract).FirstOrDefault();
-      }
-
-      private QueryAddressContract MapQueryAddressContract(CirrusContractTable item)
-      {
-         return new QueryAddressContract
+         return res.Select(item => new QueryContractTransaction
          {
             Success = item.Success,
             NewContractAddress = item.NewContractAddress,
+            ContractCodeType = item.ContractCodeType,
             GasUsed = item.GasUsed,
             FromAddress = item.FromAddress,
-            Error = item.Error,
-            ContractType = item.ContractOpcode,
-            BlockIndex = item.BlockIndex,
             ToAddress = item.ToAddress,
+            Logs= item.Logs,
+            MethodName = item.MethodName,
+            PostState = item.PostState,
+            Error = item.Error,
+            ContractOpcode = item.ContractOpcode,
+            BlockIndex = item.BlockIndex,
             TransactionId = item.TransactionId
-         };
+         }).FirstOrDefault();
       }
+
 
    }
 }

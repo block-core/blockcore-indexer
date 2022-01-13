@@ -1,20 +1,15 @@
-using Blockcore.Indexer.Cirrus.Client.Types;
-using Blockcore.Indexer.Core.Storage.Mongo.Types;
-using NBitcoin;
-
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
+namespace Blockcore.Indexer.Cirrus.Models
 {
-   public class CirrusContractTable
+   /// <summary>
+   /// Fetch information about a smart contract represented by
+   /// the contract address or the transaction the contract was created in.
+   /// </summary>
+   public class QueryContractCreate
    {
       /// <summary>
       /// The transaction id where the contract was created in.
       /// </summary>
       public string TransactionId { get; set; }
-
-      /// <summary>
-      /// State after execution.
-      /// </summary>
-      public string PostState { get; set; }
 
       /// <summary>
       /// The block that this was confirmed in, this is to be able to reorg the data.
@@ -32,11 +27,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       public string ContractCodeType { get; set; }
 
       /// <summary>
-      /// The method that is executed on teh smart contract class.
-      /// </summary>
-      public string MethodName { get; set; }
-
-      /// <summary>
       /// Was the contract executed successfully (i.e not run out foo gas).
       /// </summary>
       public bool Success { get; set; }
@@ -52,23 +42,13 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       public string FromAddress { get; set; }
 
       /// <summary>
-      /// Who is the recipient.
-      /// </summary>
-      public string ToAddress { get; set; }
-
-      /// <summary>
       /// The contract address (if its a call then this is null and instead use the ToAddress)
       /// </summary>
-      public string NewContractAddress { get; set; }
+      public string ContractAddress { get; set; }
 
       /// <summary>
       /// Document any errors when executed. 
       /// </summary>
       public string Error { get; set; }
-
-      /// <summary>
-      /// Logs as outputed on the contract execution.
-      /// </summary>
-      public LogResponse[] Logs { get; set; }
    }
 }

@@ -1,10 +1,12 @@
 using Blockcore.Indexer.Cirrus.Client.Types;
-using Blockcore.Indexer.Core.Storage.Mongo.Types;
-using NBitcoin;
 
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
+namespace Blockcore.Indexer.Cirrus.Models
 {
-   public class CirrusContractTable
+   /// <summary>
+   /// Fetch information about a smart contract represented by
+   /// the contract address or the transaction the contract was created in.
+   /// </summary>
+   public class QueryContractTransaction
    {
       /// <summary>
       /// The transaction id where the contract was created in.
