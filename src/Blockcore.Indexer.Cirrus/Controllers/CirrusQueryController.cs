@@ -32,14 +32,14 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("contract/create/{address}")]
+      [Route("contract/{address}")]
       public IActionResult GetAddressContract([MinLength(30)][MaxLength(100)] string address)
       {
          return Ok(cirrusMongoData.ContractCreate(address));
       }
 
       [HttpGet]
-      [Route("contract/call/{address}")]
+      [Route("contract/{address}/transactions")]
       public IActionResult GetAddressCall([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.ContractCall(address, offset, limit));
