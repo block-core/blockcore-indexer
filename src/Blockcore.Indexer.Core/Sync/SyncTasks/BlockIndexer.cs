@@ -182,9 +182,10 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogDebug($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.BlockIndex)}");
 
-                  await mongoData.InputTable.Indexes
-                     .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+                  // await mongoData.InputTable.Indexes
+                  //    .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
+                  //       .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+                  await Task.CompletedTask;
 
                }).ContinueWith(async task =>
                {
@@ -198,9 +199,10 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogDebug($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.Address)}");
 
-                  await mongoData.InputTable.Indexes
-                     .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+                  // await mongoData.InputTable.Indexes
+                  //    .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
+                  //       .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+                  await Task.CompletedTask;
 
                }).ContinueWith(async task =>
                {
@@ -378,7 +380,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             new BsonDocument("$lookup",
                new BsonDocument
                {
-                  { "from", "Output" },
+                  { "from", "Utxo" },
                   { "localField", "Outpoint" },
                   { "foreignField", "Outpoint" },
                   { "pipeline", new BsonArray

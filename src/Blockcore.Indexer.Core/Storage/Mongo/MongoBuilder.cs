@@ -4,6 +4,7 @@ using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -121,6 +122,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                cm.AutoMap();
             });
          }
+
+         mongoData.InputTable.Indexes
+            .CreateOne(new CreateIndexModel<InputTable>(Builders<InputTable>
+               .IndexKeys.Hashed(trxBlk => trxBlk.Address)));
+
+         mongoData.InputTable.Indexes
+            .CreateOne(new CreateIndexModel<InputTable>(Builders<InputTable>
+               .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+
+         mongoData.UtxoTable.Indexes
+            .CreateOne(new CreateIndexModel<UtxoTable>(Builders<UtxoTable>
+               .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
 
          return Task.FromResult(1);
       }
