@@ -1,0 +1,19 @@
+version: "2.4"
+
+volumes:
+  mongo-database:
+    name: mongo-db
+
+services:
+  mongo-database:
+    container_name: mongo-db
+    image: mongo:latest
+    command: "--wiredTigerCacheSizeGB 3"
+    mem_limit: 3000m
+    restart: always
+    stop_grace_period: 1m
+    volumes:
+      - mongo-database:/data/db
+      - mongo-database:/data/configdb
+    ports:
+      - 27017:27017
