@@ -7,7 +7,7 @@ volumes:
 services:
   mongo-database:
     container_name: mongo-db
-    image: mongo:latest
+    image: mongo:5.0.5
     command: "--wiredTigerCacheSizeGB 3"
     mem_limit: 3000m
     restart: always
