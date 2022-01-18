@@ -49,13 +49,25 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          }
       }
 
+      public IMongoCollection<CirrusContractCodeTable> CirrusContractCodeTable
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<CirrusContractCodeTable>("CirrusContractCode");
+         }
+      }
+
+
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
       {
          // delete the contracts
          FilterDefinition<CirrusContractTable> contractFilter = Builders<CirrusContractTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
          Task<DeleteResult> contracts = CirrusContractTable.DeleteManyAsync(contractFilter);
 
-         await Task.WhenAll(contracts);
+         FilterDefinition<CirrusContractCodeTable> contractCodeFilter = Builders<CirrusContractCodeTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
+         Task<DeleteResult> contractsCode = CirrusContractCodeTable.DeleteManyAsync(contractCodeFilter);
+
+         await Task.WhenAll(contracts, contractsCode);
       }
 
       public QueryContractCreate ContractCreate(string address)
@@ -143,6 +155,20 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          }).FirstOrDefault();
       }
 
+      public QueryContractCode ContractCode(string address)
+      {
+         IMongoQueryable<CirrusContractCodeTable> cirrusContractCode = CirrusContractCodeTable.AsQueryable()
+            .Where(q => q.ContractAddress == address);
 
+         var res = cirrusContractCode.ToList();
+
+         return res.Select(item => new QueryContractCode
+         {
+            CodeType = item.CodeType,
+            ByteCode = item.ByteCode,
+            ContractHash = item.ContractHash,
+            Csharp = item.Csharp
+         }).FirstOrDefault();
+      }
    }
 }

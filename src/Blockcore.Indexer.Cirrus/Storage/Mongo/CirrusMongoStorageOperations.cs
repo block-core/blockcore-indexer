@@ -89,6 +89,19 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                      GasUsed = receipt.GasUsed,
                      Logs = receipt.Logs
                   });
+
+                  if (receipt.ContractCodeHash != null)
+                  {
+                     cirrusStorageBatch.CirrusContractCodeTable.Add(new CirrusContractCodeTable
+                     {
+                        ContractAddress = receipt.NewContractAddress,
+                        BlockIndex = item.BlockInfo.Height,
+                        CodeType = receipt.ContractCodeType,
+                        ContractHash = receipt.ContractCodeHash,
+                        ByteCode = receipt.ContractBytecode,
+                        Csharp = receipt.ContractCSharp
+                     });
+                  }
                }
             }
          }
@@ -105,8 +118,14 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                cirrusMongoData.CirrusContractTable.InsertMany(cirrusStorageBatch.CirrusContractTable, new InsertManyOptions { IsOrdered = false });
          });
 
-         Task.WaitAll(t1);
+         var t2 = Task.Run(() =>
+         {
+            if (cirrusStorageBatch.CirrusContractCodeTable.Any())
+               cirrusMongoData.CirrusContractCodeTable.InsertMany(cirrusStorageBatch.CirrusContractCodeTable, new InsertManyOptions { IsOrdered = false });
+         });
 
+
+         Task.WaitAll(t1, t2);
       }
    }
 }

@@ -1,13 +1,7 @@
-using Blockcore.Indexer.Cirrus.Client.Types;
-using Blockcore.Indexer.Core.Storage.Mongo.Types;
-using NBitcoin;
-
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
+namespace Blockcore.Indexer.Cirrus.Models
 {
-   public class CirrusContractCodeTable
+   public class QueryContractCode
    {
-      public string ContractAddress { get; set; }
-
       /// <summary>
       /// The smart contract ype.
       /// </summary>
@@ -28,9 +22,5 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       /// </summary>
       public string ContractHash { get; set; }
 
-      /// <summary>
-      /// The block the contract was whitelisted.
-      /// </summary>
-      public long BlockIndex { get; set; }
    }
 }
