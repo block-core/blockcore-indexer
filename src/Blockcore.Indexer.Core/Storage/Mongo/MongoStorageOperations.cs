@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Threading.Tasks;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Crypto;
@@ -10,9 +9,7 @@ using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
-using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using NBitcoin;
 
@@ -83,26 +80,41 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                };
             }));
 
+            foreach (OutputTable output in outputs)
+            {
+               storageBatch.OutputTable.AddOrReplace(output.Outpoint.ToString(), output);
+            }
 
-         storageBatch.OutputTable.AddRange(outputs);
 
-         var inputs = item.Transactions
+            var inputs = item.Transactions
             .Where(t => t.IsCoinBase == false)
             .SelectMany((trx, trxIndex) =>
                trx.Inputs.Select((input, inputIndex) =>
                {
+                  var outpoint = new Outpoint
+                  {
+                     TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
+                  };
+
+                  OutputTable output = storageBatch.OutputTable.ContainsKey(outpoint.ToString())
+                     ? storageBatch.OutputTable[outpoint.ToString()] : null;
+
                   return new InputTable()
                   {
-                     Outpoint = new Outpoint
-                     {
-                        TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
-                     },
+                     Outpoint = outpoint,
                      TrxHash = trx.GetHash().ToString(),
                      BlockIndex = item.BlockInfo.Height,
+                     Address = output?.Address,
+                     Value = output?.Value ?? 0,
                   };
                })).ToList();
 
-         storageBatch.InputTable.AddRange(inputs);
+
+         if (inputs.Any())
+         {
+            storageBatch.InputTable.AddRange(inputs);
+         }
+
 
          // allow any extensions to add ot the batch.
          OnAddToStorageBatch(storageBatch, item);
@@ -130,30 +142,38 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          }
 
-         var t1 = Task.Run(() =>
-         {
-            if (storageBatch.BlockTable.Values.Any())
-               data.BlockTable.InsertMany(storageBatch.BlockTable.Values, new InsertManyOptions { IsOrdered = false });
-         });
+         var t1 = storageBatch.BlockTable.Values.Any()
+            ? data.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values, new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t2 = Task.Run(() =>
-         {
-            if (storageBatch.TransactionBlockTable.Any())
-               data.TransactionBlockTable.InsertMany(storageBatch.TransactionBlockTable,
-                  new InsertManyOptions { IsOrdered = false });
-         });
+         var t2 = storageBatch.TransactionBlockTable.Any()
+            ? data.TransactionBlockTable.InsertManyAsync(storageBatch.TransactionBlockTable,
+               new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t3 = Task.Run(() =>
-         {
-            if (storageBatch.OutputTable.Any())
-               data.OutputTable.InsertMany(storageBatch.OutputTable, new InsertManyOptions { IsOrdered = false });
-         });
+         var t3 = storageBatch.OutputTable.Any()
+            ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values, new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t4 = Task.Run(() =>
+
+         var t4 = Task.CompletedTask;
+         if(storageBatch.InputTable.Any())
          {
-            if (storageBatch.InputTable.Any())
-               data.InputTable.InsertMany(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
-         });
+            var utxos = FetchUtxos(storageBatch.InputTable
+               .Where(_ => _.Address == null)
+               .Select(_ => _.Outpoint));
+
+            foreach (InputTable input in storageBatch.InputTable)
+            {
+               if (input.Address != null) continue;
+
+               string key = input.Outpoint.ToString();
+               input.Address = utxos[key].Address;
+               input.Value = utxos[key].Value;
+            }
+
+            t4 = data.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
+         };
 
          var t5 = Task.Run(() =>
          {
@@ -174,30 +194,20 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          });
 
-         Task.WaitAll(t3, t4);
+         Task.WaitAll(t1, t2, t3, t4, t5);
 
          var t6 = Task.Run(() =>
-         {
-
-         });
-
-         Task.WaitAll(t1, t2, t3, t4, t5, t6);
-
-         var t7 = Task.Run(() =>
-         {
-            var utxos = storageBatch.OutputTable.Select(_ =>
-               new UtxoTable
-               {
-                  Address = _.Address,
-                  Outpoint = _.Outpoint,
-                  Value = _.Value
-               });
-
-            data.UtxoTable.InsertMany(utxos);
-         }).ContinueWith(Task =>
             {
-               PipelineDefinition<InputTable, InputTable> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
-               data.InputTable.Aggregate(pipeline);
+               var utxos = storageBatch.OutputTable.Values.Select(_ =>
+                  new UtxoTable
+                  {
+                     Address = _.Address,
+                     Outpoint = _.Outpoint,
+                     Value = _.Value,
+                     BLockIndex = _.BlockIndex
+                  });
+
+               data.UtxoTable.InsertMany(utxos);
             })
             .ContinueWith(task =>
             {
@@ -209,7 +219,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                data.UtxoTable.DeleteMany(filter);
             });
 
-         Task.WaitAll(t7);
+         Task.WaitAll(t6);
 
          // allow any extensions to push to repo before we complete the block.
          OnPushStorageBatch(storageBatch);
@@ -341,6 +351,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          FilterDefinition<OutputTable> filter = builder.In(output => output.Outpoint, outputs);
 
          var res = data.OutputTable.Find(filter).ToList();
+
+         return res;
+      }
+
+      private Dictionary<string,UtxoTable> FetchUtxos(IEnumerable<Outpoint> outputs)
+      {
+         FilterDefinitionBuilder<UtxoTable> builder = Builders<UtxoTable>.Filter;
+         FilterDefinition<UtxoTable> filter = builder.In(utxo => utxo.Outpoint, outputs);
+
+         var res = data.UtxoTable.FindSync(filter)
+            .ToList()
+            .ToDictionary(_ => _.Outpoint.ToString());
 
          return res;
       }

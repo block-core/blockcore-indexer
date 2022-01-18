@@ -838,11 +838,17 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       {
          SyncBlockInfo block = BlockByHash(blockHash);
 
-         FilterDefinition<InputTable> addrForInputFilter = Builders<InputTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         Task<DeleteResult> input = InputTable.DeleteManyAsync(addrForInputFilter);
+         FilterDefinition<InputTable> inputFilter = Builders<InputTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         var inputs = InputTable.FindSync(inputFilter).ToList();
 
-         FilterDefinition<OutputTable> addrForOutputFilter = Builders<OutputTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         Task<DeleteResult> output = OutputTable.DeleteManyAsync(addrForOutputFilter);
+         Task utxos = UtxoTable.InsertManyAsync(inputs.Select(_ => new UtxoTable
+            {
+               Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BLockIndex = _.BlockIndex
+            }))
+            .ContinueWith(task => InputTable.DeleteManyAsync(inputFilter));
+
+         FilterDefinition<OutputTable> outputFilter = Builders<OutputTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
+         Task<DeleteResult> output = OutputTable.DeleteManyAsync(outputFilter);
 
          // delete the transaction
          FilterDefinition<TransactionBlockTable> transactionFilter = Builders<TransactionBlockTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
@@ -860,7 +866,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          FilterDefinition<AddressUtxoComputedTable> addrCompUtxoFilter = Builders<AddressUtxoComputedTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
          Task<DeleteResult> addressUtxoComputed = AddressUtxoComputedTable.DeleteManyAsync(addrCompUtxoFilter);
 
-         await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed);
+         FilterDefinition<UtxoTable> utxoFilter = Builders<UtxoTable>.Filter.Eq(utxo => utxo.BLockIndex, block.BlockIndex);
+         Task<DeleteResult> utxo = UtxoTable.DeleteManyAsync(utxoFilter);
+
+         await Task.WhenAll(utxos, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed,utxo);
+
+         await InputTable.DeleteManyAsync(inputFilter);
 
          // signal to any child classes to deleted a block.
          await OnDeleteBlockAsync(block);

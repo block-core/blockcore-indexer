@@ -123,13 +123,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             });
          }
 
-         mongoData.InputTable.Indexes
-            .CreateOne(new CreateIndexModel<InputTable>(Builders<InputTable>
-               .IndexKeys.Hashed(trxBlk => trxBlk.Address)));
-
-         mongoData.InputTable.Indexes
-            .CreateOne(new CreateIndexModel<InputTable>(Builders<InputTable>
-               .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(UtxoTable)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<UtxoTable>(cm =>
+            {
+               cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
+            });
+         }
 
          mongoData.UtxoTable.Indexes
             .CreateOne(new CreateIndexModel<UtxoTable>(Builders<UtxoTable>

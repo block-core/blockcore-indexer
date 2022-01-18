@@ -182,10 +182,17 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogDebug($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.BlockIndex)}");
 
-                  // await mongoData.InputTable.Indexes
-                  //    .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
-                  //       .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
-                  await Task.CompletedTask;
+                  await mongoData.InputTable.Indexes
+                     .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
+
+               }).ContinueWith(async task =>
+               {
+                  log.LogDebug($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.BlockIndex)}");
+
+                  await mongoData.InputTable.Indexes
+                     .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
 
                }).ContinueWith(async task =>
                {
@@ -197,12 +204,11 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.Address)}");
+                  log.LogDebug($"Creating indexes on {nameof(UtxoTable)}.{nameof(UtxoTable.Address)}");
 
-                  // await mongoData.InputTable.Indexes
-                  //    .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
-                  //       .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
-                  await Task.CompletedTask;
+                  await mongoData.UtxoTable.Indexes
+                     .CreateOneAsync(new CreateIndexModel<UtxoTable>(Builders<UtxoTable>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
                }).ContinueWith(async task =>
                {
