@@ -70,6 +70,9 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                   // fetch the contract receipt
                   ContractReceiptResponse receipt = cirrusClient.GetContractInfoAsync(transaction.GetHash().ToString()).Result;
 
+                  if (receipt == null)
+                     throw new ApplicationException($"Smart Contract receipt not found for trx {transaction.GetHash()}");
+
                   cirrusStorageBatch.CirrusContractTable.Add(new CirrusContractTable
                   {
                      ContractOpcode = contractOpcode,
