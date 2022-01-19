@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Crypto;
+using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
@@ -60,36 +61,33 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }));
          }
 
-         IEnumerable<OutputTable> outputs = item.Transactions.SelectMany((trx, i) =>
-            trx.Outputs.Select((output, index) =>
+         item.Transactions.ForEach((trx, i) =>
+            trx.Outputs.ForEach((output, index) =>
             {
                ScriptOutputInfo res = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey);
                string addr = res != null
                   ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType.ToString()
                   : "none";
 
-               return new OutputTable
+               var outpoint = new Outpoint { TransactionId = trx.GetHash().ToString(), OutputIndex = index };
+
+               storageBatch.OutputTable.AddOrReplace(outpoint.ToString(), new OutputTable
                {
                   Address = addr,
-                  Outpoint = new Outpoint { TransactionId = trx.GetHash().ToString(), OutputIndex = index },
+                  Outpoint = outpoint,
                   BlockIndex = item.BlockInfo.Height,
                   Value = output.Value,
                   ScriptHex = output.ScriptPubKey.ToHex(),
                   CoinBase = trx.IsCoinBase,
                   CoinStake = syncConnection.Network.Consensus.IsProofOfStake && trx.IsCoinStake,
-               };
+               });
             }));
 
-            foreach (OutputTable output in outputs)
-            {
-               storageBatch.OutputTable.AddOrReplace(output.Outpoint.ToString(), output);
-            }
 
-
-            var inputs = item.Transactions
+         item.Transactions
             .Where(t => t.IsCoinBase == false)
-            .SelectMany((trx, trxIndex) =>
-               trx.Inputs.Select((input, inputIndex) =>
+            .ForEach((trx, trxIndex) =>
+               trx.Inputs.ForEach((input, inputIndex) =>
                {
                   var outpoint = new Outpoint
                   {
@@ -97,23 +95,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                   };
 
                   OutputTable output = storageBatch.OutputTable.ContainsKey(outpoint.ToString())
-                     ? storageBatch.OutputTable[outpoint.ToString()] : null;
+                     ? storageBatch.OutputTable[outpoint.ToString()]
+                     : null;
 
-                  return new InputTable()
+                  storageBatch.InputTable.Add(new InputTable()
                   {
                      Outpoint = outpoint,
                      TrxHash = trx.GetHash().ToString(),
                      BlockIndex = item.BlockInfo.Height,
                      Address = output?.Address,
                      Value = output?.Value ?? 0,
-                  };
-               })).ToList();
-
-
-         if (inputs.Any())
-         {
-            storageBatch.InputTable.AddRange(inputs);
-         }
+                  });
+               }));
 
 
          // allow any extensions to add ot the batch.
@@ -143,7 +136,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
 
          var t1 = storageBatch.BlockTable.Values.Any()
-            ? data.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values, new InsertManyOptions { IsOrdered = false })
+            ? data.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values,
+               new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
          var t2 = storageBatch.TransactionBlockTable.Any()
@@ -152,14 +146,15 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             : Task.CompletedTask;
 
          var t3 = storageBatch.OutputTable.Any()
-            ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values, new InsertManyOptions { IsOrdered = false })
+            ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values,
+               new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
 
          var t4 = Task.CompletedTask;
-         if(storageBatch.InputTable.Any())
+         if (storageBatch.InputTable.Any())
          {
-            var utxos = FetchUtxos(storageBatch.InputTable
+            var utxosLookups = FetchUtxos(storageBatch.InputTable
                .Where(_ => _.Address == null)
                .Select(_ => _.Outpoint));
 
@@ -168,58 +163,58 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                if (input.Address != null) continue;
 
                string key = input.Outpoint.ToString();
-               input.Address = utxos[key].Address;
-               input.Value = utxos[key].Value;
+               input.Address = utxosLookups[key].Address;
+               input.Value = utxosLookups[key].Value;
             }
 
             t4 = data.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
-         };
+         }
 
-         var t5 = Task.Run(() =>
+         Task t5 = Task.CompletedTask;
+
+         try
          {
-            try
+            if (storageBatch.TransactionTable.Any())
             {
-               if (storageBatch.TransactionTable.Any())
-                  data.TransactionTable.InsertMany(storageBatch.TransactionTable,
-                     new InsertManyOptions { IsOrdered = false });
+               t5 = data.TransactionTable.InsertManyAsync(storageBatch.TransactionTable,
+                  new InsertManyOptions { IsOrdered = false });
             }
-            catch (MongoBulkWriteException mbwex)
+         }
+         catch (MongoBulkWriteException mbwex)
+         {
+            // transactions are a special case they are not deleted from store in case of reorgs
+            // because they will just be included in another blocks, so we ignore if key is already present
+            if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
             {
-               // transactions are a special case they are not deleted from store in case of reorgs
-               // because they will just be included in another blocks, so we ignore if key is already present
-               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
-               {
-                  throw;
-               }
+               throw;
             }
-         });
+         }
 
          Task.WaitAll(t1, t2, t3, t4, t5);
 
-         var t6 = Task.Run(() =>
+         var utxos = new List<UtxoTable>(storageBatch.OutputTable.Values.Count);
+
+         foreach (OutputTable outputTable in storageBatch.OutputTable.Values)
+         {
+            utxos.Add(new UtxoTable
             {
-               var utxos = storageBatch.OutputTable.Values.Select(_ =>
-                  new UtxoTable
-                  {
-                     Address = _.Address,
-                     Outpoint = _.Outpoint,
-                     Value = _.Value,
-                     BLockIndex = _.BlockIndex
-                  });
-
-               data.UtxoTable.InsertMany(utxos);
-            })
-            .ContinueWith(task =>
-            {
-               var outpoint = storageBatch.InputTable.Select(_ => _.Outpoint);
-
-               var filter =
-                  Builders<UtxoTable>.Filter.Where(_ => outpoint.Contains(_.Outpoint));
-
-               data.UtxoTable.DeleteMany(filter);
+               Address = outputTable.Address,
+               Outpoint = outputTable.Outpoint,
+               Value = outputTable.Value,
+               BLockIndex = outputTable.BlockIndex
             });
+         }
 
-         Task.WaitAll(t6);
+         var t6 =  utxos.Any() ? data.UtxoTable.InsertManyAsync(utxos) : Task.CompletedTask;
+
+         var outpoint = storageBatch.InputTable.Select(_ => _.Outpoint);
+
+         var filterToDelete = Builders<UtxoTable>.Filter
+            .Where(_ => outpoint.Contains(_.Outpoint));
+
+         var t7=  data.UtxoTable.DeleteManyAsync(filterToDelete);
+
+         Task.WaitAll(t6,t7);
 
          // allow any extensions to push to repo before we complete the block.
          OnPushStorageBatch(storageBatch);
