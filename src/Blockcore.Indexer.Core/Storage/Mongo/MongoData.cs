@@ -25,6 +25,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       private readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
       readonly ICryptoClientFactory clientFactory;
+
       public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,IScriptInterpeter scriptInterpeter)
          : base(dbLogger,  connection, nakoConfiguration, chainConfiguration, globalState)
@@ -830,52 +831,21 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          public bool CoinBase;
          public bool CoinStake;
 
-         public List<InputTable> Inputs = new List<InputTable>();
-         public List<OutputTable> Ouputs = new List<OutputTable>();
+         public List<InputTable> Inputs = new();
+         public List<OutputTable> Ouputs = new();
       }
 
       public async Task DeleteBlockAsync(string blockHash)
       {
           SyncBlockInfo block = BlockByHash(blockHash);
-         //
-         // FilterDefinition<InputTable> inputFilter = Builders<InputTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         // var inputs = InputTable.FindSync(inputFilter)
-         //    .ToList()
-         //    .Select(_ => new UnspentOutputTable
-         //    {
-         //       Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BlockIndex = _.BlockIndex
-         //    });
-         //
-         // Task utxos = UnspentOutputTable.InsertManyAsync(inputs));
-         //     InputTable.DeleteManyAsync(inputFilter));
-         //
-         // FilterDefinition<OutputTable> outputFilter = Builders<OutputTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         // Task<DeleteResult> output = OutputTable.DeleteManyAsync(outputFilter);
-         //
-         // // delete the transaction
-         // FilterDefinition<TransactionBlockTable> transactionFilter = Builders<TransactionBlockTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
-         // Task<DeleteResult> transactions = TransactionBlockTable.DeleteManyAsync(transactionFilter);
-         //
-         // // delete computed
-         // FilterDefinition<AddressComputedTable> addrCompFilter = Builders<AddressComputedTable>.Filter.Eq(addr => addr.ComputedBlockIndex, block.BlockIndex);
-         // Task<DeleteResult> addressComputed = AddressComputedTable.DeleteManyAsync(addrCompFilter);
-         //
-         // // delete computed history
-         // FilterDefinition<AddressHistoryComputedTable> addrCompHistFilter = Builders<AddressHistoryComputedTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         // Task<DeleteResult> addressHistoryComputed = AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
-         //
-         // // delete computed utxo
-         // FilterDefinition<AddressUtxoComputedTable> addrCompUtxoFilter = Builders<AddressUtxoComputedTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
-         // Task<DeleteResult> addressUtxoComputed = AddressUtxoComputedTable.DeleteManyAsync(addrCompUtxoFilter);
-         //
-         // FilterDefinition<UnspentOutputTable> utxoFilter = Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BlockIndex, block.BlockIndex);
-         // Task<DeleteResult> utxo = UnspentOutputTable.DeleteManyAsync(utxoFilter);
-         //
-         // await Task.WhenAll(utxos, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed,utxo);
-         //
-         // await InputTable.DeleteManyAsync(inputFilter);
 
-         // signal to any child classes to deleted a block.
+          var rewindTask = globalState.IndexModeCompleted
+             ? this.RewindBlockOnIbdAsync(block.BlockIndex)
+             : this.RewindBlockAsync(block.BlockIndex);
+
+          await rewindTask;
+
+          // signal to any child classes to deleted a block.
          await OnDeleteBlockAsync(block);
 
          // delete the block itself is done last
