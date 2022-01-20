@@ -111,23 +111,25 @@ public static class BlockRewindOperation
 
    private static Task MergeRewindInputsToUnspentTransactionsAsync(MongoData storage ,long blockIndex)
    {
+      const string output = "Output";
+
       return storage.InputTable.Aggregate()
          .Match(_ => _.BlockIndex.Equals(blockIndex))
          .Lookup(storage.OutputTable.CollectionNamespace.CollectionName,
             new StringFieldDefinition<InputTable>(nameof(Outpoint)),
             new StringFieldDefinition<OutputTable>(nameof(Outpoint)),
-            new StringFieldDefinition<BsonDocument>("Output"))
-         .Unwind(_ => _["Output"])
+            new StringFieldDefinition<BsonDocument>(output))
+         .Unwind(_ => _[output])
          .Project(_ => new
          {
             //We need the block index that the output was created on, the rest of the data is the same as input
-            Value = _["Value"],
-            Address = _["Address"],
-            BlockIndex = _["Output"]["BlockIndex"],
+            Value = _[nameof(InputTable.Value)],
+            Address = _[nameof(InputTable.Address)],
+            BlockIndex = _[output][nameof(OutputTable.BlockIndex)],
             Outpoint = new
             {
-               OutputIndex = _["Outpoint"]["OutputIndex"],
-               TransactionId = _["Outpoint"]["TransactionId"],
+               OutputIndex = _[nameof(Outpoint)][nameof(Outpoint.OutputIndex)],
+               TransactionId = _[nameof(Outpoint)][nameof(Outpoint.OutputIndex)],
             }
          })
          .MergeAsync(storage.UnspentOutputTable);
