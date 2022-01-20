@@ -8,5 +8,5 @@ public class UnspentOutputTable
 
    public long Value { get; set; }
 
-   public long BLockIndex { get; set; }
+   public long BlockIndex { get; set; }
 }

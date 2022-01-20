@@ -132,7 +132,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             });
          }
 
-         mongoData.UtxoTable.Indexes
+         mongoData.UnspentOutputTable.Indexes
             .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
 

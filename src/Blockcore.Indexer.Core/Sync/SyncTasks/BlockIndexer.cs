@@ -206,7 +206,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogDebug($"Creating indexes on {nameof(UnspentOutputTable)}.{nameof(UnspentOutputTable.Address)}");
 
-                  await mongoData.UtxoTable.Indexes
+                  await mongoData.UnspentOutputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 

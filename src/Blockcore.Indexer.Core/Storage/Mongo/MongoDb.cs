@@ -55,7 +55,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
       }
 
-      public IMongoCollection<UnspentOutputTable> UtxoTable
+      public IMongoCollection<UnspentOutputTable> UnspentOutputTable
       {
          get
          {

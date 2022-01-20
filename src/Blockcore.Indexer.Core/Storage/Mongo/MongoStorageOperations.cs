@@ -201,18 +201,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                Address = outputTable.Address,
                Outpoint = outputTable.Outpoint,
                Value = outputTable.Value,
-               BLockIndex = outputTable.BlockIndex
+               BlockIndex = outputTable.BlockIndex
             });
          }
 
-         var t6 =  utxos.Any() ? data.UtxoTable.InsertManyAsync(utxos) : Task.CompletedTask;
+         var t6 =  utxos.Any() ? data.UnspentOutputTable.InsertManyAsync(utxos) : Task.CompletedTask;
 
-         var outpoint = storageBatch.InputTable.Select(_ => _.Outpoint);
+         var outpointsFromNewInput = storageBatch.InputTable.Select(_ => _.Outpoint);
 
          var filterToDelete = Builders<UnspentOutputTable>.Filter
-            .Where(_ => outpoint.Contains(_.Outpoint));
+            .Where(_ => outpointsFromNewInput.Contains(_.Outpoint));
 
-         var t7=  data.UtxoTable.DeleteManyAsync(filterToDelete);
+         var t7=  data.UnspentOutputTable.DeleteManyAsync(filterToDelete);
 
          Task.WaitAll(t6,t7);
 
@@ -355,7 +355,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          FilterDefinitionBuilder<UnspentOutputTable> builder = Builders<UnspentOutputTable>.Filter;
          FilterDefinition<UnspentOutputTable> filter = builder.In(utxo => utxo.Outpoint, outputs);
 
-         var res = data.UtxoTable.FindSync(filter)
+         var res = data.UnspentOutputTable.FindSync(filter)
             .ToList()
             .ToDictionary(_ => _.Outpoint.ToString());
 
