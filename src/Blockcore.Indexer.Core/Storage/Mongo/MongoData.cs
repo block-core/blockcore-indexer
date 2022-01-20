@@ -841,7 +841,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          FilterDefinition<InputTable> inputFilter = Builders<InputTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
          var inputs = InputTable.FindSync(inputFilter).ToList();
 
-         Task utxos = UtxoTable.InsertManyAsync(inputs.Select(_ => new UtxoTable
+         Task utxos = UtxoTable.InsertManyAsync(inputs.Select(_ => new UnspentOutputTable
             {
                Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BLockIndex = _.BlockIndex
             }))
@@ -866,7 +866,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          FilterDefinition<AddressUtxoComputedTable> addrCompUtxoFilter = Builders<AddressUtxoComputedTable>.Filter.Eq(addr => addr.BlockIndex, block.BlockIndex);
          Task<DeleteResult> addressUtxoComputed = AddressUtxoComputedTable.DeleteManyAsync(addrCompUtxoFilter);
 
-         FilterDefinition<UtxoTable> utxoFilter = Builders<UtxoTable>.Filter.Eq(utxo => utxo.BLockIndex, block.BlockIndex);
+         FilterDefinition<UnspentOutputTable> utxoFilter = Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BLockIndex, block.BlockIndex);
          Task<DeleteResult> utxo = UtxoTable.DeleteManyAsync(utxoFilter);
 
          await Task.WhenAll(utxos, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed,utxo);

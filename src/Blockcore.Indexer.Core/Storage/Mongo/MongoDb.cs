@@ -55,11 +55,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
       }
 
-      public IMongoCollection<UtxoTable> UtxoTable
+      public IMongoCollection<UnspentOutputTable> UtxoTable
       {
          get
          {
-            return mongoDatabase.GetCollection<UtxoTable>("Utxo");
+            return mongoDatabase.GetCollection<UnspentOutputTable>("UnspentOutput");
          }
       }
 

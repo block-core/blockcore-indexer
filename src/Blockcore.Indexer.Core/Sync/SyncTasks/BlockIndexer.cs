@@ -204,10 +204,10 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
-                  log.LogDebug($"Creating indexes on {nameof(UtxoTable)}.{nameof(UtxoTable.Address)}");
+                  log.LogDebug($"Creating indexes on {nameof(UnspentOutputTable)}.{nameof(UnspentOutputTable.Address)}");
 
                   await mongoData.UtxoTable.Indexes
-                     .CreateOneAsync(new CreateIndexModel<UtxoTable>(Builders<UtxoTable>
+                     .CreateOneAsync(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
                }).ContinueWith(async task =>

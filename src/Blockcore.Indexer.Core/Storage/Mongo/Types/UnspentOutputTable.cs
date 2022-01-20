@@ -1,9 +1,6 @@
-using MongoDB.Bson.Serialization.Attributes;
-
 namespace Blockcore.Indexer.Core.Storage.Mongo.Types;
 
-[BsonIgnoreExtraElements]
-public class UtxoTable
+public class UnspentOutputTable
 {
    public Outpoint Outpoint { get; set; }
 

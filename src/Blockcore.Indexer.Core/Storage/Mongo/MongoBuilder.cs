@@ -123,9 +123,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(UtxoTable)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(UnspentOutputTable)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<UtxoTable>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<UnspentOutputTable>(cm =>
             {
                cm.AutoMap();
                cm.SetIgnoreExtraElements(true);
@@ -133,7 +133,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
 
          mongoData.UtxoTable.Indexes
-            .CreateOne(new CreateIndexModel<UtxoTable>(Builders<UtxoTable>
+            .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
 
          return Task.FromResult(1);

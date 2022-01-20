@@ -192,11 +192,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          Task.WaitAll(t1, t2, t3, t4, t5);
 
-         var utxos = new List<UtxoTable>(storageBatch.OutputTable.Values.Count);
+         var utxos = new List<UnspentOutputTable>(storageBatch.OutputTable.Values.Count);
 
          foreach (OutputTable outputTable in storageBatch.OutputTable.Values)
          {
-            utxos.Add(new UtxoTable
+            utxos.Add(new UnspentOutputTable
             {
                Address = outputTable.Address,
                Outpoint = outputTable.Outpoint,
@@ -209,7 +209,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          var outpoint = storageBatch.InputTable.Select(_ => _.Outpoint);
 
-         var filterToDelete = Builders<UtxoTable>.Filter
+         var filterToDelete = Builders<UnspentOutputTable>.Filter
             .Where(_ => outpoint.Contains(_.Outpoint));
 
          var t7=  data.UtxoTable.DeleteManyAsync(filterToDelete);
@@ -350,10 +350,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return res;
       }
 
-      private Dictionary<string,UtxoTable> FetchUtxos(IEnumerable<Outpoint> outputs)
+      private Dictionary<string,UnspentOutputTable> FetchUtxos(IEnumerable<Outpoint> outputs)
       {
-         FilterDefinitionBuilder<UtxoTable> builder = Builders<UtxoTable>.Filter;
-         FilterDefinition<UtxoTable> filter = builder.In(utxo => utxo.Outpoint, outputs);
+         FilterDefinitionBuilder<UnspentOutputTable> builder = Builders<UnspentOutputTable>.Filter;
+         FilterDefinition<UnspentOutputTable> filter = builder.In(utxo => utxo.Outpoint, outputs);
 
          var res = data.UtxoTable.FindSync(filter)
             .ToList()
