@@ -6,6 +6,11 @@ namespace Blockcore.Indexer.Cirrus.Client.Types
    {
       public string MethodName { get; set; }
       public string ContractCodeType { get; set; }
+      public string ContractBytecode { get; set; }
+      public string ContractCodeHash { get; set; }
+      public string ContractCSharp { get; set; }
+
+
    }
 
 }

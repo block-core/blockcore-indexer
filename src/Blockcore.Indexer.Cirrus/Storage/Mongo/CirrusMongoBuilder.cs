@@ -33,6 +33,15 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             });
          }
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(CirrusContractCodeTable)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<CirrusContractCodeTable>(cm =>
+            {
+               cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
+            });
+         }
+
 
          return Task.FromResult(1);
       }
