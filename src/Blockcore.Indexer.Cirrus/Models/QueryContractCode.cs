@@ -13,9 +13,9 @@ namespace Blockcore.Indexer.Cirrus.Models
       public string ByteCode { get; set; }
 
       /// <summary>
-      /// The smart contract csharp code.
+      /// The smart contract source code.
       /// </summary>
-      public string Csharp { get; set; }
+      public string SourceCode { get; set; }
 
       /// <summary>
       /// The hash of the contract.

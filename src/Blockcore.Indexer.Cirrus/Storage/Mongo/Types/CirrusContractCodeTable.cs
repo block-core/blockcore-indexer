@@ -21,7 +21,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       /// <summary>
       /// The smart contract csharp code.
       /// </summary>
-      public string Csharp { get; set; }
+      public string SourceCode { get; set; }
 
       /// <summary>
       /// The hash of the contract.

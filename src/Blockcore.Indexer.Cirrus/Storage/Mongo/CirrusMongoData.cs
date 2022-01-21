@@ -167,7 +167,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             CodeType = item.CodeType,
             ByteCode = item.ByteCode,
             ContractHash = item.ContractHash,
-            Csharp = item.Csharp
+            SourceCode = item.SourceCode
          }).FirstOrDefault();
       }
    }
