@@ -840,8 +840,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
           SyncBlockInfo block = BlockByHash(blockHash);
 
           var rewindTask = globalState.IndexModeCompleted
-             ? this.RewindBlockOnIbdAsync(block.BlockIndex)
-             : this.RewindBlockAsync(block.BlockIndex);
+             ? this.RewindBlockAsync(block.BlockIndex)
+             : this.RewindBlockOnIbdAsync(block.BlockIndex);
 
           await rewindTask;
 
