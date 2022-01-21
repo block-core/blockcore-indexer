@@ -77,6 +77,14 @@ When you have the node running, pick it from the dropdown menu (green play butto
 
 *Happy debugging and coding!*
 
+### Local MongoDB database server on docker
+
+There is a basic docker-compose.yml that can be used to start a MongoDB database server on docker. Navigate to the docker/database folder and start the container in background mode:
+
+```
+sudo docker-compose up -d
+```
+
 ## Release Process
 
 1. New changes to the codebase must come as pull requests. This will trigger the [pull-request.yml](.github/workflows/pull-request.yml) workflow.

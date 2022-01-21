@@ -50,7 +50,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       public override async Task OnExecute()
       {
-         var client = clientFactory.Create(connection);
+         IBlockchainClient client = clientFactory.Create(connection);
 
          Runner.GlobalState.PullingTip = null;
          Runner.GlobalState.StoreTip = null;

@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Core.Client.Types
+namespace Blockcore.Indexer.Core.Client.Types
 {
    public class NetworkInfoModel
    {
@@ -49,6 +49,8 @@
 
       //[JsonProperty(PropertyName = "difficulty")]
       public double Difficulty { get; set; }
+
+      public long NetworkWeight { get; set; }
 
       //[JsonProperty(PropertyName = "mediantime")]
       public long MedianTime { get; set; }

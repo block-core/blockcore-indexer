@@ -53,7 +53,9 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          storageBatch.ExtraData ??= new CirrusStorageBatch();
 
          if (!(storageBatch.ExtraData is CirrusStorageBatch cirrusStorageBatch))
+         {
             throw new ArgumentNullException(nameof(cirrusStorageBatch));
+         }
 
          foreach (Transaction transaction in item.Transactions)
          {
@@ -69,6 +71,11 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
                   // fetch the contract receipt
                   ContractReceiptResponse receipt = cirrusClient.GetContractInfoAsync(transaction.GetHash().ToString()).Result;
+
+                  if (receipt == null)
+                  {
+                     throw new ApplicationException($"Smart Contract receipt not found for trx {transaction.GetHash()}");
+                  }
 
                   cirrusStorageBatch.CirrusContractTable.Add(new CirrusContractTable
                   {
@@ -86,6 +93,19 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                      GasUsed = receipt.GasUsed,
                      Logs = receipt.Logs
                   });
+
+                  if (receipt.ContractCodeHash != null)
+                  {
+                     cirrusStorageBatch.CirrusContractCodeTable.Add(new CirrusContractCodeTable
+                     {
+                        ContractAddress = receipt.NewContractAddress,
+                        BlockIndex = item.BlockInfo.Height,
+                        CodeType = receipt.ContractCodeType,
+                        ContractHash = receipt.ContractCodeHash,
+                        ByteCode = receipt.ContractBytecode,
+                        SourceCode = receipt.ContractCSharp
+                     });
+                  }
                }
             }
          }
@@ -94,7 +114,9 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
       protected override void OnPushStorageBatch(StorageBatch storageBatch)
       {
          if (!(storageBatch.ExtraData is CirrusStorageBatch cirrusStorageBatch))
+         {
             throw new ArgumentNullException(nameof(cirrusStorageBatch));
+         }
 
          var t1 = Task.Run(() =>
          {
@@ -102,8 +124,14 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                cirrusMongoData.CirrusContractTable.InsertMany(cirrusStorageBatch.CirrusContractTable, new InsertManyOptions { IsOrdered = false });
          });
 
-         Task.WaitAll(t1);
+         var t2 = Task.Run(() =>
+         {
+            if (cirrusStorageBatch.CirrusContractCodeTable.Any())
+               cirrusMongoData.CirrusContractCodeTable.InsertMany(cirrusStorageBatch.CirrusContractCodeTable, new InsertManyOptions { IsOrdered = false });
+         });
 
+
+         Task.WaitAll(t1, t2);
       }
    }
 }

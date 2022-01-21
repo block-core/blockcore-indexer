@@ -7,5 +7,8 @@ namespace Blockcore.Indexer.Cirrus.Operations.Types
    public class CirrusStorageBatch
    {
       public List<CirrusContractTable> CirrusContractTable { get; set; } = new List<CirrusContractTable>();
+
+      public List<CirrusContractCodeTable> CirrusContractCodeTable { get; set; } = new List<CirrusContractCodeTable>();
+
    }
 }
