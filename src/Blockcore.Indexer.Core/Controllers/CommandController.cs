@@ -24,7 +24,7 @@ namespace Blockcore.Indexer.Core.Controllers
       }
 
       [HttpPost("send")]
-      public async Task<IActionResult> Send([ModelBinder(BinderType = typeof(RawStringModelBinder))] string data)
+      public async Task<IActionResult> Send([FromBody][ModelBinder(BinderType = typeof(RawStringModelBinder))] string data)
       {
          if (string.IsNullOrEmpty(data))
          {
