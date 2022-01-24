@@ -100,14 +100,14 @@ public static class BlockRewindOperation
             .ToList();
 
          var filteredItemsToCopy = itemsToCopy
-            .Where(_ => existingOutpoint.All(e => e.Outpoint != _.Outpoint))
+            .Where(_ => existingOutpoint.All(e => e.Outpoint.ToString() != _.Outpoint.ToString()))
             .Select(_ => new UnspentOutputTable
             {
                Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BlockIndex = -1
             })
             .ToList();
 
-         if (!itemsToCopy.Any())
+         if (!filteredItemsToCopy.Any())
             break;
 
          await storage.UnspentOutputTable.InsertManyAsync(filteredItemsToCopy);
