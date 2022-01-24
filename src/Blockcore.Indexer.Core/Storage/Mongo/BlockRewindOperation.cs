@@ -91,16 +91,26 @@ public static class BlockRewindOperation
 
          var itemsToCopy = lookupItems
             .Where(_ => _.BlockIndex == blockIndex)
+            .ToList();
+
+         var outpoints = itemsToCopy.Select(_ => _.Outpoint).ToList();
+
+         var existingOutpoint = (await storage.UnspentOutputTable
+               .FindAsync(_ => outpoints.Contains(_.Outpoint)))
+            .ToList();
+
+         var filteredItemsToCopy = itemsToCopy
+            .Where(_ => existingOutpoint.All(e => e.Outpoint != _.Outpoint))
             .Select(_ => new UnspentOutputTable
             {
-               Address = _.Address,Outpoint = _.Outpoint,Value = _.Value,BlockIndex = -1
+               Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BlockIndex = -1
             })
             .ToList();
 
          if (!itemsToCopy.Any())
             break;
 
-         await storage.UnspentOutputTable.InsertManyAsync(itemsToCopy);
+         await storage.UnspentOutputTable.InsertManyAsync(filteredItemsToCopy);
          moreItemsToCopy = itemsToCopy.Count == lookupItems.Count;
 
 

@@ -135,23 +135,23 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          }
 
-         var t1 = storageBatch.BlockTable.Values.Any()
+         var blockTableTask = storageBatch.BlockTable.Values.Any()
             ? data.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values,
                new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
-         var t2 = storageBatch.TransactionBlockTable.Any()
+         var transactionBlockTableTask = storageBatch.TransactionBlockTable.Any()
             ? data.TransactionBlockTable.InsertManyAsync(storageBatch.TransactionBlockTable,
                new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
-         var t3 = storageBatch.OutputTable.Any()
+         var outputTableTask = storageBatch.OutputTable.Any()
             ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values,
                new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
 
-         var t4 = Task.CompletedTask;
+         var inputTableTask = Task.CompletedTask;
          if (storageBatch.InputTable.Any())
          {
             var utxosLookups = FetchUtxos(storageBatch.InputTable
@@ -167,16 +167,16 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                input.Value = utxosLookups[key].Value;
             }
 
-            t4 = data.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
+            inputTableTask = data.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
          }
 
-         Task t5 = Task.CompletedTask;
+         Task transactionTableTask = Task.CompletedTask;
 
          try
          {
             if (storageBatch.TransactionTable.Any())
             {
-               t5 = data.TransactionTable.InsertManyAsync(storageBatch.TransactionTable,
+               transactionTableTask = data.TransactionTable.InsertManyAsync(storageBatch.TransactionTable,
                   new InsertManyOptions { IsOrdered = false });
             }
          }
@@ -189,8 +189,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                throw;
             }
          }
-
-         Task.WaitAll(t1, t2, t3, t4, t5);
 
          var utxos = new List<UnspentOutputTable>(storageBatch.OutputTable.Values.Count);
 
@@ -205,16 +203,23 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             });
          }
 
-         var t6 =  utxos.Any() ? data.UnspentOutputTable.InsertManyAsync(utxos) : Task.CompletedTask;
+         var unspentOutputTableTask = utxos.Any()
+            ? data.UnspentOutputTable.InsertManyAsync(utxos)
+            : Task.CompletedTask;
 
-         var outpointsFromNewInput = storageBatch.InputTable.Select(_ => _.Outpoint);
+         Task.WaitAll(blockTableTask, transactionBlockTableTask, outputTableTask, inputTableTask, transactionTableTask, unspentOutputTableTask);
 
-         var filterToDelete = Builders<UnspentOutputTable>.Filter
-            .Where(_ => outpointsFromNewInput.Contains(_.Outpoint));
+         var outpointsFromNewInput = storageBatch.InputTable
+            .Select(_ => _.Outpoint)
+            .ToList();
 
-         var t7=  data.UnspentOutputTable.DeleteManyAsync(filterToDelete);
+         if (outpointsFromNewInput.Any())
+         {
+            var filterToDelete = Builders<UnspentOutputTable>.Filter
+               .Where(_ => outpointsFromNewInput.Contains(_.Outpoint));
 
-         Task.WaitAll(t6,t7);
+            data.UnspentOutputTable.DeleteMany(filterToDelete);
+         }
 
          // allow any extensions to push to repo before we complete the block.
          OnPushStorageBatch(storageBatch);
