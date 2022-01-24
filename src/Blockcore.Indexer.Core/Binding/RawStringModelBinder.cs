@@ -8,23 +8,22 @@ namespace Blockcore.Indexer.Core.Binding
    public class RawStringModelBinder : IModelBinder
    {
       /// <inheritdoc />
-      public Task BindModelAsync(ModelBindingContext bindingContext)
+      public async Task BindModelAsync(ModelBindingContext bindingContext)
       {
          if (bindingContext == null)
          {
             throw new ArgumentNullException("bindingContext");
          }
 
-         using (var memoryStream = new MemoryStream())
+         await using (var memoryStream = new MemoryStream())
          {
-            bindingContext.HttpContext.Request.Body.CopyTo(memoryStream);
+            await bindingContext.HttpContext.Request.Body.CopyToAsync(memoryStream);
             memoryStream.Seek(0, SeekOrigin.Begin);
 
             using (var rdr = new StreamReader(memoryStream))
             {
-               string resut = rdr.ReadToEnd();
+               string resut = await rdr.ReadToEndAsync();
                bindingContext.Result = ModelBindingResult.Success(resut);
-               return Task.CompletedTask;
             }
          }
       }
