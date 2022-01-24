@@ -13,27 +13,32 @@ public static class BlockRewindOperation
 {
    public static async Task RewindBlockOnIbdAsync(this MongoData storage, long blockIndex)
    {
-      await DeleteBlockInCollectionFromTopOfTable(storage.UnspentOutputTable, nameof(UnspentOutputTable.BlockIndex),blockIndex);
+      await DeleteBlockInCollectionFromTopOfTable(storage.UnspentOutputTable, nameof(UnspentOutputTable.BlockIndex),
+         blockIndex);
 
       await RewindInputDataIntoUnspentTransactionTableAsync(storage, blockIndex);
 
       var output =
-         DeleteBlockInCollectionFromTopOfTable(storage.OutputTable, nameof(OutputTable.BlockIndex),blockIndex);
+         DeleteBlockInCollectionFromTopOfTable(storage.OutputTable, nameof(OutputTable.BlockIndex), blockIndex);
 
       var input =
-         DeleteBlockInCollectionFromTopOfTable(storage.InputTable, nameof(InputTable.BlockIndex),blockIndex);
+         DeleteBlockInCollectionFromTopOfTable(storage.InputTable, nameof(InputTable.BlockIndex), blockIndex);
 
       var transactions =
-         DeleteBlockInCollectionFromTopOfTable(storage.TransactionBlockTable, nameof(TransactionBlockTable.BlockIndex),blockIndex);
+         DeleteBlockInCollectionFromTopOfTable(storage.TransactionBlockTable, nameof(TransactionBlockTable.BlockIndex),
+            blockIndex);
 
       var addressComputed =
-         DeleteBlockInCollectionFromTopOfTable(storage.AddressComputedTable, nameof(AddressComputedTable.ComputedBlockIndex),blockIndex);
+         DeleteBlockInCollectionFromTopOfTable(storage.AddressComputedTable,
+            nameof(AddressComputedTable.ComputedBlockIndex), blockIndex);
 
       var addressHistoryComputed =
-         DeleteBlockInCollectionFromTopOfTable(storage.AddressHistoryComputedTable, nameof(AddressHistoryComputedTable.BlockIndex),blockIndex);
+         DeleteBlockInCollectionFromTopOfTable(storage.AddressHistoryComputedTable,
+            nameof(AddressHistoryComputedTable.BlockIndex), blockIndex);
 
       var addressUtxoComputed =
-         DeleteBlockInCollectionFromTopOfTable(storage.AddressUtxoComputedTable, nameof(AddressUtxoComputedTable.BlockIndex),blockIndex);
+         DeleteBlockInCollectionFromTopOfTable(storage.AddressUtxoComputedTable,
+            nameof(AddressUtxoComputedTable.BlockIndex), blockIndex);
 
 
       await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed);
@@ -58,7 +63,8 @@ public static class BlockRewindOperation
       // delete computed history
       FilterDefinition<AddressHistoryComputedTable> addrCompHistFilter =
          Builders<AddressHistoryComputedTable>.Filter.Eq(addr => addr.BlockIndex, blockIndex);
-      Task<DeleteResult> addressHistoryComputed = storage.AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
+      Task<DeleteResult> addressHistoryComputed =
+         storage.AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
 
       // delete computed utxo
       FilterDefinition<AddressUtxoComputedTable> addrCompUtxoFilter =
@@ -69,9 +75,10 @@ public static class BlockRewindOperation
          Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BlockIndex, blockIndex);
       Task<DeleteResult> unspentOutput = storage.UnspentOutputTable.DeleteManyAsync(unspentOutputFilter);
 
-      await Task.WhenAll(unspentOutput, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed);
+      await Task.WhenAll(unspentOutput, output, transactions, addressComputed, addressHistoryComputed,
+         addressUtxoComputed);
 
-      await MergeRewindInputsToUnspentTransactionsAsync(storage,blockIndex);
+      await MergeRewindInputsToUnspentTransactionsAsync(storage, blockIndex);
 
       FilterDefinition<InputTable> inputFilter =
          Builders<InputTable>.Filter.Eq(addr => addr.BlockIndex, blockIndex);
@@ -87,7 +94,9 @@ public static class BlockRewindOperation
 
       do
       {
-         var lookupItems = await GetTopNDocumentsFromCollectionAsync<InputTable,InputTable>(storage.InputTable,limit * skip++, limit);
+         var lookupItems =
+            await GetTopNDocumentsFromCollectionAsync<InputTable, InputTable>(storage.InputTable, limit * skip++,
+               limit);
 
          var itemsToCopy = lookupItems
             .Where(_ => _.BlockIndex == blockIndex)
@@ -114,7 +123,7 @@ public static class BlockRewindOperation
          moreItemsToCopy = itemsToCopy.Count == lookupItems.Count;
 
 
-      } while (moreItemsToCopy );
+      } while (moreItemsToCopy);
    }
 
    private static async Task DeleteBlockInCollectionFromTopOfTable<T>(IMongoCollection<T> collection,
@@ -124,7 +133,7 @@ public static class BlockRewindOperation
 
       do
       {
-         var lookupItems = await GetTopNDocumentsFromCollectionAsync<T,BsonDocument>(collection, 0,limit);
+         var lookupItems = await GetTopNDocumentsFromCollectionAsync<T, BsonDocument>(collection, 0, limit);
 
          if (!lookupItems.Any())
             break;
@@ -144,7 +153,12 @@ public static class BlockRewindOperation
       } while (true);
    }
 
-   private static Task MergeRewindInputsToUnspentTransactionsAsync(MongoData storage ,long blockIndex)
+   /// <summary>
+   /// Inputs spend outputs, when an output is spent it gets deleted from the UnspendOutput table and the action of the delete is represented in the inputs table,
+   /// when a rewind happens we need to bring back outputs that have been deleted from the UnspendOutput so we look for those outputs in the inputs table,
+   /// however the block index in the inputs table is the one representing the input not the output we are trying to restore so we have to look it up in the outputs table.
+   /// </summary>
+   private static Task MergeRewindInputsToUnspentTransactionsAsync(MongoData storage, long blockIndex)
    {
       const string output = "Output";
 
@@ -170,10 +184,11 @@ public static class BlockRewindOperation
          .MergeAsync(storage.UnspentOutputTable);
    }
 
-   private static async Task<List<TProjection>> GetTopNDocumentsFromCollectionAsync<T,TProjection>(IMongoCollection<T> collection,int skip, int limit)
+   private static async Task<List<TProjection>> GetTopNDocumentsFromCollectionAsync<T, TProjection>(
+      IMongoCollection<T> collection, int skip, int limit)
    {
       return (await collection.FindAsync(FilterDefinition<T>.Empty,
-               new FindOptions<T,TProjection>
+               new FindOptions<T, TProjection>
                {
                   Sort = new BsonDocumentSortDefinition<T>(new BsonDocument("_id", -1)),
                   Limit = limit,
