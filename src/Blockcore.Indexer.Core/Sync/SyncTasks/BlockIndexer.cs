@@ -386,7 +386,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             new BsonDocument("$lookup",
                new BsonDocument
                {
-                  { "from", "Utxo" },
+                  { "from", "UnspentOutput" },
                   { "localField", "Outpoint" },
                   { "foreignField", "Outpoint" },
                   { "pipeline", new BsonArray
