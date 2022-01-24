@@ -97,8 +97,12 @@ public static class BlockRewindOperation
             })
             .ToList();
 
+         if (!itemsToCopy.Any())
+            break;
+
          await storage.UnspentOutputTable.InsertManyAsync(itemsToCopy);
          moreItemsToCopy = itemsToCopy.Count == lookupItems.Count;
+
 
       } while (moreItemsToCopy );
    }
@@ -111,6 +115,9 @@ public static class BlockRewindOperation
       do
       {
          var lookupItems = await GetTopNDocumentsFromCollectionAsync<T,BsonDocument>(collection, 0,limit);
+
+         if (!lookupItems.Any())
+            break;
 
          foreach (BsonDocument bsonDocument in lookupItems)
          {
