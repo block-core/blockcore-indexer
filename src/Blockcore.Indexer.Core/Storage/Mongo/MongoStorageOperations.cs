@@ -95,9 +95,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                      TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
                   };
 
-                  OutputTable output = storageBatch.OutputTable.ContainsKey(outpoint.ToString())
-                     ? storageBatch.OutputTable[outpoint.ToString()]
-                     : null;
+                  storageBatch.OutputTable.TryGetValue(outpoint.ToString(), out OutputTable output);
 
                   storageBatch.InputTable.Add(new InputTable()
                   {
