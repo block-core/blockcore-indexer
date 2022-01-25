@@ -1,8 +1,12 @@
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
 using Microsoft.Extensions.Logging;
 
 namespace Blockcore.Indexer.Core.Sync.SyncTasks
@@ -19,6 +23,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       private readonly SyncConnection connection;
       private readonly IStorageOperations storageOperations;
       readonly ICryptoClientFactory clientFactory;
+      readonly IStorage data;
+      private readonly MongoData mongoData;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockStartup"/> class.
@@ -27,14 +33,20 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          ILogger<BlockStartup> logger,
          ISyncOperations syncOperations,
          SyncConnection syncConnection,
-         IStorageOperations storageOperations, ICryptoClientFactory clientFactory)
+         IStorageOperations storageOperations,
+         ICryptoClientFactory clientFactory,
+         IStorage data)
           : base(logger)
       {
          connection = syncConnection;
          this.storageOperations = storageOperations;
          this.clientFactory = clientFactory;
+         this.data = data;
          this.syncOperations = syncOperations;
          log = logger;
+
+         mongoData = (MongoData)data;
+
       }
 
       /// <summary>
@@ -51,6 +63,13 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       public override async Task OnExecute()
       {
          IBlockchainClient client = clientFactory.Create(connection);
+
+         List<string> allIndexes = mongoData.GetAllIndexes();
+
+         if (allIndexes.Count != BlockIndexer.ExpectedNumberOfIndexes)
+         {
+            Runner.GlobalState.IndexModeCompleted = true;
+         }
 
          Runner.GlobalState.PullingTip = null;
          Runner.GlobalState.StoreTip = null;
@@ -78,6 +97,17 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          BlockInfo fetchedBlock = await client.GetBlockAsync(Runner.GlobalState.StoreTip.BlockHash);
          if (fetchedBlock == null)
          {
+            // check if the fullnode is ahead of the indexer height
+            int fullnodeTipHeight = client.GetBlockCount();
+            if (fullnodeTipHeight < Runner.GlobalState.StoreTip.BlockIndex)
+            {
+               throw new ApplicationException($"Indexer at height {fullnodeTipHeight} whihc is behind the fullnode at heigh {Runner.GlobalState.StoreTip.BlockIndex}");
+            }
+
+            // reorg happend while indexer was offline rewind the indexer database
+            Runner.GlobalState.PullingTip = null;
+            Runner.GlobalState.StoreTip = null;
+
             Runner.GlobalState.StoreTip = await syncOperations.RewindToBestChain(connection);
          }
       }

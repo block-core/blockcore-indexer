@@ -35,7 +35,26 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          this.scriptInterpeter = scriptInterpeter;
       }
 
-      public List<IndexView> GetCurrentIndexes()
+      public List<string> GetAllIndexes()
+      {
+         List<string> collections = mongoDatabase.ListCollectionNames().ToList();
+
+         List<string> indexNames = new();
+
+         foreach (string colName in collections)
+         {
+            var indexes = mongoDatabase.GetCollection<BsonDocument>(colName, new MongoCollectionSettings { }).Indexes.List().ToList();
+
+            foreach (string indexName in indexes.Select(s => s.ToString()))
+            {
+               indexNames.Add(indexName);
+            }
+         }
+
+         return indexNames;
+      }
+
+      public List<IndexView> GetIndexesBuildProgress()
       {
             IMongoDatabase db = mongoClient.GetDatabase("admin");
             var command = new BsonDocument {
