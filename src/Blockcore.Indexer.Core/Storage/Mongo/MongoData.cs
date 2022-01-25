@@ -45,7 +45,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          {
             var indexes = mongoDatabase.GetCollection<BsonDocument>(colName, new MongoCollectionSettings { }).Indexes.List().ToList();
 
-            foreach (string indexName in indexes.Select(s => s.ToString()))
+            foreach (string indexName in indexes.Select(s => colName + " - " + s.ToString()))
             {
                indexNames.Add(indexName);
             }
@@ -580,11 +580,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// </summary>
       private AddressComputedTable ComputeAddressBalance(string address)
       {
-         if (globalState.IndexModeCompleted == false)
-         {
-            // do not compute tables if indexes have not run.
-            throw new ApplicationException("node in syncing process");
-         }
+         //if (globalState.IndexModeCompleted == false)
+         //{
+         //   // do not compute tables if indexes have not run.
+         //   throw new ApplicationException("node in syncing process");
+         //}
 
          FilterDefinition<AddressComputedTable> addrFilter = Builders<AddressComputedTable>.Filter
             .Where(f => f.Address == address);

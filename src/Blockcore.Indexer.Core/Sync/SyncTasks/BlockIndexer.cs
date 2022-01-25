@@ -19,7 +19,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public class BlockIndexer : TaskRunner
    {
-      public const int ExpectedNumberOfIndexes = 34;
+      public const int ExpectedNumberOfIndexes = 6;
 
       private readonly IndexerSettings config;
 
@@ -297,7 +297,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             }
             else
             {
-               List<string> allIndexes = mongoData.GetAllIndexes();
+               List<string> allIndexes = mongoData.GetAllIndexes().Where(w => w.Contains("BlockIndex")).ToList();
 
                if (allIndexes.Count != ExpectedNumberOfIndexes)
                {

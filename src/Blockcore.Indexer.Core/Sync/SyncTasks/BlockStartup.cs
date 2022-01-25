@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Client.Types;
@@ -64,7 +65,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       {
          IBlockchainClient client = clientFactory.Create(connection);
 
-         List<string> allIndexes = mongoData.GetAllIndexes();
+         List<string> allIndexes = mongoData.GetAllIndexes().Where(w => w.Contains("BlockIndex")).ToList();
 
          if (allIndexes.Count == BlockIndexer.ExpectedNumberOfIndexes)
          {
