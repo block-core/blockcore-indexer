@@ -71,6 +71,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
                var outpoint = new Outpoint { TransactionId = trx.GetHash().ToString(), OutputIndex = index };
 
+               //TODO David need to change AddOrReplace to fit the BTC issue with repeating outputs that was fixed with hard-coding the 2 transactions that had that
                storageBatch.OutputTable.AddOrReplace(outpoint.ToString(), new OutputTable
                {
                   Address = addr,
