@@ -286,7 +286,18 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          {
             if (indexingCompletTask is not { IsCompleted: true })
             {
+
                log.LogDebug($"Indexer - Indexing tables time passed {watch.Elapsed}");
+            }
+            else
+            {
+               Runner.GlobalState.IndexMode = false;
+               Runner.GlobalState.IndexModeCompleted = true;
+
+               log.LogDebug($"Indexer - Indexing completed in {totalSecondsToMerge.ToString()}");
+
+               Abort = true;
+               return true;
             }
          }
 
