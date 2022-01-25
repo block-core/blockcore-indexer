@@ -55,6 +55,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
       }
 
+      public IMongoCollection<UnspentOutputTable> UnspentOutputTable
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<UnspentOutputTable>("UnspentOutput");
+         }
+      }
+
       public IMongoCollection<AddressComputedTable> AddressComputedTable
       {
          get

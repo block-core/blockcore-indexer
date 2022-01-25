@@ -40,30 +40,6 @@ namespace Blockcore.Indexer.Core.Storage
 
       Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address,long confirmations, int offset, int limit);
 
-      //IEnumerable<SyncBlockInfo> BlockGetCompleteBlockCount(int count);
-
-      //SyncBlockInfo BlockByHash(string blockHash);
-
-      //SyncTransactionInfo BlockTransactionGet(string transactionId);
-
-      //(IEnumerable<SyncBlockInfo> Items, int Total) BlockGetByLimitOffset(int offset, int limit);
-
-      //IEnumerable<SyncTransactionInfo> BlockTransactionGetByBlock(string blockHash);
-
-      //IEnumerable<SyncTransactionInfo> BlockTransactionGetByBlockIndex(long blockIndex);
-
-      //SyncTransactionItemOutput TransactionsGet(string transactionId, int index, SyncTransactionIndexType indexType);
-
-      //SyncTransactionItems TransactionItemsGet(string transactionId);
-
-      //Address AddressGetBalance(string address, long confirmations, bool availableOnly);
-
-      //// Address AddressGetBalanceUtxo(string address, long confirmations);
-
-      //string GetSpendingTransaction(string transaction, int index);
-
       Task DeleteBlockAsync(string blockHash);
-
-      //IEnumerable<NBitcoin.Transaction> GetMemoryTransactions();
    }
 }

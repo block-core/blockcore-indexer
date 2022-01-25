@@ -4,12 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Crypto;
+using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
-using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using NBitcoin;
@@ -49,8 +49,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          storageBatch.TransactionBlockTable.AddRange(item.Transactions.Select(s => new TransactionBlockTable
          {
-            BlockIndex = item.BlockInfo.Height,
-            TransactionId = s.GetHash().ToString()
+            BlockIndex = item.BlockInfo.Height, TransactionId = s.GetHash().ToString()
          }));
 
          if (configuration.StoreRawTransactions)
@@ -62,44 +61,52 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }));
          }
 
-         IEnumerable<OutputTable> outputs = item.Transactions.SelectMany((trx, i) =>
-            trx.Outputs.Select((output, index) =>
+         item.Transactions.ForEach((trx, i) =>
+            trx.Outputs.ForEach((output, index) =>
             {
                ScriptOutputInfo res = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey);
-               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType.ToString() : "none";
+               string addr = res != null
+                  ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType.ToString()
+                  : "none";
 
-               return new OutputTable
+               var outpoint = new Outpoint { TransactionId = trx.GetHash().ToString(), OutputIndex = index };
+
+               //TODO David need to change AddOrReplace to fit the BTC issue with repeating outputs that was fixed with hard-coding the 2 transactions that had that
+               storageBatch.OutputTable.AddOrReplace(outpoint.ToString(), new OutputTable
                {
                   Address = addr,
-                  Outpoint = new Outpoint{TransactionId = trx.GetHash().ToString(), OutputIndex = index},
+                  Outpoint = outpoint,
                   BlockIndex = item.BlockInfo.Height,
                   Value = output.Value,
                   ScriptHex = output.ScriptPubKey.ToHex(),
                   CoinBase = trx.IsCoinBase,
                   CoinStake = syncConnection.Network.Consensus.IsProofOfStake && trx.IsCoinStake,
-               };
+               });
             }));
 
 
-         storageBatch.OutputTable.AddRange(outputs);
-
-         var inputs = item.Transactions
+         item.Transactions
             .Where(t => t.IsCoinBase == false)
-            .SelectMany((trx, trxIndex) =>
-               trx.Inputs.Select((input, inputIndex) =>
+            .ForEach((trx, trxIndex) =>
+               trx.Inputs.ForEach((input, inputIndex) =>
                {
-                  return new InputTable()
+                  var outpoint = new Outpoint
                   {
-                     Outpoint = new Outpoint
-                     {
-                        TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
-                     },
+                     TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
+                  };
+
+                  storageBatch.OutputTable.TryGetValue(outpoint.ToString(), out OutputTable output);
+
+                  storageBatch.InputTable.Add(new InputTable()
+                  {
+                     Outpoint = outpoint,
                      TrxHash = trx.GetHash().ToString(),
                      BlockIndex = item.BlockInfo.Height,
-                  };
-               })).ToList();
+                     Address = output?.Address,
+                     Value = output?.Value ?? 0,
+                  });
+               }));
 
-         storageBatch.InputTable.AddRange(inputs);
 
          // allow any extensions to add ot the batch.
          OnAddToStorageBatch(storageBatch, item);
@@ -116,7 +123,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                   var toRemoveFromMempool = storageBatch.TransactionBlockTable.Select(s => s.TransactionId).ToList();
 
                   FilterDefinitionBuilder<MempoolTable> builder = Builders<MempoolTable>.Filter;
-                  FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
+                  FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId,
+                     toRemoveFromMempool);
 
                   data.Mempool.DeleteMany(filter);
 
@@ -126,60 +134,91 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          }
 
-         var t1 = Task.Run(() =>
-         {
-            if (storageBatch.BlockTable.Values.Any())
-            data.BlockTable.InsertMany(storageBatch.BlockTable.Values, new InsertManyOptions {IsOrdered = false });
-         });
+         var blockTableTask = storageBatch.BlockTable.Values.Any()
+            ? data.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values,
+               new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t2 = Task.Run(() =>
-         {
-            if (storageBatch.TransactionBlockTable.Any())
-            data.TransactionBlockTable.InsertMany(storageBatch.TransactionBlockTable, new InsertManyOptions { IsOrdered = false });
-         });
+         var transactionBlockTableTask = storageBatch.TransactionBlockTable.Any()
+            ? data.TransactionBlockTable.InsertManyAsync(storageBatch.TransactionBlockTable,
+               new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t3 = Task.Run(() =>
-         {
-            if (storageBatch.OutputTable.Any())
-            data.OutputTable.InsertMany(storageBatch.OutputTable, new InsertManyOptions {IsOrdered = false});
-         });
+         var outputTableTask = storageBatch.OutputTable.Any()
+            ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values,
+               new InsertManyOptions { IsOrdered = false })
+            : Task.CompletedTask;
 
-         var t4 = Task.Run(() =>
-         {
-            if (storageBatch.InputTable.Any())
-               data.InputTable.InsertMany(storageBatch.InputTable, new InsertManyOptions {IsOrdered = false});
-         });
 
-         var t5 = Task.Run(() =>
+         var inputTableTask = Task.CompletedTask;
+         if (storageBatch.InputTable.Any())
          {
-            try
+            var utxosLookups = FetchUtxos(storageBatch.InputTable
+               .Where(_ => _.Address == null)
+               .Select(_ => _.Outpoint));
+
+            foreach (InputTable input in storageBatch.InputTable)
             {
-               if (storageBatch.TransactionTable.Any())
-                  data.TransactionTable.InsertMany(storageBatch.TransactionTable, new InsertManyOptions {IsOrdered = false});
-            }
-            catch (MongoBulkWriteException mbwex)
-            {
-               // transactions are a special case they are not deleted from store in case of reorgs
-               // because they will just be included in another blocks, so we ignore if key is already present
-               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
-               {
-                  throw;
-               }
-            }
-         });
+               if (input.Address != null) continue;
 
-         Task.WaitAll(t3, t4);
+               string key = input.Outpoint.ToString();
+               input.Address = utxosLookups[key].Address;
+               input.Value = utxosLookups[key].Value;
+            }
 
-         var t6 = Task.Run(() =>
+            inputTableTask = data.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
+         }
+
+         Task transactionTableTask = Task.CompletedTask;
+
+         try
          {
-            if (globalState.IndexModeCompleted)
+            if (storageBatch.TransactionTable.Any())
             {
-               PipelineDefinition<InputTable, InputTable> pipeline = BlockIndexer.BuildInputsAddressUpdatePiepline();
-               data.InputTable.Aggregate(pipeline);
+               transactionTableTask = data.TransactionTable.InsertManyAsync(storageBatch.TransactionTable,
+                  new InsertManyOptions { IsOrdered = false });
             }
-         });
+         }
+         catch (MongoBulkWriteException mbwex)
+         {
+            // transactions are a special case they are not deleted from store in case of reorgs
+            // because they will just be included in another blocks, so we ignore if key is already present
+            if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
+            {
+               throw;
+            }
+         }
 
-         Task.WaitAll(t1, t2, t3, t4, t5, t6);
+         var utxos = new List<UnspentOutputTable>(storageBatch.OutputTable.Values.Count);
+
+         foreach (OutputTable outputTable in storageBatch.OutputTable.Values)
+         {
+            utxos.Add(new UnspentOutputTable
+            {
+               Address = outputTable.Address,
+               Outpoint = outputTable.Outpoint,
+               Value = outputTable.Value,
+               BlockIndex = outputTable.BlockIndex
+            });
+         }
+
+         var unspentOutputTableTask = utxos.Any()
+            ? data.UnspentOutputTable.InsertManyAsync(utxos)
+            : Task.CompletedTask;
+
+         Task.WaitAll(blockTableTask, transactionBlockTableTask, outputTableTask, inputTableTask, transactionTableTask, unspentOutputTableTask);
+
+         var outpointsFromNewInput = storageBatch.InputTable
+            .Select(_ => _.Outpoint)
+            .ToList();
+
+         if (outpointsFromNewInput.Any())
+         {
+            var filterToDelete = Builders<UnspentOutputTable>.Filter
+               .Where(_ => outpointsFromNewInput.Contains(_.Outpoint));
+
+            data.UnspentOutputTable.DeleteMany(filterToDelete);
+         }
 
          // allow any extensions to push to repo before we complete the block.
          OnPushStorageBatch(storageBatch);
@@ -189,8 +228,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var markBlocksAsComplete = new List<UpdateOneModel<BlockTable>>();
          foreach (BlockTable mapBlock in storageBatch.BlockTable.Values.OrderBy(b => b.BlockIndex))
          {
-            FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
-            UpdateDefinition<BlockTable> update = Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
+            FilterDefinition<BlockTable> filter =
+               Builders<BlockTable>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
+            UpdateDefinition<BlockTable> update =
+               Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
 
             markBlocksAsComplete.Add(new UpdateOneModel<BlockTable>(filter, update));
             lastBlockHash = mapBlock.BlockHash;
@@ -204,7 +245,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          if (block.BlockHash != lastBlockHash)
          {
-            throw new ArgumentException($"Expected hash {lastBlockHash} for block {blockIndex} but was {block.BlockHash}");
+            throw new ArgumentException(
+               $"Expected hash {lastBlockHash} for block {blockIndex} but was {block.BlockHash}");
          }
 
          return block;
@@ -217,17 +259,25 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          foreach (Transaction itemTransaction in item.Transactions)
          {
-            var mempoolEntry = new MempoolTable() {TransactionId = itemTransaction.GetHash().ToString()};
+            var mempoolEntry = new MempoolTable() { TransactionId = itemTransaction.GetHash().ToString() };
             mempool.Add(mempoolEntry);
 
             foreach (TxOut transactionOutput in itemTransaction.Outputs)
             {
-               ScriptOutputInfo res = scriptInterpeter.InterpretScript(syncConnection.Network, transactionOutput.ScriptPubKey);
-               string addr = res != null ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType.ToString() : null;
+               ScriptOutputInfo res =
+                  scriptInterpeter.InterpretScript(syncConnection.Network, transactionOutput.ScriptPubKey);
+               string addr = res != null
+                  ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType.ToString()
+                  : null;
 
                if (addr != null)
                {
-                  var output = new MempoolOutput {Value = transactionOutput.Value, ScriptHex = transactionOutput.ScriptPubKey.ToHex(), Address = addr};
+                  var output = new MempoolOutput
+                  {
+                     Value = transactionOutput.Value,
+                     ScriptHex = transactionOutput.ScriptPubKey.ToHex(),
+                     Address = addr
+                  };
                   mempoolEntry.Outputs.Add(output);
                   mempoolEntry.AddressOutputs.Add(addr);
                }
@@ -235,7 +285,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
             foreach (TxIn transactionInput in itemTransaction.Inputs)
             {
-               var input = new MempoolInput {Outpoint = new Outpoint {OutputIndex = (int)transactionInput.PrevOut.N, TransactionId = transactionInput.PrevOut.Hash.ToString()}};
+               var input = new MempoolInput
+               {
+                  Outpoint = new Outpoint
+                  {
+                     OutputIndex = (int)transactionInput.PrevOut.N,
+                     TransactionId = transactionInput.PrevOut.Hash.ToString()
+                  }
+               };
                mempoolEntry.Inputs.Add(input);
                inputs.Add($"{input.Outpoint.TransactionId}-{input.Outpoint.OutputIndex}", (input, mempoolEntry));
             }
@@ -245,7 +302,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          foreach (OutputTable outputFromStore in outputsFromStore)
          {
-            if (inputs.TryGetValue($"{outputFromStore.Outpoint.TransactionId}-{outputFromStore.Outpoint.OutputIndex}", out (MempoolInput mempoolInput, MempoolTable mempool) input))
+            if (inputs.TryGetValue($"{outputFromStore.Outpoint.TransactionId}-{outputFromStore.Outpoint.OutputIndex}",
+                   out (MempoolInput mempoolInput, MempoolTable mempool) input))
             {
                input.mempoolInput.Address = outputFromStore.Address;
                input.mempoolInput.Value = outputFromStore.Value;
@@ -273,7 +331,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          foreach (MempoolTable mempooltrx in mempool)
             globalState.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
 
-         return new InsertStats {Items = mempool};
+         return new InsertStats { Items = mempool };
       }
 
       protected virtual void OnAddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
@@ -292,6 +350,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          FilterDefinition<OutputTable> filter = builder.In(output => output.Outpoint, outputs);
 
          var res = data.OutputTable.Find(filter).ToList();
+
+         return res;
+      }
+
+      private Dictionary<string,UnspentOutputTable> FetchUtxos(IEnumerable<Outpoint> outputs)
+      {
+         FilterDefinitionBuilder<UnspentOutputTable> builder = Builders<UnspentOutputTable>.Filter;
+         FilterDefinition<UnspentOutputTable> filter = builder.In(utxo => utxo.Outpoint, outputs);
+
+         var res = data.UnspentOutputTable.FindSync(filter)
+            .ToList()
+            .ToDictionary(_ => _.Outpoint.ToString());
 
          return res;
       }
