@@ -19,7 +19,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public class BlockIndexer : TaskRunner
    {
-      public const int ExpectedNumberOfIndexes = 11;
+      public const int ExpectedNumberOfIndexes = 34;
 
       private readonly IndexerSettings config;
 
@@ -39,8 +39,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       Task indexingTask;
       Task indexingCompletTask;
       bool initialized;
-
-
 
       public BlockIndexer(
          IOptions<IndexerSettings> configuration,

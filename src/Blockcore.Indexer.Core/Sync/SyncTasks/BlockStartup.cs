@@ -66,7 +66,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
          List<string> allIndexes = mongoData.GetAllIndexes();
 
-         if (allIndexes.Count != BlockIndexer.ExpectedNumberOfIndexes)
+         if (allIndexes.Count == BlockIndexer.ExpectedNumberOfIndexes)
          {
             Runner.GlobalState.IndexModeCompleted = true;
          }
