@@ -212,6 +212,14 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                }).ContinueWith(async task =>
                {
+                  log.LogDebug($"Creating indexes on {nameof(UnspentOutputTable)}.{nameof(UnspentOutputTable.BlockIndex)}");
+
+                  await mongoData.UnspentOutputTable.Indexes
+                     .CreateOneAsync(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
+                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+
+               }).ContinueWith(async task =>
+               {
                   // run this indexes together because they data store should be empty they will complete fast
 
                   log.LogDebug($"Creating indexes on {nameof(AddressComputedTable)}.{nameof(AddressComputedTable.Address)}");
