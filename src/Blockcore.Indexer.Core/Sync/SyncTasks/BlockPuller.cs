@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Client;
@@ -34,6 +35,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       private StorageBatch currentStorageBatch;
 
       readonly ICryptoClientFactory clientFactory;
+
+      private readonly IEnumerable<long> bip30Blocks = new List<long> {91842 , 91880 };
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockPuller"/> class.
@@ -133,7 +136,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
          bool ibd = Runner.GlobalState.ChainTipHeight - nextBlock.Height > 20;
 
-         if (!ibd || currentStorageBatch.BlockTable.Count >= 10000 || currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
+         bool bip30Issue = bip30Blocks.Contains(nextBlock.Height + 1);
+
+         if (!ibd || bip30Issue || currentStorageBatch.BlockTable.Count >= 10000 || currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
          {
             long totalBlocks = currentStorageBatch.BlockTable.Count;
             double totalSeconds = watchBatch.Elapsed.TotalSeconds;
