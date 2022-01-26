@@ -48,8 +48,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
             watch.Restart();
 
-            PipelineDefinition<BlockTable, object> pipeline = BuildRichListComputingAndTableUpdatePipeline();
-
             await mongoData.UnspentOutputTable.Aggregate()
                .Group(table => table.Address,
                   tables => new { Address = tables.Key, Balance = tables.Sum(table => table.Value) })
