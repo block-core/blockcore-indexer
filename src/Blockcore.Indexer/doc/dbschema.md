@@ -16,7 +16,7 @@ https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexe
 
 `Output` - Stores information about outputs (this includes the script in hex format, block index, amount, if its a coinbase or coinstake, and the address), indexed on block index, outpoint and address.
 
-`Output` - Stores information about unspent outputs(this includes address, block index, value and outpoint).
+`UnspentOutput` - Stores information about unspent outputs (this includes address, block index, value and outpoint).
 
 `Input` - Stores information about inputs (this includes the trx hash the input appeared in and the output, amount and address its spending from) indexed on block index, outpoint and address. on the initial sync the address and amount fields are empty, they get populated when sync is complete and indexes are built by scanning the entire blockchain and copying info form the output.
 
