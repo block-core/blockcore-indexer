@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using NBitcoin.DataEncoders;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -258,6 +259,28 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             TransactionHash = trx.TransactionId,
             Confirmations = current.BlockIndex - trx.BlockIndex
          };
+      }
+
+      public string GetRawTransaction(string transactionId)
+      {
+         // Try to find the trx in disk
+         SyncRawTransaction rawtrx = TransactionGetByHash(transactionId);
+
+         if (rawtrx != null)
+         {
+            return Encoders.Hex.EncodeData(rawtrx.RawTransaction);
+         }
+
+         IBlockchainClient client = clientFactory.Create(syncConnection);
+
+         Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
+
+         if (res.Hex != null)
+         {
+            return res.Hex;
+         }
+
+         return null;
       }
 
       public SyncTransactionItems TransactionItemsGet(string transactionId, Transaction transaction = null)
