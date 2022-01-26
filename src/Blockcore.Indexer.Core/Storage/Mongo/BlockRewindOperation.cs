@@ -36,12 +36,8 @@ public static class BlockRewindOperation
          DeleteBlockInCollectionFromTopOfTable(storage.AddressHistoryComputedTable,
             nameof(AddressHistoryComputedTable.BlockIndex), blockIndex);
 
-      var addressUtxoComputed =
-         DeleteBlockInCollectionFromTopOfTable(storage.AddressUtxoComputedTable,
-            nameof(AddressUtxoComputedTable.BlockIndex), blockIndex);
 
-
-      await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, addressUtxoComputed);
+      await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed);
    }
 
    public static async Task RewindBlockAsync(this MongoData storage, long blockIndex)
@@ -66,17 +62,11 @@ public static class BlockRewindOperation
       Task<DeleteResult> addressHistoryComputed =
          storage.AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
 
-      // delete computed utxo
-      FilterDefinition<AddressUtxoComputedTable> addrCompUtxoFilter =
-         Builders<AddressUtxoComputedTable>.Filter.Eq(addr => addr.BlockIndex, blockIndex);
-      Task<DeleteResult> addressUtxoComputed = storage.AddressUtxoComputedTable.DeleteManyAsync(addrCompUtxoFilter);
-
       FilterDefinition<UnspentOutputTable> unspentOutputFilter =
          Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BlockIndex, blockIndex);
       Task<DeleteResult> unspentOutput = storage.UnspentOutputTable.DeleteManyAsync(unspentOutputFilter);
 
-      await Task.WhenAll(unspentOutput, output, transactions, addressComputed, addressHistoryComputed,
-         addressUtxoComputed);
+      await Task.WhenAll(unspentOutput, output, transactions, addressComputed, addressHistoryComputed);
 
       await MergeRewindInputsToUnspentTransactionsAsync(storage, blockIndex);
 
