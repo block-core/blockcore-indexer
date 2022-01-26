@@ -19,7 +19,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public class BlockIndexer : TaskRunner
    {
-      public const int ExpectedNumberOfIndexes = 6;
+      public const int ExpectedNumberOfIndexes = 5;
 
       private readonly IndexerSettings config;
 
