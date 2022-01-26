@@ -65,7 +65,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       {
          IBlockchainClient client = clientFactory.Create(connection);
 
-         List<string> allIndexes = mongoData.GetAllIndexes().Where(w => w.Contains("BlockIndex")).ToList();
+         List<string> allIndexes = mongoData.GetBlockIndexIndexes();
 
          if (allIndexes.Count == BlockIndexer.ExpectedNumberOfIndexes)
          {

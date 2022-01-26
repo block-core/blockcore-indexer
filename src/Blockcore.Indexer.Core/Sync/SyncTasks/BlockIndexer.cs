@@ -297,7 +297,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             }
             else
             {
-               List<string> allIndexes = mongoData.GetAllIndexes().Where(w => w.Contains("BlockIndex")).ToList();
+               List<string> allIndexes = mongoData.GetBlockIndexIndexes();
 
                if (allIndexes.Count != ExpectedNumberOfIndexes)
                {

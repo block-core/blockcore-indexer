@@ -35,7 +35,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          this.scriptInterpeter = scriptInterpeter;
       }
 
-      public List<string> GetAllIndexes()
+      /// <summary>
+      /// Return all the indexes that index the BlockIndex parameter.
+      /// Rewind logic uses BlockIndex to revert the chain those are the indexes we want to see built.
+      /// </summary>
+      /// <returns></returns>
+      public List<string> GetBlockIndexIndexes()
       {
          List<string> collections = mongoDatabase.ListCollectionNames().ToList();
 
@@ -51,7 +56,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          }
 
-         return indexNames;
+         return indexNames.Where(w => w.Contains("BlockIndex")).ToList();
       }
 
       public List<IndexView> GetIndexesBuildProgress()
