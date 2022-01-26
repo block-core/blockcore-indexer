@@ -35,7 +35,31 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          this.scriptInterpeter = scriptInterpeter;
       }
 
-      public List<IndexView> GetCurrentIndexes()
+      /// <summary>
+      /// Return all the indexes that index the BlockIndex parameter.
+      /// Rewind logic uses BlockIndex to revert the chain those are the indexes we want to see built.
+      /// </summary>
+      /// <returns></returns>
+      public List<string> GetBlockIndexIndexes()
+      {
+         List<string> collections = mongoDatabase.ListCollectionNames().ToList();
+
+         List<string> indexNames = new();
+
+         foreach (string colName in collections)
+         {
+            var indexes = mongoDatabase.GetCollection<BsonDocument>(colName, new MongoCollectionSettings { }).Indexes.List().ToList();
+
+            foreach (string indexName in indexes.Select(s => colName + " - " + s.ToString()))
+            {
+               indexNames.Add(indexName);
+            }
+         }
+
+         return indexNames.Where(w => w.Contains("BlockIndex")).ToList();
+      }
+
+      public List<IndexView> GetIndexesBuildProgress()
       {
             IMongoDatabase db = mongoClient.GetDatabase("admin");
             var command = new BsonDocument {
@@ -561,11 +585,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// </summary>
       private AddressComputedTable ComputeAddressBalance(string address)
       {
-         if (globalState.IndexModeCompleted == false)
-         {
-            // do not compute tables if indexes have not run.
-            throw new ApplicationException("node in syncing process");
-         }
+         //if (globalState.IndexModeCompleted == false)
+         //{
+         //   // do not compute tables if indexes have not run.
+         //   throw new ApplicationException("node in syncing process");
+         //}
 
          FilterDefinition<AddressComputedTable> addrFilter = Builders<AddressComputedTable>.Filter
             .Where(f => f.Address == address);

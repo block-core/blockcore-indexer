@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +19,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public class BlockIndexer : TaskRunner
    {
+      public const int ExpectedNumberOfIndexes = 6;
+
       private readonly IndexerSettings config;
 
       private readonly ISyncOperations syncOperations;
@@ -36,10 +39,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       Task indexingTask;
       Task indexingCompletTask;
       bool initialized;
-
-      long? inputCopyLastBlockHeight;
-
-      double totalSecondsToMerge = 0;
 
       public BlockIndexer(
          IOptions<IndexerSettings> configuration,
@@ -90,7 +89,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          {
             initialized = true;
 
-            List<IndexView> indexes = mongoData.GetCurrentIndexes();
+            List<IndexView> indexes = mongoData.GetIndexesBuildProgress();
             if (indexes.Any())
             {
                // if indexes are currently running go directly in to index mode
@@ -109,7 +108,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             Runner.GlobalState.IndexMode = true;
          }
 
-         List<IndexView> ops = mongoData.GetCurrentIndexes();
+         List<IndexView> ops = mongoData.GetIndexesBuildProgress();
 
          if (ops.Any())
          {
@@ -294,15 +293,21 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          {
             if (indexingCompletTask is not { IsCompleted: true })
             {
-
                log.LogDebug($"Indexer - Indexing tables time passed {watch.Elapsed}");
             }
             else
             {
+               List<string> allIndexes = mongoData.GetBlockIndexIndexes();
+
+               if (allIndexes.Count != ExpectedNumberOfIndexes)
+               {
+                  throw new ApplicationException($"Expected {ExpectedNumberOfIndexes} indexes but got {allIndexes.Count}");
+               }
+
                Runner.GlobalState.IndexMode = false;
                Runner.GlobalState.IndexModeCompleted = true;
 
-               log.LogDebug($"Indexer - Indexing completed in {totalSecondsToMerge.ToString()}");
+               log.LogDebug($"Indexer - Indexing completed in {watch.Elapsed}");
 
                Abort = true;
                return true;
