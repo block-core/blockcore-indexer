@@ -941,7 +941,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
             .Count()
-            .Single());
+            .SingleOrDefault());
 
          var outpointsToFetchTask = Task.Run(() => UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
@@ -961,7 +961,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return new QueryResult<OutputTable>
          {
             Items = results,
-            Total = totalTask.Result.Count,
+            Total = totalTask.Result?.Count ?? 0,
             Offset = offset,
             Limit = limit
          };
