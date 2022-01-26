@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Operations;
 
 namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
@@ -46,9 +48,12 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
             watch.Restart();
 
-            PipelineDefinition<BlockTable, object> pipeline = BuildRichListComputingAndTableUpdatePipeline();
-
-            await mongoData.BlockTable.AggregateAsync(pipeline);
+            await mongoData.UnspentOutputTable.Aggregate()
+               .Group(table => table.Address,
+                  tables => new { Address = tables.Key, Balance = tables.Sum(table => table.Value) })
+               .SortByDescending(arg => arg.Balance)
+               .Limit(1000)
+               .OutAsync(mongoData.RichlistTable.CollectionNamespace.CollectionName);
 
             watch.Stop();
             log.LogDebug($"Finished updating rich list in {watch.Elapsed}");
@@ -77,7 +82,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                   Runner.GlobalState.IndexMode||
             //local state valid
             syncInProgress ||
-                  lastSync.AddHours(1) > DateTime.UtcNow);
+                  lastSync.AddMinutes(10) > DateTime.UtcNow);
       }
 
       private PipelineDefinition<BlockTable,object> BuildRichListComputingAndTableUpdatePipeline()
