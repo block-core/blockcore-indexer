@@ -11,6 +11,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo;
 
 public static class BlockRewindOperation
 {
+   const long RewindBlockIndexTempValue = -1;
+
    public static async Task RewindBlockOnIbdAsync(this MongoData storage, long blockIndex)
    {
       await DeleteBlockInCollectionFromTopOfTable(storage.UnspentOutputTable, nameof(UnspentOutputTable.BlockIndex),
@@ -112,7 +114,7 @@ public static class BlockRewindOperation
             .Where(_ => existingOutpoint.All(e => e.Outpoint.ToString() != _.Outpoint.ToString()))
             .Select(_ => new UnspentOutputTable
             {
-               Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BlockIndex = -1
+               Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BlockIndex = RewindBlockIndexTempValue
             })
             .ToList();
 
@@ -182,6 +184,35 @@ public static class BlockRewindOperation
             }
          })
          .MergeAsync(storage.UnspentOutputTable);
+   }
+
+   /// <summary>
+   /// Rewind in Idb does not allow us to get the block index from the output table because of the lack of index
+   /// with the index on outpoint this method can update the block index on any unspent output that has the RewindBlockIndexTempValue set
+   /// </summary>
+   /// <param name="storage">The mongo db storage that contains the Unspent output and output tables</param>
+   /// <returns>Task/returns>
+   public static Task UpdateUnspentOutputFromRewindWithMissingDetailsAsync(MongoData storage)
+   {
+      const string lookupOutputName = "lookupOutputName";
+
+      return storage.UnspentOutputTable.Aggregate()
+         .Match(_ => _.BlockIndex == RewindBlockIndexTempValue)
+         .Lookup(storage.OutputTable.CollectionNamespace.CollectionName,
+            new StringFieldDefinition<UnspentOutputTable>(nameof(Outpoint)),
+            new StringFieldDefinition<OutputTable>(nameof(Outpoint)),
+            new StringFieldDefinition<BsonDocument>(lookupOutputName))
+         .Unwind(lookupOutputName)
+         .Project(_ => new
+         {
+            _id = _["_id"],
+            BlockIndex = _[lookupOutputName][nameof(OutputTable.BlockIndex)].AsInt32
+         })
+         .MergeAsync(storage.UnspentOutputTable,
+            new MergeStageOptions<UnspentOutputTable>
+            {
+               WhenMatched = MergeStageWhenMatched.Merge
+            });
    }
 
    private static async Task<List<TProjection>> GetTopNDocumentsFromCollectionAsync<T, TProjection>(
