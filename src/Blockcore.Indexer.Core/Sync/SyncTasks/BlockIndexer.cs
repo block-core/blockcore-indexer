@@ -309,8 +309,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                log.LogDebug($"Indexer - Indexing completed in {watch.Elapsed}");
 
-               await BlockRewindOperation.UpdateUnspentOutputFromRewindWithMissingDetailsAsync(mongoData);
-
                Abort = true;
                return true;
             }
