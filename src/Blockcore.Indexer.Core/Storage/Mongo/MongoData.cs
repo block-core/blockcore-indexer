@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using NBitcoin.DataEncoders;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -258,6 +259,28 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             TransactionHash = trx.TransactionId,
             Confirmations = current.BlockIndex - trx.BlockIndex
          };
+      }
+
+      public string GetRawTransaction(string transactionId)
+      {
+         // Try to find the trx in disk
+         SyncRawTransaction rawtrx = TransactionGetByHash(transactionId);
+
+         if (rawtrx != null)
+         {
+            return Encoders.Hex.EncodeData(rawtrx.RawTransaction);
+         }
+
+         IBlockchainClient client = clientFactory.Create(syncConnection);
+
+         Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
+
+         if (res.Hex != null)
+         {
+            return res.Hex;
+         }
+
+         return null;
       }
 
       public SyncTransactionItems TransactionItemsGet(string transactionId, Transaction transaction = null)
@@ -800,43 +823,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                }
             });
 
-            var utxoTask = Task.Run(() =>
-            {
-               try
-               {
-                  var utxoEntriesToModify = new Dictionary<string, WriteModel<AddressUtxoComputedTable>>();
-
-                  foreach (KeyValuePair<string, AddressUtxoComputedTable> utxoComputedTable in utxoToAdd)
-                  {
-                     utxoEntriesToModify.Add(utxoComputedTable.Key, new InsertOneModel<AddressUtxoComputedTable>(utxoComputedTable.Value));
-                  }
-
-                  foreach (KeyValuePair<string, Outpoint> toDelete in utxoToDelete)
-                  {
-                     FilterDefinition<AddressUtxoComputedTable> filter = Builders<AddressUtxoComputedTable>.Filter.Eq(entry => entry.Outpoint, toDelete.Value);
-                     utxoEntriesToModify.Add(toDelete.Key, new DeleteOneModel<AddressUtxoComputedTable>(filter));
-                  }
-
-                  if (utxoEntriesToModify.Values.Any())
-                  {
-                     // if we managed to update the address we can safely insert history
-                     AddressUtxoComputedTable.BulkWrite(utxoEntriesToModify.Values, new BulkWriteOptions {IsOrdered = false});
-                  }
-               }
-               catch (MongoBulkWriteException mbwex)
-               {
-                  // in cases of reorgs trx are not deleted from the store,
-                  // if a trx is already written and we attempt to write it again
-                  // the write will fail and throw, so we ignore such errors.
-                  // (IsOrdered = false will attempt all entries and only throw when done)
-                  if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
-                  {
-                     throw;
-                  }
-               }
-            });
-
-            Task.WaitAll(historyTask, utxoTask);
+            Task.WaitAll(historyTask);
          }
 
          return addressComputedTable;
@@ -946,88 +933,35 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       public int GetMemoryTransactionsCount()
       {
          return globalState.LocalMempoolView.Count;
-         //return (int)Mempool.CountDocuments(FilterDefinition<Mempool>.Empty);
       }
 
-      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address ,long confirmations, int offset, int limit)
+      public async Task<QueryResult<OutputTable>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
       {
-         // make sure fields are computed
-         AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
-
-         long total = addressComputedTable.CountUtxo;
-
-         IEnumerable<UnspentOutputsView> utxos = AddressUtxoComputedTable.AsQueryable()
-            .Where(utxo => utxo.Address == address)
-            .Skip(offset)
-            .Take(limit)
-            .ToList()
-            .Select(utxo => new UnspentOutputsView
-            {
-               Address = utxo.Address,
-               Outpoint = utxo.Outpoint,
-               Value = utxo.Value,
-               BlockIndex = utxo.BlockIndex,
-               CoinBase = utxo.CoinBase,
-               CoinStake = utxo.CoinStake,
-               ScriptHex = utxo.ScriptHex
-            });
-
-         return new QueryResult<UnspentOutputsView>
-         {
-            Items = utxos,
-            Total = total,
-            Offset = offset,
-            Limit = limit
-         };
-
-      }
-
-      public async Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync_Old(string address, long confirmations, int offset, int limit)
-      {
-         var totalTask = Task.Run(() => OutputTable.Aggregate()
+         var totalTask = Task.Run(() => UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
-            .Lookup(InputTable.CollectionNamespace.CollectionName,
-               new StringFieldDefinition<OutputTable>(nameof(Outpoint)),
-               new StringFieldDefinition<BsonDocument>(nameof(Outpoint)),
-               new StringFieldDefinition<BsonDocument>("Inputs"))
-            .Match(_ => _["Inputs"] == new BsonArray())
             .Count()
-            .Single());
+            .SingleOrDefault());
 
-         var selectedTask = Task.Run(() => OutputTable.Aggregate()
+         var outpointsToFetchTask = Task.Run(() => UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
-            .Sort(new BsonDocumentSortDefinition<OutputTable>(new BsonDocument("BlockIndex",-1)))
-            .Lookup(InputTable.CollectionNamespace.CollectionName,
-               new StringFieldDefinition<OutputTable>(nameof(Outpoint)),
-               new StringFieldDefinition<BsonDocument>(nameof(Outpoint)),
-               new StringFieldDefinition<BsonDocument>("Inputs"))
-            .Match(_ => _["Inputs"] == new BsonArray())
+            .Sort(new BsonDocumentSortDefinition<UnspentOutputTable>(new BsonDocument("BlockIndex",-1))) //TODO David, will need to chane -1 when the index is changed to descending
             .Skip(offset * limit)
             .Limit(limit)
             .ToList()
-            .Select(_ => new UnspentOutputsView
-            {
-               Address = _["Address"].AsString,
-               Outpoint = new Outpoint
-               {
-                  OutputIndex = _["Outpoint"]["OutputIndex"].AsInt32,
-                  TransactionId = _["Outpoint"]["TransactionId"].AsString,
-               }  ,
-               Value = _["Value"].AsInt64,
-               BlockIndex = _["BlockIndex"].AsInt64,
-               CoinBase = _["CoinBase"].AsBoolean,
-               CoinStake = _["CoinStake"].AsBoolean,
-               ScriptHex = _["ScriptHex"].AsString
-            }));
+            .Select(_ => _.Outpoint));
 
-         await Task.WhenAll(totalTask, selectedTask);
+         await Task.WhenAll(totalTask, outpointsToFetchTask);
 
-         return new QueryResult<UnspentOutputsView>
+         var results = await OutputTable.Aggregate()
+            .Match(_ => outpointsToFetchTask.Result.Contains(_.Outpoint))
+            .ToListAsync();
+
+         return new QueryResult<OutputTable>
          {
-            Items = selectedTask.Result,
-            Total = totalTask.Result.Count,
+            Items = results,
+            Total = totalTask.Result?.Count ?? 0,
             Offset = offset,
             Limit = limit
          };

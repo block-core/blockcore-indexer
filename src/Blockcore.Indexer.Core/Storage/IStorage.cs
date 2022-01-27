@@ -18,6 +18,8 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit);
 
+      string GetRawTransaction(string transactionId);
+
       QueryTransaction GetTransaction(string transactionId);
 
       QueryResult<SyncTransactionInfo> TransactionsByBlock(string hash, int offset, int limit);
@@ -38,7 +40,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       long TotalBalance();
 
-      Task<QueryResult<UnspentOutputsView>> GetUnspentTransactionsByAddressAsync(string address,long confirmations, int offset, int limit);
+      Task<QueryResult<OutputTable>> GetUnspentTransactionsByAddressAsync(string address,long confirmations, int offset, int limit);
 
       Task DeleteBlockAsync(string blockHash);
    }

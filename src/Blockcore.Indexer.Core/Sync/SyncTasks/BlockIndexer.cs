@@ -19,7 +19,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public class BlockIndexer : TaskRunner
    {
-      public const int ExpectedNumberOfIndexes = 6;
+      public const int ExpectedNumberOfIndexes = 5;
 
       private readonly IndexerSettings config;
 
@@ -248,22 +248,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   // -- utxo
                   log.LogDebug($"Creating indexes on {nameof(AddressUtxoComputedTable)}.{nameof(AddressUtxoComputedTable.BlockIndex)}");
-
-                  await mongoData.AddressUtxoComputedTable.Indexes
-                     .CreateOneAsync(new CreateIndexModel<AddressUtxoComputedTable>(Builders<AddressUtxoComputedTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
-
-                  log.LogDebug($"Creating indexes on {nameof(AddressUtxoComputedTable)}.{nameof(AddressUtxoComputedTable.Outpoint)}");
-
-                  await mongoData.AddressUtxoComputedTable.Indexes
-                     .CreateOneAsync(new CreateIndexModel<AddressUtxoComputedTable>(Builders<AddressUtxoComputedTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint), new CreateIndexOptions {Unique = true}));
-
-                  log.LogDebug($"Creating indexes on {nameof(AddressUtxoComputedTable)}.{nameof(AddressUtxoComputedTable.Address)}");
-
-                  await mongoData.AddressUtxoComputedTable.Indexes
-                     .CreateOneAsync(new CreateIndexModel<AddressUtxoComputedTable>(Builders<AddressUtxoComputedTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
                   // --mempool
                   log.LogDebug($"Creating indexes on {nameof(MempoolTable)}.{nameof(MempoolTable.TransactionId)}");

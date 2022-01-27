@@ -56,36 +56,6 @@ namespace Blockcore.Indexer.Core.Controllers
       }
 
       /// <summary>
-      /// Get unconfirmed transactions that exists on the address, based on the confirmation value specified. Confirmations must be 1 or higher, as 0 will always return empty results.
-      /// </summary>
-      /// <param name="address"></param>
-      /// <param name="confirmations"></param>
-      /// <param name="offset"></param>
-      /// <param name="limit"></param>
-      /// <returns></returns>
-      [HttpGet]
-      [Route("address/{address}/transactions/unconfirmed")]
-      public IActionResult GetAddressTransactionsUnconfirmed([MinLength(30)][MaxLength(100)] string address, [Range(1, long.MaxValue)] long confirmations, [MinLength(0)] int offset = 0, [Range(1, 50)] int limit = 10)
-      {
-         return OkPaging(storage.AddressHistory(address, offset, limit));
-      }
-
-      /// <summary>
-      /// Get spent transactions that exists on the address.
-      /// </summary>
-      /// <param name="address"></param>
-      /// <param name="confirmations"></param>
-      /// <param name="offset"></param>
-      /// <param name="limit"></param>
-      /// <returns></returns>
-      [HttpGet]
-      [Route("address/{address}/transactions/spent")]
-      public IActionResult GetAddressTransactionsSpent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
-      {
-         return OkPaging(storage.AddressHistory(address, offset, limit));
-      }
-
-      /// <summary>
       /// Get unspent transactions that exists on the address.
       /// </summary>
       /// <param name="address"></param>
@@ -97,7 +67,7 @@ namespace Blockcore.Indexer.Core.Controllers
       [Route("address/{address}/transactions/unspent")]
       public async Task<IActionResult> GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
-         QueryResult<Storage.Mongo.Types.UnspentOutputsView> result = await storage.GetUnspentTransactionsByAddressAsync(address, confirmations, offset, limit);
+         QueryResult<Storage.Mongo.Types.OutputTable> result = await storage.GetUnspentTransactionsByAddressAsync(address, confirmations, offset, limit);
 
          return OkPaging(result);
       }
@@ -137,6 +107,19 @@ namespace Blockcore.Indexer.Core.Controllers
       {
          return OkItem(storage.GetTransaction(transactionId));
       }
+
+      /// <summary>
+      /// Get a transaction in hex format based on the transaction ID (hash).
+      /// </summary>
+      /// <param name="transactionId"></param>
+      /// <returns></returns>
+      [HttpGet]
+      [Route("transaction/{transactionId}/hex")]
+      public IActionResult GetTransactionHex(string transactionId)
+      {
+         return OkItem(storage.GetRawTransaction(transactionId));
+      }
+
 
       /// <summary>
       /// Returns blocks based on the offset and limit. The blocks are sorted from from lowest to highest index. You can use the "link" HTTP header to get dynamic paging links.

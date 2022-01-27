@@ -9,8 +9,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo;
 
 public static class BlockRewindOperation
 {
-   const long RewindBlockIndexTempValue = -1;
-
    public static Task RewindBlockOnIbdAsync(this MongoData storage, long blockIndex)
    {
       //We have too many scenarios that add complexity to the sync (and really slows it down) with very little benefit as this is really a problem with the
@@ -26,8 +24,6 @@ public static class BlockRewindOperation
       Task<DeleteResult> addressComputed =  DeleteDocumentsFromDbByBlockIndexAsync(storage.AddressComputedTable, _ => _.ComputedBlockIndex, blockIndex);
       Task<DeleteResult> addressHistoryComputed =  DeleteDocumentsFromDbByBlockIndexAsync(storage.AddressHistoryComputedTable, _ => _.BlockIndex, blockIndex);
       Task<DeleteResult> unspentOutput =  DeleteDocumentsFromDbByBlockIndexAsync(storage.UnspentOutputTable, _ => _.BlockIndex, blockIndex);
-
-      await Task.WhenAll(output, transactions, addressComputed, addressHistoryComputed, unspentOutput);
 
       await MergeRewindInputsToUnspentTransactionsAsync(storage, blockIndex);
 
