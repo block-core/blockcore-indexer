@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -148,30 +147,34 @@ public static class BlockRewindOperation
    /// when a rewind happens we need to bring back outputs that have been deleted from the UnspendOutput so we look for those outputs in the inputs table,
    /// however the block index in the inputs table is the one representing the input not the output we are trying to restore so we have to look it up in the outputs table.
    /// </summary>
-   private static Task MergeRewindInputsToUnspentTransactionsAsync(MongoData storage, long blockIndex)
+   private static async Task MergeRewindInputsToUnspentTransactionsAsync(MongoData storage, long blockIndex)
    {
-      const string output = "Output";
-
-      return storage.InputTable.Aggregate()
-         .Match(_ => _.BlockIndex.Equals(blockIndex))
-         .Lookup(storage.OutputTable.CollectionNamespace.CollectionName,
-            new StringFieldDefinition<InputTable>(nameof(Outpoint)),
-            new StringFieldDefinition<OutputTable>(nameof(Outpoint)),
-            new StringFieldDefinition<BsonDocument>(output))
-         .Unwind(_ => _[output])
-         .Project(_ => new
+      var unspendOutputs = await storage.InputTable.Aggregate<UnspentOutputTable>(
+         new []
          {
-            //We need the block index that the output was created on, the rest of the data is the same as input
-            Value = _[nameof(InputTable.Value)],
-            Address = _[nameof(InputTable.Address)],
-            BlockIndex = _[output][nameof(OutputTable.BlockIndex)],
-            Outpoint = new
-            {
-               OutputIndex = _[nameof(Outpoint)][nameof(Outpoint.OutputIndex)],
-               TransactionId = _[nameof(Outpoint)][nameof(Outpoint.OutputIndex)],
-            }
-         })
-         .MergeAsync(storage.UnspentOutputTable);
+            new BsonDocument("$match",
+               new BsonDocument("BlockIndex", blockIndex)),
+            new BsonDocument("$lookup",
+               new BsonDocument
+               {
+                  { "from", "Output" },
+                  { "localField", "Outpoint" },
+                  { "foreignField", "Outpoint" },
+                  { "as", "Output" }
+               }),
+            new BsonDocument("$unwind",
+               new BsonDocument("path", "$Output")),
+            new BsonDocument("$project",
+               new BsonDocument
+               {
+                  { "Value", "$Value" },
+                  { "Address", "$Address" },
+                  { "BlockIndex", "$Output.BlockIndex" },
+                  { "Outpoint", "$Outpoint" }
+               })
+         }).ToListAsync();
+
+      await storage.UnspentOutputTable.InsertManyAsync(unspendOutputs);
    }
 
    private static async Task<List<TProjection>> GetTopNDocumentsFromCollectionAsync<T, TProjection>(
