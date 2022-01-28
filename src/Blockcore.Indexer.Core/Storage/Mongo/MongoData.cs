@@ -124,13 +124,16 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             Confirmations = transaction?.Confirmations ?? 0,
             Timestamp = transaction?.Timestamp ?? 0,
             TransactionId = transaction?.TransactionHash ?? transactionId,
-
             RBF = transactionItems.RBF,
             LockTime = transactionItems.LockTime.ToString(),
             Version = transactionItems.Version,
             IsCoinbase = transactionItems.IsCoinbase,
             IsCoinstake = transactionItems.IsCoinstake,
-
+            Fee = transactionItems.Fee,
+            Weight = transactionItems.Weight,
+            Size = transactionItems.Size,
+            VirtualSize = transactionItems.VirtualSize,
+            HasWitness = transactionItems.HasWitness,
             Inputs = transactionItems.Inputs.Select(i => new QueryTransactionInput
             {
                CoinBase = i.InputCoinBase,
@@ -285,6 +288,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public SyncTransactionItems TransactionItemsGet(string transactionId, Transaction transaction = null)
       {
+
          if (transaction == null)
          {
             // Try to find the trx in disk
@@ -311,11 +315,22 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          }
 
+         bool hasWitness = transaction.HasWitness;
+         int witnessScaleFactor = syncConnection.Network.Consensus.Options?.WitnessScaleFactor ?? 4;
+
+         int size = NBitcoin.BitcoinSerializableExtensions.GetSerializedSize(transaction, syncConnection.Network.Consensus.ConsensusFactory) ;
+         int virtualSize = hasWitness ? transaction.GetVirtualSize(witnessScaleFactor) : size;
+         int weight = virtualSize * witnessScaleFactor - (witnessScaleFactor - 1);
+
          var ret = new SyncTransactionItems
          {
             RBF = transaction.RBF,
             LockTime = transaction.LockTime.ToString(),
             Version = transaction.Version,
+            HasWitness = hasWitness,
+            Size = size,
+            VirtualSize = virtualSize,
+            Weight = weight,
             IsCoinbase = transaction.IsCoinBase,
             IsCoinstake = syncConnection.Network.Consensus.IsProofOfStake && transaction.IsCoinStake,
             Inputs = transaction.Inputs.Select(v => new SyncTransactionItemInput
@@ -348,6 +363,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          foreach (SyncTransactionItemOutput output in ret.Outputs)
          {
             output.SpentInTransaction = GetTransactionInput(transactionId, output.Index)?.TrxHash;
+         }
+
+         if (!ret.IsCoinbase && !ret.IsCoinstake)
+         {
+            // calcualte fee and feePk
+            ret.Fee = ret.Inputs.Sum(s => s.InputAmount) - ret.Outputs.Sum(s => s.Value);
          }
 
          return ret;
@@ -891,7 +912,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                Version = transactionItems.Version,
                IsCoinbase = transactionItems.IsCoinbase,
                IsCoinstake = transactionItems.IsCoinstake,
-
+               Fee = transactionItems.Fee,
+               Weight = transactionItems.Weight,
+               Size = transactionItems.Size,
+               VirtualSize = transactionItems.VirtualSize,
+               HasWitness = transactionItems.HasWitness,
                Inputs = transactionItems.Inputs.Select(i => new QueryTransactionInput
                {
                   CoinBase = i.InputCoinBase,

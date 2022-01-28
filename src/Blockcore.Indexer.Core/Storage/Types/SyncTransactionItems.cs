@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Blockcore.Indexer.Core.Storage.Types
 {
@@ -13,6 +13,16 @@ namespace Blockcore.Indexer.Core.Storage.Types
       public bool RBF { get; set; }
 
       public uint Version { get; set; }
+
+      public int Size { get; set; }
+
+      public int VirtualSize { get; set; }
+
+      public int Weight { get; set; }
+
+      public long Fee { get; set; }
+
+      public bool HasWitness { get; set; }
 
       public List<SyncTransactionItemInput> Inputs { get; set; }
 

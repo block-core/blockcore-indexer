@@ -44,6 +44,16 @@ namespace Blockcore.Indexer.Core.Models
 
       public uint Version { get; set; }
 
+      public int Size { get; set; }
+
+      public int VirtualSize { get; set; }
+
+      public int Weight { get; set; }
+
+      public long Fee { get; set; }
+
+      public bool HasWitness { get; set; }
+
       /// <summary>
       /// Gets or sets the transaction inputs.
       /// </summary>
