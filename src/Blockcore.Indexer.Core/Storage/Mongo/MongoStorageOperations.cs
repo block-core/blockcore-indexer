@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Crypto;
-using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
@@ -18,6 +17,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoStorageOperations : IStorageOperations
    {
+      const string OpReturnAddress = "TX_NULL_DATA";
+
       protected readonly SyncConnection syncConnection;
       protected readonly GlobalState globalState;
       protected readonly IScriptInterpeter scriptInterpeter;
@@ -175,6 +176,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          foreach (OutputTable outputTable in storageBatch.OutputTable.Values)
          {
+            if (outputTable.Address.Equals(OpReturnAddress))
+               continue;
+
             utxos.Add(new UnspentOutputTable
             {
                Address = outputTable.Address,
