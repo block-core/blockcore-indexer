@@ -68,46 +68,50 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             return false;
          }
 
-         if (TryDequeue(out StorageBatch item))
-         {
-            // check all blocks are consecutive and start from the last block in store.
-            string prevHash = Runner.GlobalState.StoreTip.BlockHash;
-            foreach (BlockTable mapBlock in item.BlockTable.Values.OrderBy(b => b.BlockIndex))
-            {
-               if (mapBlock.PreviousBlockHash != prevHash)
-               {
-                  throw new ApplicationException("None consecutive block received");
-               }
+         if (!TryDequeue(out StorageBatch batch))
+            return await Task.FromResult(false);
 
-               prevHash = mapBlock.BlockHash;
+         ValidateBatch(batch);
+
+         watch.Restart();
+
+         Runner.GlobalState.StoreTip = storageOperations.PushStorageBatch(batch);
+
+         watch.Stop();
+
+         if (Runner.GlobalState.StoreTip == null)
+            throw new ApplicationException("Store tip was not persisted");
+
+         long totalBlocks = batch.BlockTable.Count;// insertStats.Sum((tuple => tuple.count));
+         double totalSeconds = watch.Elapsed.TotalSeconds;// insertStats.Sum((tuple => tuple.seconds));
+         double blocksPerSecond = totalBlocks / totalSeconds;
+         double secondsPerBlock = totalSeconds / totalBlocks;
+
+         log.LogDebug($"Store - blocks={batch.BlockTable.Count}, outputs={batch.OutputTable.Count}, inputs={batch.InputTable.Count}, trx={batch.TransactionBlockTable.Count}, total Size = {((decimal)batch.TotalSize / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
+
+         foreach (BlockTable mapBlocksValue in batch.BlockTable.Values)
+            syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(blocksPerSecond), mapBlocksValue.BlockSize));
+
+         var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
+         Runner.Get<Notifier>().Enqueue(notifications);
+
+         return await Task.FromResult(true);
+
+      }
+
+      void ValidateBatch(StorageBatch item)
+      {
+         // check all blocks are consecutive and start from the last block in store.
+         string prevHash = Runner.GlobalState.StoreTip.BlockHash;
+         foreach (BlockTable mapBlock in item.BlockTable.Values.OrderBy(b => b.BlockIndex))
+         {
+            if (mapBlock.PreviousBlockHash != prevHash)
+            {
+               throw new ApplicationException("None consecutive block received");
             }
 
-            watch.Restart();
-
-            Runner.GlobalState.StoreTip = storageOperations.PushStorageBatch(item);
-
-            watch.Stop();
-
-            if (Runner.GlobalState.StoreTip == null)
-               throw new ApplicationException("Store tip was not persisted");
-
-            long totalBlocks = item.BlockTable.Count;// insertStats.Sum((tuple => tuple.count));
-            double totalSeconds = watch.Elapsed.TotalSeconds;// insertStats.Sum((tuple => tuple.seconds));
-            double blocksPerSecond = totalBlocks / totalSeconds;
-            double secondsPerBlock = totalSeconds / totalBlocks;
-
-            log.LogDebug($"Store - blocks={item.BlockTable.Count}, outputs={item.OutputTable.Count}, inputs={item.InputTable.Count}, trx={item.TransactionBlockTable.Count}, total Size = {((decimal)item.TotalSize / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
-
-            foreach (BlockTable mapBlocksValue in item.BlockTable.Values)
-               syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(blocksPerSecond), mapBlocksValue.BlockSize));
-
-            var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
-            Runner.Get<Notifier>().Enqueue(notifications);
-
-            return await Task.FromResult(true);
+            prevHash = mapBlock.BlockHash;
          }
-
-         return await Task.FromResult(false);
       }
    }
 }

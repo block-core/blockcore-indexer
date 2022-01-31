@@ -89,6 +89,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             return false;
          }
 
+         if (blockInfos.Count > 10000)
+            return false;
+
          watch.Restart();
 
          if (Runner.GlobalState.PullingTip == null)
