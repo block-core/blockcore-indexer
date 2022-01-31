@@ -34,19 +34,23 @@ namespace Blockcore.Indexer.Core.Handlers
       private readonly NetworkSettings networkConfig;
 
       readonly ICryptoClientFactory clientFactory;
+      readonly GlobalState globalState;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsHandler"/> class.
       /// </summary>
       public StatsHandler(
-         SyncConnection connection, IStorage storage,
+         SyncConnection connection,
+         IStorage storage,
          IOptions<NetworkSettings> networkConfig,
          IOptions<IndexerSettings> configuration,
          IOptions<ChainSettings> chainConfiguration,
-         ICryptoClientFactory clientFactory)
+         ICryptoClientFactory clientFactory,
+         GlobalState globalState)
       {
          this.storage = storage;
          this.clientFactory = clientFactory;
+         this.globalState = globalState;
          syncConnection = connection;
          this.configuration = configuration.Value;
          this.chainConfiguration = chainConfiguration.Value;
@@ -148,6 +152,11 @@ namespace Blockcore.Indexer.Core.Handlers
             {
                stats.SyncBlockIndex = latestBlock.BlockIndex;
                stats.Progress = $"{stats.SyncBlockIndex}/{stats.Blockchain.Blocks} - {stats.Blockchain.Blocks - stats.SyncBlockIndex}";
+
+               if (globalState.IndexMode)
+               {
+                  stats.Progress = $"{stats.Progress} (indexing)";
+               }
 
                double totalSeconds = syncConnection.RecentItems.Sum(s => s.Duration.TotalSeconds);
                stats.AvgBlockPersistInSeconds = Math.Round(totalSeconds / syncConnection.RecentItems.Count, 2);
