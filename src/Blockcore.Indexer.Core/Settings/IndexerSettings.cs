@@ -35,5 +35,7 @@ namespace Blockcore.Indexer.Core.Settings
       public int AverageInterval { get; set; }
 
       public bool StoreRawTransactions { get; set; }
+
+      public int NumberOfPullerTasksForIBD { get; set; }
    }
 }
