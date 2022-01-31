@@ -222,30 +222,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          // allow any extensions to push to repo before we complete the block.
          OnPushStorageBatch(storageBatch);
 
-         string lastBlockHash = null;
-         long blockIndex = 0;
-         var markBlocksAsComplete = new List<UpdateOneModel<BlockTable>>();
-         foreach (BlockTable mapBlock in storageBatch.BlockTable.Values.OrderBy(b => b.BlockIndex))
-         {
-            FilterDefinition<BlockTable> filter =
-               Builders<BlockTable>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
-            UpdateDefinition<BlockTable> update =
-               Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
-
-            markBlocksAsComplete.Add(new UpdateOneModel<BlockTable>(filter, update));
-            lastBlockHash = mapBlock.BlockHash;
-            blockIndex = mapBlock.BlockIndex;
-         }
-
          // mark each block is complete
-         data.BlockTable.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
+         var updateResult = data.BlockTable.UpdateMany(_ => storageBatch.BlockTable.Keys.Contains(_.BlockIndex),
+            Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true));
 
-         SyncBlockInfo block = data.BlockByIndex(blockIndex);
+         var lastblock = storageBatch.BlockTable.Last();
 
-         if (block.BlockHash != lastBlockHash)
+         SyncBlockInfo block = data.BlockByIndex(lastblock.Key);
+
+         if (block.BlockHash != lastblock.Value.BlockHash)
          {
             throw new ArgumentException(
-               $"Expected hash {lastBlockHash} for block {blockIndex} but was {block.BlockHash}");
+               $"Expected hash {lastblock.Key} for block {lastblock.Value.BlockHash} but was {block.BlockHash}");
          }
 
          return block;
