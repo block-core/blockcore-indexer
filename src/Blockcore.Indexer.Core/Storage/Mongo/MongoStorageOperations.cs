@@ -47,29 +47,35 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          storageBatch.TotalSize += item.BlockInfo.Size;
          storageBatch.BlockTable.Add(item.BlockInfo.Height, mongoBlockToStorageBlock.Map(item.BlockInfo));
 
-         storageBatch.TransactionBlockTable.AddRange(item.Transactions.Select(s => new TransactionBlockTable
+         foreach (Transaction trx in item.Transactions)
          {
-            BlockIndex = item.BlockInfo.Height, TransactionId = s.GetHash().ToString()
-         }));
+            string trxHash = trx.GetHash().ToString();
 
-         if (configuration.StoreRawTransactions)
-         {
-            storageBatch.TransactionTable.AddRange(item.Transactions.Select(t => new TransactionTable
+            storageBatch.TransactionBlockTable.Add(
+               new TransactionBlockTable
+               {
+                  BlockIndex = item.BlockInfo.Height,
+                  TransactionId = trxHash
+               });
+
+            if (configuration.StoreRawTransactions)
             {
-               TransactionId = t.GetHash().ToString(),
-               RawTransaction = t.ToBytes(syncConnection.Network.Consensus.ConsensusFactory)
-            }));
-         }
+               storageBatch.TransactionTable.Add(new TransactionTable
+               {
+                  TransactionId = trxHash,
+                  RawTransaction = trx.ToBytes(syncConnection.Network.Consensus.ConsensusFactory)
+               });
+            }
 
-         item.Transactions.ForEach((trx, i) =>
-            trx.Outputs.ForEach((output, index) =>
+            int outputIndex = 0;
+            foreach (TxOut output in trx.Outputs)
             {
                ScriptOutputInfo res = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey);
                string addr = res != null
-                  ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType.ToString()
+                  ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType
                   : "none";
 
-               var outpoint = new Outpoint { TransactionId = trx.GetHash().ToString(), OutputIndex = index };
+               var outpoint = new Outpoint { TransactionId = trxHash, OutputIndex = outputIndex++ };
 
                storageBatch.OutputTable.Add(outpoint.ToString(), new OutputTable
                {
@@ -81,31 +87,31 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                   CoinBase = trx.IsCoinBase,
                   CoinStake = syncConnection.Network.Consensus.IsProofOfStake && trx.IsCoinStake,
                });
-            }));
+            }
 
+            if (trx.IsCoinBase)
+               continue; //no need to check the inputs for that transaction
 
-         item.Transactions
-            .Where(t => t.IsCoinBase == false)
-            .ForEach((trx, trxIndex) =>
-               trx.Inputs.ForEach((input, inputIndex) =>
+            foreach (TxIn input in trx.Inputs)
+            {
+               var outpoint = new Outpoint
                {
-                  var outpoint = new Outpoint
-                  {
-                     TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
-                  };
+                  TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
+               };
 
                   storageBatch.OutputTable.TryGetValue(outpoint.ToString(), out OutputTable output);
 
-                  storageBatch.InputTable.Add(new InputTable()
-                  {
-                     Outpoint = outpoint,
-                     TrxHash = trx.GetHash().ToString(),
-                     BlockIndex = item.BlockInfo.Height,
-                     Address = output?.Address,
-                     Value = output?.Value ?? 0,
-                  });
-               }));
+               storageBatch.InputTable.Add(new InputTable()
+               {
+                  Outpoint = outpoint,
+                  TrxHash = trxHash,
+                  BlockIndex = item.BlockInfo.Height,
+                  Address = output?.Address,
+                  Value = output?.Value ?? 0,
+               });
+            }
 
+         }
 
          // allow any extensions to add ot the batch.
          OnAddToStorageBatch(storageBatch, item);
@@ -134,39 +140,16 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
 
          var blockTableTask = storageBatch.BlockTable.Values.Any()
-            ? data.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values,
-               new InsertManyOptions { IsOrdered = false })
+            ? data.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values, new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
          var transactionBlockTableTask = storageBatch.TransactionBlockTable.Any()
-            ? data.TransactionBlockTable.InsertManyAsync(storageBatch.TransactionBlockTable,
-               new InsertManyOptions { IsOrdered = false })
+            ? data.TransactionBlockTable.InsertManyAsync(storageBatch.TransactionBlockTable, new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
          var outputTableTask = storageBatch.OutputTable.Any()
-            ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values,
-               new InsertManyOptions { IsOrdered = false })
+            ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values, new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
-
-
-         var inputTableTask = Task.CompletedTask;
-         if (storageBatch.InputTable.Any())
-         {
-            var utxosLookups = FetchUtxos(storageBatch.InputTable
-               .Where(_ => _.Address == null)
-               .Select(_ => _.Outpoint));
-
-            foreach (InputTable input in storageBatch.InputTable)
-            {
-               if (input.Address != null) continue;
-
-               string key = input.Outpoint.ToString();
-               input.Address = utxosLookups[key].Address;
-               input.Value = utxosLookups[key].Value;
-            }
-
-            inputTableTask = data.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
-         }
 
          Task transactionTableTask = Task.CompletedTask;
 
@@ -202,8 +185,28 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
 
          var unspentOutputTableTask = utxos.Any()
-            ? data.UnspentOutputTable.InsertManyAsync(utxos)
+            ? data.UnspentOutputTable.InsertManyAsync(utxos, new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
+
+         var inputTableTask = Task.CompletedTask;
+         if (storageBatch.InputTable.Any())
+         {
+            var utxosLookups = FetchUtxos(
+               storageBatch.InputTable
+                  .Where(_ => _.Address == null)
+                  .Select(_ => _.Outpoint));
+
+            foreach (InputTable input in storageBatch.InputTable)
+            {
+               if (input.Address != null) continue;
+
+               string key = input.Outpoint.ToString();
+               input.Address = utxosLookups[key].Address;
+               input.Value = utxosLookups[key].Value;
+            }
+
+            inputTableTask = data.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
+         }
 
          Task.WaitAll(blockTableTask, transactionBlockTableTask, outputTableTask, inputTableTask, transactionTableTask, unspentOutputTableTask);
 

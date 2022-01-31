@@ -135,7 +135,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.BlockTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<BlockTable>(Builders<BlockTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockHash)));
+                        .IndexKeys.Descending(trxBlk => trxBlk.BlockHash)));
 
                }).ContinueWith(async task =>
                {
@@ -143,7 +143,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.TransactionBlockTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<TransactionBlockTable>(Builders<TransactionBlockTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+                        .IndexKeys.Descending(trxBlk => trxBlk.BlockIndex)));
 
                }).ContinueWith(async task =>
                {
@@ -159,7 +159,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.OutputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<OutputTable>(Builders<OutputTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+                        .IndexKeys.Descending(trxBlk => trxBlk.BlockIndex)));
 
                }).ContinueWith(async task =>
                {
@@ -191,7 +191,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.InputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+                        .IndexKeys.Descending(trxBlk => trxBlk.BlockIndex)));
 
                }).ContinueWith(async task =>
                {
@@ -232,13 +232,13 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.AddressHistoryComputedTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressHistoryComputedTable>(Builders<AddressHistoryComputedTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
+                        .IndexKeys.Descending(trxBlk => trxBlk.BlockIndex)));
 
                   log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputedTable)}.{nameof(AddressHistoryComputedTable.Position)}");
 
                   await mongoData.AddressHistoryComputedTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressHistoryComputedTable>(Builders<AddressHistoryComputedTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.Position)));
+                        .IndexKeys.Descending(trxBlk => trxBlk.Position)));
 
                   log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputedTable)}.{nameof(AddressHistoryComputedTable.Address)}");
 
@@ -254,7 +254,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.Mempool.Indexes
                      .CreateOneAsync(new CreateIndexModel<MempoolTable>(Builders<MempoolTable>
-                        .IndexKeys.Ascending(trxBlk => trxBlk.TransactionId)));
+                        .IndexKeys.Hashed(trxBlk => trxBlk.TransactionId)));
 
                   log.LogDebug($"Creating indexes on {nameof(MempoolTable)}.{nameof(MempoolTable.AddressOutputs)}");
 
