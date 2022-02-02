@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Consensus;
+using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Client.Types;
@@ -11,10 +12,12 @@ using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Networks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using Moq;
+using NBitcoin;
 using Xunit;
 
 namespace Blockcore.Indexer.Tests.Storage.Mongo;
@@ -29,7 +32,7 @@ public class MongoStorageOperationsTests
    private static long NewRandomInt64  => Random.NextInt64();
 
    IndexerSettings indexSettings;
-
+   ScriptOutputInfo scriptOutputInfo;
    public MongoStorageOperationsTests()
    {
       var indexSettingsMock = new Mock<IOptions<IndexerSettings>>();
@@ -71,12 +74,17 @@ public class MongoStorageOperationsTests
       mongodatabase.Setup(_ => _.Client)
          .Returns(new Mock<IMongoClient>().Object);
 
+      var scriptInterpeter = new Mock<IScriptInterpeter>();
+
+      scriptInterpeter.Setup(_ => _.InterpretScript(It.IsAny<Network>(), It.IsAny<Script>()))
+         .Returns(() => scriptOutputInfo);
+
       sut = new MongoStorageOperations(syncConnection,
          new MongoData(null, syncConnection, indexSettingsMock.Object,
             chainSetting.Object, globalState, new MapMongoBlockToStorageBlock(),
-            cryptoClientFactory.Object, new ScriptToAddressParser(), mongodatabase.Object),
+            cryptoClientFactory.Object, scriptInterpeter.Object, mongodatabase.Object),
          new UtxoCache(null), indexSettingsMock.Object, globalState, new MapMongoBlockToStorageBlock(),
-         new ScriptToAddressParser());
+         scriptInterpeter.Object);
    }
 
    private static BlockInfo NewRandomBlockInfo => new()
@@ -101,16 +109,25 @@ public class MongoStorageOperationsTests
       PreviousBlockHash = NewRandomString,
    };
 
+   static SyncBlockTransactionsOperation WithRandomSyncBlockTransactionsOperation()
+   {
+      var item = new SyncBlockTransactionsOperation
+      {
+         BlockInfo = NewRandomBlockInfo,
+         Transactions = new List<Transaction>
+         {
+            new Transaction() //TODO David generate random transactions
+         }
+      };
+      return item;
+   }
+
    [Fact]
    public void WhenAddToStorageIsCalledSetsTheTotalSizeFromBlockInfo()
    {
       var batch = new StorageBatch();
 
-      var item = new SyncBlockTransactionsOperation
-      {
-         BlockInfo = NewRandomBlockInfo,
-         Transactions = new List<Transaction>()
-      };
+      var item = WithRandomSyncBlockTransactionsOperation();
 
       sut.AddToStorageBatch(batch,item);
 
@@ -122,11 +139,7 @@ public class MongoStorageOperationsTests
    {
       var batch = new StorageBatch();
 
-      var item = new SyncBlockTransactionsOperation
-      {
-         BlockInfo = NewRandomBlockInfo,
-         Transactions = new List<Transaction>()
-      };
+      var item = WithRandomSyncBlockTransactionsOperation();
 
       sut.AddToStorageBatch(batch,item);
 
@@ -147,14 +160,7 @@ public class MongoStorageOperationsTests
    {
       var batch = new StorageBatch();
 
-      var item = new SyncBlockTransactionsOperation
-      {
-         BlockInfo = NewRandomBlockInfo,
-         Transactions = new List<Transaction>
-         {
-            new Transaction() //TODO David generate random transactions
-         }
-      };
+      var item = WithRandomSyncBlockTransactionsOperation();
 
       sut.AddToStorageBatch(batch,item);
 
@@ -172,14 +178,7 @@ public class MongoStorageOperationsTests
    {
       var batch = new StorageBatch();
 
-      var item = new SyncBlockTransactionsOperation
-      {
-         BlockInfo = NewRandomBlockInfo,
-         Transactions = new List<Transaction>
-         {
-            new Transaction() //TODO David generate random transactions
-         }
-      };
+      var item = WithRandomSyncBlockTransactionsOperation();
 
       indexSettings.StoreRawTransactions = true;
 
@@ -191,6 +190,98 @@ public class MongoStorageOperationsTests
       {
          RawTransaction = new byte[]{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
          TransactionId = "d21633ba23f70118185227be58a63527675641ad37967e2aa461559f577aec43"
+      });
+   }
+
+
+
+   [Fact]
+   public void WhenAddToStorageIsCalledSetsTheOutputsInTheTransactionToTheOutputTable()
+   {
+      var batch = new StorageBatch();
+      var valueMoney = new Money(NewRandomInt32);
+      var script = new Script(NewRandomString.Replace('-','1'));
+      var item = WithRandomSyncBlockTransactionsOperation();
+      item.Transactions = new List<Transaction>
+      {
+         new()
+         {
+            Outputs =
+            {
+               new TxOut { Value = valueMoney, ScriptPubKey =  script}
+            }
+         }
+      };
+
+      scriptOutputInfo = new ScriptOutputInfo { Addresses = new[] { NewRandomString } };
+
+      var expectedOutpoint = new Outpoint
+      {
+         OutputIndex = 0, TransactionId = item.Transactions.Single().GetHash().ToString()
+      };
+
+
+      sut.AddToStorageBatch(batch, item);
+
+
+      batch.OutputTable.Should().HaveCount(1);
+
+      var output = batch.OutputTable.Single();
+
+      output.Key.Should().Be(expectedOutpoint.ToString());
+
+      output.Value.Should().BeEquivalentTo(new OutputTable
+      {
+         Address = scriptOutputInfo.Addresses.Single(),
+         Outpoint = expectedOutpoint,
+         Value = valueMoney.Satoshi,
+         BlockIndex = item.BlockInfo.Height,
+         CoinBase = false,
+         CoinStake = false,
+         ScriptHex = script.ToHex()
+      });
+   }
+
+   [Fact]
+   public void WhenAddToStorageIsCalledSetsTheInputsInInputTableWithoutAddress()
+   {
+      var batch = new StorageBatch();
+      var hash = new uint256($"{NewRandomInt64}{NewRandomInt64}{NewRandomInt64}{NewRandomInt64}".Substring(0,64));
+      int n = NewRandomInt32;
+      var expectedOutpoint = new OutPoint
+      {
+         Hash = hash,
+         N = (uint)n
+      };
+      var item = WithRandomSyncBlockTransactionsOperation();
+      item.Transactions = new List<Transaction>
+      {
+         new()
+         {
+            Inputs =
+            {
+               new TxIn { PrevOut = expectedOutpoint}
+            }
+         }
+      };
+
+      scriptOutputInfo = new ScriptOutputInfo { Addresses = new[] { NewRandomString } };
+
+
+      sut.AddToStorageBatch(batch, item);
+
+
+      batch.InputTable.Should().HaveCount(1);
+
+      var input = batch.InputTable.Single();
+
+      input.Should().BeEquivalentTo(new InputTable
+      {
+         Address = null,
+         Outpoint = new Outpoint{TransactionId = hash.ToString(),OutputIndex = n},
+         Value = 0,
+         BlockIndex = item.BlockInfo.Height,
+         TrxHash = item.Transactions.Single().GetHash().ToString()
       });
    }
 }
