@@ -28,8 +28,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       readonly ICryptoClientFactory clientFactory;
 
       public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState,
-         IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,IScriptInterpeter scriptInterpeter)
-         : base(dbLogger,  connection, nakoConfiguration, chainConfiguration, globalState)
+         IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase)
+         : base(dbLogger,  connection, nakoConfiguration, chainConfiguration, globalState, mongoDatabase)
       {
          this.mongoBlockToStorageBlock = mongoBlockToStorageBlock;
          this.clientFactory = clientFactory;

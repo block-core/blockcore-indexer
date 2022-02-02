@@ -28,7 +28,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
          ICryptoClientFactory clientFactory,
-         IScriptInterpeter scriptInterpeter)
+         IScriptInterpeter scriptInterpeter,
+         IMongoDatabase mongoDatabase)
          : base(
             dbLogger,
             connection,
@@ -37,7 +38,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             globalState,
             mongoBlockToStorageBlock,
             clientFactory,
-            scriptInterpeter)
+            scriptInterpeter,
+            mongoDatabase)
       {
       }
 
