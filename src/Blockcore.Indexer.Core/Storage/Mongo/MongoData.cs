@@ -522,19 +522,27 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var list = filter.Where(w => w.Position <= offset && w.Position > offset - limit).ToList();
 
          // Loop all transaction IDs and get the transaction object.
-         IEnumerable<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
+         List<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
          {
             BlockIndex = item.BlockIndex,
             Value = item.AmountInOutputs - item.AmountInInputs,
             EntryType = item.EntryType,
             TransactionHash = item.TransactionId,
             Confirmations = globalState.StoreTip.BlockIndex + 1 - item.BlockIndex
-         });
+         }).ToList();
 
          if (offset == total)
          {
-            // TODO: add mempool in to history only when the page is the tip (offset = 1 or total) with zero confirmations
-            // List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
+            List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
+
+            transactions.AddRange(mempoolAddressBag.Select(item => new QueryAddressItem
+            {
+               BlockIndex = 0,
+               Value = item.AmountInOutputs - item.AmountInInputs,
+               EntryType = item.AmountInOutputs > item.AmountInInputs ? "receive" : "send",
+               TransactionHash = item.Mempool.TransactionId,
+               Confirmations = 0
+            }));
          }
 
          return new QueryResult<QueryAddressItem>
