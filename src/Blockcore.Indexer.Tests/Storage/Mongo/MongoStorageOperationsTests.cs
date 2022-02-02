@@ -284,4 +284,38 @@ public class MongoStorageOperationsTests
          TrxHash = item.Transactions.Single().GetHash().ToString()
       });
    }
+
+   [Fact]
+   public void WhenAddToStorageIsCalledSetsTheInputsInInputTableWithAddressAndValue()
+   {
+      var batch = new StorageBatch();
+      var valueMoney = new Money(NewRandomInt32);
+      var script = new Script(NewRandomString.Replace('-','1'));
+      var transaction = new Transaction { Outputs = { { new TxOut { Value = valueMoney, ScriptPubKey = script } } } };
+      var item = WithRandomSyncBlockTransactionsOperation();
+      item.Transactions = new List<Transaction>
+      {
+         transaction,
+         new() { Inputs = { new TxIn { PrevOut = new OutPoint { Hash = transaction.GetHash(), N = 0 } } } }
+      };
+
+      scriptOutputInfo = new ScriptOutputInfo { Addresses = new[] { NewRandomString } };
+
+
+      sut.AddToStorageBatch(batch, item);
+
+
+      batch.InputTable.Should().HaveCount(1);
+
+      var input = batch.InputTable.Single();
+
+      input.Should().BeEquivalentTo(new InputTable
+      {
+         Address = scriptOutputInfo.Addresses.Single(),
+         Outpoint = new Outpoint{TransactionId = transaction.GetHash().ToString(),OutputIndex = 0},
+         Value = valueMoney,
+         BlockIndex = item.BlockInfo.Height,
+         TrxHash = item.Transactions.Last().GetHash().ToString()
+      });
+   }
 }
