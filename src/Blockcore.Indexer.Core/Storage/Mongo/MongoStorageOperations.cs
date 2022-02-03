@@ -55,7 +55,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             storageBatch.TransactionBlockTable.Add(
                new TransactionBlockTable
                {
-                  BlockIndex = item.BlockInfo.Height,
+                  BlockIndex = item.BlockInfo.HeightAsUint32,
                   TransactionId = trxHash
                });
 
@@ -82,7 +82,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                {
                   Address = addr,
                   Outpoint = outpoint,
-                  BlockIndex = item.BlockInfo.Height,
+                  BlockIndex = item.BlockInfo.HeightAsUint32,
                   Value = output.Value,
                   ScriptHex = output.ScriptPubKey.ToHex(),
                   CoinBase = trx.IsCoinBase,
@@ -106,7 +106,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                {
                   Outpoint = outpoint,
                   TrxHash = trxHash,
-                  BlockIndex = item.BlockInfo.Height,
+                  BlockIndex = item.BlockInfo.HeightAsUint32,
                   Address = output?.Address,
                   Value = output?.Value ?? 0,
                });

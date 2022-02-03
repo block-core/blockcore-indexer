@@ -8,7 +8,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.Types
 
       public string ScriptHex { get; set; }
       public long Value { get; set; }
-      public long BlockIndex { get; set; }
+      public uint BlockIndex { get; set; }
       public bool CoinBase { get; set; }
       public bool CoinStake { get; set; }
    }

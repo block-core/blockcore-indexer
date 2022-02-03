@@ -101,7 +101,7 @@ public static class BlockRewindOperation
             .Where(_ => existingOutpoint.All(e => e.Outpoint.ToString() != _.Outpoint.ToString()))
             .Select(_ => new UnspentOutputTable
             {
-               Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BlockIndex = -1
+               Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BlockIndex = uint.MaxValue
             })
             .ToList();
 

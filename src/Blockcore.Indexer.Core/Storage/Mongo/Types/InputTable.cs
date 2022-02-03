@@ -10,6 +10,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.Types
 
       public string TrxHash { get; set; }
 
-      public long BlockIndex { get; set; }
+      public uint BlockIndex { get; set; }
    }
 }
