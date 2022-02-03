@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using Blockcore.Consensus;
@@ -36,6 +37,7 @@ public class MongoStorageOperationsTests
    ScriptOutputInfo scriptOutputInfo;
 
    Mock<IMongoCollection<BlockTable>> blockTableCollection;
+   Mock<IMongoCollection<TransactionBlockTable>> transactionBlockTableCollection;
    public MongoStorageOperationsTests()
    {
       var indexSettingsMock = new Mock<IOptions<IndexerSettings>>();
@@ -73,10 +75,13 @@ public class MongoStorageOperationsTests
       var cryptoClientFactory = new Mock<ICryptoClientFactory>();
 
       blockTableCollection = new Mock<IMongoCollection<BlockTable>>();
+      transactionBlockTableCollection = new Mock<IMongoCollection<TransactionBlockTable>>();
       var mongodatabase = new Mock<IMongoDatabase>();
 
       mongodatabase.Setup(_ => _.GetCollection<BlockTable>("Block",null))
          .Returns(blockTableCollection.Object);
+      mongodatabase.Setup(_ => _.GetCollection<TransactionBlockTable>("TransactionBlock",null))
+         .Returns(transactionBlockTableCollection.Object);
 
       mongodatabase.Setup(_ => _.Client)
          .Returns(new Mock<IMongoClient>().Object);
@@ -151,6 +156,21 @@ public class MongoStorageOperationsTests
          }
       };
       return item;
+   }
+
+   void GivenBlockIsLookupUpSuccessfully(BlockTable block)
+   {
+      var lookup = new Mock<IAsyncCursor<BlockTable>>();
+
+      lookup.Setup(_ => _.Current).Returns(() => new[] { block });
+      lookup.SetupSequence(_ => _.MoveNext(It.IsAny<CancellationToken>()))
+         .Returns(true)
+         .Returns(false);
+
+      blockTableCollection.Setup(_ => _.FindSync(It.IsAny<FilterDefinition<BlockTable>>(),
+            It.IsAny<FindOptions<BlockTable, BlockTable>>()
+            , It.IsAny<CancellationToken>()))
+         .Returns(() => lookup.Object);
    }
 
    [Fact]
@@ -348,25 +368,40 @@ public class MongoStorageOperationsTests
       var batch = new StorageBatch();
 
       var block = NewRandomBlockTable;
-
       batch.BlockTable.Add(block.BlockIndex, block);
 
-      var lookup = new Mock<IAsyncCursor<BlockTable>>();
-
-      lookup.Setup(_ => _.Current).Returns(() => new[] { block });
-      lookup.SetupSequence(_ => _.MoveNext(It.IsAny<CancellationToken>()))
-         .Returns(true)
-         .Returns(false);
-
-      blockTableCollection.Setup(_ => _.FindSync(It.IsAny<FilterDefinition<BlockTable>>(),
-            It.IsAny<FindOptions<BlockTable, BlockTable>>()
-            ,It.IsAny<CancellationToken>()))
-         .Returns(() => lookup.Object);
+      GivenBlockIsLookupUpSuccessfully(block);
 
       sut.PushStorageBatch(batch);
 
       blockTableCollection.Verify(_ => _.InsertManyAsync( batch.BlockTable.Values,
             It.Is<InsertManyOptions>(_ => _.IsOrdered == false), It.IsAny<CancellationToken>())
+         , Times.Once);
+   }
+
+   [Fact]
+   public void PushStorageBatchAddsTransactionBlockTableFromBatchToMongoDb()
+   {
+      var batch = new StorageBatch();
+
+      var block = NewRandomBlockTable;
+      batch.BlockTable.Add(block.BlockIndex, block);
+
+      GivenBlockIsLookupUpSuccessfully(block);
+
+      var blockTable = new TransactionBlockTable
+      {
+         BlockIndex = NewRandomInt32,
+         TransactionId = NewRandomString
+      };
+
+      batch.TransactionBlockTable.Add(blockTable);
+
+      sut.PushStorageBatch(batch);
+
+      transactionBlockTableCollection.Verify(_ => _.InsertManyAsync( batch.TransactionBlockTable,
+            It.Is<InsertManyOptions>(_ => _.IsOrdered == false),
+            It.IsAny<CancellationToken>())
          , Times.Once);
    }
 }
