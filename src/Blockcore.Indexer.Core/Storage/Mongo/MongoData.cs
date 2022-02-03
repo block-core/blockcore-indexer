@@ -909,6 +909,30 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          await Task.CompletedTask;
       }
 
+      public QueryResult<QueryMempoolTransaction> GetMemoryTransactionsSlim(int offset, int limit)
+      {
+         ICollection<MempoolTable> list = Mempool.AsQueryable().Skip(offset).Take(limit).ToList();
+
+         var retList = new List<QueryMempoolTransaction>();
+
+         foreach (MempoolTable trx in list) 
+         {
+            string transactionId = trx.TransactionId;
+
+            retList.Add(new QueryMempoolTransaction { TransactionId = transactionId });
+         }
+
+         var queryResult = new QueryResult<QueryMempoolTransaction>
+         {
+            Items = retList,
+            Total = Mempool.EstimatedDocumentCount(),
+            Offset = offset,
+            Limit = limit
+         };
+
+         return queryResult;
+      }
+
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)
       {
          ICollection<MempoolTable> list = Mempool.AsQueryable().Skip(offset).Take(limit).ToList();
@@ -919,6 +943,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          {
             string transactionId = trx.TransactionId;
             SyncTransactionItems transactionItems = TransactionItemsGet(transactionId);
+
+
 
             var result = new QueryTransaction
             {
