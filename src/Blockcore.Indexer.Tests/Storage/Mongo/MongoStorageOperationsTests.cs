@@ -38,6 +38,8 @@ public class MongoStorageOperationsTests
 
    Mock<IMongoCollection<BlockTable>> blockTableCollection;
    Mock<IMongoCollection<TransactionBlockTable>> transactionBlockTableCollection;
+   Mock<IMongoCollection<OutputTable>> outputTableCollection;
+   Mock<IMongoCollection<UnspentOutputTable>> unspentOutputTableCollection;
    public MongoStorageOperationsTests()
    {
       var indexSettingsMock = new Mock<IOptions<IndexerSettings>>();
@@ -76,13 +78,18 @@ public class MongoStorageOperationsTests
 
       blockTableCollection = new Mock<IMongoCollection<BlockTable>>();
       transactionBlockTableCollection = new Mock<IMongoCollection<TransactionBlockTable>>();
+      outputTableCollection = new Mock<IMongoCollection<OutputTable>>();
+      unspentOutputTableCollection = new Mock<IMongoCollection<UnspentOutputTable>>();
       var mongodatabase = new Mock<IMongoDatabase>();
 
       mongodatabase.Setup(_ => _.GetCollection<BlockTable>("Block",null))
          .Returns(blockTableCollection.Object);
       mongodatabase.Setup(_ => _.GetCollection<TransactionBlockTable>("TransactionBlock",null))
          .Returns(transactionBlockTableCollection.Object);
-
+      mongodatabase.Setup(_ => _.GetCollection<OutputTable>("Output",null))
+         .Returns(outputTableCollection.Object);
+      mongodatabase.Setup(_ => _.GetCollection<UnspentOutputTable>("UnspentOutput",null))
+         .Returns(unspentOutputTableCollection.Object);
       mongodatabase.Setup(_ => _.Client)
          .Returns(new Mock<IMongoClient>().Object);
 
@@ -158,7 +165,7 @@ public class MongoStorageOperationsTests
       return item;
    }
 
-   void GivenBlockIsLookupUpSuccessfully(BlockTable block)
+   void GivenBlockIsLookedUpSuccessfully(BlockTable block)
    {
       var lookup = new Mock<IAsyncCursor<BlockTable>>();
 
@@ -370,7 +377,7 @@ public class MongoStorageOperationsTests
       var block = NewRandomBlockTable;
       batch.BlockTable.Add(block.BlockIndex, block);
 
-      GivenBlockIsLookupUpSuccessfully(block);
+      GivenBlockIsLookedUpSuccessfully(block);
 
       sut.PushStorageBatch(batch);
 
@@ -387,7 +394,7 @@ public class MongoStorageOperationsTests
       var block = NewRandomBlockTable;
       batch.BlockTable.Add(block.BlockIndex, block);
 
-      GivenBlockIsLookupUpSuccessfully(block);
+      GivenBlockIsLookedUpSuccessfully(block);
 
       var blockTable = new TransactionBlockTable
       {
@@ -400,6 +407,37 @@ public class MongoStorageOperationsTests
       sut.PushStorageBatch(batch);
 
       transactionBlockTableCollection.Verify(_ => _.InsertManyAsync( batch.TransactionBlockTable,
+            It.Is<InsertManyOptions>(_ => _.IsOrdered == false),
+            It.IsAny<CancellationToken>())
+         , Times.Once);
+   }
+
+   [Fact]
+   public void PushStorageBatchAddsOutputTableFromBatchToMongoDb()
+   {
+      var batch = new StorageBatch();
+
+      var block = NewRandomBlockTable;
+      batch.BlockTable.Add(block.BlockIndex, block);
+
+      GivenBlockIsLookedUpSuccessfully(block);
+
+      var outputTable = new OutputTable()
+      {
+         BlockIndex = NewRandomInt32,
+         Address = NewRandomString,
+         Outpoint = new Outpoint{OutputIndex = NewRandomInt32,TransactionId = NewRandomString},
+         Value = NewRandomInt64,
+         CoinBase = NewRandomInt32 % 2 > 0,
+         CoinStake = NewRandomInt32 % 2 > 0,
+         ScriptHex = NewRandomString
+      };
+
+      batch.OutputTable.Add(outputTable.Outpoint.ToString(),outputTable);
+
+      sut.PushStorageBatch(batch);
+
+      outputTableCollection.Verify(_ => _.InsertManyAsync( batch.OutputTable.Values,
             It.Is<InsertManyOptions>(_ => _.IsOrdered == false),
             It.IsAny<CancellationToken>())
          , Times.Once);
