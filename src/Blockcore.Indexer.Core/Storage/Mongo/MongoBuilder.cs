@@ -120,6 +120,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<MempoolTable>(cm =>
             {
                cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
             });
          }
 

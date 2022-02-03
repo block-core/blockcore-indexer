@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 
 namespace Blockcore.Indexer.Core.Client
@@ -75,6 +75,12 @@ namespace Blockcore.Indexer.Core.Client
             {
                return true;
             }
+
+            if (ErrorMessage.Contains("No such mempool or blockchain transaction"))
+            {
+               return true;
+            }
+
          }
 
          return false;

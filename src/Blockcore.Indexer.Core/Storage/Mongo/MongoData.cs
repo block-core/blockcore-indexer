@@ -522,32 +522,42 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var list = filter.Where(w => w.Position <= offset && w.Position > offset - limit).ToList();
 
          // Loop all transaction IDs and get the transaction object.
-         List<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
+         IEnumerable<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
          {
             BlockIndex = item.BlockIndex,
             Value = item.AmountInOutputs - item.AmountInInputs,
             EntryType = item.EntryType,
             TransactionHash = item.TransactionId,
             Confirmations = globalState.StoreTip.BlockIndex + 1 - item.BlockIndex
-         }).ToList();
+         });
+
+         IEnumerable<QueryAddressItem> mempollTransactions = null;
 
          if (offset == total)
          {
             List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
 
-            transactions.AddRange(mempoolAddressBag.Select(item => new QueryAddressItem
+            mempollTransactions = mempoolAddressBag.Select(item => new QueryAddressItem
             {
                BlockIndex = 0,
                Value = item.AmountInOutputs - item.AmountInInputs,
                EntryType = item.AmountInOutputs > item.AmountInInputs ? "receive" : "send",
                TransactionHash = item.Mempool.TransactionId,
                Confirmations = 0
-            }));
+            });
          }
+
+         List<QueryAddressItem> allTransactions = new();
+
+         if (mempollTransactions != null)
+            allTransactions.AddRange(mempollTransactions);
+
+         allTransactions.AddRange(transactions);
+
 
          return new QueryResult<QueryAddressItem>
          {
-            Items = transactions,
+            Items = allTransactions,
             Offset = offset,
             Limit = limit,
             Total = total
@@ -593,7 +603,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          foreach (MempoolTable mempool in mempoolForAddress)
          {
-            var bag = new MapMempoolAddressBag();
+            var bag = new MapMempoolAddressBag { Mempool = mempool };
+
             foreach (MempoolOutput mempoolOutput in mempool.Outputs)
             {
                if (mempoolOutput.Address == address)
@@ -955,7 +966,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var queryResult = new QueryResult<QueryTransaction>
          {
             Items = retList,
-            Total = list.Count,
+            Total = Mempool.EstimatedDocumentCount(),
             Offset = offset,
             Limit = limit
          };
