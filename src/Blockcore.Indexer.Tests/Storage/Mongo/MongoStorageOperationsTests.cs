@@ -144,7 +144,8 @@ public class MongoStorageOperationsTests
       sut.AddToStorageBatch(batch,item);
 
       batch.BlockTable.Keys.Single().Should().Be(item.BlockInfo.Height);
-      batch.BlockTable.Values.Should().HaveCount(1);
+      batch.BlockTable.Values.Should().ContainSingle();
+
       var blockTable = batch.BlockTable.Values.Single();
       blockTable.Should().BeEquivalentTo(item.BlockInfo,
          _ => _.ExcludingMissingMembers());
@@ -164,9 +165,8 @@ public class MongoStorageOperationsTests
 
       sut.AddToStorageBatch(batch,item);
 
-      batch.TransactionBlockTable.Should().HaveCount(1);
-
-      batch.TransactionBlockTable.Single().Should().BeEquivalentTo(new TransactionBlockTable
+      batch.TransactionBlockTable.Should().ContainSingle()
+         .Which.Should().BeEquivalentTo(new TransactionBlockTable
       {
          BlockIndex = item.BlockInfo.Height,
          TransactionId = item.Transactions.Single().GetHash().ToString()
@@ -184,9 +184,8 @@ public class MongoStorageOperationsTests
 
       sut.AddToStorageBatch(batch,item);
 
-      batch.TransactionBlockTable.Should().HaveCount(1);
-
-      batch.TransactionTable.Single().Should().BeEquivalentTo(new TransactionTable
+      batch.TransactionTable.Should().ContainSingle()
+         .Which.Should().BeEquivalentTo(new TransactionTable
       {
          RawTransaction = new byte[]{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
          TransactionId = "d21633ba23f70118185227be58a63527675641ad37967e2aa461559f577aec43"
@@ -224,13 +223,12 @@ public class MongoStorageOperationsTests
       sut.AddToStorageBatch(batch, item);
 
 
-      batch.OutputTable.Should().HaveCount(1);
+      batch.OutputTable.Should().ContainSingle()
+         .Which.Deconstruct(out string key,out OutputTable output);
 
-      var output = batch.OutputTable.Single();
+      key.Should().Be(expectedOutpoint.ToString());
 
-      output.Key.Should().Be(expectedOutpoint.ToString());
-
-      output.Value.Should().BeEquivalentTo(new OutputTable
+      output.Should().BeEquivalentTo(new OutputTable
       {
          Address = scriptOutputInfo.Addresses.Single(),
          Outpoint = expectedOutpoint,
@@ -271,11 +269,8 @@ public class MongoStorageOperationsTests
       sut.AddToStorageBatch(batch, item);
 
 
-      batch.InputTable.Should().HaveCount(1);
-
-      var input = batch.InputTable.Single();
-
-      input.Should().BeEquivalentTo(new InputTable
+      batch.InputTable.Should().ContainSingle()
+         .Which.Should().BeEquivalentTo(new InputTable
       {
          Address = null,
          Outpoint = new Outpoint{TransactionId = hash.ToString(),OutputIndex = n},
@@ -305,11 +300,8 @@ public class MongoStorageOperationsTests
       sut.AddToStorageBatch(batch, item);
 
 
-      batch.InputTable.Should().HaveCount(1);
-
-      var input = batch.InputTable.Single();
-
-      input.Should().BeEquivalentTo(new InputTable
+      batch.InputTable.Should().ContainSingle()
+         .Which.Should().BeEquivalentTo(new InputTable
       {
          Address = scriptOutputInfo.Addresses.Single(),
          Outpoint = new Outpoint{TransactionId = transaction.GetHash().ToString(),OutputIndex = 0},
