@@ -40,6 +40,7 @@ public class MongoStorageOperationsTests
    Mock<IMongoCollection<TransactionBlockTable>> transactionBlockTableCollection;
    Mock<IMongoCollection<OutputTable>> outputTableCollection;
    Mock<IMongoCollection<UnspentOutputTable>> unspentOutputTableCollection;
+   Mock<IMongoCollection<InputTable>> inputTableCollection;
    public MongoStorageOperationsTests()
    {
       var indexSettingsMock = new Mock<IOptions<IndexerSettings>>();
@@ -80,8 +81,8 @@ public class MongoStorageOperationsTests
       transactionBlockTableCollection = new Mock<IMongoCollection<TransactionBlockTable>>();
       outputTableCollection = new Mock<IMongoCollection<OutputTable>>();
       unspentOutputTableCollection = new Mock<IMongoCollection<UnspentOutputTable>>();
+      inputTableCollection = new Mock<IMongoCollection<InputTable>>();
       var mongodatabase = new Mock<IMongoDatabase>();
-
       mongodatabase.Setup(_ => _.GetCollection<BlockTable>("Block",null))
          .Returns(blockTableCollection.Object);
       mongodatabase.Setup(_ => _.GetCollection<TransactionBlockTable>("TransactionBlock",null))
@@ -90,10 +91,11 @@ public class MongoStorageOperationsTests
          .Returns(outputTableCollection.Object);
       mongodatabase.Setup(_ => _.GetCollection<UnspentOutputTable>("UnspentOutput",null))
          .Returns(unspentOutputTableCollection.Object);
+      mongodatabase.Setup(_ => _.GetCollection<InputTable>("Input",null))
+         .Returns(inputTableCollection.Object);
+
       mongodatabase.Setup(_ => _.Client)
          .Returns(new Mock<IMongoClient>().Object);
-
-
 
       var scriptInterpeter = new Mock<IScriptInterpeter>();
 
@@ -438,6 +440,56 @@ public class MongoStorageOperationsTests
       sut.PushStorageBatch(batch);
 
       outputTableCollection.Verify(_ => _.InsertManyAsync( batch.OutputTable.Values,
+            It.Is<InsertManyOptions>(_ => _.IsOrdered == false),
+            It.IsAny<CancellationToken>())
+         , Times.Once);
+   }
+
+   [Fact]
+   public void PushStorageBatchAddsInputTableAddsToMongodb()
+   {
+      var batch = new StorageBatch();
+
+      var block = NewRandomBlockTable;
+      batch.BlockTable.Add(block.BlockIndex, block);
+
+      GivenBlockIsLookedUpSuccessfully(block);
+
+      var outpoint = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
+      var unspentOutput =
+         new UnspentOutputTable { Outpoint = outpoint, Address = NewRandomString, Value = NewRandomInt64 };
+      var lookup = new Mock<IAsyncCursor<UnspentOutputTable>>();
+
+      lookup.Setup(_ => _.Current).Returns(() => new [] {unspentOutput });
+      lookup.SetupSequence(_ => _.MoveNext(It.IsAny<CancellationToken>()))
+         .Returns(true)
+         .Returns(false);
+
+      unspentOutputTableCollection.Setup(_ => _.FindSync(It.IsAny<FilterDefinition<UnspentOutputTable>>(),
+            It.IsAny<FindOptions<UnspentOutputTable, UnspentOutputTable>>()
+            , It.IsAny<CancellationToken>()))
+         .Returns(lookup.Object);
+
+      var inputTable = new InputTable
+      {
+         BlockIndex = NewRandomInt32,
+         Outpoint = outpoint,
+         TrxHash = NewRandomString
+      };
+
+      batch.InputTable.Add(inputTable);
+
+      sut.PushStorageBatch(batch);
+
+      inputTableCollection.Verify(_ => _.InsertManyAsync( batch.InputTable,
+            It.Is<InsertManyOptions>(_ => _.IsOrdered == false),
+            It.IsAny<CancellationToken>())
+         , Times.Once);
+
+      inputTableCollection.Verify(_ => _.InsertManyAsync( It.Is<IEnumerable<InputTable>>(_
+            => _.Count() == 1 &&
+               _.First().Address == unspentOutput.Address &&
+               _.First().Value == unspentOutput.Value),
             It.Is<InsertManyOptions>(_ => _.IsOrdered == false),
             It.IsAny<CancellationToken>())
          , Times.Once);
