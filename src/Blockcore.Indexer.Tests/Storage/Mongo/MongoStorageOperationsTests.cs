@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Blockcore.Consensus;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
@@ -33,6 +34,8 @@ public class MongoStorageOperationsTests
 
    IndexerSettings indexSettings;
    ScriptOutputInfo scriptOutputInfo;
+
+   Mock<IMongoCollection<BlockTable>> blockTableCollection;
    public MongoStorageOperationsTests()
    {
       var indexSettingsMock = new Mock<IOptions<IndexerSettings>>();
@@ -69,10 +72,16 @@ public class MongoStorageOperationsTests
 
       var cryptoClientFactory = new Mock<ICryptoClientFactory>();
 
+      blockTableCollection = new Mock<IMongoCollection<BlockTable>>();
       var mongodatabase = new Mock<IMongoDatabase>();
+
+      mongodatabase.Setup(_ => _.GetCollection<BlockTable>("Block",null))
+         .Returns(blockTableCollection.Object);
 
       mongodatabase.Setup(_ => _.Client)
          .Returns(new Mock<IMongoClient>().Object);
+
+
 
       var scriptInterpeter = new Mock<IScriptInterpeter>();
 
@@ -98,6 +107,28 @@ public class MongoStorageOperationsTests
       Nonce = NewRandomInt64,
       Time = NewRandomInt64,
       Transactions = new List<string>(0),
+      Version = NewRandomInt64,
+      PosFlags = NewRandomString,
+      PosModifierv2 = NewRandomString,
+      NextBlockHash = NewRandomString,
+      PosBlockSignature = NewRandomString,
+      PosBlockTrust = NewRandomString,
+      PosChainTrust = NewRandomString,
+      PosHashProof = NewRandomString,
+      PreviousBlockHash = NewRandomString,
+   };
+
+   private static BlockTable NewRandomBlockTable => new()
+   {
+      BlockSize = NewRandomInt64,
+      Bits = NewRandomString,
+      Confirmations = NewRandomInt32,
+      BlockHash = NewRandomString,
+      BlockIndex = NewRandomInt32,
+      Merkleroot = NewRandomString,
+      Nonce = NewRandomInt64,
+      BlockTime = NewRandomInt64,
+      TransactionCount = NewRandomInt32,
       Version = NewRandomInt64,
       PosFlags = NewRandomString,
       PosModifierv2 = NewRandomString,
@@ -309,5 +340,33 @@ public class MongoStorageOperationsTests
          BlockIndex = item.BlockInfo.Height,
          TrxHash = item.Transactions.Last().GetHash().ToString()
       });
+   }
+
+   [Fact]
+   public void PushStorageBatchAddsBlockTableFromBatchToMongoDb()
+   {
+      var batch = new StorageBatch();
+
+      var block = NewRandomBlockTable;
+
+      batch.BlockTable.Add(block.BlockIndex, block);
+
+      var lookup = new Mock<IAsyncCursor<BlockTable>>();
+
+      lookup.Setup(_ => _.Current).Returns(() => new[] { block });
+      lookup.SetupSequence(_ => _.MoveNext(It.IsAny<CancellationToken>()))
+         .Returns(true)
+         .Returns(false);
+
+      blockTableCollection.Setup(_ => _.FindSync(It.IsAny<FilterDefinition<BlockTable>>(),
+            It.IsAny<FindOptions<BlockTable, BlockTable>>()
+            ,It.IsAny<CancellationToken>()))
+         .Returns(() => lookup.Object);
+
+      sut.PushStorageBatch(batch);
+
+      blockTableCollection.Verify(_ => _.InsertManyAsync( batch.BlockTable.Values,
+            It.Is<InsertManyOptions>(_ => _.IsOrdered == false), It.IsAny<CancellationToken>())
+         , Times.Once);
    }
 }
