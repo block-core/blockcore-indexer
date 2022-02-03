@@ -154,7 +154,7 @@ public class MongoStorageOperationsTests
    }
 
    [Fact]
-   public void WhenAddToStorageIsCalledSetsTheTotalSizeFromBlockInfo()
+   public void AddToStorageBatchSetsTheTotalSizeFromBlockInfo()
    {
       var batch = new StorageBatch();
 
@@ -166,7 +166,7 @@ public class MongoStorageOperationsTests
    }
 
    [Fact]
-   public void WhenAddToStorageIsCalledSetsTheBlockTableFromBlockInfo()
+   public void AddToStorageBatchSetsTheBlockTableFromBlockInfo()
    {
       var batch = new StorageBatch();
 
@@ -188,7 +188,7 @@ public class MongoStorageOperationsTests
    }
 
    [Fact]
-   public void WhenAddToStorageIsCalledSetsTheTransactionBlockTableFromTransactions()
+   public void AddToStorageBatchSetsTheTransactionBlockTableFromTransactions()
    {
       var batch = new StorageBatch();
 
@@ -205,7 +205,7 @@ public class MongoStorageOperationsTests
    }
 
    [Fact]
-   public void WhenAddToStorageIsCalledWithStoreRawTransactionsTrueSetsTransactionTable()
+   public void AddToStorageBatchWithStoreRawTransactionsTrueSetsTransactionTable()
    {
       var batch = new StorageBatch();
 
@@ -226,7 +226,7 @@ public class MongoStorageOperationsTests
 
 
    [Fact]
-   public void WhenAddToStorageIsCalledSetsTheOutputsInTheTransactionToTheOutputTable()
+   public void AddToStorageBatchSetsTheOutputsInTheTransactionToTheOutputTable()
    {
       var batch = new StorageBatch();
       var valueMoney = new Money(NewRandomInt32);
@@ -272,7 +272,7 @@ public class MongoStorageOperationsTests
    }
 
    [Fact]
-   public void WhenAddToStorageIsCalledSetsTheInputsInInputTableWithoutAddress()
+   public void AddToStorageBatchSetsTheInputsInInputTableWithoutAddress()
    {
       var batch = new StorageBatch();
       var hash = new uint256($"{NewRandomInt64}{NewRandomInt64}{NewRandomInt64}{NewRandomInt64}".Substring(0,64));
@@ -312,7 +312,7 @@ public class MongoStorageOperationsTests
    }
 
    [Fact]
-   public void WhenAddToStorageIsCalledSetsTheInputsInInputTableWithAddressAndValue()
+   public void AddToStorageBatchSetsTheInputsInInputTableWithAddressAndValue()
    {
       var batch = new StorageBatch();
       var valueMoney = new Money(NewRandomInt32);
