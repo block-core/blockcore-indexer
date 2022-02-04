@@ -150,7 +150,7 @@ namespace Blockcore.Indexer.Core.Sync
 
       private SyncPoolTransactions FindPoolInternal(SyncConnection connection)
       {
-         var client = clientFactory.Create(connection);
+         IBlockchainClient client = clientFactory.Create(connection);
 
          IEnumerable<string> memPool = client.GetRawMemPool();
 
@@ -212,7 +212,7 @@ namespace Blockcore.Indexer.Core.Sync
             }
          });
 
-         IEnumerable<Transaction> transactions = itemList.Select(s =>
+         IEnumerable<Transaction> transactions = itemList.Where(t => t.result != null).Select(s =>
          {
             Transaction trx = connection.Network.Consensus.ConsensusFactory.CreateTransaction(s.result.Hex);
             trx.PrecomputeHash(false, true);
@@ -224,7 +224,7 @@ namespace Blockcore.Indexer.Core.Sync
 
       private SyncBlockTransactionsOperation SyncPoolInternal(SyncConnection connection, SyncPoolTransactions poolTransactions)
       {
-         var client = clientFactory.Create(connection);
+         IBlockchainClient client = clientFactory.Create(connection);
 
          SyncBlockTransactionsOperation returnBlock = SyncBlockTransactions(client, connection, poolTransactions.Transactions, false);
 

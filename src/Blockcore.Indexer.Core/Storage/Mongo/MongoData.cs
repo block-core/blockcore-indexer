@@ -531,15 +531,33 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             Confirmations = globalState.StoreTip.BlockIndex + 1 - item.BlockIndex
          });
 
+         IEnumerable<QueryAddressItem> mempollTransactions = null;
+
          if (offset == total)
          {
-            // TODO: add mempool in to history only when the page is the tip (offset = 1 or total) with zero confirmations
-            // List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
+            List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
+
+            mempollTransactions = mempoolAddressBag.Select(item => new QueryAddressItem
+            {
+               BlockIndex = 0,
+               Value = item.AmountInOutputs - item.AmountInInputs,
+               EntryType = item.AmountInOutputs > item.AmountInInputs ? "receive" : "send",
+               TransactionHash = item.Mempool.TransactionId,
+               Confirmations = 0
+            });
          }
+
+         List<QueryAddressItem> allTransactions = new();
+
+         if (mempollTransactions != null)
+            allTransactions.AddRange(mempollTransactions);
+
+         allTransactions.AddRange(transactions);
+
 
          return new QueryResult<QueryAddressItem>
          {
-            Items = transactions,
+            Items = allTransactions,
             Offset = offset,
             Limit = limit,
             Total = total
@@ -585,7 +603,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          foreach (MempoolTable mempool in mempoolForAddress)
          {
-            var bag = new MapMempoolAddressBag();
+            var bag = new MapMempoolAddressBag { Mempool = mempool };
+
             foreach (MempoolOutput mempoolOutput in mempool.Outputs)
             {
                if (mempoolOutput.Address == address)
@@ -890,6 +909,30 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          await Task.CompletedTask;
       }
 
+      public QueryResult<QueryMempoolTransactionHashes> GetMemoryTransactionsSlim(int offset, int limit)
+      {
+         ICollection<MempoolTable> list = Mempool.AsQueryable().OrderByDescending(o => o.FirstSeen).Skip(offset).Take(limit).ToList();
+
+         var mempoolTransactions = new List<QueryMempoolTransactionHashes>();
+
+         foreach (MempoolTable trx in list) 
+         {
+            string transactionId = trx.TransactionId;
+
+            mempoolTransactions.Add(new QueryMempoolTransactionHashes { TransactionId = transactionId });
+         }
+
+         var queryResult = new QueryResult<QueryMempoolTransactionHashes>
+         {
+            Items = mempoolTransactions,
+            Total = Mempool.EstimatedDocumentCount(),
+            Offset = offset,
+            Limit = limit
+         };
+
+         return queryResult;
+      }
+
       public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)
       {
          ICollection<MempoolTable> list = Mempool.AsQueryable().Skip(offset).Take(limit).ToList();
@@ -900,6 +943,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          {
             string transactionId = trx.TransactionId;
             SyncTransactionItems transactionItems = TransactionItemsGet(transactionId);
+
+
 
             var result = new QueryTransaction
             {
@@ -947,7 +992,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var queryResult = new QueryResult<QueryTransaction>
          {
             Items = retList,
-            Total = list.Count,
+            Total = Mempool.EstimatedDocumentCount(),
             Offset = offset,
             Limit = limit
          };

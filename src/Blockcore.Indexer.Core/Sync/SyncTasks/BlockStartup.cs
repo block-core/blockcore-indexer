@@ -111,6 +111,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
             Runner.GlobalState.StoreTip = await syncOperations.RewindToBestChain(connection);
          }
+
+         // update the chains tip
+         Runner.GlobalState.ChainTipHeight = syncOperations.GetBlockCount(client);
       }
    }
 }
