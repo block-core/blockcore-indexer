@@ -258,7 +258,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          foreach (Transaction itemTransaction in item.Transactions)
          {
-            var mempoolEntry = new MempoolTable() { TransactionId = itemTransaction.GetHash().ToString() };
+            var mempoolEntry = new MempoolTable() { TransactionId = itemTransaction.GetHash().ToString(), FirstSeen = DateTime.UtcNow.Ticks };
             mempool.Add(mempoolEntry);
 
             foreach (TxOut transactionOutput in itemTransaction.Outputs)

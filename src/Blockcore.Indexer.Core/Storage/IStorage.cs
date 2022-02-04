@@ -16,7 +16,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit);
 
-      QueryResult<QueryMempoolTransaction> GetMemoryTransactionsSlim(int offset, int limit);
+      QueryResult<QueryMempoolTransactionHashes> GetMemoryTransactionsSlim(int offset, int limit);
 
       QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit);
 

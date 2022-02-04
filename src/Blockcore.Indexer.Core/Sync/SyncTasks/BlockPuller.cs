@@ -160,8 +160,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private async Task<string> NextHashAsync(IBlockchainClient client, long height)
       {
-         // ugly hack for now
-
          try
          {
             string nextHash = await client.GetblockHashAsync(height);

@@ -212,17 +212,14 @@ namespace Blockcore.Indexer.Core.Sync
             }
          });
 
-         IEnumerable<Transaction> transactions = itemList.Select(s =>
+         IEnumerable<Transaction> transactions = itemList.Where(t => t.result != null).Select(s =>
          {
-            if (s.result == null)
-               return null;
-
             Transaction trx = connection.Network.Consensus.ConsensusFactory.CreateTransaction(s.result.Hex);
             trx.PrecomputeHash(false, true);
             return trx;
          });
 
-         return new SyncBlockTransactionsOperation { Transactions = transactions.Where(t => t != null).ToList() };
+         return new SyncBlockTransactionsOperation { Transactions = transactions.ToList() };
       }
 
       private SyncBlockTransactionsOperation SyncPoolInternal(SyncConnection connection, SyncPoolTransactions poolTransactions)

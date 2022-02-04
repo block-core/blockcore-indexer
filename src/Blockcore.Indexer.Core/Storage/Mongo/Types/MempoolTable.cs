@@ -23,6 +23,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.Types
 
    public class MempoolTable
    {
+      public long FirstSeen{ get; set; }
+
       public List<string> AddressOutputs { get; set; } = new List<string>();
 
       public List<string> AddressInputs { get; set; } = new List<string>();
