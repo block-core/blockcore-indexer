@@ -82,7 +82,7 @@ namespace Blockcore.Indexer.Core.Controllers
       [Route("mempool/transactions")]
       public IActionResult GetMempoolTransactions([Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return OkPaging(storage.GetMemoryTransactions(offset, limit));
+         return OkPaging(storage.GetMemoryTransactionsSlim(offset, limit));
       }
 
       /// <summary>

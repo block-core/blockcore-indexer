@@ -87,7 +87,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
          watch.Restart();
 
-         var client = clientFactory.Create(syncConnection);
+         IBlockchainClient client = clientFactory.Create(syncConnection);
 
          if (Runner.GlobalState.PullingTip == null)
          {
@@ -99,7 +99,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          }
 
          // fetch the next block form the fullnode
-         string nextHash = await client.GetblockHashAsync(Runner.GlobalState.PullingTip.Height + 1);
+         string nextHash = await NextHashAsync(client, Runner.GlobalState.PullingTip.Height + 1);
 
          if (string.IsNullOrEmpty(nextHash))
          {
@@ -156,6 +156,25 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          Runner.GlobalState.PullingTip = nextBlock;
 
          return await Task.FromResult(true);
+      }
+
+      private async Task<string> NextHashAsync(IBlockchainClient client, long height)
+      {
+         try
+         {
+            string nextHash = await client.GetblockHashAsync(height);
+
+            return nextHash;
+         }
+         catch (Exception e)
+         {
+            if (e.Message.Contains("Block height out of range"))
+            {
+               return null;
+            }
+
+            throw;
+         }
       }
    }
 }
