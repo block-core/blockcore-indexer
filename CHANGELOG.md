@@ -1,3 +1,12 @@
+## <small>0.1.23 (2022-02-06)</small>
+
+* Adding unconfirmed trx to history (#87) ([367df2c](https://github.com/block-core/blockcore-indexer/commit/367df2c)), closes [#87](https://github.com/block-core/blockcore-indexer/issues/87)
+* Fix bug on client when fullnode return null ([36489c7](https://github.com/block-core/blockcore-indexer/commit/36489c7))
+* show indexing on progress bar (#86) ([2b4f1a5](https://github.com/block-core/blockcore-indexer/commit/2b4f1a5)), closes [#86](https://github.com/block-core/blockcore-indexer/issues/86)
+* Update version ([579dbb4](https://github.com/block-core/blockcore-indexer/commit/579dbb4))
+
+
+
 ## <small>0.1.22 (2022-01-30)</small>
 
 * Add a basic docker-compose to run local test database ([3a8e9b3](https://github.com/block-core/blockcore-indexer/commit/3a8e9b3))
@@ -10,9 +19,11 @@
 * Contract code table (#57) ([1ba3444](https://github.com/block-core/blockcore-indexer/commit/1ba3444)), closes [#57](https://github.com/block-core/blockcore-indexer/issues/57)
 * Fix block index count ([fa4b9ba](https://github.com/block-core/blockcore-indexer/commit/fa4b9ba))
 * fix minor utxo bug ([aba62c1](https://github.com/block-core/blockcore-indexer/commit/aba62c1))
-* Pulled lookup result to the indexer and than update mongo and replaced the fluent c# with bson docum ([320ee31](https://github.com/block-core/blockcore-indexer/commit/320ee31))
+* Pulled lookup result to the indexer and than update mongo and replaced the fluent c# with bson docum ([931a364](https://github.com/block-core/blockcore-indexer/commit/931a364)), closes [#82](https://github.com/block-core/blockcore-indexer/issues/82)
 * Removed computed utxo table and use the unspent output table instead (#76) ([5797a76](https://github.com/block-core/blockcore-indexer/commit/5797a76)), closes [#76](https://github.com/block-core/blockcore-indexer/issues/76) [#67](https://github.com/block-core/blockcore-indexer/issues/67)
+* return tx size and fee (#84) ([f13ca07](https://github.com/block-core/blockcore-indexer/commit/f13ca07)), closes [#84](https://github.com/block-core/blockcore-indexer/issues/84)
 * Richlist to use new utxo table (#75) ([70a319a](https://github.com/block-core/blockcore-indexer/commit/70a319a)), closes [#75](https://github.com/block-core/blockcore-indexer/issues/75) [#66](https://github.com/block-core/blockcore-indexer/issues/66)
+* Upgrade version prepare for release ([665beea](https://github.com/block-core/blockcore-indexer/commit/665beea))
 * Use specific container image we have verified with ([d924e6b](https://github.com/block-core/blockcore-indexer/commit/d924e6b))
 
 
