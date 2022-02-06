@@ -581,7 +581,7 @@ namespace Blockcore.Indexer.Core.Client
 
                   JsonRpcResponse<T> ret = JsonConvert.DeserializeObject<JsonRpcResponse<T>>(jsonResult);
 
-                  return ret.Result;
+                  return ret == null ? default(T) : ret.Result;
                }
             }
          }

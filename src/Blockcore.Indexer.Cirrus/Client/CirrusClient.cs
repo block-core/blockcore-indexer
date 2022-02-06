@@ -44,7 +44,13 @@ namespace Blockcore.Indexer.Cirrus.Client
       public async Task<ContractReceiptResponse> GetContractInfoAsync(string trxHash)
       {
          HttpResponseMessage httpResponse = await Client.GetAsync($"{ApiUrl}api/indexer/contract/info?txHash={trxHash}");
-         return httpResponse.IsSuccessStatusCode ? await httpResponse.Content.ReadAsAsync<ContractReceiptResponse>() : null;
+
+         if(!httpResponse.IsSuccessStatusCode)
+         {
+            throw new ApplicationException(httpResponse.Content.ReadAsStringAsync().Result);
+         }
+
+         return await httpResponse.Content.ReadAsAsync<ContractReceiptResponse>();
       }
 
    }
