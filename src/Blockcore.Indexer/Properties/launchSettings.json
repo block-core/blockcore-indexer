@@ -53,6 +53,15 @@
          },
          "applicationUrl": "http://localhost:9910/"
       },
+      "TSTRAX": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=TSTRAX",
+         "launchBrowser": false,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
+      },
       "CITY": {
          "commandName": "Project",
          "commandLineArgs": "--chain=CITY",
