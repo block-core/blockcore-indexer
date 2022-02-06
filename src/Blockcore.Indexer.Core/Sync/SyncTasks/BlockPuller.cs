@@ -105,6 +105,11 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                $"Fetching block started at block {Runner.GlobalState.PullingTip.Height}({Runner.GlobalState.PullingTip.Hash})");
          }
 
+         if (collectionProcessor.IsFaulted)
+         {
+            throw collectionProcessor.Exception;
+         }
+
          if (Runner.GlobalState.IbdMode())
          {
             List<Task<SyncBlockTransactionsOperation>> blocks = new (config.NumberOfPullerTasksForIBD);
