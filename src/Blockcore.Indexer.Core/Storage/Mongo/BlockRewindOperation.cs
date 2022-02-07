@@ -149,7 +149,7 @@ public static class BlockRewindOperation
    /// </summary>
    private static async Task MergeRewindInputsToUnspentTransactionsAsync(MongoData storage, long blockIndex)
    {
-      var unspendOutputs = await storage.InputTable.Aggregate<UnspentOutputTable>(
+      List<UnspentOutputTable> unspentOutputs = await storage.InputTable.Aggregate<UnspentOutputTable>(
          new []
          {
             new BsonDocument("$match",
@@ -174,7 +174,8 @@ public static class BlockRewindOperation
                })
          }).ToListAsync();
 
-      await storage.UnspentOutputTable.InsertManyAsync(unspendOutputs);
+      if (unspentOutputs.Any())
+         await storage.UnspentOutputTable.InsertManyAsync(unspentOutputs);
    }
 
    private static async Task<List<TProjection>> GetTopNDocumentsFromCollectionAsync<T, TProjection>(
