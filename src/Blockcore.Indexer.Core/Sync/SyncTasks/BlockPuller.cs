@@ -108,6 +108,12 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             throw collectionProcessor.Exception;
          }
 
+         // update the chains tip
+         Runner.GlobalState.ChainTipHeight = syncOperations.GetBlockCount(clientFactory.Create(syncConnection));
+
+         if (Runner.GlobalState.ChainTipHeight == Runner.GlobalState.PullingTip.Height)
+            return false;
+
          int numberOfTasks = Runner.GlobalState.IbdMode() ? config.NumberOfPullerTasksForIBD : 1;
 
          List<Task<SyncBlockTransactionsOperation>> blocks = new(numberOfTasks);
@@ -169,9 +175,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             // nothing to process
             return null;
          }
-
-         // update the chains tip
-         Runner.GlobalState.ChainTipHeight = syncOperations.GetBlockCount(client);
 
          BlockInfo nextBlock = await client.GetBlockAsync(nextHash);
 
