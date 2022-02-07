@@ -108,14 +108,12 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             throw collectionProcessor.Exception;
          }
 
-         int numberOfTasks = Runner.GlobalState.IbdMode() ? config.MaxItemsInBlockingCollection : 1;
+         int numberOfTasks = Runner.GlobalState.IbdMode() ? config.NumberOfPullerTasksForIBD : 1;
 
          List<Task<SyncBlockTransactionsOperation>> blocks = new(numberOfTasks);
 
-         for (int i = 1; i < config.NumberOfPullerTasksForIBD + 1; i++)
-         {
+         for (int i = 1; i < numberOfTasks + 1; i++)
             blocks.Add(FetchBlockAsync(Runner.GlobalState.PullingTip.Height + i));
-         }
 
          Task.WaitAll(blocks.ToArray());
 
@@ -214,13 +212,11 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          }
       }
 
-      private async Task<string> NextHashAsync(IBlockchainClient client, long height)
+      private static Task<string> NextHashAsync(IBlockchainClient client, long height)
       {
          try
          {
-            string nextHash = await client.GetblockHashAsync(height);
-
-            return nextHash;
+            return client.GetblockHashAsync(height);
          }
          catch (Exception e)
          {
