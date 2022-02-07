@@ -28,8 +28,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private readonly IStorageOperations storageOperations;
 
-      private readonly System.Diagnostics.Stopwatch watch;
-
       private readonly System.Diagnostics.Stopwatch watchBatch;
 
       private StorageBatch currentStorageBatch;
@@ -39,7 +37,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       private readonly IEnumerable<long> bip30Blocks = new List<long> {91842 , 91880 };
 
       BlockingCollection<SyncBlockTransactionsOperation> blockInfos = new();
+
       Task collectionProcessor;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockPuller"/> class.
       /// </summary>
@@ -58,7 +58,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          this.syncConnection = syncConnection;
          this.syncOperations = syncOperations;
          config = configuration.Value;
-         watch = Stopwatch.Start();
          watchBatch = Stopwatch.Start();
 
          collectionProcessor = Task.Run(ProcessFromBlockingCollection);
@@ -73,7 +72,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             return true;
          }
 
-         if (Runner.GlobalState.Blocked)
+         if (Runner.GlobalState.Blocked || Abort)
          {
             return false;
          }
@@ -89,10 +88,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             return false;
          }
 
-         if (blockInfos.Count > 10000)
+         if (blockInfos.Count > config.MaxItemsInBlockingCollection)
             return false;
-
-         watch.Restart();
 
          if (Runner.GlobalState.PullingTip == null)
          {
@@ -101,8 +98,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                .GetBlockAsync(Runner.GlobalState.StoreTip.BlockHash);
             currentStorageBatch = new StorageBatch();
 
-            log.LogDebug(
-               $"Fetching block started at block {Runner.GlobalState.PullingTip.Height}({Runner.GlobalState.PullingTip.Hash})");
+            log.LogDebug($"Fetching block started at block {Runner.GlobalState.PullingTip.Height}({Runner.GlobalState.PullingTip.Hash})");
          }
 
          if (collectionProcessor.IsFaulted)
@@ -110,47 +106,28 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             throw collectionProcessor.Exception;
          }
 
-         if (Runner.GlobalState.IbdMode())
+         int numberOfTasks = Runner.GlobalState.IbdMode() ? config.MaxItemsInBlockingCollection : 1;
+
+         List<Task<SyncBlockTransactionsOperation>> blocks = new(numberOfTasks);
+
+         for (int i = 1; i < config.NumberOfPullerTasksForIBD + 1; i++)
          {
-            List<Task<SyncBlockTransactionsOperation>> blocks = new (config.NumberOfPullerTasksForIBD);
-
-            for (int i = 1; i < config.NumberOfPullerTasksForIBD + 1; i++)
-            {
-               blocks.Add(FetchBlockAsync(Runner.GlobalState.PullingTip.Height + i));
-            }
-
-            Task.WaitAll(blocks.ToArray());
-
-            int index = 0;
-            foreach (Task<SyncBlockTransactionsOperation> block in blocks)
-            {
-               string previousBlockHash = index == 0
-                  ? Runner.GlobalState.PullingTip.Hash
-                  : blocks[index - 1].Result.BlockInfo.Hash;
-
-               if (block.Result.BlockInfo.PreviousBlockHash != previousBlockHash)
-               {
-                  log.LogDebug(
-                     $"Reorg detected on block = {Runner.GlobalState.PullingTip.Height} - ({Runner.GlobalState.PullingTip.Hash})");
-
-                  // reorgs are sorted at the store task
-                  Runner.GlobalState.ReorgMode = true;
-                  return false;
-               }
-
-               AddFetchedBlockToCollection(block.Result);
-               index++;
-            }
+            blocks.Add(FetchBlockAsync(Runner.GlobalState.PullingTip.Height + i));
          }
-         else
+
+         Task.WaitAll(blocks.ToArray());
+
+         int index = 0;
+         foreach (Task<SyncBlockTransactionsOperation> block in blocks)
          {
-            SyncBlockTransactionsOperation block = await FetchBlockAsync(Runner.GlobalState.PullingTip.Height + 1);
+            if (block.Result == null)
+               return false; //we are at the tip
 
-            if (block == null)
-               return false;
+            string previousBlockHash = index == 0
+               ? Runner.GlobalState.PullingTip.Hash
+               : blocks[index - 1].Result.BlockInfo.Hash;
 
-            // check if the next block prev hash is the same as our current tip
-            if (Runner.GlobalState.PullingTip.Hash != block.BlockInfo.PreviousBlockHash)
+            if (block.Result.BlockInfo.PreviousBlockHash != previousBlockHash)
             {
                log.LogDebug(
                   $"Reorg detected on block = {Runner.GlobalState.PullingTip.Height} - ({Runner.GlobalState.PullingTip.Hash})");
@@ -160,12 +137,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                return false;
             }
 
-            AddFetchedBlockToCollection(block);
+            AddFetchedBlockToCollection(block.Result);
+            index++;
          }
-
-         watch.Stop();
-
-         //log.LogDebug($"Puller fetched block and push to collection in{watch.Elapsed.TotalSeconds}");
 
          return await Task.FromResult(true);
       }
@@ -208,7 +182,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private void ProcessFromBlockingCollection()
       {
-         while (!blockInfos.IsCompleted) //TODO add cancellation token
+         while (!blockInfos.IsCompleted || !Abort)
          {
             var block = blockInfos.Take();
 
@@ -218,22 +192,25 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
             bool bip30Issue = bip30Blocks.Contains(block.BlockInfo.Height + 1);
 
-            if (!ibd || bip30Issue || currentStorageBatch.BlockTable.Count >= 10000 ||
-                currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
-            {
-               long totalBlocks = currentStorageBatch.BlockTable.Count;
-               double totalSeconds = watchBatch.Elapsed.TotalSeconds;
-               double blocksPerSecond = totalBlocks / totalSeconds;
-               double secondsPerBlock = totalSeconds / totalBlocks;
+            if (ibd &&
+                !bip30Issue &&
+                currentStorageBatch.BlockTable.Count < config.MongoBatchCount &&
+                currentStorageBatch.TotalSize <= config.MongoBatchSize)
+               continue;
 
-               log.LogDebug(
-                  $"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {block.BlockInfo.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b). ({blockInfos.Count})");
 
-               Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
-               currentStorageBatch = new StorageBatch();
+            long totalBlocks = currentStorageBatch.BlockTable.Count;
+            double totalSeconds = watchBatch.Elapsed.TotalSeconds;
+            double blocksPerSecond = totalBlocks / totalSeconds;
+            double secondsPerBlock = totalSeconds / totalBlocks;
 
-               watchBatch.Restart();
-            }
+            log.LogDebug(
+               $"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {block.BlockInfo.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b). ({blockInfos.Count})");
+
+            Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
+            currentStorageBatch = new StorageBatch();
+
+            watchBatch.Restart();
          }
       }
 
