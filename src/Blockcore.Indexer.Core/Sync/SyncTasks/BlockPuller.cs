@@ -37,7 +37,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private readonly IEnumerable<long> bip30Blocks = new List<long> {91842 , 91880 };
 
-      private readonly BlockingCollection<SyncBlockTransactionsOperation> blockInfos = new();
+      private readonly BlockingCollection<SyncBlockTransactionsOperation> pendingBlocksToAddToStorage = new();
 
       private readonly Task collectionProcessor;
 
@@ -89,7 +89,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             return false;
          }
 
-         if (blockInfos.Count > config.MaxItemsInBlockingCollection)
+         if (pendingBlocksToAddToStorage.Count > config.MaxItemsInBlockingCollection)
          {
             return false;
          }
@@ -153,7 +153,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          }
          else
          {
-            blockInfos.Add(blockTask);
+            pendingBlocksToAddToStorage.Add(blockTask);
 
             Runner.GlobalState.PullingTip = blockTask.BlockInfo;
          }
@@ -183,9 +183,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private void ProcessFromBlockingCollection()
       {
-         while (!blockInfos.IsCompleted || !Abort)
+         while (!pendingBlocksToAddToStorage.IsCompleted || !Abort)
          {
-            SyncBlockTransactionsOperation block = blockInfos.Take(CancellationToken);
+            SyncBlockTransactionsOperation block = pendingBlocksToAddToStorage.Take(CancellationToken);
 
             storageOperations.AddToStorageBatch(currentStorageBatch, block);
 
@@ -205,7 +205,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             double blocksPerSecond = totalBlocks / totalSeconds;
             double secondsPerBlock = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {block.BlockInfo.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b). ({blockInfos.Count})");
+            log.LogDebug($"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {block.BlockInfo.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b). ({pendingBlocksToAddToStorage.Count})");
 
             Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
             currentStorageBatch = new StorageBatch();
