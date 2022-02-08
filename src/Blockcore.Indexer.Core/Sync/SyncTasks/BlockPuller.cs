@@ -41,6 +41,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private readonly Task collectionProcessor;
 
+      private bool drainBlockingCollection = false;
+
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockPuller"/> class.
       /// </summary>
@@ -87,6 +89,14 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
              Runner.GlobalState.IndexMode)
          {
             return false;
+         }
+
+         if (drainBlockingCollection)
+         {
+            if (pendingBlocksToAddToStorage.Count == 0)
+               drainBlockingCollection = false;
+            else
+               return false;
          }
 
          if (pendingBlocksToAddToStorage.Count > config.MaxItemsInBlockingCollection)
@@ -138,6 +148,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                log.LogDebug($"Reorg detected on block = {Runner.GlobalState.PullingTip.Height} - ({Runner.GlobalState.PullingTip.Hash})");
 
                // reorgs are sorted at the store task
+               drainBlockingCollection = true;
                Runner.GlobalState.ReorgMode = true;
                return false;
             }
@@ -181,11 +192,16 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          return  syncOperations.FetchFullBlock(syncConnection, nextBlock);
       }
 
-
       private void ProcessFromBlockingCollection()
       {
          while (!pendingBlocksToAddToStorage.IsCompleted || !Abort)
          {
+            if (drainBlockingCollection)
+            {
+               while (pendingBlocksToAddToStorage.TryTake(out _)) { }
+               drainBlockingCollection = false;
+            }
+
             SyncBlockTransactionsOperation block = pendingBlocksToAddToStorage.Take(CancellationToken);
 
             storageOperations.AddToStorageBatch(currentStorageBatch, block);
