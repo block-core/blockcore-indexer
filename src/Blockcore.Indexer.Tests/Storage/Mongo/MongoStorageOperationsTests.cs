@@ -147,6 +147,18 @@ public class MongoStorageOperationsTests
       return item;
    }
 
+   StorageBatch WithBatchThatHasABlockToPush()
+   {
+      var batch = new StorageBatch();
+
+      var block = NewRandomBlockTable;
+      batch.BlockTable.Add(block.BlockIndex, block);
+
+      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
+         block);
+      return batch;
+   }
+
    [Fact]
    public void AddToStorageBatchSetsTheTotalSizeFromBlockInfo()
    {
@@ -356,15 +368,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsTransactionBlockTableFromBatchToMongoDb()
    {
-      var batch = new StorageBatch();
-
-      var block = NewRandomBlockTable;
-      batch.BlockTable.Add(block.BlockIndex, block);
-
-//      mongodbMock.GivenBlockIsLookedUpSuccessfully(block);
-
-      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
-         block);
+      StorageBatch batch = WithBatchThatHasABlockToPush();
 
       var blockTable = new TransactionBlockTable
       {
@@ -383,13 +387,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsOutputTableFromBatchToMongoDb()
    {
-      var batch = new StorageBatch();
-
-      var block = NewRandomBlockTable;
-      batch.BlockTable.Add(block.BlockIndex, block);
-
-      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
-         block);
+      StorageBatch batch = WithBatchThatHasABlockToPush();
 
       var outputTable = new OutputTable()
       {
@@ -413,13 +411,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsInputTableAddsToMongodb()
    {
-      var batch = new StorageBatch();
-
-      var block = NewRandomBlockTable;
-      batch.BlockTable.Add(block.BlockIndex, block);
-
-      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
-         block);
+      StorageBatch batch = WithBatchThatHasABlockToPush();
 
 
 
@@ -450,5 +442,23 @@ public class MongoStorageOperationsTests
             => _.Count() == 1 &&
                _.First().Address == unspentOutput.Address &&
                _.First().Value == unspentOutput.Value);
+   }
+
+   [Fact]
+   public void PushStorageBatchAddsInputTableDataToMongodb()
+   {
+      StorageBatch batch = WithBatchThatHasABlockToPush();
+
+      var transactionTable = new TransactionTable()
+         {
+            TransactionId = NewRandomString, RawTransaction = BitConverter.GetBytes(NewRandomInt64)
+         };
+
+      batch.TransactionTable.Add(transactionTable);
+
+      sut.PushStorageBatch(batch);
+
+      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.transactionTable,
+         batch.TransactionTable);
    }
 }
