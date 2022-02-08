@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Threading;
 using Blockcore.Consensus;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
@@ -17,7 +15,6 @@ using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Networks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 using Moq;
 using NBitcoin;
 using Xunit;
@@ -445,7 +442,7 @@ public class MongoStorageOperationsTests
    }
 
    [Fact]
-   public void PushStorageBatchAddsInputTableDataToMongodb()
+   public void PushStorageBatchAddsTransactionTableDataToMongodb()
    {
       StorageBatch batch = WithBatchThatHasABlockToPush();
 
@@ -457,6 +454,29 @@ public class MongoStorageOperationsTests
       batch.TransactionTable.Add(transactionTable);
 
       sut.PushStorageBatch(batch);
+
+      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.transactionTable,
+         batch.TransactionTable);
+   }
+
+   //[Fact]
+   public void PushStorageBatchIgnoresDuplicatsOnInputTableForDuplicateKeyException()
+   {
+      StorageBatch batch = WithBatchThatHasABlockToPush();
+
+      var transactionTable = new TransactionTable()
+      {
+         TransactionId = NewRandomString, RawTransaction = BitConverter.GetBytes(NewRandomInt64)
+      };
+
+      // mongodbMock.transactionTable.Setup(_ => _.InsertMany(batch.TransactionTable, null,CancellationToken.None))
+      //    .Throws(new MongoBulkWriteException<TransactionTable>();
+
+      batch.TransactionTable.Add(transactionTable);
+
+      Action callToSut = () => sut.PushStorageBatch(batch);
+
+      callToSut.Should().NotThrow();
 
       mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.transactionTable,
          batch.TransactionTable);
