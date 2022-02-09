@@ -1,3 +1,14 @@
+## <small>0.1.24 (2022-02-09)</small>
+
+* Add Cybits network package to indexer ([0acce7c](https://github.com/block-core/blockcore-indexer/commit/0acce7c))
+* Added guard for empty results in the rewind lookup (#89) ([f5103fd](https://github.com/block-core/blockcore-indexer/commit/f5103fd)), closes [#89](https://github.com/block-core/blockcore-indexer/issues/89)
+* Move the StoreRawTransactions to development config ([d9fa519](https://github.com/block-core/blockcore-indexer/commit/d9fa519))
+* Performance enhances (#88) ([91f0572](https://github.com/block-core/blockcore-indexer/commit/91f0572)), closes [#88](https://github.com/block-core/blockcore-indexer/issues/88)
+* Thorw if cirrus api failed to fetch a recipt ([cbf28c9](https://github.com/block-core/blockcore-indexer/commit/cbf28c9))
+* Update changelog and version ([eb94c1f](https://github.com/block-core/blockcore-indexer/commit/eb94c1f))
+
+
+
 ## <small>0.1.23 (2022-02-06)</small>
 
 * Add ability to manually trigger build ([3c95378](https://github.com/block-core/blockcore-indexer/commit/3c95378))
