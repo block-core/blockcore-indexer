@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Threading;
 using Blockcore.Consensus;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
@@ -15,6 +17,10 @@ using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Networks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+using MongoDB.Driver.Core.Clusters;
+using MongoDB.Driver.Core.Connections;
+using MongoDB.Driver.Core.Servers;
 using Moq;
 using NBitcoin;
 using Xunit;
@@ -459,7 +465,7 @@ public class MongoStorageOperationsTests
          batch.TransactionTable);
    }
 
-   //[Fact]
+   //[Fact] TODO we need to add to the new List<BulkWriteError>{} an error with duplicate category to actually check the code otherwise it goes green as a false positive
    public void PushStorageBatchIgnoresDuplicatsOnInputTableForDuplicateKeyException()
    {
       StorageBatch batch = WithBatchThatHasABlockToPush();
@@ -469,8 +475,11 @@ public class MongoStorageOperationsTests
          TransactionId = NewRandomString, RawTransaction = BitConverter.GetBytes(NewRandomInt64)
       };
 
-      // mongodbMock.transactionTable.Setup(_ => _.InsertMany(batch.TransactionTable, null,CancellationToken.None))
-      //    .Throws(new MongoBulkWriteException<TransactionTable>();
+
+      mongodbMock.transactionTable.Setup(_ => _.InsertManyAsync(batch.TransactionTable, It.IsAny<InsertManyOptions>(),CancellationToken.None))
+         .Throws(new MongoBulkWriteException<TransactionTable>(new ConnectionId(new ServerId(new ClusterId(),new IPEndPoint(256,1))) ,
+            new BulkWriteResult<TransactionTable>.Acknowledged(NewRandomInt32,NewRandomInt64,NewRandomInt32,NewRandomInt32,null,new List<WriteModel<TransactionTable>>(),new List<BulkWriteUpsert>()),
+            new List<BulkWriteError>{},null,new List<WriteModel<TransactionTable>>()));
 
       batch.TransactionTable.Add(transactionTable);
 
