@@ -17,7 +17,6 @@ using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Networks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using MongoDB.Driver.Core.Connections;
@@ -579,5 +578,23 @@ public class MongoStorageOperationsTests
                CancellationToken.None),
          Times.Once);
 
+   }
+
+   [Fact]
+   public void PushStorageBatchThrowsWhenTheBlockInertedIsNotTheSameHashAsTopBlockInMongodb()
+   {
+      var batch = new StorageBatch();
+
+      var dbBlock = NewRandomBlockTable;
+      var storageBlock = NewRandomBlockTable;
+
+      batch.BlockTable.Add(storageBlock.BlockIndex, storageBlock);
+
+      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
+         dbBlock);
+
+      Action serviceCall = () => sut.PushStorageBatch(batch);
+
+      serviceCall.Should().ThrowExactly<ArgumentException>();
    }
 }
