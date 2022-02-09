@@ -518,4 +518,33 @@ public class MongoStorageOperationsTests
               _.First().Value == outputTable.Value &&
               _.First().BlockIndex == outputTable.BlockIndex);
    }
+
+   [Fact]
+   public void PushStorageBatchAddsDeletsFromUnspentOutputTableOnMongoDbForAllInputTableItems()
+   {
+      StorageBatch batch = WithBatchThatHasABlockToPush();
+
+      //We must have an unspent output for an input that is being processed
+      var outpoint = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
+      var unspentOutput =
+         new UnspentOutputTable { Outpoint = outpoint, Address = NewRandomString, Value = NewRandomInt64 };
+
+      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.unspentOutputTableCollection,
+         unspentOutput);
+
+      var inputTable = new InputTable
+      {
+         BlockIndex = NewRandomInt32,
+         Outpoint = outpoint,
+         TrxHash = NewRandomString
+      };
+
+      batch.InputTable.Add(inputTable);
+
+      sut.PushStorageBatch(batch);
+
+      mongodbMock.unspentOutputTableCollection.Verify(_ =>
+         _.DeleteMany(It.IsAny<ExpressionFilterDefinition<UnspentOutputTable>>() //TODO David try to get a better validation than is any
+            , CancellationToken.None));
+   }
 }
