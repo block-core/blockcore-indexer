@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,8 +29,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private readonly IStorageOperations storageOperations;
 
-      private readonly System.Diagnostics.Stopwatch watch;
-
       private readonly System.Diagnostics.Stopwatch watchBatch;
 
       private StorageBatch currentStorageBatch;
@@ -37,6 +36,12 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       readonly ICryptoClientFactory clientFactory;
 
       private readonly IEnumerable<long> bip30Blocks = new List<long> {91842 , 91880 };
+
+      private readonly BlockingCollection<SyncBlockTransactionsOperation> pendingBlocksToAddToStorage = new();
+
+      private readonly Task collectionProcessor;
+
+      private bool drainBlockingCollection = false;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockPuller"/> class.
@@ -56,8 +61,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          this.syncConnection = syncConnection;
          this.syncOperations = syncOperations;
          config = configuration.Value;
-         watch = Stopwatch.Start();
          watchBatch = Stopwatch.Start();
+
+         collectionProcessor = Task.Run(ProcessFromBlockingCollection);
       }
 
       /// <inheritdoc />
@@ -85,86 +91,151 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             return false;
          }
 
-         watch.Restart();
+         if (drainBlockingCollection)
+         {
+            if (pendingBlocksToAddToStorage.Count == 0)
+               drainBlockingCollection = false;
+            else
+               return false;
+         }
 
-         IBlockchainClient client = clientFactory.Create(syncConnection);
+         if (pendingBlocksToAddToStorage.Count > config.MaxItemsInBlockingCollection)
+         {
+            return false;
+         }
 
          if (Runner.GlobalState.PullingTip == null)
          {
             // start pulling blocks form this tip
-            Runner.GlobalState.PullingTip = await client.GetBlockAsync(Runner.GlobalState.StoreTip.BlockHash);
+            Runner.GlobalState.PullingTip = await clientFactory.Create(syncConnection).GetBlockAsync(Runner.GlobalState.StoreTip.BlockHash);
             currentStorageBatch = new StorageBatch();
 
             log.LogDebug($"Fetching block started at block {Runner.GlobalState.PullingTip.Height}({Runner.GlobalState.PullingTip.Hash})");
          }
 
+         if (collectionProcessor.IsFaulted)
+         {
+            throw collectionProcessor.Exception;
+         }
+
+         // update the chains tip
+         Runner.GlobalState.ChainTipHeight = syncOperations.GetBlockCount(clientFactory.Create(syncConnection));
+
+         if (Runner.GlobalState.ChainTipHeight == Runner.GlobalState.PullingTip.Height)
+            return false;
+
+         int numberOfTasks = Runner.GlobalState.IbdMode() ? config.NumberOfPullerTasksForIBD : 1;
+
+         List<Task<SyncBlockTransactionsOperation>> blocks = new(numberOfTasks);
+
+         for (int i = 1; i < numberOfTasks + 1; i++)
+            blocks.Add(FetchBlockAsync(Runner.GlobalState.PullingTip.Height + i));
+
+         Task.WaitAll(blocks.ToArray());
+
+         int index = 0;
+         foreach (Task<SyncBlockTransactionsOperation> block in blocks)
+         {
+            if (block.Result == null)
+               return false; //we are at the tip
+
+            string previousBlockHash = index == 0
+               ? Runner.GlobalState.PullingTip.Hash
+               : blocks[index - 1].Result.BlockInfo.Hash;
+
+            if (block.Result.BlockInfo.PreviousBlockHash != previousBlockHash)
+            {
+               log.LogDebug($"Reorg detected on block = {Runner.GlobalState.PullingTip.Height} - ({Runner.GlobalState.PullingTip.Hash})");
+
+               // reorgs are sorted at the store task
+               drainBlockingCollection = true;
+               Runner.GlobalState.ReorgMode = true;
+               return false;
+            }
+
+            AddFetchedBlockToCollection(block.Result);
+            index++;
+         }
+
+         return await Task.FromResult(true);
+      }
+
+      void AddFetchedBlockToCollection(SyncBlockTransactionsOperation blockTask)
+      {
+         if (blockTask.BlockInfo == null)
+         {
+            throw new ApplicationException("Block was not found.");
+         }
+         else
+         {
+            pendingBlocksToAddToStorage.Add(blockTask);
+
+            Runner.GlobalState.PullingTip = blockTask.BlockInfo;
+         }
+      }
+
+      async Task<SyncBlockTransactionsOperation> FetchBlockAsync(long tip)
+      {
+         IBlockchainClient client = clientFactory.Create(syncConnection);
+
          // fetch the next block form the fullnode
-         string nextHash = await NextHashAsync(client, Runner.GlobalState.PullingTip.Height + 1);
+         string nextHash = await NextHashAsync(client, tip);
 
          if (string.IsNullOrEmpty(nextHash))
          {
             // nothing to process
-            return false;
+            return null;
          }
-
-         // update the chains tip
-         Runner.GlobalState.ChainTipHeight = syncOperations.GetBlockCount(client);
 
          BlockInfo nextBlock = await client.GetBlockAsync(nextHash);
 
-         // check if the next block prev hash is the same as our current tip
-         if (nextBlock.PreviousBlockHash != Runner.GlobalState.PullingTip.Hash)
+         return  syncOperations.FetchFullBlock(syncConnection, nextBlock);
+      }
+
+      private void ProcessFromBlockingCollection()
+      {
+         while (!pendingBlocksToAddToStorage.IsCompleted || !Abort)
          {
-            log.LogDebug($"Reorg detected on block = {Runner.GlobalState.PullingTip.Height} - ({Runner.GlobalState.PullingTip.Hash})");
+            if (drainBlockingCollection)
+            {
+               while (pendingBlocksToAddToStorage.TryTake(out _)) { }
+               drainBlockingCollection = false;
+            }
 
-            // reorgs are sorted at the store task
-            Runner.GlobalState.ReorgMode = true;
-            return false;
-         }
+            SyncBlockTransactionsOperation block = pendingBlocksToAddToStorage.Take(CancellationToken);
 
-         // build mongod data from that block
-         SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(syncConnection, nextBlock);
+            storageOperations.AddToStorageBatch(currentStorageBatch, block);
 
-         if (block?.BlockInfo == null)
-         {
-            throw new ApplicationException("Block was not found.");
-         }
+            bool ibd = Runner.GlobalState.ChainTipHeight - block.BlockInfo.Height > 20;
 
-         storageOperations.AddToStorageBatch(currentStorageBatch, block);
+            bool bip30Issue = bip30Blocks.Contains(block.BlockInfo.Height + 1);
 
-         watch.Stop();
+            if (ibd && !bip30Issue &&
+                currentStorageBatch.BlockTable.Count < config.MongoBatchCount &&
+                currentStorageBatch.TotalSize <= config.MongoBatchSize)
+            {
+               continue;
+            }
 
-         bool ibd = Runner.GlobalState.ChainTipHeight - nextBlock.Height > 20;
-
-         bool bip30Issue = bip30Blocks.Contains(nextBlock.Height + 1);
-
-         if (!ibd || bip30Issue || currentStorageBatch.BlockTable.Count >= 10000 || currentStorageBatch.TotalSize > 10000000) // 5000000) // 10000000) todo: add this to config
-         {
             long totalBlocks = currentStorageBatch.BlockTable.Count;
             double totalSeconds = watchBatch.Elapsed.TotalSeconds;
             double blocksPerSecond = totalBlocks / totalSeconds;
             double secondsPerBlock = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {nextBlock.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b).");
+            log.LogDebug($"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {block.BlockInfo.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b). ({pendingBlocksToAddToStorage.Count})");
 
             Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
             currentStorageBatch = new StorageBatch();
 
             watchBatch.Restart();
          }
-
-         Runner.GlobalState.PullingTip = nextBlock;
-
-         return await Task.FromResult(true);
       }
 
-      private async Task<string> NextHashAsync(IBlockchainClient client, long height)
+      private static Task<string> NextHashAsync(IBlockchainClient client, long height)
       {
          try
          {
-            string nextHash = await client.GetblockHashAsync(height);
-
-            return nextHash;
+            return client.GetblockHashAsync(height);
          }
          catch (Exception e)
          {

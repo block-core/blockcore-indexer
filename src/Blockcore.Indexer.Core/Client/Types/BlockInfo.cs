@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Blockcore.Indexer.Core.Client.Types
@@ -25,6 +26,7 @@ namespace Blockcore.Indexer.Core.Client.Types
 
       [JsonProperty("height")]
       public long Height { get; set; }
+      public uint HeightAsUint32 => Convert.ToUInt32(Height);
 
       [JsonProperty("merkleroot")]
       public string Merkleroot { get; set; }

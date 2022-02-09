@@ -31,9 +31,13 @@ namespace Blockcore.Indexer.Core.Settings
       public int NotifyBatchCount { get; set; }
 
       public int MongoBatchSize { get; set; }
+      public int MongoBatchCount { get; set; }
 
       public int AverageInterval { get; set; }
 
       public bool StoreRawTransactions { get; set; }
+
+      public int NumberOfPullerTasksForIBD { get; set; }
+      public int MaxItemsInBlockingCollection { get; set; }
    }
 }

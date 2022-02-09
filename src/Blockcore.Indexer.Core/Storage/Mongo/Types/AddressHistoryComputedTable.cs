@@ -15,6 +15,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.Types
 
       public long Position { get; set; }
 
-      public long BlockIndex { get; set; }
+      public uint BlockIndex { get; set; }
    }
 }

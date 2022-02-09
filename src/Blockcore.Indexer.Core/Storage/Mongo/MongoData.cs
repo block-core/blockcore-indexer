@@ -740,31 +740,31 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          if (transcations.Any())
          {
-            foreach (KeyValuePair<string, MapAddressBag> item in transcations.OrderBy(o => o.Value.BlockIndex))
+            foreach ((string key, MapAddressBag mapAddressBag) in transcations.OrderBy(o => o.Value.BlockIndex))
             {
                var historyItem = new AddressHistoryComputedTable
                {
                   Address = addressComputedTable.Address,
-                  TransactionId = item.Key,
-                  BlockIndex = item.Value.BlockIndex,
-                  Id = $"{item.Key}-{address}",
+                  TransactionId = key,
+                  BlockIndex = Convert.ToUInt32(mapAddressBag.BlockIndex),
+                  Id = $"{key}-{address}",
                };
 
-               history.Add(item.Key, historyItem);
+               history.Add(key, historyItem);
 
-               foreach (OutputTable output in item.Value.Ouputs)
+               foreach (OutputTable output in mapAddressBag.Ouputs)
                   historyItem.AmountInOutputs += output.Value;
 
-               foreach (InputTable output in item.Value.Inputs)
+               foreach (InputTable output in mapAddressBag.Inputs)
                   historyItem.AmountInInputs += output.Value;
 
-               if (item.Value.CoinBase)
+               if (mapAddressBag.CoinBase)
                {
                   countMined++;
                   mined += historyItem.AmountInOutputs;
                   historyItem.EntryType = "mine";
                }
-               else if (item.Value.CoinStake)
+               else if (mapAddressBag.CoinStake)
                {
                   countStaked++;
                   staked += historyItem.AmountInOutputs - historyItem.AmountInInputs;

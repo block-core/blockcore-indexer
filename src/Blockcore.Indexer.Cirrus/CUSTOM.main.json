@@ -9,7 +9,7 @@
       "Color": "#f3b623"
    },
    "Network": {
-      "NetworkConsensusFactoryType": "Cirrus.SmartContractConsensusFactory, Blockcore.Indexer.Cirrus",
+      "NetworkConsensusFactoryType": "Blockcore.Indexer.Cirrus.SmartContractConsensusFactory, Blockcore.Indexer.Cirrus",
       "NetworkPubkeyAddressPrefix": 0,
       "NetworkScriptAddressPrefix": 5,
       "NetworkWitnessPrefix": "coin",

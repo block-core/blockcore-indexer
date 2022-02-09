@@ -56,7 +56,7 @@ namespace Blockcore.Indexer.Core.Operations.Types
       /// <summary>
       /// This represents an a memory view of all mempool transactions in store
       /// </summary>
-      public ConcurrentDictionary<string, string> LocalMempoolView { get; set; } = new ConcurrentDictionary<string, string>();
+      public ConcurrentDictionary<string, string> LocalMempoolView { get; set; } = new ();
 
       /// <summary>
       /// Indicates is the last persisted tip is in initial block download mode.

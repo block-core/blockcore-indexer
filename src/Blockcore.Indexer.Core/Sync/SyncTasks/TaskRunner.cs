@@ -26,30 +26,33 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       protected Runner Runner { get; set; }
 
+      protected CancellationToken CancellationToken { get; private set; }
+
       public Task Run(Runner runner, CancellationTokenSource tokenSource)
       {
          Runner = runner;
-         CancellationToken cancellationToken = tokenSource.Token;
+         CancellationToken = tokenSource.Token;
 
          var task = Task.Run(
              async () =>
              {
+
                 try
                 {
                    while (!Abort)
                    {
                       if (await OnExecute())
                       {
-                         cancellationToken.ThrowIfCancellationRequested();
+                         CancellationToken.ThrowIfCancellationRequested();
 
                          continue;
                       }
 
                       //log.LogDebug($"TaskRunner-{GetType().Name} Delay = {Delay.TotalSeconds}");
 
-                      cancellationToken.ThrowIfCancellationRequested();
+                      CancellationToken.ThrowIfCancellationRequested();
 
-                      await Task.Delay(Delay, cancellationToken);
+                      await Task.Delay(Delay, CancellationToken);
                    }
                 }
                 catch (OperationCanceledException)
@@ -65,7 +68,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                    throw;
                 }
              },
-             cancellationToken);
+             CancellationToken);
 
          return task;
       }
