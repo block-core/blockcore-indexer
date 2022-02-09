@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using Moq;
 
@@ -88,5 +89,12 @@ public class MongodbMock
             options,
             It.IsAny<CancellationToken>())
          , Times.Once);
+   }
+
+   public (IBsonSerializer<TDocument>,IBsonSerializerRegistry) GetRendererForDocumentExpresion<TDocument>()
+   {
+      var serializerRegistry = BsonSerializer.SerializerRegistry;
+      var documentSerializer = serializerRegistry.GetSerializer<TDocument>();
+      return (documentSerializer, serializerRegistry);
    }
 }

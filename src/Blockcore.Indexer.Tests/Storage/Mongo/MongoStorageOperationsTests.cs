@@ -17,6 +17,7 @@ using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Networks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using MongoDB.Driver.Core.Connections;
@@ -543,8 +544,40 @@ public class MongoStorageOperationsTests
 
       sut.PushStorageBatch(batch);
 
+      var (docSerializer,serializer) = mongodbMock.GetRendererForDocumentExpresion<UnspentOutputTable>();
+
+      var filterToDelete = Builders<UnspentOutputTable>.Filter
+         .Where(_ => new List<Outpoint>{outpoint}.Contains(_.Outpoint));
+
       mongodbMock.unspentOutputTableCollection.Verify(_ =>
-         _.DeleteMany(It.IsAny<ExpressionFilterDefinition<UnspentOutputTable>>() //TODO David try to get a better validation than is any
+         _.DeleteMany(It.Is<ExpressionFilterDefinition<UnspentOutputTable>>(e =>
+               e.Render(docSerializer,serializer) == filterToDelete.Render(docSerializer,serializer))
             , CancellationToken.None));
+   }
+
+   [Fact]
+   public void PushStorageBatchUpdatesBlockTableItemsWithSyncCompleteTrueInMongodb()
+   {
+      StorageBatch batch = WithBatchThatHasABlockToPush();
+
+      sut.PushStorageBatch(batch);
+
+      var (docSerializer,serializer) = mongodbMock.GetRendererForDocumentExpresion<BlockTable>();
+
+      FilterDefinition<BlockTable> filter =
+         Builders<BlockTable>.Filter.Eq(block => block.BlockIndex, batch.BlockTable.Single().Key);
+      UpdateDefinition<BlockTable> update =
+         Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
+
+
+      mongodbMock.blockTableCollection.Verify(_ =>
+             _.BulkWrite(It.Is<IEnumerable<UpdateOneModel<BlockTable>>>(e =>
+                   e.ToList().Count == 1 &&
+                   e.Single().Filter.Render(docSerializer, serializer) == filter.Render(docSerializer, serializer) &&
+                   e.Single().Update.Render(docSerializer, serializer) == update.Render(docSerializer, serializer) ),
+               It.Is<BulkWriteOptions>(o => o.IsOrdered == true),
+               CancellationToken.None),
+         Times.Once);
+
    }
 }
