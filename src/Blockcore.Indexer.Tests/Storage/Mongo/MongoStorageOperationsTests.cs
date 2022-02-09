@@ -416,8 +416,7 @@ public class MongoStorageOperationsTests
    {
       StorageBatch batch = WithBatchThatHasABlockToPush();
 
-
-
+      //We must have an unspent output for an input that is being processed
       var outpoint = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
       var unspentOutput =
          new UnspentOutputTable { Outpoint = outpoint, Address = NewRandomString, Value = NewRandomInt64 };
@@ -440,7 +439,7 @@ public class MongoStorageOperationsTests
       mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.inputTableCollection,
          batch.InputTable);
 
-      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.inputTableCollection,
+      mongodbMock.ThanTheCollectionStoredTheUnorderedItemsSuccessfully(mongodbMock.inputTableCollection,
          _
             => _.Count() == 1 &&
                _.First().Address == unspentOutput.Address &&
@@ -489,5 +488,34 @@ public class MongoStorageOperationsTests
 
       mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.transactionTable,
          batch.TransactionTable);
+   }
+
+
+   [Fact]
+   public void PushStorageBatchAddsUnspendOutputToMongodbForEachOutputTableItem()
+   {
+      StorageBatch batch = WithBatchThatHasABlockToPush();
+
+      var outputTable = new OutputTable
+      {
+         BlockIndex = NewRandomInt32,
+         Address = NewRandomString,
+         Outpoint = new Outpoint{OutputIndex = NewRandomInt32,TransactionId = NewRandomString},
+         Value = NewRandomInt64,
+         CoinBase = NewRandomInt32 % 2 > 0,
+         CoinStake = NewRandomInt32 % 2 > 0,
+         ScriptHex = NewRandomString
+      };
+
+      batch.OutputTable.Add(outputTable.Outpoint.ToString(),outputTable);
+
+      sut.PushStorageBatch(batch);
+
+      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.unspentOutputTableCollection,
+         _ => _.Count() == 1 &&
+              _.First().Address == outputTable.Address &&
+              _.First().Outpoint.ToString() == outputTable.Outpoint.ToString() &&
+              _.First().Value == outputTable.Value &&
+              _.First().BlockIndex == outputTable.BlockIndex);
    }
 }
