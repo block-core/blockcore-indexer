@@ -1,8 +1,10 @@
 ## <small>0.1.23 (2022-02-06)</small>
 
+* Add ability to manually trigger build ([3c95378](https://github.com/block-core/blockcore-indexer/commit/3c95378))
 * Adding unconfirmed trx to history (#87) ([367df2c](https://github.com/block-core/blockcore-indexer/commit/367df2c)), closes [#87](https://github.com/block-core/blockcore-indexer/issues/87)
 * Fix bug on client when fullnode return null ([36489c7](https://github.com/block-core/blockcore-indexer/commit/36489c7))
 * show indexing on progress bar (#86) ([2b4f1a5](https://github.com/block-core/blockcore-indexer/commit/2b4f1a5)), closes [#86](https://github.com/block-core/blockcore-indexer/issues/86)
+* Update CHANGELOG.md ([9a00b36](https://github.com/block-core/blockcore-indexer/commit/9a00b36))
 * Update version ([579dbb4](https://github.com/block-core/blockcore-indexer/commit/579dbb4))
 
 

@@ -178,6 +178,15 @@
             "ASPNETCORE_ENVIRONMENT": "Development"
          },
          "applicationUrl": "http://localhost:9910/"
+      },
+      "CYBITS": {
+         "commandName": "Project",
+         "commandLineArgs": "--chain=CYBITS",
+         "launchBrowser": true,
+         "environmentVariables": {
+            "ASPNETCORE_ENVIRONMENT": "Development"
+         },
+         "applicationUrl": "http://localhost:9910/"
       }
    }
 }
