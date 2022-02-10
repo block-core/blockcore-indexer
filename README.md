@@ -77,6 +77,20 @@ When you have the node running, pick it from the dropdown menu (green play butto
 
 *Happy debugging and coding!*
 
+### Improved performance for initial sync and indexing
+
+Running the node and indexer from Visual Studio will involve a reduction in performance on initial syncing of the blockchain and indexing the data. For optimal performance, 
+use the dotnet from terminal:
+
+```sh
+# Run the node and let it sync to tip
+dotnet run Blockcore.Node.csproj --chain=STRAX -txindex=1  -server -iprangefiltering=0 -rpcallowip=127.0.0.1 -rpcbind=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -testnet
+
+# Run the indexer
+set ASPNETCORE_ENVIRONMENT=Development
+dotnet run Blockcore.Indexer.csproj --chain=TSTRAX --no-launch-profile
+```
+
 ### Local MongoDB database server on docker
 
 There is a basic docker-compose.yml that can be used to start a MongoDB database server on docker. Navigate to the docker/database folder and start the container in background mode:
