@@ -82,15 +82,6 @@ public class MongodbMock
          , Times.Once);
    }
 
-   public void ThanTheCollectionStoredTheItemsSuccessfully<TDocument>(Mock<IMongoCollection<TDocument>> collection,
-      Expression<Func<IEnumerable<TDocument>, bool>> match, InsertManyOptions options = null)
-   {
-      collection.Verify(_ => _.InsertManyAsync(It.Is(match),
-            options,
-            It.IsAny<CancellationToken>())
-         , Times.Once);
-   }
-
    public (IBsonSerializer<TDocument>,IBsonSerializerRegistry) GetRendererForDocumentExpresion<TDocument>()
    {
       var serializerRegistry = BsonSerializer.SerializerRegistry;

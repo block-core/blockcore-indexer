@@ -208,7 +208,7 @@ public class MongoStorageOperationsTests
       batch.TransactionBlockTable.Should().ContainSingle()
          .Which.Should().BeEquivalentTo(new TransactionBlockTable
       {
-         BlockIndex = item.BlockInfo.Height,
+         BlockIndex = item.BlockInfo.HeightAsUint32,
          TransactionId = item.Transactions.Single().GetHash().ToString()
       });
    }
@@ -273,7 +273,7 @@ public class MongoStorageOperationsTests
          Address = scriptOutputInfo.Addresses.Single(),
          Outpoint = expectedOutpoint,
          Value = valueMoney.Satoshi,
-         BlockIndex = item.BlockInfo.Height,
+         BlockIndex = item.BlockInfo.HeightAsUint32,
          CoinBase = false,
          CoinStake = false,
          ScriptHex = script.ToHex()
@@ -315,7 +315,7 @@ public class MongoStorageOperationsTests
          Address = null,
          Outpoint = new Outpoint{TransactionId = hash.ToString(),OutputIndex = n},
          Value = 0,
-         BlockIndex = item.BlockInfo.Height,
+         BlockIndex = item.BlockInfo.HeightAsUint32,
          TrxHash = item.Transactions.Single().GetHash().ToString()
       });
    }
@@ -346,7 +346,7 @@ public class MongoStorageOperationsTests
          Address = scriptOutputInfo.Addresses.Single(),
          Outpoint = new Outpoint{TransactionId = transaction.GetHash().ToString(),OutputIndex = 0},
          Value = valueMoney,
-         BlockIndex = item.BlockInfo.Height,
+         BlockIndex = item.BlockInfo.HeightAsUint32,
          TrxHash = item.Transactions.Last().GetHash().ToString()
       });
    }
@@ -375,7 +375,7 @@ public class MongoStorageOperationsTests
 
       var blockTable = new TransactionBlockTable
       {
-         BlockIndex = NewRandomInt32,
+         BlockIndex = (uint)NewRandomInt32,
          TransactionId = NewRandomString
       };
 
@@ -394,7 +394,7 @@ public class MongoStorageOperationsTests
 
       var outputTable = new OutputTable()
       {
-         BlockIndex = NewRandomInt32,
+         BlockIndex = (uint)NewRandomInt32,
          Address = NewRandomString,
          Outpoint = new Outpoint{OutputIndex = NewRandomInt32,TransactionId = NewRandomString},
          Value = NewRandomInt64,
@@ -426,7 +426,7 @@ public class MongoStorageOperationsTests
 
       var inputTable = new InputTable
       {
-         BlockIndex = NewRandomInt32,
+         BlockIndex = (uint)NewRandomInt32,
          Outpoint = outpoint,
          TrxHash = NewRandomString
       };
@@ -498,7 +498,7 @@ public class MongoStorageOperationsTests
 
       var outputTable = new OutputTable
       {
-         BlockIndex = NewRandomInt32,
+         BlockIndex = (uint)NewRandomInt32,
          Address = NewRandomString,
          Outpoint = new Outpoint{OutputIndex = NewRandomInt32,TransactionId = NewRandomString},
          Value = NewRandomInt64,
@@ -511,7 +511,7 @@ public class MongoStorageOperationsTests
 
       sut.PushStorageBatch(batch);
 
-      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.unspentOutputTableCollection,
+      mongodbMock.ThanTheCollectionStoredTheUnorderedItemsSuccessfully(mongodbMock.unspentOutputTableCollection,
          _ => _.Count() == 1 &&
               _.First().Address == outputTable.Address &&
               _.First().Outpoint.ToString() == outputTable.Outpoint.ToString() &&
@@ -534,7 +534,7 @@ public class MongoStorageOperationsTests
 
       var inputTable = new InputTable
       {
-         BlockIndex = NewRandomInt32,
+         BlockIndex = (uint)NewRandomInt32,
          Outpoint = outpoint,
          TrxHash = NewRandomString
       };
@@ -563,21 +563,20 @@ public class MongoStorageOperationsTests
 
       var (docSerializer,serializer) = mongodbMock.GetRendererForDocumentExpresion<BlockTable>();
 
-      FilterDefinition<BlockTable> filter =
-         Builders<BlockTable>.Filter.Eq(block => block.BlockIndex, batch.BlockTable.Single().Key);
-      UpdateDefinition<BlockTable> update =
-         Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
+      var filterToUpdate = Builders<BlockTable>.Filter
+         .Where(_ => batch.BlockTable.Keys.Contains(_.BlockIndex));
 
+      var update = Builders<BlockTable>.Update
+         .Set(blockInfo => blockInfo.SyncComplete, true);
 
       mongodbMock.blockTableCollection.Verify(_ =>
-             _.BulkWrite(It.Is<IEnumerable<UpdateOneModel<BlockTable>>>(e =>
-                   e.ToList().Count == 1 &&
-                   e.Single().Filter.Render(docSerializer, serializer) == filter.Render(docSerializer, serializer) &&
-                   e.Single().Update.Render(docSerializer, serializer) == update.Render(docSerializer, serializer) ),
-               It.Is<BulkWriteOptions>(o => o.IsOrdered == true),
+            _.UpdateMany(It.Is<ExpressionFilterDefinition<BlockTable>>(f =>
+                   f.Render(docSerializer,serializer) == filterToUpdate.Render(docSerializer,serializer)),
+               It.Is<UpdateDefinition<BlockTable>>(u =>
+                  u.Render(docSerializer, serializer) == update.Render(docSerializer, serializer)),
+               null,
                CancellationToken.None),
          Times.Once);
-
    }
 
    [Fact]
