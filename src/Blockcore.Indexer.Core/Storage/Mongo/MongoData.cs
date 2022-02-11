@@ -891,8 +891,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
           SyncBlockInfo block = BlockByHash(blockHash);
 
           var rewindTask = globalState.IndexModeCompleted
-             ? this.RewindBlockAsync(block.BlockIndex)
-             : this.RewindBlockOnIbdAsync(block.BlockIndex);
+             ? this.RewindBlockAsync((uint)block.BlockIndex)
+             : this.RewindBlockOnIbdAsync((uint)block.BlockIndex);
 
           await rewindTask;
 
@@ -915,7 +915,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          var mempoolTransactions = new List<QueryMempoolTransactionHashes>();
 
-         foreach (MempoolTable trx in list) 
+         foreach (MempoolTable trx in list)
          {
             string transactionId = trx.TransactionId;
 

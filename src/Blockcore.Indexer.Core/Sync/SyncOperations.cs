@@ -105,13 +105,13 @@ namespace Blockcore.Indexer.Core.Sync
          return SyncBlockInternal(connection, block);
       }
 
-      public async Task<Storage.Types.SyncBlockInfo> RewindToBestChain(SyncConnection connection)
+      public async Task<SyncBlockInfo> RewindToBestChain(SyncConnection connection)
       {
-         var client = clientFactory.Create(connection);
+         IBlockchainClient client = clientFactory.Create(connection);
 
          while (true)
          {
-            Storage.Types.SyncBlockInfo block = storage.GetLatestBlock();
+            SyncBlockInfo block = storage.GetLatestBlock();
 
             if (block == null)
             {

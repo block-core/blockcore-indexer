@@ -10,12 +10,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo;
 
 public static class BlockRewindOperation
 {
-   public static async Task RewindBlockOnIbdAsync(this MongoData storage, long blockIndex)
+   public static async Task RewindBlockOnIbdAsync(this MongoData storage, uint blockIndex)
    {
-      await DeleteBlockInCollectionFromTopOfTable(storage.UnspentOutputTable, nameof(UnspentOutputTable.BlockIndex),
-         blockIndex);
+      await StoreRewindBlockAsync(storage, blockIndex);
 
       await RewindInputDataIntoUnspentTransactionTableAsync(storage, blockIndex);
+
+      var unspent = DeleteBlockInCollectionFromTopOfTable(storage.UnspentOutputTable, nameof(UnspentOutputTable.BlockIndex),
+         blockIndex);
 
       var output =
          DeleteBlockInCollectionFromTopOfTable(storage.OutputTable, nameof(OutputTable.BlockIndex), blockIndex);
@@ -36,11 +38,13 @@ public static class BlockRewindOperation
             nameof(AddressHistoryComputedTable.BlockIndex), blockIndex);
 
 
-      await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed);
+      await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, unspent);
    }
 
-   public static async Task RewindBlockAsync(this MongoData storage, long blockIndex)
+   public static async Task RewindBlockAsync(this MongoData storage, uint blockIndex)
    {
+      await StoreRewindBlockAsync(storage, blockIndex);
+
       FilterDefinition<OutputTable> outputFilter =
          Builders<OutputTable>.Filter.Eq(addr => addr.BlockIndex, blockIndex);
       Task<DeleteResult> output = storage.OutputTable.DeleteManyAsync(outputFilter);
@@ -61,18 +65,44 @@ public static class BlockRewindOperation
       Task<DeleteResult> addressHistoryComputed =
          storage.AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
 
-      FilterDefinition<UnspentOutputTable> unspentOutputFilter =
-         Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BlockIndex, blockIndex);
-      Task<DeleteResult> unspentOutput = storage.UnspentOutputTable.DeleteManyAsync(unspentOutputFilter);
-
-      await Task.WhenAll(unspentOutput, output, transactions, addressComputed, addressHistoryComputed);
+      await Task.WhenAll( output, transactions, addressComputed, addressHistoryComputed);
 
       await MergeRewindInputsToUnspentTransactionsAsync(storage, blockIndex);
 
       FilterDefinition<InputTable> inputFilter =
          Builders<InputTable>.Filter.Eq(addr => addr.BlockIndex, blockIndex);
 
-      await storage.InputTable.DeleteManyAsync(inputFilter);
+      var inputs = storage.InputTable.DeleteManyAsync(inputFilter);
+
+      FilterDefinition<UnspentOutputTable> unspentOutputFilter =
+         Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BlockIndex, blockIndex);
+      Task<DeleteResult> unspentOutput = storage.UnspentOutputTable.DeleteManyAsync(unspentOutputFilter);
+
+      await Task.WhenAll( inputs, unspentOutput);
+   }
+
+   static Task StoreRewindBlockAsync(MongoDb storage, uint blockIndex)
+   {
+      var blockTask = storage.BlockTable.FindAsync(_ => _.BlockIndex == blockIndex);
+      var inputsTask = storage.InputTable.FindAsync(_ => _.BlockIndex == blockIndex);
+      var outputsTask = storage.OutputTable.FindAsync(_ => _.BlockIndex == blockIndex);
+      var transactionIdsTask = storage.TransactionBlockTable.FindAsync(_ => _.BlockIndex == blockIndex);
+
+      Task.WhenAll(blockTask, inputsTask, outputsTask, transactionIdsTask);
+
+      var block = blockTask.Result.Single();
+
+      var reorgBlock = new ReorgBlockTable
+      {
+         BlockIndex = blockIndex,
+         BlockHash = block.BlockHash,
+         Block = block,
+         Inputs = inputsTask.Result.ToList(),
+         Outputs = outputsTask.Result.ToList(),
+         TransactionIds = transactionIdsTask.Result.ToList()
+      };
+
+      return storage.ReorgBlock.InsertOneAsync(reorgBlock);
    }
 
    private static async Task RewindInputDataIntoUnspentTransactionTableAsync(MongoData storage, long blockIndex)
