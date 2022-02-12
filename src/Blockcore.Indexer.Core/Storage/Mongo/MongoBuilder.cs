@@ -138,7 +138,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<ReorgBlockTable>(cm =>
             {
                cm.AutoMap();
-               cm.MapIdMember(c => c.BlockHash);
                cm.SetIgnoreExtraElements(true);
             });
          }
