@@ -1,3 +1,10 @@
+## <small>0.1.26 (2022-02-12)</small>
+
+* Changed from hash to object id (#94) ([8bbe293](https://github.com/block-core/blockcore-indexer/commit/8bbe293)), closes [#94](https://github.com/block-core/blockcore-indexer/issues/94)
+* Update changelog and version ([e5a9045](https://github.com/block-core/blockcore-indexer/commit/e5a9045))
+
+
+
 ## <small>0.1.25 (2022-02-12)</small>
 
 * Add some notes regarding running with dotnet ([d63a281](https://github.com/block-core/blockcore-indexer/commit/d63a281))
