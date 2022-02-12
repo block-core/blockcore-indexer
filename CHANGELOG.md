@@ -1,3 +1,12 @@
+## <small>0.1.25 (2022-02-12)</small>
+
+* Add some notes regarding running with dotnet ([d63a281](https://github.com/block-core/blockcore-indexer/commit/d63a281))
+* Added table for reorg blocks (#93) ([607ac0a](https://github.com/block-core/blockcore-indexer/commit/607ac0a)), closes [#93](https://github.com/block-core/blockcore-indexer/issues/93)
+* fix cirrus test config file ([7731ae9](https://github.com/block-core/blockcore-indexer/commit/7731ae9))
+* Update changelog and version ([9f29234](https://github.com/block-core/blockcore-indexer/commit/9f29234))
+
+
+
 ## <small>0.1.24 (2022-02-09)</small>
 
 * Add Cybits network package to indexer ([0acce7c](https://github.com/block-core/blockcore-indexer/commit/0acce7c))
