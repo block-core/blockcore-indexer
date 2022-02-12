@@ -126,5 +126,13 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             return mongoDatabase.GetCollection<MempoolTable>("Mempool");
          }
       }
+
+      public IMongoCollection<ReorgBlockTable> ReorgBlock
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<ReorgBlockTable>("ReorgBlock");
+         }
+      }
    }
 }

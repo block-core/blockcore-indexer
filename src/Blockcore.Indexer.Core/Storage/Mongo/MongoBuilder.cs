@@ -133,9 +133,23 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             });
          }
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(ReorgBlockTable)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<ReorgBlockTable>(cm =>
+            {
+               cm.AutoMap();
+               cm.MapIdMember(c => c.BlockHash);
+               cm.SetIgnoreExtraElements(true);
+            });
+         }
+
          mongoData.UnspentOutputTable.Indexes
             .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
+
+         mongoData.ReorgBlock.Indexes
+            .CreateOne(new CreateIndexModel<ReorgBlockTable>(Builders<ReorgBlockTable>
+               .IndexKeys.Descending(_ => _.BlockIndex)));
 
          return Task.FromResult(1);
       }
