@@ -90,10 +90,11 @@ public static class BlockRewindOperation
 
       Task.WhenAll(blockTask, inputsTask, outputsTask, transactionIdsTask);
 
-      var block = blockTask.Result.Single();
+      BlockTable block = blockTask.Result.Single();
 
       var reorgBlock = new ReorgBlockTable
       {
+         Created = System.DateTime.UtcNow,
          BlockIndex = blockIndex,
          BlockHash = block.BlockHash,
          Block = block,
