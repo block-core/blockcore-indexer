@@ -83,7 +83,7 @@ namespace Blockcore.Indexer.Core.Paging
          List<PageLink> links = new List<PageLink>();
 
          links.Add(Create(0, limit, "first"));
-         links.Add(Create(((total + 1) - limit), limit, "last")); // +1 since the index is 0 based.
+         links.Add(Create((total - limit), limit, "last"));
 
          // If the total is less than limit, we won't be rendering next/previous links.
          if (limit > total)
@@ -107,7 +107,7 @@ namespace Blockcore.Indexer.Core.Paging
 
          long offsetNext = offset + limit;
 
-         if (offsetNext < (total + 1)) // Due to 0 index we must +1.
+         if (offsetNext < total) // Due to 0 index we must +1.
          {
             links.Add(Create(offsetNext, limit, "next"));
          }
