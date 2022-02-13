@@ -169,55 +169,26 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// <returns></returns>
       public QueryResult<SyncBlockInfo> Blocks(int offset, int limit)
       {
-         // page using the block height as paging counter
          SyncBlockInfo storeTip = globalState.StoreTip;
+         long total = storeTip?.BlockIndex ?? BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
 
-         // When the node is not accessible, the BlockIndex is 0.
-         long total = (storeTip != null && storeTip.BlockIndex > 0) ? storeTip.BlockIndex : BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
+         // If the offset is -1, then fetch the latest blocks.
+         long startPosition = offset == -1 ? total - limit : offset;
 
-         //if (storeTip != null && storeTip.BlockIndex > 0)
-         //{
-         //   total = storeTip.BlockIndex;
-         //}
-         //else
-         //{
-         //   total = BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
-         //}
+         long endPosition = (startPosition) + limit;
 
-         //long total = storeTip?.BlockIndex ?? BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
+         // The BlockIndex is 0 based, so we must perform >= to get first.
+         IQueryable<BlockTable> filter = BlockTable.AsQueryable().OrderBy(b => b.BlockIndex).Where(w => w.BlockIndex >= startPosition && w.BlockIndex < endPosition);
 
-         if (total == -1) total = 0;
+         IEnumerable<SyncBlockInfo> list = filter.ToList().Select(mongoBlockToStorageBlock.Map);
 
-         //if (offset == 0 || offset > total)
-         //   offset = (int)total;
+         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
+      }
 
-         if (offset == -1)
-         {
-            // The API offset is 0-based while the Position is 1-based.
-            long startPosition = offset;
-            long endPosition = (startPosition) + limit;
-
-            // The BlockIndex is 0 based, so we must perform >= to get first.
-            IQueryable<BlockTable> filter = BlockTable.AsQueryable().OrderByDescending(b => b.BlockIndex).Take(limit);
-
-            // TakeLast is not supported/possible, so we must perform in-memory re-order.
-            IEnumerable<SyncBlockInfo> list = filter.ToList().OrderBy(b => b.BlockIndex).Select(mongoBlockToStorageBlock.Map);
-
-            return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
-         }
-         else
-         {
-            // The API offset is 0-based while the Position is 1-based.
-            long startPosition = offset;
-            long endPosition = (startPosition) + limit;
-
-            // The BlockIndex is 0 based, so we must perform >= to get first.
-            IQueryable<BlockTable> filter = BlockTable.AsQueryable().OrderBy(b => b.BlockIndex).Where(w => w.BlockIndex >= startPosition && w.BlockIndex < endPosition);
-
-            IEnumerable<SyncBlockInfo> list = filter.ToList().Select(mongoBlockToStorageBlock.Map);
-
-            return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
-         }
+      public SyncBlockInfo GetLatestBlock()
+      {
+         SyncBlockInfo current = Blocks(-1, 1).Items.FirstOrDefault();
+         return current;
       }
 
       public SyncBlockInfo BlockByIndex(long blockIndex)
@@ -515,12 +486,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public SyncBlockInfo GetLatestBlock()
-      {
-         SyncBlockInfo current = Blocks(0, 1).Items.FirstOrDefault();
-         return current;
-      }
-
       public QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit)
       {
          // make sure fields are computed
@@ -549,12 +514,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          // Filter by the position, in the order of first entry being 1 and then second entry being 2.
          filter = filter.OrderBy(s => s.Position);
 
-         // The API offset is 0-based while the Position is 1-based.
-         long startPosition = offset;
-         long endPosition = (startPosition + 1) + limit;
+         long startPosition = offset == -1 ? total - limit : offset;
+         long endPosition = (startPosition) + limit;
 
          // Get all items that is higher than start position and lower than end position.
-         var list = filter.Where(w => w.Position > startPosition && w.Position < endPosition).ToList();
+         var list = filter.Where(w => w.Position > startPosition && w.Position <= endPosition).ToList();
 
          // Loop all transaction IDs and get the transaction object.
          IEnumerable<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
@@ -563,7 +527,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             Value = item.AmountInOutputs - item.AmountInInputs,
             EntryType = item.EntryType,
             TransactionHash = item.TransactionId,
-            Confirmations = globalState.StoreTip.BlockIndex + 1 - item.BlockIndex
+            Confirmations = storeTip.BlockIndex + 1 - item.BlockIndex
          });
 
          IEnumerable<QueryAddressItem> mempollTransactions = null;
