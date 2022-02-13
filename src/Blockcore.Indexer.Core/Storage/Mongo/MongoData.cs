@@ -171,17 +171,53 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       {
          // page using the block height as paging counter
          SyncBlockInfo storeTip = globalState.StoreTip;
-         long total = storeTip?.BlockIndex ?? BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
+
+         // When the node is not accessible, the BlockIndex is 0.
+         long total = (storeTip != null && storeTip.BlockIndex > 0) ? storeTip.BlockIndex : BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
+
+         //if (storeTip != null && storeTip.BlockIndex > 0)
+         //{
+         //   total = storeTip.BlockIndex;
+         //}
+         //else
+         //{
+         //   total = BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
+         //}
+
+         //long total = storeTip?.BlockIndex ?? BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
 
          if (total == -1) total = 0;
 
-         if (offset == 0 || offset > total)
-            offset = (int)total;
+         //if (offset == 0 || offset > total)
+         //   offset = (int)total;
 
-         IQueryable<BlockTable> filter = BlockTable.AsQueryable().Where(w => w.BlockIndex <= offset && w.BlockIndex > offset - limit);
-         IEnumerable<SyncBlockInfo> list = filter.ToList().Select(mongoBlockToStorageBlock.Map);
+         if (offset == -1)
+         {
+            // The API offset is 0-based while the Position is 1-based.
+            long startPosition = offset;
+            long endPosition = (startPosition) + limit;
 
-         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
+            // The BlockIndex is 0 based, so we must perform >= to get first.
+            IQueryable<BlockTable> filter = BlockTable.AsQueryable().OrderByDescending(b => b.BlockIndex).Take(limit);
+
+            // TakeLast is not supported/possible, so we must perform in-memory re-order.
+            IEnumerable<SyncBlockInfo> list = filter.ToList().OrderBy(b => b.BlockIndex).Select(mongoBlockToStorageBlock.Map);
+
+            return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
+         }
+         else
+         {
+            // The API offset is 0-based while the Position is 1-based.
+            long startPosition = offset;
+            long endPosition = (startPosition) + limit;
+
+            // The BlockIndex is 0 based, so we must perform >= to get first.
+            IQueryable<BlockTable> filter = BlockTable.AsQueryable().OrderBy(b => b.BlockIndex).Where(w => w.BlockIndex >= startPosition && w.BlockIndex < endPosition);
+
+            IEnumerable<SyncBlockInfo> list = filter.ToList().Select(mongoBlockToStorageBlock.Map);
+
+            return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
+         }
       }
 
       public SyncBlockInfo BlockByIndex(long blockIndex)
@@ -489,7 +525,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       {
          // make sure fields are computed
          AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
-
 
          IQueryable<AddressHistoryComputedTable> filter = AddressHistoryComputedTable.AsQueryable()
             .Where(t => t.Address == address);
