@@ -146,6 +146,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
 
+         // 
+         mongoData.UnspentOutputTable.Indexes
+            .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
+               .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint), new CreateIndexOptions { Unique = true }));
+
          mongoData.ReorgBlock.Indexes
             .CreateOne(new CreateIndexModel<ReorgBlockTable>(Builders<ReorgBlockTable>
                .IndexKeys.Descending(_ => _.BlockIndex)));
