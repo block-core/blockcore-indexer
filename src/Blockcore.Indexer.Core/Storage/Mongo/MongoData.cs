@@ -390,22 +390,22 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          int total = (int)RichlistTable.Find(filter).CountDocuments();
 
          // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
-         if (offset == 0)
-         {
-            // If limit is higher than total, simply use offset 0 and get all that exists.
-            if (limit > total)
-            {
-               offset = 1;
-            }
-            else
-            {
-               offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
-            }
-         }
+         //if (offset == 0)
+         //{
+         //   // If limit is higher than total, simply use offset 0 and get all that exists.
+         //   if (limit > total)
+         //   {
+         //      offset = 1;
+         //   }
+         //   else
+         //   {
+         //      offset = (total - limit); // +1 to counteract the Skip -1 below.
+         //   }
+         //}
 
          IEnumerable<RichlistTable> list = RichlistTable.Find(filter)
-                   .SortBy(p => p.Balance)
-                   .Skip(offset - 1) // 1 based index, so we'll subtract one.
+                   .SortByDescending(p => p.Balance)
+                   .Skip(offset) // 1 based index, so we'll subtract one.
                    .Limit(limit)
                    .ToList();
 
@@ -1006,17 +1006,25 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public async Task<QueryResult<OutputTable>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
       {
+         SyncBlockInfo storeTip = globalState.StoreTip;
+
+         // TODO: This must be fixed, the tip will be null whenever the node is inaccessible.
+         if (storeTip == null)
+         {
+            return null;
+         }
+
          var totalTask = Task.Run(() => UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
-            .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
+            .Match(_ => _.BlockIndex <= storeTip.BlockIndex - confirmations)
             .Count()
             .SingleOrDefault());
 
          var outpointsToFetchTask = Task.Run(() => UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
-            .Sort(new BsonDocumentSortDefinition<UnspentOutputTable>(new BsonDocument("BlockIndex",-1))) //TODO David, will need to chane -1 when the index is changed to descending
-            .Skip(offset * limit)
+            .Sort(Builders<UnspentOutputTable>.Sort.Descending(x => x.BlockIndex).Ascending(x => x.Outpoint.OutputIndex))
+            .Skip(offset)
             .Limit(limit)
             .ToList()
             .Select(_ => _.Outpoint));

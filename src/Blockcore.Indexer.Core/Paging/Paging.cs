@@ -88,8 +88,8 @@ namespace Blockcore.Indexer.Core.Paging
          //   limit = (int)total;
          //}
 
-         links.Add(Create(1, limit, "first"));
-         links.Add(Create((total - limit + 1), limit, "last"));
+         links.Add(Create(0, limit, "first"));
+         links.Add(Create((total - limit), limit, "last"));
 
          // // If the limit is equal total, we won't be rendering next/previous links.
          // If the total is less than limit, we won't be rendering next/previous links.
@@ -101,7 +101,7 @@ namespace Blockcore.Indexer.Core.Paging
          // if the offset is 0, we'll pick the last page.
          if (offset == -1)
          {
-            offset = (total - limit + 1);
+            offset = (total - limit);
          }
 
          // If offset queried is higher than 0, we'll always include the previous link.
@@ -110,9 +110,9 @@ namespace Blockcore.Indexer.Core.Paging
             long offsetPrevious = offset - limit;
 
             // If offset previous is lower than 1, make sure it's 1.
-            if (offsetPrevious < 1)
+            if (offsetPrevious < 0)
             {
-               offsetPrevious = 1;
+               offsetPrevious = 0;
             }
 
             links.Add(Create(offsetPrevious, limit, "previous"));

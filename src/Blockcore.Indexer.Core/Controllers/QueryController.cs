@@ -63,7 +63,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/unspent")]
-      public async Task<IActionResult> GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(-1, int.MaxValue)] int offset = -1, [Range(1, 50)] int limit = 10)
+      public async Task<IActionResult> GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          QueryResult<Storage.Mongo.Types.OutputTable> result = await storage.GetUnspentTransactionsByAddressAsync(address, confirmations, offset, limit);
 
