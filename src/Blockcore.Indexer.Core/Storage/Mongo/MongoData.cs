@@ -189,7 +189,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public SyncBlockInfo GetLatestBlock()
       {
-         SyncBlockInfo current = Blocks(-1, 1).Items.FirstOrDefault();
+         SyncBlockInfo current = Blocks(null, 1).Items.FirstOrDefault();
          return current;
       }
 

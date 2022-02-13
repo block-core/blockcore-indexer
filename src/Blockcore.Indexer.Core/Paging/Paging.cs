@@ -71,7 +71,7 @@ namespace Blockcore.Indexer.Core.Paging
          2022-02-13: The initial implementation of paging was not using offset/limit,
          so the rule to return the last page when page 0 was provided, does not work
          correctly with offset/limit instead of pages. To return the latest set of data,
-         the offset must bet set to -1, not 0.
+         the offset must bet set to null, not 0.
 
          On the last page of data, the "next" link should not be returned.
          On the first page of data, the "previous" link should not be returned.
