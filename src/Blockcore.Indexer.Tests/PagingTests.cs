@@ -29,40 +29,40 @@ namespace Blockcore.Indexer.Tests
 
          Assert.Contains("first", links[0].Rel);
          Assert.Equal(10, links[0].Limit);
-         Assert.Equal(1, links[0].Offset);
+         Assert.Equal(0, links[0].Offset);
 
          Assert.Contains("last", links[1].Rel);
          Assert.Equal(10, links[1].Limit);
-         Assert.Equal(11, links[1].Offset);
+         Assert.Equal(10, links[1].Offset);
 
          Assert.Contains("previous", links[2].Rel);
          Assert.Equal(10, links[2].Limit);
-         Assert.Equal(1, links[2].Offset);
+         Assert.Equal(0, links[2].Offset);
 
-         // 1 offset, 10 limit, 100 total. Normal behavior.
-         links = linkBuilder.Links(1, 10, 100);
+         // 0 offset, 10 limit, 100 total. Normal behavior.
+         links = linkBuilder.Links(0, 10, 100);
          Assert.Equal(3, links.Count);
 
          Assert.Contains("first", links[0].Rel);
          Assert.Equal(10, links[0].Limit);
-         Assert.Equal(1, links[0].Offset);
+         Assert.Equal(0, links[0].Offset);
 
          Assert.Contains("last", links[1].Rel);
          Assert.Equal(10, links[1].Limit);
-         Assert.Equal(91, links[1].Offset);
+         Assert.Equal(90, links[1].Offset);
 
          Assert.Contains("next", links[2].Rel);
          Assert.Equal(10, links[2].Limit);
-         Assert.Equal(11, links[2].Offset);
+         Assert.Equal(10, links[2].Offset);
 
          // Take next page based on previous
          links = linkBuilder.Links(links[2].Offset, links[2].Limit, 100);
          Assert.Equal(4, links.Count); // Now we should have all 4 links.
-         Assert.Equal(21, links[3].Offset);
+         Assert.Equal(20, links[3].Offset);
 
          // Take next page based on previous
          links = linkBuilder.Links(links[3].Offset, links[3].Limit, 100);
-         Assert.Equal(31, links[3].Offset);
+         Assert.Equal(30, links[3].Offset);
 
          // Verify the second last page.
          links = linkBuilder.Links(81, links[3].Limit, 100);
@@ -72,21 +72,6 @@ namespace Blockcore.Indexer.Tests
          links = linkBuilder.Links(91, links[3].Limit, 100);
          Assert.Equal(3, links.Count); // At the end we should only have 3 links, as in the beginning.
          Assert.Equal(81, links[2].Offset);
-
-         // 0 offset, 10 limit, 100 total, should initially return the last page.
-         // This should effectively be the same as (91, 10, 100)
-         links = linkBuilder.Links(0, 10, 100);
-         Assert.Equal(3, links.Count);
-         Assert.Equal(81, links[2].Offset);
-
-         // Verify limit higher than total.
-         links = linkBuilder.Links(10, 40, 20);
-
-         // This means we already have all data, so we'll only get "first" and "last".
-         Assert.Equal(2, links.Count);
-
-         // Verify that limit has been reduced to the total.
-         Assert.Equal(20, links[1].Limit);
       }
    }
 }

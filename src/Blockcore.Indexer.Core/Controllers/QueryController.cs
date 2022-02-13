@@ -31,11 +31,10 @@ namespace Blockcore.Indexer.Core.Controllers
       /// Get the balance on address.
       /// </summary>
       /// <param name="address"></param>
-      /// <param name="confirmations"></param>
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}")]
-      public IActionResult GetAddress([MinLength(30)][MaxLength(100)] string address)
+      public IActionResult GetAddress([MinLength(4)][MaxLength(100)] string address)
       {
          return Ok(storage.AddressBalance(address));
       }
@@ -44,13 +43,12 @@ namespace Blockcore.Indexer.Core.Controllers
       /// Get transactions that exists on the address.
       /// </summary>
       /// <param name="address"></param>
-      /// <param name="confirmations"></param>
-      /// <param name="offset"></param>
+      /// <param name="offset">Set to null to get latest entries and not the first entries.</param>
       /// <param name="limit"></param>
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions")]
-      public IActionResult GetAddressTransactions([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactions([MinLength(4)][MaxLength(100)] string address, [Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressHistory(address, offset, limit));
       }
@@ -65,7 +63,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/unspent")]
-      public async Task<IActionResult> GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
+      public async Task<IActionResult> GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          QueryResult<Storage.Mongo.Types.OutputTable> result = await storage.GetUnspentTransactionsByAddressAsync(address, confirmations, offset, limit);
 
@@ -124,11 +122,11 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <summary>
       /// Returns blocks based on the offset and limit. The blocks are sorted from from lowest to highest index. You can use the "link" HTTP header to get dynamic paging links.
       /// </summary>
-      /// <param name="offset">If value set to 0, then query will start from block tip, not from 1 (genesis).</param>
+      /// <param name="offset">If value set to null, then query will start from block tip, not from 0 (genesis).</param>
       /// <param name="limit">Number of blocks to return. Maximum 50.</param>
       [HttpGet]
       [Route("block")]
-      public IActionResult GetBlocks([Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetBlocks([Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.Blocks(offset, limit));
       }
@@ -136,14 +134,12 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <summary>
       /// Return transactions in a block based on block hash.
       /// </summary>
-      /// <param name="address"></param>
-      /// <param name="confirmations"></param>
       /// <param name="offset"></param>
       /// <param name="limit"></param>
       /// <returns></returns>
       [HttpGet]
       [Route("block/{hash}/transactions")]
-      public IActionResult GetBlockByHashTransactions(string hash, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetBlockByHashTransactions(string hash, [Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.TransactionsByBlock(hash, offset, limit));
       }
@@ -176,10 +172,11 @@ namespace Blockcore.Indexer.Core.Controllers
       /// Return transactions in a block based on block height (index).
       /// </summary>
       /// <param name="index">The block height to get block from.</param>
+      /// <param name="offset"></param>
       /// <returns></returns>
       [HttpGet]
       [Route("block/index/{index}/transactions")]
-      public IActionResult GetBlockByIndexTransactions([Range(0, long.MaxValue)] long index, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetBlockByIndexTransactions([Range(0, long.MaxValue)] long index, [Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.TransactionsByBlock(index, offset, limit));
       }
@@ -187,34 +184,22 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <summary>
       /// Returns the latest blocks that is available.
       /// </summary>
-      /// <param name="transactions"></param>
       /// <returns></returns>
       [HttpGet]
       [Route("block/latest")]
-      public IActionResult GetLatestBlock(bool transactions = false)
+      public IActionResult GetLatestBlock()
       {
          return OkItem(storage.GetLatestBlock());
       }
 
-      /// <summary>
-      /// Returns richlist entries based on the offset and limit. The entries are sorted from from lowest to highest balance.
-      /// </summary>
-      [HttpGet]
-      [Route("richlist")]
-      [Obsolete("This API has been moved to the /insight API.")]
-      public IActionResult GetRichlist([Range(0, int.MaxValue)] int offset = 0, [Range(1, 100)] int limit = 100)
-      {
-         return OkPaging(storage.Richlist(offset, limit));
-      }
-
       private IActionResult OkPaging<T>(QueryResult<T> result)
       {
-         paging.Write(HttpContext, result);
-
          if (result == null)
          {
             return NotFound();
          }
+
+         paging.Write(HttpContext, result);
 
          if (HttpContext.Request.Query.ContainsKey("envelope"))
          {
@@ -235,22 +220,5 @@ namespace Blockcore.Indexer.Core.Controllers
 
          return Ok(result);
       }
-
-      // TODO: Future API additions to get spent and unspent.
-      //[HttpGet]
-      //[Route("address/{address}/transactions/unspent")]
-      //public IActionResult GetAddressTransactionsUnspent(string address, int offset = 0, int limit = 10, long confirmations = 0)
-      //{
-      //   var result = storage.AddressTransactions(address, confirmations, true, offset, limit);
-      //   return Ok(result);
-      //}
-
-      //[HttpGet]
-      //[Route("address/{address}/transactions/spent")]
-      //public IActionResult GetAddressTransactionsSpent(string address, int offset = 0, int limit = 10, long confirmations = 0)
-      //{
-      //   var result = storage.AddressTransactions(address, confirmations, false, offset, limit);
-      //   return Ok(result);
-      //}
    }
 }

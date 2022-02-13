@@ -167,21 +167,30 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// <param name="offset">Set to zero if last page should be returned.</param>
       /// <param name="limit">Amount of items to return.</param>
       /// <returns></returns>
-      public QueryResult<SyncBlockInfo> Blocks(int offset, int limit)
+      public QueryResult<SyncBlockInfo> Blocks(int? offset, int limit)
       {
-         // page using the block height as paging counter
          SyncBlockInfo storeTip = globalState.StoreTip;
-         long total = storeTip?.BlockIndex ?? BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
+         long index = storeTip?.BlockIndex ?? BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
 
-         if (total == -1) total = 0;
+         // Get the total number of items based off the index.
+         long total = index + 1;
 
-         if (offset == 0 || offset > total)
-            offset = (int)total;
+         // If the offset has value, then use it, if not fetch the latest blocks.
+         long startPosition = offset ?? total - limit;
+         long endPosition = startPosition + limit;
 
-         IQueryable<BlockTable> filter = BlockTable.AsQueryable().Where(w => w.BlockIndex <= offset && w.BlockIndex > offset - limit);
+         // The BlockIndex is 0 based, so we must perform >= to get first.
+         IQueryable<BlockTable> filter = BlockTable.AsQueryable().OrderBy(b => b.BlockIndex).Where(w => w.BlockIndex >= startPosition && w.BlockIndex < endPosition);
+
          IEnumerable<SyncBlockInfo> list = filter.ToList().Select(mongoBlockToStorageBlock.Map);
 
-         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
+         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = (int)startPosition, Limit = limit };
+      }
+
+      public SyncBlockInfo GetLatestBlock()
+      {
+         SyncBlockInfo current = Blocks(null, 1).Items.FirstOrDefault();
+         return current;
       }
 
       public SyncBlockInfo BlockByIndex(long blockIndex)
@@ -383,22 +392,22 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          int total = (int)RichlistTable.Find(filter).CountDocuments();
 
          // If the offset is not set, or set to 0 implicit, we'll reverse the query and grab last page as oppose to first.
-         if (offset == 0)
-         {
-            // If limit is higher than total, simply use offset 0 and get all that exists.
-            if (limit > total)
-            {
-               offset = 1;
-            }
-            else
-            {
-               offset = (total - limit) + 1; // +1 to counteract the Skip -1 below.
-            }
-         }
+         //if (offset == 0)
+         //{
+         //   // If limit is higher than total, simply use offset 0 and get all that exists.
+         //   if (limit > total)
+         //   {
+         //      offset = 1;
+         //   }
+         //   else
+         //   {
+         //      offset = (total - limit); // +1 to counteract the Skip -1 below.
+         //   }
+         //}
 
          IEnumerable<RichlistTable> list = RichlistTable.Find(filter)
-                   .SortBy(p => p.Balance)
-                   .Skip(offset - 1) // 1 based index, so we'll subtract one.
+                   .SortByDescending(p => p.Balance)
+                   .Skip(offset) // 1 based index, so we'll subtract one.
                    .Limit(limit)
                    .ToList();
 
@@ -442,6 +451,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       public QueryResult<SyncTransactionInfo> TransactionsByBlock(string hash, int offset, int limit)
       {
          SyncBlockInfo blk = BlockByHash(hash);
+
+         if (blk == null)
+         {
+            return null;
+         }
+
          return TransactionsByBlock(blk.BlockIndex, offset, limit);
       }
 
@@ -479,17 +494,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public SyncBlockInfo GetLatestBlock()
-      {
-         SyncBlockInfo current = Blocks(0, 1).Items.FirstOrDefault();
-         return current;
-      }
-
-      public QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit)
+      public QueryResult<QueryAddressItem> AddressHistory(string address, int? offset, int limit)
       {
          // make sure fields are computed
          AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
-
 
          IQueryable<AddressHistoryComputedTable> filter = AddressHistoryComputedTable.AsQueryable()
             .Where(t => t.Address == address);
@@ -502,7 +510,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             return new QueryResult<QueryAddressItem>
             {
                Items = Enumerable.Empty<QueryAddressItem>(),
-               Offset = offset,
+               Offset = 0,
                Limit = limit,
                Total = 0
             };
@@ -511,15 +519,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          // This will first perform one db query.
          long total = addressComputedTable.CountSent + addressComputedTable.CountReceived + addressComputedTable.CountStaked + addressComputedTable.CountMined;
 
-         if (offset == 0 || offset > total)
-            offset = (int)total;
+         // Filter by the position, in the order of first entry being 1 and then second entry being 2.
+         filter = filter.OrderBy(s => s.Position);
 
-         filter = filter.OrderByDescending(s => s.Position);
+         long startPosition = offset ?? total - limit;
+         long endPosition = (startPosition) + limit;
 
-         // This will perform a query and return only transaction ID of the filtered results.
-         //var list = filter.Skip(offset).Take(limit).ToList();
-
-         var list = filter.Where(w => w.Position <= offset && w.Position > offset - limit).ToList();
+         // Get all items that is higher than start position and lower than end position.
+         var list = filter.Where(w => w.Position > startPosition && w.Position <= endPosition).ToList();
 
          // Loop all transaction IDs and get the transaction object.
          IEnumerable<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
@@ -528,7 +535,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             Value = item.AmountInOutputs - item.AmountInInputs,
             EntryType = item.EntryType,
             TransactionHash = item.TransactionId,
-            Confirmations = globalState.StoreTip.BlockIndex + 1 - item.BlockIndex
+            Confirmations = storeTip.BlockIndex + 1 - item.BlockIndex
          });
 
          IEnumerable<QueryAddressItem> mempollTransactions = null;
@@ -554,11 +561,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          allTransactions.AddRange(transactions);
 
-
          return new QueryResult<QueryAddressItem>
          {
             Items = allTransactions,
-            Offset = offset,
+            Offset = (int)startPosition,
             Limit = limit,
             Total = total
          };
@@ -944,8 +950,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             string transactionId = trx.TransactionId;
             SyncTransactionItems transactionItems = TransactionItemsGet(transactionId);
 
-
-
             var result = new QueryTransaction
             {
                Symbol = chainConfiguration.Symbol,
@@ -1007,17 +1011,25 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public async Task<QueryResult<OutputTable>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
       {
+         SyncBlockInfo storeTip = globalState.StoreTip;
+
+         // TODO: This must be fixed, the tip will be null whenever the node is inaccessible.
+         if (storeTip == null)
+         {
+            return null;
+         }
+
          var totalTask = Task.Run(() => UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
-            .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
+            .Match(_ => _.BlockIndex <= storeTip.BlockIndex - confirmations)
             .Count()
             .SingleOrDefault());
 
          var outpointsToFetchTask = Task.Run(() => UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
-            .Sort(new BsonDocumentSortDefinition<UnspentOutputTable>(new BsonDocument("BlockIndex",-1))) //TODO David, will need to chane -1 when the index is changed to descending
-            .Skip(offset * limit)
+            .Sort(Builders<UnspentOutputTable>.Sort.Descending(x => x.BlockIndex).Ascending(x => x.Outpoint.OutputIndex))
+            .Skip(offset)
             .Limit(limit)
             .ToList()
             .Select(_ => _.Outpoint));

@@ -65,12 +65,14 @@ namespace Blockcore.Indexer.Core.Paging
       }
       public List<PageLink> Links(long offset, int limit, long total)
       {
-         List<PageLink> links = new List<PageLink>();
-
          /*
          SPECIFICATION:
-         The paging goes from 1 to total. The lowest item is 1.
-         Supplying offset 0, will return the last page of data.
+
+         2022-02-13: The initial implementation of paging was not using offset/limit,
+         so the rule to return the last page when page 0 was provided, does not work
+         correctly with offset/limit instead of pages. To return the latest set of data,
+         the offset must bet set to null, not 0.
+
          On the last page of data, the "next" link should not be returned.
          On the first page of data, the "previous" link should not be returned.
          "first" and "last" are always returned no matter what.
@@ -78,36 +80,26 @@ namespace Blockcore.Indexer.Core.Paging
          The array of links is always ordered: "first", "last", "previous" and "next".
          */
 
-         // If the limit is higher than total, make the limit the total amount that is available.
+         List<PageLink> links = new List<PageLink>();
+
+         links.Add(Create(0, limit, "first"));
+         links.Add(Create((total - limit), limit, "last"));
+
+         // If the total is less than limit, we won't be rendering next/previous links.
          if (limit > total)
-         {
-            limit = (int)total;
-         }
-
-         links.Add(Create(1, limit, "first"));
-         links.Add(Create((total - limit + 1), limit, "last"));
-
-         // If the limit is equal total, we won't be rendering next/previous links.
-         if (limit == total)
          {
             return links;
          }
 
-         // if the offset is 0, we'll pick the last page.
-         if (offset == 0)
-         {
-            offset = (total - limit + 1);
-         }
-
-         // If offset queried is higher than 1, we'll always include the previous link.
-         if (offset > 1)
+         // If offset queried is higher than 0, we'll always include the previous link.
+         if (offset > 0)
          {
             long offsetPrevious = offset - limit;
 
-            // If offset previous is lower than 1, make sure it's 1.
-            if (offsetPrevious < 1)
+            // If offset previous is lower than 0, make sure it's 0.
+            if (offsetPrevious < 0)
             {
-               offsetPrevious = 1;
+               offsetPrevious = 0;
             }
 
             links.Add(Create(offsetPrevious, limit, "previous"));
@@ -115,19 +107,8 @@ namespace Blockcore.Indexer.Core.Paging
 
          long offsetNext = offset + limit;
 
-         if (offset + limit < total)
+         if (offsetNext < total) // Due to 0 index we must +1.
          {
-            // Make sure the offset next is never higher than total.
-            if (offsetNext > total)
-            {
-               offsetNext = total;
-            }
-
-            if (offset == 0)
-            {
-               offsetNext = offsetNext++;
-            }
-
             links.Add(Create(offsetNext, limit, "next"));
          }
 
