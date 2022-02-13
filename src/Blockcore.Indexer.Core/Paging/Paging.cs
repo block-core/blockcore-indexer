@@ -69,8 +69,12 @@ namespace Blockcore.Indexer.Core.Paging
 
          /*
          SPECIFICATION:
-         The paging goes from 1 to total. The lowest item is 1.
-         Supplying offset 0, will return the last page of data.
+
+         2022-02-13: The initial implementation of paging was not using offset/limit,
+         so the rule to return the last page when page 0 was provided, does not work
+         correctly with offset/limit instead of pages. To return the latest set of data,
+         the offset must bet set to -1, not 0.
+
          On the last page of data, the "next" link should not be returned.
          On the first page of data, the "previous" link should not be returned.
          "first" and "last" are always returned no matter what.
@@ -79,28 +83,29 @@ namespace Blockcore.Indexer.Core.Paging
          */
 
          // If the limit is higher than total, make the limit the total amount that is available.
-         if (limit > total)
-         {
-            limit = (int)total;
-         }
+         //if (limit > total)
+         //{
+         //   limit = (int)total;
+         //}
 
          links.Add(Create(1, limit, "first"));
          links.Add(Create((total - limit + 1), limit, "last"));
 
-         // If the limit is equal total, we won't be rendering next/previous links.
-         if (limit == total)
+         // // If the limit is equal total, we won't be rendering next/previous links.
+         // If the total is less than limit, we won't be rendering next/previous links.
+         if (limit > total)
          {
             return links;
          }
 
          // if the offset is 0, we'll pick the last page.
-         if (offset == 0)
+         if (offset == -1)
          {
             offset = (total - limit + 1);
          }
 
-         // If offset queried is higher than 1, we'll always include the previous link.
-         if (offset > 1)
+         // If offset queried is higher than 0, we'll always include the previous link.
+         if (offset > 0)
          {
             long offsetPrevious = offset - limit;
 
