@@ -1,3 +1,12 @@
+## <small>0.2.27 (2022-02-13)</small>
+
+* Add some guards and checks on the utxo table (#98) ([8b445da](https://github.com/block-core/blockcore-indexer/commit/8b445da)), closes [#98](https://github.com/block-core/blockcore-indexer/issues/98)
+* Breaking change version upgrade ([f73be31](https://github.com/block-core/blockcore-indexer/commit/f73be31))
+* Fix issue with paging on address transactions (#97) ([e31b64d](https://github.com/block-core/blockcore-indexer/commit/e31b64d)), closes [#97](https://github.com/block-core/blockcore-indexer/issues/97) [#96](https://github.com/block-core/blockcore-indexer/issues/96)
+* Update changelog and version ([48081e2](https://github.com/block-core/blockcore-indexer/commit/48081e2))
+
+
+
 ## <small>0.1.26 (2022-02-12)</small>
 
 * Changed from hash to object id (#94) ([8bbe293](https://github.com/block-core/blockcore-indexer/commit/8bbe293)), closes [#94](https://github.com/block-core/blockcore-indexer/issues/94)
