@@ -14,7 +14,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryAddress AddressBalance(string address);
 
-      QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit);
+      QueryResult<QueryAddressItem> AddressHistory(string address, int? offset, int limit);
 
       QueryResult<QueryMempoolTransactionHashes> GetMemoryTransactionsSlim(int offset, int limit);
 
@@ -28,7 +28,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryResult<SyncTransactionInfo> TransactionsByBlock(long index, int offset, int limit);
 
-      QueryResult<SyncBlockInfo> Blocks(int offset, int limit);
+      QueryResult<SyncBlockInfo> Blocks(int? offset, int limit);
 
       SyncBlockInfo BlockByHash(string blockHash);
 

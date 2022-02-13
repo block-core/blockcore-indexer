@@ -167,22 +167,24 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// <param name="offset">Set to zero if last page should be returned.</param>
       /// <param name="limit">Amount of items to return.</param>
       /// <returns></returns>
-      public QueryResult<SyncBlockInfo> Blocks(int offset, int limit)
+      public QueryResult<SyncBlockInfo> Blocks(int? offset, int limit)
       {
          SyncBlockInfo storeTip = globalState.StoreTip;
-         long total = storeTip?.BlockIndex ?? BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
+         long index = storeTip?.BlockIndex ?? BlockTable.Find(Builders<BlockTable>.Filter.Empty).CountDocuments() - 1;
 
-         // If the offset is -1, then fetch the latest blocks.
-         long startPosition = offset == -1 ? total - limit : offset;
+         // Get the total number of items based off the index.
+         long total = index + 1;
 
-         long endPosition = (startPosition) + limit;
+         // If the offset has value, then use it, if not fetch the latest blocks.
+         long startPosition = offset ?? total - limit;
+         long endPosition = startPosition + limit;
 
          // The BlockIndex is 0 based, so we must perform >= to get first.
          IQueryable<BlockTable> filter = BlockTable.AsQueryable().OrderBy(b => b.BlockIndex).Where(w => w.BlockIndex >= startPosition && w.BlockIndex < endPosition);
 
          IEnumerable<SyncBlockInfo> list = filter.ToList().Select(mongoBlockToStorageBlock.Map);
 
-         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = offset, Limit = limit };
+         return new QueryResult<SyncBlockInfo> { Items = list, Total = total, Offset = (int)startPosition, Limit = limit };
       }
 
       public SyncBlockInfo GetLatestBlock()
@@ -449,6 +451,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       public QueryResult<SyncTransactionInfo> TransactionsByBlock(string hash, int offset, int limit)
       {
          SyncBlockInfo blk = BlockByHash(hash);
+
+         if (blk == null)
+         {
+            return null;
+         }
+
          return TransactionsByBlock(blk.BlockIndex, offset, limit);
       }
 
@@ -486,7 +494,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public QueryResult<QueryAddressItem> AddressHistory(string address, int offset, int limit)
+      public QueryResult<QueryAddressItem> AddressHistory(string address, int? offset, int limit)
       {
          // make sure fields are computed
          AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
@@ -502,7 +510,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             return new QueryResult<QueryAddressItem>
             {
                Items = Enumerable.Empty<QueryAddressItem>(),
-               Offset = offset,
+               Offset = 0,
                Limit = limit,
                Total = 0
             };
@@ -514,7 +522,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          // Filter by the position, in the order of first entry being 1 and then second entry being 2.
          filter = filter.OrderBy(s => s.Position);
 
-         long startPosition = offset == -1 ? total - limit : offset;
+         long startPosition = offset ?? total - limit;
          long endPosition = (startPosition) + limit;
 
          // Get all items that is higher than start position and lower than end position.
@@ -553,11 +561,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          allTransactions.AddRange(transactions);
 
-
          return new QueryResult<QueryAddressItem>
          {
             Items = allTransactions,
-            Offset = offset,
+            Offset = (int)startPosition,
             Limit = limit,
             Total = total
          };
@@ -942,8 +949,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          {
             string transactionId = trx.TransactionId;
             SyncTransactionItems transactionItems = TransactionItemsGet(transactionId);
-
-
 
             var result = new QueryTransaction
             {

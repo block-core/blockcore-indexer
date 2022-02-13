@@ -65,8 +65,6 @@ namespace Blockcore.Indexer.Core.Paging
       }
       public List<PageLink> Links(long offset, int limit, long total)
       {
-         List<PageLink> links = new List<PageLink>();
-
          /*
          SPECIFICATION:
 
@@ -82,26 +80,15 @@ namespace Blockcore.Indexer.Core.Paging
          The array of links is always ordered: "first", "last", "previous" and "next".
          */
 
-         // If the limit is higher than total, make the limit the total amount that is available.
-         //if (limit > total)
-         //{
-         //   limit = (int)total;
-         //}
+         List<PageLink> links = new List<PageLink>();
 
          links.Add(Create(0, limit, "first"));
-         links.Add(Create((total - limit), limit, "last"));
+         links.Add(Create(((total + 1) - limit), limit, "last")); // +1 since the index is 0 based.
 
-         // // If the limit is equal total, we won't be rendering next/previous links.
          // If the total is less than limit, we won't be rendering next/previous links.
          if (limit > total)
          {
             return links;
-         }
-
-         // if the offset is 0, we'll pick the last page.
-         if (offset == -1)
-         {
-            offset = (total - limit);
          }
 
          // If offset queried is higher than 0, we'll always include the previous link.
@@ -109,7 +96,7 @@ namespace Blockcore.Indexer.Core.Paging
          {
             long offsetPrevious = offset - limit;
 
-            // If offset previous is lower than 1, make sure it's 1.
+            // If offset previous is lower than 0, make sure it's 0.
             if (offsetPrevious < 0)
             {
                offsetPrevious = 0;
@@ -120,19 +107,8 @@ namespace Blockcore.Indexer.Core.Paging
 
          long offsetNext = offset + limit;
 
-         if (offset + limit < total)
+         if (offsetNext < (total + 1)) // Due to 0 index we must +1.
          {
-            // Make sure the offset next is never higher than total.
-            if (offsetNext > total)
-            {
-               offsetNext = total;
-            }
-
-            if (offset == 0)
-            {
-               offsetNext = offsetNext++;
-            }
-
             links.Add(Create(offsetNext, limit, "next"));
          }
 
