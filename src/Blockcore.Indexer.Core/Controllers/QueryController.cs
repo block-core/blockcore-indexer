@@ -44,13 +44,12 @@ namespace Blockcore.Indexer.Core.Controllers
       /// Get transactions that exists on the address.
       /// </summary>
       /// <param name="address"></param>
-      /// <param name="confirmations"></param>
       /// <param name="offset"></param>
       /// <param name="limit"></param>
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions")]
-      public IActionResult GetAddressTransactions([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactions([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressHistory(address, offset, limit));
       }

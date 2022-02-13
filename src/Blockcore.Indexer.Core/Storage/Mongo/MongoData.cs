@@ -511,15 +511,15 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          // This will first perform one db query.
          long total = addressComputedTable.CountSent + addressComputedTable.CountReceived + addressComputedTable.CountStaked + addressComputedTable.CountMined;
 
-         if (offset == 0 || offset > total)
-            offset = (int)total;
+         // Filter by the position, in the order of first entry being 1 and then second entry being 2.
+         filter = filter.OrderBy(s => s.Position);
 
-         filter = filter.OrderByDescending(s => s.Position);
+         // The API offset is 0-based while the Position is 1-based.
+         long startPosition = offset;
+         long endPosition = (startPosition + 1) + limit;
 
-         // This will perform a query and return only transaction ID of the filtered results.
-         //var list = filter.Skip(offset).Take(limit).ToList();
-
-         var list = filter.Where(w => w.Position <= offset && w.Position > offset - limit).ToList();
+         // Get all items that is higher than start position and lower than end position.
+         var list = filter.Where(w => w.Position > startPosition && w.Position < endPosition).ToList();
 
          // Loop all transaction IDs and get the transaction object.
          IEnumerable<QueryAddressItem> transactions = list.Select(item => new QueryAddressItem
