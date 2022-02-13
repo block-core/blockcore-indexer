@@ -223,7 +223,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             var filterToDelete = Builders<UnspentOutputTable>.Filter
                .Where(_ => outpointsFromNewInput.Contains(_.Outpoint));
 
-            data.UnspentOutputTable.DeleteMany(filterToDelete);
+            var deleteResult = data.UnspentOutputTable.DeleteMany(filterToDelete);
+
+            if (deleteResult.DeletedCount != outpointsFromNewInput.Count)
+               throw new ApplicationException($"Delete of unspent outputs did not complete successfully : {deleteResult.DeletedCount} deleted but {outpointsFromNewInput.Count} expected");
          }
 
          // allow any extensions to push to repo before we complete the block.
@@ -233,14 +236,16 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var updateResult = data.BlockTable.UpdateMany(_ => storageBatch.BlockTable.Keys.Contains(_.BlockIndex),
             Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true));
 
+         if (updateResult.ModifiedCount != storageBatch.BlockTable.Count)
+            throw new ApplicationException($"Update of blocks to sync complete did not complete successfully : {updateResult.ModifiedCount} modified but {storageBatch.BlockTable.Count} expected");
+
          var lastblock = storageBatch.BlockTable.Last();
 
          SyncBlockInfo block = data.BlockByIndex(lastblock.Key);
 
          if (block.BlockHash != lastblock.Value.BlockHash)
          {
-            throw new ArgumentException(
-               $"Expected hash {lastblock.Key} for block {lastblock.Value.BlockHash} but was {block.BlockHash}");
+            throw new ArgumentException($"Expected hash {lastblock.Key} for block {lastblock.Value.BlockHash} but was {block.BlockHash}");
          }
 
          return block;

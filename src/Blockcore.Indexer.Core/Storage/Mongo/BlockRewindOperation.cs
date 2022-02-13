@@ -205,6 +205,9 @@ public static class BlockRewindOperation
                })
          }).ToListAsync();
 
+      // this is to unsure the values are unique 
+      unspentOutputs.ToDictionary(a => a.Outpoint.ToString());
+
       if (unspentOutputs.Any())
          await storage.UnspentOutputTable.InsertManyAsync(unspentOutputs);
    }
