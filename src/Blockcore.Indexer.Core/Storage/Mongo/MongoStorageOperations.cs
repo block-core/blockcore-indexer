@@ -232,20 +232,29 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          // allow any extensions to push to repo before we complete the block.
          OnPushStorageBatch(storageBatch);
 
-         // mark each block is complete
-         var updateResult = data.BlockTable.UpdateMany(_ => storageBatch.BlockTable.Keys.Contains(_.BlockIndex),
-            Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true));
-
-         if (updateResult.ModifiedCount != storageBatch.BlockTable.Count)
-            throw new ApplicationException($"Update of blocks to sync complete did not complete successfully : {updateResult.ModifiedCount} modified but {storageBatch.BlockTable.Count} expected");
-
-         var lastblock = storageBatch.BlockTable.Last();
-
-         SyncBlockInfo block = data.BlockByIndex(lastblock.Key);
-
-         if (block.BlockHash != lastblock.Value.BlockHash)
+         string lastBlockHash = null;
+         long blockIndex = 0;
+         var markBlocksAsComplete = new List<UpdateOneModel<BlockTable>>();
+         foreach (BlockTable mapBlock in storageBatch.BlockTable.Values.OrderBy(b => b.BlockIndex))
          {
-            throw new ArgumentException($"Expected hash {lastblock.Key} for block {lastblock.Value.BlockHash} but was {block.BlockHash}");
+            FilterDefinition<BlockTable> filter =
+               Builders<BlockTable>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
+            UpdateDefinition<BlockTable> update =
+               Builders<BlockTable>.Update.Set(blockInfo => blockInfo.SyncComplete, true);
+
+            markBlocksAsComplete.Add(new UpdateOneModel<BlockTable>(filter, update));
+            lastBlockHash = mapBlock.BlockHash;
+            blockIndex = mapBlock.BlockIndex;
+         }
+
+         // mark each block is complete
+         data.BlockTable.BulkWrite(markBlocksAsComplete, new BulkWriteOptions() { IsOrdered = true });
+
+         SyncBlockInfo block = data.BlockByIndex(blockIndex);
+
+         if (block.BlockHash != lastBlockHash)
+         {
+            throw new ArgumentException($"Expected hash {blockIndex} for block {lastBlockHash} but was {block.BlockHash}");
          }
 
          return block;
