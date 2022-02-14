@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Threading;
 using Blockcore.Consensus;
@@ -20,6 +21,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using MongoDB.Driver.Core.Connections;
+using MongoDB.Driver.Core.Operations;
 using MongoDB.Driver.Core.Servers;
 using Moq;
 using NBitcoin;
@@ -150,7 +152,7 @@ public class MongoStorageOperationsTests
       return item;
    }
 
-   StorageBatch WithBatchThatHasABlockToPush()
+   StorageBatch WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully()
    {
       var batch = new StorageBatch();
 
@@ -159,7 +161,33 @@ public class MongoStorageOperationsTests
 
       mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
          block);
+
+      WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(batch);
+
       return batch;
+   }
+
+   void WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(StorageBatch batch)
+   {
+      var filterToUpdate = Builders<BlockTable>.Filter
+         .Where(_ => batch.BlockTable.Keys.Contains(_.BlockIndex));
+
+      var update = Builders<BlockTable>.Update
+         .Set(blockInfo => blockInfo.SyncComplete, true);
+
+      mongodbMock.WithTheDocumentsUpdatedSuccessfullyInMongoDb(mongodbMock.blockTableCollection, filterToUpdate,
+         update, new UpdateResult.Acknowledged(0, batch.BlockTable.Keys.Count, null));
+   }
+
+   void WithASuccessfulDeleteManyOnUnspentOutputTable(StorageBatch batch)
+   {
+      var utxo = batch.InputTable.Select(_ => _.Outpoint).ToList();
+
+      var filterToUpdate = Builders<UnspentOutputTable>.Filter
+         .Where(_ => utxo.Contains(_.Outpoint));
+
+      mongodbMock.WithTheDocumentsDeletedSuccessfullyInMongoDb(mongodbMock.unspentOutputTableCollection, filterToUpdate,
+          new DeleteResult.Acknowledged(utxo.Count));
    }
 
    [Fact]
@@ -362,6 +390,8 @@ public class MongoStorageOperationsTests
       mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
          block);
 
+      WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(batch);
+
       sut.PushStorageBatch(batch);
 
       mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.blockTableCollection,
@@ -371,7 +401,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsTransactionBlockTableFromBatchToMongoDb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPush();
+      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var blockTable = new TransactionBlockTable
       {
@@ -380,6 +410,8 @@ public class MongoStorageOperationsTests
       };
 
       batch.TransactionBlockTable.Add(blockTable);
+
+      WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(batch);
 
       sut.PushStorageBatch(batch);
 
@@ -390,7 +422,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsOutputTableFromBatchToMongoDb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPush();
+      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var outputTable = new OutputTable()
       {
@@ -414,7 +446,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsInputTableAddsToMongodb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPush();
+      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       //We must have an unspent output for an input that is being processed
       var outpoint = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
@@ -433,6 +465,8 @@ public class MongoStorageOperationsTests
 
       batch.InputTable.Add(inputTable);
 
+      WithASuccessfulDeleteManyOnUnspentOutputTable(batch);
+
       sut.PushStorageBatch(batch);
 
 
@@ -449,7 +483,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsTransactionTableDataToMongodb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPush();
+      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var transactionTable = new TransactionTable()
          {
@@ -467,7 +501,7 @@ public class MongoStorageOperationsTests
    //[Fact] TODO we need to add to the new List<BulkWriteError>{} an error with duplicate category to actually check the code otherwise it goes green as a false positive
    public void PushStorageBatchIgnoresDuplicatsOnInputTableForDuplicateKeyException()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPush();
+      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var transactionTable = new TransactionTable()
       {
@@ -494,7 +528,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsUnspendOutputToMongodbForEachOutputTableItem()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPush();
+      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var outputTable = new OutputTable
       {
@@ -522,7 +556,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsDeletsFromUnspentOutputTableOnMongoDbForAllInputTableItems()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPush();
+      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       //We must have an unspent output for an input that is being processed
       var outpoint = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
@@ -541,6 +575,8 @@ public class MongoStorageOperationsTests
 
       batch.InputTable.Add(inputTable);
 
+      WithASuccessfulDeleteManyOnUnspentOutputTable(batch);
+
       sut.PushStorageBatch(batch);
 
       var (docSerializer,serializer) = mongodbMock.GetRendererForDocumentExpresion<UnspentOutputTable>();
@@ -557,7 +593,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchUpdatesBlockTableItemsWithSyncCompleteTrueInMongodb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPush();
+      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       sut.PushStorageBatch(batch);
 
@@ -591,6 +627,8 @@ public class MongoStorageOperationsTests
 
       mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
          dbBlock);
+
+      WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(batch);
 
       Action serviceCall = () => sut.PushStorageBatch(batch);
 

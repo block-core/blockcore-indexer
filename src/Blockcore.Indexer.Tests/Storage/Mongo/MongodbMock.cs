@@ -65,6 +65,38 @@ public class MongodbMock
          .Returns(() => lookup.Object);
    }
 
+   public void WithTheDocumentsUpdatedSuccessfullyInMongoDb<TDocument>(
+      Mock<IMongoCollection<TDocument>> mongoCollection,
+      FilterDefinition<TDocument> filter,
+      UpdateDefinition<TDocument> update,
+      UpdateResult expectedResult)
+   {
+      var (docSerializer,serializer) = GetRendererForDocumentExpresion<TDocument>();
+
+      mongoCollection.Setup(_ =>
+            _.UpdateMany(It.Is<ExpressionFilterDefinition<TDocument>>(f =>
+                  f.Render(docSerializer, serializer) == filter.Render(docSerializer, serializer)),
+               It.Is<UpdateDefinition<TDocument>>(u =>
+                  u.Render(docSerializer, serializer) == update.Render(docSerializer, serializer)),
+               null,
+               CancellationToken.None))
+         .Returns(expectedResult);
+   }
+
+   public void WithTheDocumentsDeletedSuccessfullyInMongoDb<TDocument>(
+      Mock<IMongoCollection<TDocument>> mongoCollection,
+      FilterDefinition<TDocument> filter,
+      DeleteResult expectedResult)
+   {
+      var (docSerializer,serializer) = GetRendererForDocumentExpresion<TDocument>();
+
+      mongoCollection.Setup(_ =>
+            _.DeleteMany(It.Is<ExpressionFilterDefinition<TDocument>>(f =>
+                  f.Render(docSerializer, serializer) == filter.Render(docSerializer, serializer)),
+               CancellationToken.None))
+         .Returns(expectedResult);
+   }
+
    public void ThanTheCollectionStoredTheItemsSuccessfully< TDocument>(Mock<IMongoCollection<TDocument>> collection,
       IEnumerable<TDocument> documents)
    {
