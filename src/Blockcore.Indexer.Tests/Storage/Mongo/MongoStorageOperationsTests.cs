@@ -162,21 +162,7 @@ public class MongoStorageOperationsTests
       mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
          block);
 
-      WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(batch);
-
       return batch;
-   }
-
-   void WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(StorageBatch batch)
-   {
-      var filterToUpdate = Builders<BlockTable>.Filter
-         .Where(_ => batch.BlockTable.Keys.Contains(_.BlockIndex));
-
-      var update = Builders<BlockTable>.Update
-         .Set(blockInfo => blockInfo.SyncComplete, true);
-
-      mongodbMock.WithTheDocumentsUpdatedSuccessfullyInMongoDb(mongodbMock.blockTableCollection, filterToUpdate,
-         update, new UpdateResult.Acknowledged(0, batch.BlockTable.Keys.Count, null));
    }
 
    void WithASuccessfulDeleteManyOnUnspentOutputTable(StorageBatch batch)
@@ -390,11 +376,9 @@ public class MongoStorageOperationsTests
       mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
          block);
 
-      WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(batch);
-
       sut.PushStorageBatch(batch);
 
-      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.blockTableCollection,
+      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfullyAsynchronasly(mongodbMock.blockTableCollection,
          batch.BlockTable.Values);
    }
 
@@ -411,11 +395,9 @@ public class MongoStorageOperationsTests
 
       batch.TransactionBlockTable.Add(blockTable);
 
-      WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(batch);
-
       sut.PushStorageBatch(batch);
 
-      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.transactionBlockTableCollection,
+      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfullyAsynchronasly(mongodbMock.transactionBlockTableCollection,
          batch.TransactionBlockTable);
    }
 
@@ -439,7 +421,7 @@ public class MongoStorageOperationsTests
 
       sut.PushStorageBatch(batch);
 
-      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.outputTableCollection,
+      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfullyAsynchronasly(mongodbMock.outputTableCollection,
          batch.OutputTable.Values);
    }
 
@@ -469,8 +451,7 @@ public class MongoStorageOperationsTests
 
       sut.PushStorageBatch(batch);
 
-
-      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.inputTableCollection,
+      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfullyAsynchronasly(mongodbMock.inputTableCollection,
          batch.InputTable);
 
       mongodbMock.ThanTheCollectionStoredTheUnorderedItemsSuccessfully(mongodbMock.inputTableCollection,
@@ -520,7 +501,7 @@ public class MongoStorageOperationsTests
 
       callToSut.Should().NotThrow();
 
-      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfully(mongodbMock.transactionTable,
+      mongodbMock.ThanTheCollectionStoredTheItemsSuccessfullyAsynchronasly(mongodbMock.transactionTable,
          batch.TransactionTable);
    }
 
@@ -599,18 +580,17 @@ public class MongoStorageOperationsTests
 
       var (docSerializer,serializer) = mongodbMock.GetRendererForDocumentExpresion<BlockTable>();
 
-      var filterToUpdate = Builders<BlockTable>.Filter
-         .Where(_ => batch.BlockTable.Keys.Contains(_.BlockIndex));
+      var filter = Builders<BlockTable>.Filter
+         .Eq(_ => _.BlockIndex,batch.BlockTable.Single().Key);
 
       var update = Builders<BlockTable>.Update
          .Set(blockInfo => blockInfo.SyncComplete, true);
 
       mongodbMock.blockTableCollection.Verify(_ =>
-            _.UpdateMany(It.Is<ExpressionFilterDefinition<BlockTable>>(f =>
-                   f.Render(docSerializer,serializer) == filterToUpdate.Render(docSerializer,serializer)),
-               It.Is<UpdateDefinition<BlockTable>>(u =>
-                  u.Render(docSerializer, serializer) == update.Render(docSerializer, serializer)),
-               null,
+            _.BulkWrite(It.Is<List<UpdateOneModel<BlockTable>>>(l =>
+                     l.Single().Filter.Render(docSerializer,serializer) == filter.Render(docSerializer,serializer) &&
+                     l.Single().Update.Render(docSerializer,serializer) == update.Render(docSerializer,serializer)),
+               It.Is<BulkWriteOptions>(u => u.IsOrdered == true),
                CancellationToken.None),
          Times.Once);
    }
@@ -627,8 +607,6 @@ public class MongoStorageOperationsTests
 
       mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.blockTableCollection,
          dbBlock);
-
-      WithASuccessfulUpdateManyBlocksToSyncCompleteTrue(batch);
 
       Action serviceCall = () => sut.PushStorageBatch(batch);
 

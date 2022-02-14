@@ -97,10 +97,18 @@ public class MongodbMock
          .Returns(expectedResult);
    }
 
-   public void ThanTheCollectionStoredTheItemsSuccessfully< TDocument>(Mock<IMongoCollection<TDocument>> collection,
+   public void ThanTheCollectionStoredTheItemsSuccessfullyAsynchronasly< TDocument>(Mock<IMongoCollection<TDocument>> collection,
       IEnumerable<TDocument> documents)
    {
       collection.Verify(_ => _.InsertManyAsync(documents,
+            It.Is<InsertManyOptions>(o => o.IsOrdered == false), It.IsAny<CancellationToken>())
+         , Times.Once);
+   }
+
+   public void ThanTheCollectionStoredTheItemsSuccessfully< TDocument>(Mock<IMongoCollection<TDocument>> collection,
+      IEnumerable<TDocument> documents)
+   {
+      collection.Verify(_ => _.InsertMany(documents,
             It.Is<InsertManyOptions>(o => o.IsOrdered == false), It.IsAny<CancellationToken>())
          , Times.Once);
    }
