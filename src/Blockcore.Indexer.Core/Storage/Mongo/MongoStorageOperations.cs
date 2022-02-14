@@ -152,25 +152,25 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             ? data.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values, new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
-         Task transactionTableTask = Task.CompletedTask;
+         Task transactionTableTask = Task.Run(() =>
+         {
+            try
+            {
+               if (storageBatch.TransactionTable.Any())
+                  data.TransactionTable.InsertMany(storageBatch.TransactionTable, new InsertManyOptions {IsOrdered = false});
+            }
+            catch (MongoBulkWriteException mbwex)
+            {
+               // transactions are a special case they are not deleted from store in case of reorgs
+               // because they will just be included in another blocks, so we ignore if key is already present
+               if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
+               {
+                  throw;
+               }
+            }
+         });
 
-         try
-         {
-            if (storageBatch.TransactionTable.Any())
-            {
-               transactionTableTask = data.TransactionTable.InsertManyAsync(storageBatch.TransactionTable,
-                  new InsertManyOptions { IsOrdered = false });
-            }
-         }
-         catch (MongoBulkWriteException mbwex)
-         {
-            // transactions are a special case they are not deleted from store in case of reorgs
-            // because they will just be included in another blocks, so we ignore if key is already present
-            if (mbwex.WriteErrors.Any(e => e.Category != ServerErrorCategory.DuplicateKey))
-            {
-               throw;
-            }
-         }
+
 
          var utxos = new List<UnspentOutputTable>(storageBatch.OutputTable.Values.Count);
 
