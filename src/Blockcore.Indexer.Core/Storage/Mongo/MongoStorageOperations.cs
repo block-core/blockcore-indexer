@@ -100,7 +100,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                   TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
                };
 
-                  storageBatch.OutputTable.TryGetValue(outpoint.ToString(), out OutputTable output);
+               storageBatch.OutputTable.TryGetValue(outpoint.ToString(), out OutputTable output);
 
                storageBatch.InputTable.Add(new InputTable()
                {
@@ -170,14 +170,16 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          });
 
-
-
          var utxos = new List<UnspentOutputTable>(storageBatch.OutputTable.Values.Count);
 
          foreach (OutputTable outputTable in storageBatch.OutputTable.Values)
          {
             if (outputTable.Address.Equals(OpReturnAddress))
                continue;
+
+            // TODO: filter out outputs that are already spent in the storageBatch.InputTable table
+            // such inputs will get deleted anyway in the next operation of UnspentOutputTable.DeleteMany
+            // this means we should probably make the storageBatch.InputTable a dictionary as well.
 
             utxos.Add(new UnspentOutputTable
             {
@@ -214,12 +216,15 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          Task.WaitAll(blockTableTask, transactionBlockTableTask, outputTableTask, inputTableTask, transactionTableTask, unspentOutputTableTask);
 
-         var outpointsFromNewInput = storageBatch.InputTable
+         if (storageBatch.InputTable.Any())
+         {
+            // TODO: if earlier we filtered out outputs that are already spent and not pushed to the utxo table
+            // now we do not need to try and delete such outputs becuase they where never pushed to the store.
+
+            var outpointsFromNewInput = storageBatch.InputTable
             .Select(_ => _.Outpoint)
             .ToList();
 
-         if (outpointsFromNewInput.Any())
-         {
             var filterToDelete = Builders<UnspentOutputTable>.Filter
                .Where(_ => outpointsFromNewInput.Contains(_.Outpoint));
 

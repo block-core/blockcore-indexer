@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -62,18 +63,26 @@ public static class BlockRewindOperation
       // delete computed history
       FilterDefinition<AddressHistoryComputedTable> addrCompHistFilter =
          Builders<AddressHistoryComputedTable>.Filter.Eq(addr => addr.BlockIndex, blockIndex);
-      Task<DeleteResult> addressHistoryComputed =
-         storage.AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
+      Task<DeleteResult> addressHistoryComputed = storage.AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
 
-      await Task.WhenAll( output, transactions, addressComputed, addressHistoryComputed);
+      // this is an edge case, we delete from the utxo table in case a bath push failed half way and left
+      // item in the utxo table that where suppose to get deleted, to avoid duplicates in recovery processes 
+      // we delete just in case (the utxo table has a unique key on outputs), there is no harm in deleting twice.
+      FilterDefinition<UnspentOutputTable> unspentOutputFilter1 =
+         Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BlockIndex, blockIndex);
+      Task<DeleteResult> unspentOutput1 = storage.UnspentOutputTable.DeleteManyAsync(unspentOutputFilter1);
+
+      await Task.WhenAll( output, transactions, addressComputed, addressHistoryComputed, unspentOutput1);
 
       await MergeRewindInputsToUnspentTransactionsAsync(storage, blockIndex);
 
       FilterDefinition<InputTable> inputFilter =
          Builders<InputTable>.Filter.Eq(addr => addr.BlockIndex, blockIndex);
 
-      var inputs = storage.InputTable.DeleteManyAsync(inputFilter);
+      Task<DeleteResult> inputs = storage.InputTable.DeleteManyAsync(inputFilter);
 
+      // TODO: if we filtered out outputs that where created and spent as part of the same block
+      // we may not need to delete again, however there is no harm in this extra delete.
       FilterDefinition<UnspentOutputTable> unspentOutputFilter =
          Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BlockIndex, blockIndex);
       Task<DeleteResult> unspentOutput = storage.UnspentOutputTable.DeleteManyAsync(unspentOutputFilter);
@@ -207,6 +216,10 @@ public static class BlockRewindOperation
 
       // this is to unsure the values are unique 
       unspentOutputs.ToDictionary(a => a.Outpoint.ToString());
+
+      // TODO: filter out any outputs that belong to the block being reorged.
+      // this can happen for outputs that are created and spent in the same block.
+      // if they get pushed now such outputs willjust get deleted in the next step.
 
       if (unspentOutputs.Any())
          await storage.UnspentOutputTable.InsertManyAsync(unspentOutputs);
