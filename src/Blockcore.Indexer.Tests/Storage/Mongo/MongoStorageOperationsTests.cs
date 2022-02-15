@@ -191,6 +191,8 @@ public class MongoStorageOperationsTests
    [Fact]
    public void AddToStorageBatchSetsTheBlockTableFromBlockInfo()
    {
+      throw new ApplicationException("test");
+
       var batch = new StorageBatch();
 
       var item = WithRandomSyncBlockTransactionsOperation();
