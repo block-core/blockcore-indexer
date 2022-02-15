@@ -1,3 +1,11 @@
+## <small>0.2.28 (2022-02-15)</small>
+
+* Add extra delete and some comments, also fetch better the last blolck query from memory not disk (#1 ([37a33c8](https://github.com/block-core/blockcore-indexer/commit/37a33c8)), closes [#106](https://github.com/block-core/blockcore-indexer/issues/106)
+* Changed the logic back to task.run for the transaction table because … (#103) ([4e2c281](https://github.com/block-core/blockcore-indexer/commit/4e2c281)), closes [#103](https://github.com/block-core/blockcore-indexer/issues/103)
+* Update changelog and version ([fdc3374](https://github.com/block-core/blockcore-indexer/commit/fdc3374))
+
+
+
 ## <small>0.2.27 (2022-02-13)</small>
 
 * Add some guards and checks on the utxo table (#98) ([8b445da](https://github.com/block-core/blockcore-indexer/commit/8b445da)), closes [#98](https://github.com/block-core/blockcore-indexer/issues/98)
