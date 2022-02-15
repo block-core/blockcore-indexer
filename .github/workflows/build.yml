@@ -70,6 +70,9 @@ jobs:
     - name: Restore
       run: dotnet restore ${{env.SOLUTION_PATH}}
 
+    - name: Unit Test
+      run: dotnet test -v=normal -c ${{env.BUILD_CONFIGURATION}}
+
     # - name: Build
     #   run: dotnet build -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} /p:Version=${{ env.VERSION }} -v m ${{env.SOLUTION_PATH}}
 
