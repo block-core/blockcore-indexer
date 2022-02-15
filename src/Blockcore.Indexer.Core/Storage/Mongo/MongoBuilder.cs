@@ -146,7 +146,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
 
-         // 
+         // TODO: this index was added to ensure the table is not getting corrupted with duplicated values
+         // however this is not expected and once we sure the code is stable we can remove this index to gain
+         // better performance on initial sync, onother options is to add this index at the end of the initial
+         // sync where natural reorgs are expected pretty often
          mongoData.UnspentOutputTable.Indexes
             .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint), new CreateIndexOptions { Unique = true }));
