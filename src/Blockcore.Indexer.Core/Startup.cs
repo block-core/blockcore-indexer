@@ -20,8 +20,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 
 namespace Blockcore.Indexer.Core
@@ -46,6 +48,22 @@ namespace Blockcore.Indexer.Core
          services.Configure<NetworkSettings>(configuration.GetSection("Network"));
          services.Configure<IndexerSettings>(configuration.GetSection("Indexer"));
          services.Configure<InsightSettings>(configuration.GetSection("Insight"));
+
+
+         services.AddSingleton(_ =>
+         {
+            var indexerConfiguration = _.GetService(typeof(IOptions<IndexerSettings>))as IOptions<IndexerSettings> ;// configuration.GetSection("Indexer") as IndexerSettings;
+            var chainConfiguration  = _.GetService(typeof(IOptions<ChainSettings>)) as IOptions<ChainSettings>;//  configuration.GetSection("Chain") as ChainSettings;
+
+            var mongoClient = new MongoClient(indexerConfiguration.Value.ConnectionString.Replace("{Symbol}",
+               chainConfiguration.Value.Symbol.ToLower()));
+
+            string dbName = indexerConfiguration.Value.DatabaseNameSubfix
+               ? $"Blockchain{chainConfiguration.Value.Symbol}"
+               : "Blockchain";
+
+            return mongoClient.GetDatabase(dbName);
+         });
 
          // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();

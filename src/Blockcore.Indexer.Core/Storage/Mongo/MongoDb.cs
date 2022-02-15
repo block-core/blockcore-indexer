@@ -12,30 +12,27 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
    {
       private readonly ILogger<MongoDb> log;
 
-      protected readonly MongoClient mongoClient;
+      protected readonly IMongoClient mongoClient;
 
       protected readonly IMongoDatabase mongoDatabase;
 
       protected readonly SyncConnection syncConnection;
       protected readonly GlobalState globalState;
 
-      private readonly IndexerSettings configuration;
-
       protected readonly ChainSettings chainConfiguration;
 
-      public MongoDb(ILogger<MongoDb> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState)
+      public MongoDb(ILogger<MongoDb> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState,
+         IMongoDatabase mongoDatabase)
       {
-         configuration = nakoConfiguration.Value;
          this.chainConfiguration = chainConfiguration.Value;
 
          syncConnection = connection;
          this.globalState = globalState;
          log = logger;
-         mongoClient = new MongoClient(configuration.ConnectionString.Replace("{Symbol}", this.chainConfiguration.Symbol.ToLower()));
 
-         string dbName = configuration.DatabaseNameSubfix ? "Blockchain" + this.chainConfiguration.Symbol : "Blockchain";
+         mongoClient = mongoDatabase.Client;
 
-         mongoDatabase = mongoClient.GetDatabase(dbName);
+         this.mongoDatabase = mongoDatabase;
       }
 
 
