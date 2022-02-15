@@ -48,6 +48,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          storageBatch.TotalSize += item.BlockInfo.Size;
          storageBatch.BlockTable.Add(item.BlockInfo.Height, mongoBlockToStorageBlock.Map(item.BlockInfo));
 
+         int transactionIndex = 0;
          foreach (Transaction trx in item.Transactions)
          {
             string trxHash = trx.GetHash().ToString();
@@ -56,7 +57,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                new TransactionBlockTable
                {
                   BlockIndex = item.BlockInfo.HeightAsUint32,
-                  TransactionId = trxHash
+                  TransactionId = trxHash,
+                  TransactionIndex = transactionIndex++,
                });
 
             if (configuration.StoreRawTransactions)

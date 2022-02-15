@@ -1,4 +1,4 @@
-﻿namespace Blockcore.Indexer.Core.Storage.Types
+namespace Blockcore.Indexer.Core.Storage.Types
 {
    public class SyncTransactionInfo
    {
@@ -11,5 +11,7 @@
       public string TransactionHash { get; set; }
 
       public long Confirmations { get; set; }
+
+      public int TransactionIndex { get; set; }
    }
 }

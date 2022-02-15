@@ -480,16 +480,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          int total = (int)TransactionBlockTable.Find(filter).CountDocuments();
 
-         // Can we do sorting?
-         // SortDefinition<BlockTable> sort = Builders<BlockTable>.Sort.Descending(info => info.BlockIndex);
-
          IEnumerable<SyncTransactionInfo> list = TransactionBlockTable.Find(filter)
-                   // .SortBy(p => p.BlockIndex) // Can we do sort?
+                   .SortBy(p => p.TransactionIndex) 
                    .Skip(offset)
                    .Limit(limit)
                    .ToList().Select(s => new SyncTransactionInfo
                    {
                       TransactionHash = s.TransactionId,
+                      TransactionIndex = s.TransactionIndex,
                    });
 
          return new QueryResult<SyncTransactionInfo>
