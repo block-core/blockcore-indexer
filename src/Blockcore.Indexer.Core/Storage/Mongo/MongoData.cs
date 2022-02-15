@@ -189,8 +189,15 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public SyncBlockInfo GetLatestBlock()
       {
-         SyncBlockInfo current = Blocks(null, 1).Items.FirstOrDefault();
-         return current;
+         if (globalState.StoreTip != null)
+            return globalState.StoreTip;
+
+         BlockTable recentBlock = BlockTable.AsQueryable().OrderByDescending(a => a.BlockIndex).FirstOrDefault();
+
+         if (recentBlock == null)
+            return null;
+
+         return mongoBlockToStorageBlock.Map(recentBlock);
       }
 
       public SyncBlockInfo BlockByIndex(long blockIndex)
