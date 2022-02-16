@@ -1,5 +1,9 @@
 namespace Blockcore.Indexer.Core.Storage.Mongo.Types
 {
+   /// <summary>
+   /// This table is not used anymore to store utxo data in mongodb,
+   /// however its used in the computation table calculate the utxo count. 
+   /// </summary>
    public class AddressUtxoComputedTable
    {
       public Outpoint Outpoint { get; set; }

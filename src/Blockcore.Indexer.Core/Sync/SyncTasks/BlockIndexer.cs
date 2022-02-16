@@ -238,7 +238,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   await mongoData.AddressHistoryComputedTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressHistoryComputedTable>(Builders<AddressHistoryComputedTable>
-                        .IndexKeys.Descending(trxBlk => trxBlk.Position)));
+                        .IndexKeys.Ascending(trxBlk => trxBlk.Position)));
 
                   log.LogDebug($"Creating indexes on {nameof(AddressHistoryComputedTable)}.{nameof(AddressHistoryComputedTable.Address)}");
 
