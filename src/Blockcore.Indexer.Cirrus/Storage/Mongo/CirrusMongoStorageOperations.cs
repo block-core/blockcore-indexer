@@ -91,6 +91,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                      Error = receipt.Error,
                      PostState = receipt.PostState,
                      GasUsed = receipt.GasUsed,
+                     GasPrice = receipt.GasPrice,
+                     Amount = receipt.Amount,
                      Logs = receipt.Logs
                   });
 
