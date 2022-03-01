@@ -98,13 +98,27 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          }).FirstOrDefault();
       }
 
-      public QueryResult<QueryContractCall> ContractCall(string address, int? offset, int limit)
+      public QueryResult<QueryContractCall> ContractCall(string address, string filterAddress, int? offset, int limit)
       {
-         int total = CirrusContractTable.AsQueryable()
-            .Where(q => q.ToAddress == address).Count();
+         IMongoQueryable<CirrusContractTable> totalQuary = CirrusContractTable.AsQueryable()
+             .Where(q => q.ToAddress == address);
+
+         if (filterAddress != null)
+         {
+            totalQuary = totalQuary.Where(q => q.FromAddress == filterAddress);
+         }
+
+         int total = totalQuary.Count();
 
          IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
-            .Where(q => q.ToAddress == address)
+            .Where(q => q.ToAddress == address);
+         
+         if (filterAddress != null)
+         {
+            cirrusContract = cirrusContract.Where(q => q.FromAddress == filterAddress);
+         }
+
+         cirrusContract = cirrusContract
             .OrderBy(b => b.BlockIndex)
             .Skip(offset ?? total - limit)
             .Take(limit);
