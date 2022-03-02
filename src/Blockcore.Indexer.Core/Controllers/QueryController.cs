@@ -162,7 +162,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <param name="offset">If value set to null, then query will start from block tip, not from 0 (genesis).</param>
       /// <param name="limit">Number of blocks to return. Maximum 50.</param>
       [HttpGet]
-      [Route("orphan/block")]
+      [Route("block/orphan")]
       public IActionResult GetOrphanBlocks([Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.OrphanBlocks(offset, limit));
@@ -174,7 +174,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <param name="hash">Hash (ID) of the block to return.</param>
       /// <returns></returns>
       [HttpGet]
-      [Route("orphan/block/{hash}")]
+      [Route("block/orphan/{hash}")]
       public IActionResult GetOrphanBlockByHash(string hash)
       {
          return OkItem(storage.OrphanBlockByHash(hash));
