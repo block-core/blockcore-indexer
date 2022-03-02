@@ -118,9 +118,11 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             cirrusContract = cirrusContract.Where(q => q.FromAddress == filterAddress);
          }
 
+         int itemsToSkip = offset ?? (total < limit ? 0 : total - limit);
+
          cirrusContract = cirrusContract
             .OrderBy(b => b.BlockIndex)
-            .Skip(offset ?? total - limit)
+            .Skip(itemsToSkip)
             .Take(limit);
 
          var res = cirrusContract.ToList();
@@ -142,7 +144,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          return new QueryResult<QueryContractCall>
          {
             Items = transactions,
-            Offset = offset ?? total - limit,
+            Offset = itemsToSkip,
             Limit = limit,
             Total = total
          };
