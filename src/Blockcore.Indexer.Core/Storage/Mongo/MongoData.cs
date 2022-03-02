@@ -214,6 +214,41 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
       }
 
+      public QueryResult<QueryOrphanBlock> OrphanBlocks(int? offset, int limit)
+      {
+         int total = (int)ReorgBlock.EstimatedDocumentCount();
+
+         int itemsToSkip = offset ?? (total < limit ? 0 : total - limit);
+
+         ICollection<ReorgBlockTable> list = ReorgBlock
+            .AsQueryable()
+            .OrderBy(o => o.BlockIndex)
+            .Skip(itemsToSkip)
+            .Take(limit)
+            .ToList();
+
+         return new QueryResult<QueryOrphanBlock>
+         {
+            Items = list.Select(s => new QueryOrphanBlock
+            {
+               BlockHash = s.BlockHash,
+               BlockIndex = s.BlockIndex,
+               Created = s.Created,
+               Block = s.Block
+            }),
+            Total = total,
+            Offset = itemsToSkip,
+            Limit = limit
+         };
+      }
+
+      public ReorgBlockTable OrphanBlockByHash(string blockHash)
+      {
+         FilterDefinition<ReorgBlockTable> filter = Builders<ReorgBlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
+
+         return ReorgBlock.Find(filter).ToList().FirstOrDefault();
+      }
+
       /// <summary>
       /// Inserts or updates a peer info instance. Returns the number of modified entries.
       /// </summary>
@@ -901,7 +936,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       {
           SyncBlockInfo block = BlockByHash(blockHash);
 
-          var rewindTask = globalState.IndexModeCompleted
+         Task rewindTask = globalState.IndexModeCompleted
              ? this.RewindBlockAsync((uint)block.BlockIndex)
              : this.RewindBlockOnIbdAsync((uint)block.BlockIndex);
 
