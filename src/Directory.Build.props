@@ -1,6 +1,6 @@
 <Project>
    <PropertyGroup>
-      <Version>0.2.29</Version>
+      <Version>0.2.30</Version>
       <TargetFramework>net6.0</TargetFramework>
       <Authors>Blockcore</Authors>
       <PackageLicenseExpression>MIT</PackageLicenseExpression>
