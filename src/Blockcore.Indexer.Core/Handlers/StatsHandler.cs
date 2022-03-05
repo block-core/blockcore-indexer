@@ -93,7 +93,8 @@ namespace Blockcore.Indexer.Core.Handlers
             Network network = syncConnection.Network;
             IConsensus consensus = network.Consensus;
 
-            coinInfo.Configuration = new NetworkInfo {
+            coinInfo.Configuration = new NetworkInfo
+            {
                DefaultAPIPort = network.DefaultAPIPort,
                DefaultMaxInboundConnections = network.DefaultMaxInboundConnections,
                DefaultMaxOutboundConnections = network.DefaultMaxOutboundConnections,
@@ -109,8 +110,10 @@ namespace Blockcore.Indexer.Core.Handlers
                NetworkType = network.NetworkType,
                SeedNodes = network.SeedNodes.Select(s => s.Endpoint.ToString()).ToList(),
 
-               Consensus = new ConsensusInfo {
+               Consensus = new ConsensusInfo
+               {
                   CoinbaseMaturity = consensus.CoinbaseMaturity,
+                  MaxReorgLength = consensus.MaxReorgLength,
                   CoinType = consensus.CoinType,
                   IsProofOfStake = consensus.IsProofOfStake,
                   LastPOWBlock = consensus.LastPOWBlock,
