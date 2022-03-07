@@ -33,7 +33,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          : base(
             dbLogger,
             connection,
-            nakoConfiguration,
             chainConfiguration,
             globalState,
             mongoBlockToStorageBlock,

@@ -88,10 +88,12 @@ public class MongoStorageOperationsTests
       mongodbMock = new MongodbMock();
 
       sut = new MongoStorageOperations(syncConnection,
-         new MongoData(null, syncConnection, indexSettingsMock.Object,
-            chainSetting.Object, globalState, new MapMongoBlockToStorageBlock(),
+         new MongoData(null, syncConnection, chainSetting.Object, globalState, new MapMongoBlockToStorageBlock(),
             cryptoClientFactory.Object, scriptInterpeter.Object, mongodbMock.Object),
-         new UtxoCache(null), indexSettingsMock.Object, globalState, new MapMongoBlockToStorageBlock(),
+         new UtxoCache(null),
+         indexSettingsMock.Object,
+         globalState,
+         new MapMongoBlockToStorageBlock(),
          scriptInterpeter.Object);
    }
 

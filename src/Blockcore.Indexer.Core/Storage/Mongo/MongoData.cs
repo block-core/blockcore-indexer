@@ -22,15 +22,23 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoData : MongoDb, IStorage
    {
+      private readonly SyncConnection syncConnection;
+      private readonly GlobalState globalState;
+      private readonly ChainSettings chainConfiguration;
+
       readonly IScriptInterpeter scriptInterpeter;
 
       private readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
       readonly ICryptoClientFactory clientFactory;
 
-      public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState,
+      public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<ChainSettings> chainConfiguration, GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase)
-         : base(dbLogger,  connection, nakoConfiguration, chainConfiguration, globalState, mongoDatabase)
+         : base(dbLogger, mongoDatabase)
       {
+         this.chainConfiguration = chainConfiguration.Value;
+         this.globalState = globalState;
+         syncConnection = connection;
+
          this.mongoBlockToStorageBlock = mongoBlockToStorageBlock;
          this.clientFactory = clientFactory;
          this.scriptInterpeter = scriptInterpeter;
@@ -62,7 +70,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public List<IndexView> GetIndexesBuildProgress()
       {
-            IMongoDatabase db = mongoClient.GetDatabase("admin");
+            IMongoDatabase db = mongoDatabase.Client.GetDatabase("admin");
             var command = new BsonDocument {
                { "currentOp", "1"},
             };
@@ -516,7 +524,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          int total = (int)TransactionBlockTable.Find(filter).CountDocuments();
 
          IEnumerable<SyncTransactionInfo> list = TransactionBlockTable.Find(filter)
-                   .SortBy(p => p.TransactionIndex) 
+                   .SortBy(p => p.TransactionIndex)
                    .Skip(offset)
                    .Limit(limit)
                    .ToList().Select(s => new SyncTransactionInfo
