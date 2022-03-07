@@ -18,7 +18,7 @@ using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
-   public class CirrusMongoData : MongoData // todo: make an ICirrusStorage interface
+   public class CirrusMongoData : MongoData, ICirrusStorage
    {
       public CirrusMongoData(
          ILogger<MongoDb> dbLogger,
@@ -112,7 +112,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
             .Where(q => q.ToAddress == address);
-         
+
          if (filterAddress != null)
          {
             cirrusContract = cirrusContract.Where(q => q.FromAddress == filterAddress);
