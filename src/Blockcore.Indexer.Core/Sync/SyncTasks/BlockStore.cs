@@ -87,7 +87,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          double blocksPerSecond = totalBlocks / totalSeconds;
          double secondsPerBlock = totalSeconds / totalBlocks;
 
-         log.LogDebug($"Store - blocks={batch.BlockTable.Count}, outputs={batch.OutputTable.Count}, inputs={batch.InputTable.Count}, trx={batch.TransactionBlockTable.Count}, total Size = {((decimal)batch.TotalSize / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
+         log.LogInformation($"Store - blocks={batch.BlockTable.Count}, outputs={batch.OutputTable.Count}, inputs={batch.InputTable.Count}, trx={batch.TransactionBlockTable.Count}, total Size = {((decimal)batch.TotalSize / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
 
          foreach (BlockTable mapBlocksValue in batch.BlockTable.Values)
             syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(blocksPerSecond), mapBlocksValue.BlockSize));
