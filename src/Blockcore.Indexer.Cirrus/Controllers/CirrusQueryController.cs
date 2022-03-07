@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Core.Controllers;
 using Blockcore.Indexer.Core.Paging;
@@ -19,7 +20,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
    {
       private readonly IPagingHelper paging;
       private readonly IStorage storage;
-      private readonly CirrusMongoData cirrusMongoData;
+      private readonly ICirrusStorage cirrusMongoData;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.

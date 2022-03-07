@@ -54,6 +54,8 @@ namespace Blockcore.Indexer.Cirrus
 
          services.Replace(new ServiceDescriptor(typeof(IStorage), typeof(CirrusMongoData), ServiceLifetime.Singleton));
 
+         services.AddSingleton<ICirrusStorage, CirrusMongoData>();
+
          services.AddControllers()
             .AddApplicationPart(typeof(Startup).Assembly)
             .AddControllersAsServices();
