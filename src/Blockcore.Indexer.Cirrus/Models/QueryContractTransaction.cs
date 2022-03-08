@@ -49,6 +49,16 @@ namespace Blockcore.Indexer.Cirrus.Models
       public ulong GasUsed { get; set; }
 
       /// <summary>
+      /// The price of gas at execution time.
+      /// </summary>
+      public ulong GasPrice { get; set; }
+
+      /// <summary>
+      /// The amount that was transfered in to the contract.
+      /// </summary>
+      public ulong Amount { get; set; }
+
+      /// <summary>
       /// The address that created the contract.
       /// </summary>
       public string FromAddress { get; set; }

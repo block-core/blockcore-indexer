@@ -88,6 +88,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             ContractAddress = item.NewContractAddress,
             ContractCodeType = item.ContractCodeType,
             GasUsed = item.GasUsed,
+            GasPrice = item.GasPrice,
+            Amount = item.Amount,
             FromAddress = item.FromAddress,
             Error = item.Error,
             ContractOpcode = item.ContractOpcode,
@@ -96,15 +98,32 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          }).FirstOrDefault();
       }
 
-      public QueryResult<QueryContractCall> ContractCall(string address, int offset, int limit)
+      public QueryResult<QueryContractCall> ContractCall(string address, string filterAddress, int? offset, int limit)
       {
-         IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
-            .Where(q => q.ToAddress == address)
-            .Skip(offset)
-            .Take(limit);
+         IMongoQueryable<CirrusContractTable> totalQuary = CirrusContractTable.AsQueryable()
+             .Where(q => q.ToAddress == address);
 
-         int total = CirrusContractTable.AsQueryable()
-            .Where(q => q.ToAddress == address).Count();
+         if (filterAddress != null)
+         {
+            totalQuary = totalQuary.Where(q => q.FromAddress == filterAddress);
+         }
+
+         int total = totalQuary.Count();
+
+         IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
+            .Where(q => q.ToAddress == address);
+         
+         if (filterAddress != null)
+         {
+            cirrusContract = cirrusContract.Where(q => q.FromAddress == filterAddress);
+         }
+
+         int itemsToSkip = offset ?? (total < limit ? 0 : total - limit);
+
+         cirrusContract = cirrusContract
+            .OrderBy(b => b.BlockIndex)
+            .Skip(itemsToSkip)
+            .Take(limit);
 
          var res = cirrusContract.ToList();
 
@@ -114,6 +133,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             MethodName = item.MethodName,
             ToAddress = item.NewContractAddress,
             GasUsed = item.GasUsed,
+            GasPrice = item.GasPrice,
+            Amount = item.Amount,
             FromAddress = item.FromAddress,
             Error = item.Error,
             BlockIndex = item.BlockIndex,
@@ -123,7 +144,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          return new QueryResult<QueryContractCall>
          {
             Items = transactions,
-            Offset = offset,
+            Offset = itemsToSkip,
             Limit = limit,
             Total = total
          };
@@ -145,9 +166,11 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             NewContractAddress = item.NewContractAddress,
             ContractCodeType = item.ContractCodeType,
             GasUsed = item.GasUsed,
+            GasPrice = item.GasPrice,
+            Amount = item.Amount,
             FromAddress = item.FromAddress,
             ToAddress = item.ToAddress,
-            Logs= item.Logs,
+            Logs = item.Logs,
             MethodName = item.MethodName,
             PostState = item.PostState,
             Error = item.Error,

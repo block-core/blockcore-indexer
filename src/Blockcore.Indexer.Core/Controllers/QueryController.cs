@@ -157,6 +157,30 @@ namespace Blockcore.Indexer.Core.Controllers
       }
 
       /// <summary>
+      /// Returns orphan blocks based on the offset and limit. Orphan blocks are blocks that are not part of the main chain.
+      /// </summary>
+      /// <param name="offset">If value set to null, then query will start from block tip, not from 0 (genesis).</param>
+      /// <param name="limit">Number of blocks to return. Maximum 50.</param>
+      [HttpGet]
+      [Route("block/orphan")]
+      public IActionResult GetOrphanBlocks([Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      {
+         return OkPaging(storage.OrphanBlocks(offset, limit));
+      }
+
+      /// <summary>
+      /// Returns info of an orphan block based on the block id (hash).
+      /// </summary>
+      /// <param name="hash">Hash (ID) of the block to return.</param>
+      /// <returns></returns>
+      [HttpGet]
+      [Route("block/orphan/{hash}")]
+      public IActionResult GetOrphanBlockByHash(string hash)
+      {
+         return OkItem(storage.OrphanBlockByHash(hash));
+      }
+
+      /// <summary>
       /// Returns a block based on the block height (index).
       /// </summary>
       /// <param name="index">The block height to get block from.</param>

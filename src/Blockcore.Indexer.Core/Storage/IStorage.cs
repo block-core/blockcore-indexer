@@ -34,6 +34,10 @@ namespace Blockcore.Indexer.Core.Storage
 
       SyncBlockInfo BlockByIndex(long blockIndex);
 
+      QueryResult<QueryOrphanBlock> OrphanBlocks(int? offset, int limit);
+
+      ReorgBlockTable OrphanBlockByHash(string blockHash);
+
       QueryResult<RichlistTable> Richlist(int offset, int limit);
 
       RichlistTable RichlistBalance(string address);
