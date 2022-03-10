@@ -4,5 +4,6 @@ public class DaoContractVote
 {
    public int ProposalId { get; set; }
    public string VoterAddress { get; set; }
-   public bool Decision { get; set; }
+   public bool IsApproved { get; set; }
+   public long VotedOnBlock { get; set; }
 }

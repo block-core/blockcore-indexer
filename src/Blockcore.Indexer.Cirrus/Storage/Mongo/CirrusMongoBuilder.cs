@@ -24,26 +24,24 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<CirrusBlock>();
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(CirrusContractTable)))
-         {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<CirrusContractTable>(cm =>
-            {
-               cm.AutoMap();
-               cm.SetIgnoreExtraElements(true);
-            });
-         }
-
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(CirrusContractCodeTable)))
-         {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<CirrusContractCodeTable>(cm =>
-            {
-               cm.AutoMap();
-               cm.SetIgnoreExtraElements(true);
-            });
-         }
+         SetDocumentMapAndIgnoreExtraElements<CirrusContractTable>();
+         SetDocumentMapAndIgnoreExtraElements<CirrusContractCodeTable>();
+         SetDocumentMapAndIgnoreExtraElements<DaoContractComputedTable>();
 
 
          return Task.FromResult(1);
+      }
+
+      static void SetDocumentMapAndIgnoreExtraElements<T>()
+      {
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(T)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<T>(cm =>
+            {
+               cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
+            });
+         }
       }
    }
 }

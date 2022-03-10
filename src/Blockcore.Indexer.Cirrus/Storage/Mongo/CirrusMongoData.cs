@@ -58,6 +58,14 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          }
       }
 
+      public IMongoCollection<DaoContractComputedTable> DaoContractComputedTable
+      {
+         get
+         {
+            return mongoDatabase.GetCollection<DaoContractComputedTable>("DaoContractComputed");
+         }
+      }
+
 
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
       {

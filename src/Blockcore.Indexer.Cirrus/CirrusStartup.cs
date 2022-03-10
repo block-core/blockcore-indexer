@@ -1,10 +1,13 @@
+using System;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Blockcore.Indexer.Cirrus.Client;
 using Blockcore.Indexer.Cirrus.Crypto;
 using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
@@ -59,8 +62,25 @@ namespace Blockcore.Indexer.Cirrus
          services.AddControllers()
             .AddApplicationPart(typeof(Startup).Assembly)
             .AddControllersAsServices();
+
+         services.AddTransient<IDAOContractAggregator, DaoContractAggregator>();
+         services.AddTransient<ILogReaderFactory, LogReaderFactory>();
+
+        ScanAssemblyAndRegisterTypeByNameAsTransient(services,typeof(ILogReader),typeof(ILogReader).Assembly);
       }
 
+      private static void ScanAssemblyAndRegisterTypeByNameAsTransient(IServiceCollection services, Type typeToRegister, Assembly assembly)
+      {
+         // Discovers and registers all type implementation in this assembly.
+         var implementations = from type in assembly.GetTypes()
+            where type.GetInterface(typeToRegister.Name) != null
+            select new { Interface = typeToRegister, ImplementationType = type };
+
+         foreach (var implementation in implementations)
+         {
+            services.AddSingleton(implementation.Interface, implementation.ImplementationType);
+         }
+      }
 
       public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
       {

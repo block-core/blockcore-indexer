@@ -21,14 +21,16 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       private readonly IPagingHelper paging;
       private readonly IStorage storage;
       private readonly ICirrusStorage cirrusMongoData;
+      readonly IDAOContractAggregator DaoContractAggregator;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
-      public CirrusQueryController(IPagingHelper paging, IStorage storage)
+      public CirrusQueryController(IPagingHelper paging, IStorage storage, IDAOContractAggregator daoContractAggregator)
       {
          this.paging = paging;
          this.storage = storage;
+         DaoContractAggregator = daoContractAggregator;
          cirrusMongoData = storage as CirrusMongoData;
       }
 
@@ -65,6 +67,20 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       public IActionResult GetContractCode([MinLength(30)][MaxLength(100)] string address)
       {
          return Ok(cirrusMongoData.ContractCode(address));
+      }
+
+      [HttpGet]
+      [Route("contract/Dao/{address}")]
+      public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
+      {
+         var contract = await DaoContractAggregator.ComputeDaoContractForAddressAsync(address);
+
+         if (contract is null)
+         {
+            return NotFound();
+         }
+
+         return Ok(contract);
       }
 
       private IActionResult OkPaging<T>(QueryResult<T> result)

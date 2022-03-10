@@ -9,5 +9,9 @@ public class DaoContractProposal
    public long Amount { get; set; }
    public string Description { get; set; }
    public bool WasProposalAccepted { get; set; }
+
+   public long ProposalStartedAtBlock { get; set; }
+
+   public long ProposalCompletedAtBlock { get; set; }
    public List<DaoContractVote> Votes { get; set; }
 }
