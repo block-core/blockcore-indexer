@@ -12,5 +12,6 @@ public class LogReaderFactory : ILogReaderFactory
       this.readers = readers.ToList();
    }
 
-   public ILogReader GetLogReader(string opCode, string methodName) => readers.FirstOrDefault(_ => _.CanReadLogForMethodType(opCode == "create" ? opCode : methodName));
+   public ILogReader GetLogReader(string methodName)
+      => readers.FirstOrDefault(_ => _.CanReadLogForMethodType(methodName));
 }

@@ -20,7 +20,8 @@ class DepositLogReader : ILogReader
       computedTable.Deposits.Add(new DaoContractDeposit
       {
          Amount = amount,
-         SenderAddress = (string)contractTransaction.Logs[0].Log.Data["sender"]
+         SenderAddress = (string)contractTransaction.Logs[0].Log.Data["sender"],
+         TransactionId = contractTransaction.TransactionId
       });
 
       computedTable.CurrentAmount += amount; //TODO sum the deposits subtract the proposals

@@ -22,8 +22,8 @@ class VoteLogReader : ILogReader
       }
 
       int id = (int)(long)contractTransaction.Logs.First().Log.Data["proposalId"];
-      bool vote = (bool)contractTransaction.Logs.First().Log.Data["vote"];
-      string voter = (string)contractTransaction.Logs.First().Log.Data["voter"];
+      bool voteYesNo = (bool)contractTransaction.Logs.First().Log.Data["vote"];
+      string voterAddress = (string)contractTransaction.Logs.First().Log.Data["voter"];
 
       var proposal = computedTable.Proposals.SingleOrDefault(_ => _.Id == id);
 
@@ -33,8 +33,24 @@ class VoteLogReader : ILogReader
             $"Proposal {id} not found for the vote transaction id - {contractTransaction.TransactionId}");
       }
 
-      proposal.Votes ??= new List<DaoContractVote>();
+      var vote = proposal.Votes.FirstOrDefault(_ => _.VoterAddress == voterAddress);
 
-      proposal.Votes.Add(new DaoContractVote { IsApproved = vote, ProposalId = id, VoterAddress = voter , VotedOnBlock = contractTransaction.BlockIndex});
+      if (vote != null)
+      {
+         vote.PreviousVotes ??= new List<DaoContractVote>();
+         vote.PreviousVotes.Add(new DaoContractVote { IsApproved = vote.IsApproved,VotedOnBlock = vote.VotedOnBlock });
+         vote.IsApproved = voteYesNo;
+         vote.VotedOnBlock = contractTransaction.BlockIndex;
+      }
+      else
+      {
+         proposal.Votes.Add(new DaoContractVoteDetails
+         {
+            IsApproved = voteYesNo,
+            ProposalId = id,
+            VoterAddress = voterAddress,
+            VotedOnBlock = contractTransaction.BlockIndex,
+         });
+      }
    }
 }

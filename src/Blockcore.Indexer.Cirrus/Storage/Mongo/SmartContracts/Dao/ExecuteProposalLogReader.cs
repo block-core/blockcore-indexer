@@ -22,7 +22,7 @@ class ExecuteProposalLogReader : ILogReader
 
       var proposal = computedTable.Proposals[proposalId - 1];
 
-      if (proposal.Id != proposalId || proposal.recipent != (string)log["recipent"])
+      if (proposal.Id != proposalId || proposal.recipient != (string)log["recipent"])
          throw new ArgumentException(nameof(proposalId));
 
       proposal.WasProposalAccepted = true;

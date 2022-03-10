@@ -18,11 +18,12 @@ class CreateProposalLogReader : ILogReader
 
       var proposal = new DaoContractProposal
       {
-         recipent = (string)logData["recipent"],
+         recipient = (string)logData["recipent"],
          Amount = (long)logData["amount"],
          Id = (int)(long)logData["proposalId"],
          Description = (string)logData["description"],
          ProposalStartedAtBlock = contractTransaction.BlockIndex,
+         Votes = new List<DaoContractVoteDetails>()
       };
 
       computedTable.Proposals ??= new List<DaoContractProposal>(proposal.Id);

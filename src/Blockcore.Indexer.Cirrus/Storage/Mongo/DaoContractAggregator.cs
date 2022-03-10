@@ -36,7 +36,7 @@ public class DaoContractAggregator : IDAOContractAggregator
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
-      if (contract is null)
+       if (contract is null)
       {
          var contractCode = await mongoData.CirrusContractCodeTable
             .AsQueryable()
@@ -59,23 +59,24 @@ public class DaoContractAggregator : IDAOContractAggregator
          contract = new DaoContractComputedTable
          {
             ContractAddress = contractCreationTransaction.NewContractAddress,
+            LasProcessedBlockHeight = -1
             //TODO
          };
       }
 
       var contractTransactions = await mongoData.CirrusContractTable
          .AsQueryable()
-         .Where(_ => _.ToAddress == address && _.Success)
+         .Where(_ => _.ToAddress == address && _.Success && _.BlockIndex > contract.LasProcessedBlockHeight)
          .ToListAsync();
 
       foreach (var contractTransaction in contractTransactions)
       {
-         var reader =
-            logReaderFactory.GetLogReader(contractTransaction.ContractOpcode, contractTransaction.MethodName);
+         var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
 
          if (reader is null)
          {
             Console.WriteLine(contractTransaction.MethodName);
+            continue;
          }
 
          if (!reader.IsTheTransactionLogComplete(contractTransaction.Logs))
@@ -85,15 +86,9 @@ public class DaoContractAggregator : IDAOContractAggregator
             contractTransaction.Logs = result.Logs;
          }
 
-         try
-         {
-            reader.UpdateContractFromTransactionLog(contractTransaction, contract);
-         }
-         catch (Exception e)
-         {
-            Console.WriteLine(e);
-            throw;
-         }
+         reader.UpdateContractFromTransactionLog(contractTransaction, contract);
+
+         contract.LasProcessedBlockHeight = contractTransaction.BlockIndex;
       }
 
       await mongoData.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
