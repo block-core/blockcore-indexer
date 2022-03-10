@@ -13,6 +13,8 @@ class UpdateMinVotingDurationLogReader : ILogReader
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
    {
+      if (!contractTransaction.Logs.Any())
+         return;
       computedTable.MinVotingDuration = (long)contractTransaction.Logs.Single().Log.Data["minVotingDuration"];
    }
 }

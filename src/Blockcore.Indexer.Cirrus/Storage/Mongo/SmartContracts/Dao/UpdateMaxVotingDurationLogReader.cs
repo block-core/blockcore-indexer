@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -8,14 +9,19 @@ class UpdateMaxVotingDurationLogReader : ILogReader
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "UpdateMaxVotingDuration";
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs)
-   {
-      return false;
-   }
+   public bool IsTheTransactionLogComplete(LogResponse[] logs) => false;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
    {
-      computedTable.MaxVotingDuration = (long)contractTransaction.Logs.Single().Log.Data["maxVotingDuration"];
+      var log = contractTransaction.Logs.SingleOrDefault();
+
+      if (log == null)
+      {
+         return;
+         // throw new ArgumentException(contractTransaction.TransactionId);
+      }
+
+      computedTable.MaxVotingDuration = (long)log.Log.Data["maxVotingDuration"];
    }
 }

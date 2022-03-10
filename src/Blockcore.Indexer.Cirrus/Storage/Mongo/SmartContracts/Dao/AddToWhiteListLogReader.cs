@@ -14,6 +14,9 @@ class WhitelistAddressesLogReader : ILogReader
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
    {
+      if (contractTransaction.Logs.Any() == false)
+         return;
+
       computedTable.WhitelistedCount =  (long)contractTransaction.Logs.Single().Log.Data["whitelistedCount"];
       //TODO
    }
