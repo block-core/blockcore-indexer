@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Client;
@@ -44,31 +46,56 @@ public class DaoContractAggregator : IDAOContractAggregator
 
          if (contractCode is null || contractCode.CodeType != DaoContract)
          {
-            logger.LogInformation("TODO");
+            logger.LogInformation($"Request to compute DAO contract for address {address} which was not found in the contract code table");
             return null;
          }
 
-         var contractCreationTransaction = await mongoData.CirrusContractTable
-            .AsQueryable()
-            .Where(_ => _.NewContractAddress == address)
-            .SingleOrDefaultAsync();
+         contract = await CreateNewDaoContract(address);
 
-         if (contractCreationTransaction is null)
-            throw new ArgumentNullException(nameof(contractCreationTransaction));
-
-         contract = new DaoContractComputedTable
-         {
-            ContractAddress = contractCreationTransaction.NewContractAddress,
-            LasProcessedBlockHeight = -1
-            //TODO
-         };
+         if (contract is null)
+            throw new ArgumentNullException($"Contract not found in the contract table for address {address}");
       }
 
       var contractTransactions = await mongoData.CirrusContractTable
          .AsQueryable()
-         .Where(_ => _.ToAddress == address && _.Success && _.BlockIndex > contract.LasProcessedBlockHeight)
+         .Where(_ => _.ToAddress == address && _.Success && _.BlockIndex > contract.LastProcessedBlockHeight)
          .ToListAsync();
 
+      if (contractTransactions.Any())
+      {
+         await AddNewTransactionsDataToDocumentAsync(address, contractTransactions, contract);
+      }
+
+      return contract;
+   }
+
+   private async Task<DaoContractComputedTable> CreateNewDaoContract(string address)
+   {
+      var contractCreationTransaction = await mongoData.CirrusContractTable
+         .AsQueryable()
+         .Where(_ => _.NewContractAddress == address)
+         .SingleOrDefaultAsync();
+
+      if (contractCreationTransaction is null)
+         throw new ArgumentNullException(nameof(contractCreationTransaction));
+
+      var contract = new DaoContractComputedTable
+      {
+         ContractAddress = contractCreationTransaction.NewContractAddress,
+         LastProcessedBlockHeight = contractCreationTransaction.BlockIndex
+      };
+
+      await mongoData.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
+         _ => _.ContractAddress == address, contract,
+         new FindOneAndReplaceOptions<DaoContractComputedTable> { IsUpsert = true },
+         CancellationToken.None);
+
+      return contract;
+   }
+
+   private async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions,
+      DaoContractComputedTable contract)
+   {
       foreach (var contractTransaction in contractTransactions)
       {
          var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
@@ -76,7 +103,7 @@ public class DaoContractAggregator : IDAOContractAggregator
          if (reader is null)
          {
             Console.WriteLine(contractTransaction.MethodName);
-            continue;
+            continue; //TODO need to verify this is the right way to go
          }
 
          if (!reader.IsTheTransactionLogComplete(contractTransaction.Logs))
@@ -88,14 +115,12 @@ public class DaoContractAggregator : IDAOContractAggregator
 
          reader.UpdateContractFromTransactionLog(contractTransaction, contract);
 
-         contract.LasProcessedBlockHeight = contractTransaction.BlockIndex;
+         contract.LastProcessedBlockHeight = contractTransaction.BlockIndex;
       }
 
       await mongoData.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
          _ => _.ContractAddress == address, contract,
          new FindOneAndReplaceOptions<DaoContractComputedTable> { IsUpsert = true },
          CancellationToken.None);
-
-      return contract;
    }
 }

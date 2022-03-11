@@ -1,9 +1,8 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
-using Blockcore.Indexer.Core.Controllers;
+using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Paging;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Types;
@@ -22,15 +21,17 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       private readonly IStorage storage;
       private readonly ICirrusStorage cirrusMongoData;
       readonly IDAOContractAggregator DaoContractAggregator;
+      readonly ISlowRequestsThrottle requestsThrottle;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
-      public CirrusQueryController(IPagingHelper paging, IStorage storage, IDAOContractAggregator daoContractAggregator)
+      public CirrusQueryController(IPagingHelper paging, IStorage storage, IDAOContractAggregator daoContractAggregator, ISlowRequestsThrottle requestsThrottle)
       {
          this.paging = paging;
          this.storage = storage;
          DaoContractAggregator = daoContractAggregator;
+         this.requestsThrottle = requestsThrottle;
          cirrusMongoData = storage as CirrusMongoData;
       }
 
@@ -73,7 +74,16 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [Route("contract/Dao/{address}")]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
+         if (requestsThrottle.IsRequestInProgress(nameof(GetDaoContractByAddress),address)) //TODO change this to an attribute to add on the method
+         {
+            return Accepted();
+         }
+
+         requestsThrottle.AddRequestInProgress(nameof(GetDaoContractByAddress),address);
+
          var contract = await DaoContractAggregator.ComputeDaoContractForAddressAsync(address);
+
+         requestsThrottle.RemoveCompletedRequest(nameof(GetDaoContractByAddress),address);
 
          if (contract is null)
          {

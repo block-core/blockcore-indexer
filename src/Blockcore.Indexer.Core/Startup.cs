@@ -15,6 +15,8 @@ using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Sync;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
+using Blockcore.Utilities;
+using ConcurrentCollections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -151,6 +153,7 @@ namespace Blockcore.Indexer.Core
          services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
          services.AddSingleton<ICryptoClientFactory, CryptoClientFactory>();
          services.AddSingleton<ISyncBlockTransactionOperationBuilder, SyncBlockTransactionOperationBuilder>();
+         services.AddSingleton<ISlowRequestsThrottle>(_ => new SlowRequestsThrottle(new ConcurrentHashSet<string>()));
       }
 
       public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

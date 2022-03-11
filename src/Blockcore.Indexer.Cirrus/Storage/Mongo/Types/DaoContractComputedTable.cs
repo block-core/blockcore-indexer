@@ -10,7 +10,7 @@ public class DaoContractComputedTable
    public long MinVotingDuration { get; set; }
    public long WhitelistedCount { get; set; }
 
-   public long LasProcessedBlockHeight { get; set; }
+   public long LastProcessedBlockHeight { get; set; }
 
    public List<DaoContractProposal> Proposals { get; set; }
 
