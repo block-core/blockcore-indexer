@@ -21,17 +21,15 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       private readonly IStorage storage;
       private readonly ICirrusStorage cirrusMongoData;
       readonly IDAOContractAggregator DaoContractAggregator;
-      readonly ISlowRequestsThrottle requestsThrottle;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
-      public CirrusQueryController(IPagingHelper paging, IStorage storage, IDAOContractAggregator daoContractAggregator, ISlowRequestsThrottle requestsThrottle)
+      public CirrusQueryController(IPagingHelper paging, IStorage storage, IDAOContractAggregator daoContractAggregator)
       {
          this.paging = paging;
          this.storage = storage;
          DaoContractAggregator = daoContractAggregator;
-         this.requestsThrottle = requestsThrottle;
          cirrusMongoData = storage as CirrusMongoData;
       }
 
@@ -72,18 +70,19 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/Dao/{address}")]
+      [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         if (requestsThrottle.IsRequestInProgress(nameof(GetDaoContractByAddress),address)) //TODO change this to an attribute to add on the method
-         {
-            return Accepted();
-         }
+         // if (requestsThrottle.IsRequestInProgress(nameof(GetDaoContractByAddress),address)) //TODO change this to an attribute to add on the method
+         // {
+         //    return Accepted();
+         // }
 
-         requestsThrottle.AddRequestInProgress(nameof(GetDaoContractByAddress),address);
+         //requestsThrottle.AddRequestInProgress(nameof(GetDaoContractByAddress),address);
 
          var contract = await DaoContractAggregator.ComputeDaoContractForAddressAsync(address);
 
-         requestsThrottle.RemoveCompletedRequest(nameof(GetDaoContractByAddress),address);
+         //requestsThrottle.RemoveCompletedRequest(nameof(GetDaoContractByAddress),address);
 
          if (contract is null)
          {
