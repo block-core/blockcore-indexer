@@ -27,3 +27,5 @@ https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexe
 `Mempool` - Stores information about transactions found in the node mempool, when a transaction is included in a block its deleted from this table.
 
 `RichList` - Stores the last 250 most rich addresses found on the blockchain. this is computed as a background job that run periodically.
+
+`ReorgBlock` - Stores information about blocks that have been reorged, blocks that are not part of the main chain.

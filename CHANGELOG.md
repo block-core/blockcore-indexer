@@ -1,3 +1,21 @@
+## <small>0.2.29 (2022-03-04)</small>
+
+* Add an index on the trxs in a block (#110) ([deb83f1](https://github.com/block-core/blockcore-indexer/commit/deb83f1)), closes [#110](https://github.com/block-core/blockcore-indexer/issues/110)
+* Add api endpoint to filter by user address (#116) ([e6863ee](https://github.com/block-core/blockcore-indexer/commit/e6863ee)), closes [#116](https://github.com/block-core/blockcore-indexer/issues/116)
+* Add api endpoint to return orphan (reorged) blocks (#117) ([f6b802e](https://github.com/block-core/blockcore-indexer/commit/f6b802e)), closes [#117](https://github.com/block-core/blockcore-indexer/issues/117)
+* Add comment on the utxo unitq index. ([28e94ad](https://github.com/block-core/blockcore-indexer/commit/28e94ad))
+* Add comment on utxo commuted table ([d8ceaf5](https://github.com/block-core/blockcore-indexer/commit/d8ceaf5))
+* Add gas price and amount (#115) ([bba3e98](https://github.com/block-core/blockcore-indexer/commit/bba3e98)), closes [#115](https://github.com/block-core/blockcore-indexer/issues/115)
+* Fix paging on smart contract address api endpoint ([c6ec977](https://github.com/block-core/blockcore-indexer/commit/c6ec977))
+* fix typo ([e02a179](https://github.com/block-core/blockcore-indexer/commit/e02a179))
+* Run tests on regular build ([61458da](https://github.com/block-core/blockcore-indexer/commit/61458da))
+* sort the computed history position ascending (#111) ([49f1f45](https://github.com/block-core/blockcore-indexer/commit/49f1f45)), closes [#111](https://github.com/block-core/blockcore-indexer/issues/111)
+* Started adding unit tests to the core project (#90) ([b7f8cd0](https://github.com/block-core/blockcore-indexer/commit/b7f8cd0)), closes [#90](https://github.com/block-core/blockcore-indexer/issues/90)
+* Update changelog and version ([0d06cdf](https://github.com/block-core/blockcore-indexer/commit/0d06cdf))
+* Update NuGet packages ([cadefe9](https://github.com/block-core/blockcore-indexer/commit/cadefe9))
+
+
+
 ## <small>0.2.28 (2022-02-15)</small>
 
 * Add extra delete and some comments, also fetch better the last blolck query from memory not disk (#1 ([37a33c8](https://github.com/block-core/blockcore-indexer/commit/37a33c8)), closes [#106](https://github.com/block-core/blockcore-indexer/issues/106)
