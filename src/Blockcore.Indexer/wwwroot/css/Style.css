@@ -1,58 +1,38 @@
 body {
-   font-family: 'Nunito', sans-serif;
+   font-family: "Nunito", sans-serif;
    padding: 20px;
+   background-image: url(/img/background.png);
+   background-repeat: repeat;
 }
-
 .card {
    border-radius: 4px;
    background: #fff;
-   box-shadow: 0 6px 10px rgba(0, 0, 0, .08), 0 0 6px rgba(0, 0, 0, .05);
-   transition: .3s transform cubic-bezier(.155, 1.105, .295, 1.12), .3s box-shadow, .3s -webkit-transform cubic-bezier(.155, 1.105, .295, 1.12);
-   padding: 14px 80px 18px 36px;
+   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08), 0 0 6px rgba(0, 0, 0, 0.05);
+   transition: 0.3s transform cubic-bezier(0.155, 1.105, 0.295, 1.12),
+      0.3s box-shadow,
+      0.3s -webkit-transform cubic-bezier(0.155, 1.105, 0.295, 1.12);
+   padding: 14px;
    cursor: pointer;
    margin-top: 30px;
    min-height: 172.4px;
 }
-
-   .card:hover {
-      box-shadow: 0 10px 20px rgba(0, 0, 0, .12), 0 4px 8px rgba(0, 0, 0, .06);
-   }
-
-   .card h3 {
-      font-weight: 600;
-   }
-
-   .card img {
-      position: absolute;
-      top: 20px;
-      right: 15px;
-      max-height: 120px;
-   }
-
-.card-1 {
-   background-image: url(/img/ionic-native-card.png);
-   background-repeat: no-repeat;
-   background-position: right;
-   background-size: 80px;
+.card:hover {
+   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
 }
-
-.card-2 {
-   background-image: url(/img/components-card.png);
-   background-repeat: no-repeat;
-   background-position: right;
-   background-size: 80px;
+.card h3 {
+   font-weight: 600;
 }
-
-.card-3 {
-   background-image: url(/img/theming-card.png);
-   background-repeat: no-repeat;
-   background-position: right;
-   background-size: 80px;
+.card img {
+   position: absolute;
+   top: 20px;
+   right: 15px;
+   max-height: 120px;
 }
-
-@media(max-width: 990px) {
+.indexer-card {
+   background-color: #f8f8f8;
+}
+@media (max-width: 990px) {
    .card {
       margin: 20px;
    }
 }
-
