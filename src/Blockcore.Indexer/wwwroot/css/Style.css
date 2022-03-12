@@ -1,0 +1,91 @@
+body {
+   font-family: "Nunito", sans-serif;
+   font-size: medium;
+   padding-left: 15%;
+   padding-right: 15%;
+   padding-top: 40px;
+   padding-bottom: 40px;
+   background-image: url(/img/background.png);
+   background-repeat: repeat;
+}
+.flex-container {
+   display: flex;
+   flex-wrap: wrap;
+   text-align: center;
+}
+.indexer-card {
+   background-color: #f8f8f8;
+   flex: 29%;
+   margin: 1%;
+   flex-grow: 4;
+}
+@media (max-width: 768px) {
+   body {
+      padding-left: 5%;
+      padding-right: 5%;
+      padding-top: 20px;
+      padding-bottom: 20px;
+   }
+   .indexer-card {
+      flex: 100%;
+   }
+}
+.card {
+   border-radius: 4px;
+   background: #fff;
+   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.08), 0 0 6px rgba(0, 0, 0, 0.05);
+   transition: 0.3s transform cubic-bezier(0.155, 1.105, 0.295, 1.12),
+      0.3s box-shadow,
+      0.3s -webkit-transform cubic-bezier(0.155, 1.105, 0.295, 1.12);
+   padding: 14px;
+   cursor: pointer;
+   margin-top: 30px;
+   min-height: 172.4px;
+}
+.card:hover {
+   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+.card h3 {
+   font-weight: 600;
+}
+.card img {
+   position: absolute;
+   top: 20px;
+   right: 15px;
+   max-height: 120px;
+}
+.button {
+   display: inline-block;
+   border-radius: 4px;
+   background-color: #f4b01e;
+   border: none;
+   color: #ffffff;
+   text-align: center;
+   font-size: 18px;
+   padding: 20px;
+   width: 200px;
+   transition: all 0.5s;
+   cursor: pointer;
+   margin: 5px;
+}
+.button span {
+   cursor: pointer;
+   display: inline-block;
+   position: relative;
+   transition: 0.5s;
+}
+.button span:after {
+   content: "\00bb";
+   position: absolute;
+   opacity: 0;
+   top: 0;
+   right: -20px;
+   transition: 0.5s;
+}
+.button:hover span {
+   padding-right: 25px;
+}
+.button:hover span:after {
+   opacity: 1;
+   right: 0;
+}

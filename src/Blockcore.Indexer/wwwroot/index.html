@@ -1,17 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-   <meta charset="utf-8" />
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Blockcore Indexer</title>
+   <link rel="icon" type="image/x-icon" href="/img/favicon.ico">
+   <link rel="stylesheet" href="css/Style.css">
 </head>
 <body>
-   <h1>Blockcore Indexer</h1>
-
-   <div id="network">Please wait...</div>
-   <div id="progress"></div>
-   <br />
-   <a href="/api/stats">See details</a> | <a href="/docs">API Documentation</a>
-
+   <div class="container">
+      <div class="flex-container">
+         <div class="card indexer-card">
+            <h3>Sync Progress</h3>
+            <p>
+            <div id="network">Please wait...</div>
+            <div id="progress"></div>
+            </p>
+            <a href="/" class="button"><span>refresh </span></a>
+         </div>
+         <div class="card indexer-card">
+            <h3>See details</h3>
+            <p>Click the link below for more details on blockchain and network</p>
+            <a href="/api/stats" target="_blank" class="button"><span>See details </span> </a>
+         </div>
+         <div class="card indexer-card">
+            <h3>API Documentation</h3>
+            <p>Click the link below to view the Indexer API Documentation</p>
+            <a href="/docs" target="_blank" class="button"><span>API Documentation </span></a>
+         </div>
+      </div>
+   </div>
    <script>
       var network = document.getElementById('network');
       var progress = document.getElementById('progress');
@@ -22,10 +41,9 @@
          network.innerHTML = result.symbol;
          progress.innerHTML = result.progress;
       }
-
       setInterval(getData, 30000);
       getData();
    </script>
-
 </body>
+
 </html>
