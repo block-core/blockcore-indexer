@@ -33,15 +33,17 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
          IScriptInterpeter scriptInterpeter,
-         ICryptoClientFactory clientFactory) :
+         ICryptoClientFactory clientFactory,
+         IMongoDb db) :
          base(
              syncConnection,
-             storage,
+             db,
              utxoCache,
              configuration,
              globalState,
              mongoBlockToStorageBlock,
-             scriptInterpeter)
+             scriptInterpeter,
+             storage)
       {
          this.clientFactory = clientFactory;
          cirrusClient = this.clientFactory.Create(syncConnection) as CirrusClient;

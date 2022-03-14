@@ -71,6 +71,7 @@ namespace Blockcore.Indexer.Core
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
          services.AddSingleton<IStorage, MongoData>();
+         services.AddSingleton<IMongoDb, MongoDb>();
          services.AddSingleton<IUtxoCache, UtxoCache>();
          services.AddSingleton<IStorageOperations, MongoStorageOperations>();
          services.AddSingleton<TaskStarter, MongoBuilder>();

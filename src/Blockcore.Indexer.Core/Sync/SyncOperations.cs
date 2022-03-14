@@ -26,6 +26,7 @@ namespace Blockcore.Indexer.Core.Sync
    public class SyncOperations : ISyncOperations
    {
       private readonly IStorage storage;
+      private readonly IMongoDb db;
 
       private readonly ILogger<SyncOperations> log;
 
@@ -49,7 +50,7 @@ namespace Blockcore.Indexer.Core.Sync
          IOptions<IndexerSettings> configuration,
          IMemoryCache cache,
          GlobalState globalState, ICryptoClientFactory clientFactory,
-         ISyncBlockTransactionOperationBuilder blockInfoEnrichment)
+         ISyncBlockTransactionOperationBuilder blockInfoEnrichment, IMongoDb db)
       {
          this.configuration = configuration.Value;
          log = logger;
@@ -58,6 +59,7 @@ namespace Blockcore.Indexer.Core.Sync
          this.globalState = globalState;
          this.clientFactory = clientFactory;
          transactionOperationBuilder = blockInfoEnrichment;
+         this.db = db;
 
          // Register the cold staking template.
          StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
@@ -67,9 +69,7 @@ namespace Blockcore.Indexer.Core.Sync
 
       public void InitializeMmpool()
       {
-         var data = (MongoData)storage;
-
-         var allitems = data.Mempool.AsQueryable().ToList();
+         var allitems = db.Mempool.AsQueryable().ToList();
 
          foreach (MempoolTable allitem in allitems)
          {
@@ -172,8 +172,7 @@ namespace Blockcore.Indexer.Core.Sync
             FilterDefinitionBuilder<MempoolTable> builder = Builders<MempoolTable>.Filter;
             FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
 
-            var data = (MongoData)storage;
-            data.Mempool.DeleteMany(filter);
+            db.Mempool.DeleteMany(filter);
 
             foreach (string mempooltrx in toRemoveFromMempool)
                globalState.LocalMempoolView.Remove(mempooltrx, out _);

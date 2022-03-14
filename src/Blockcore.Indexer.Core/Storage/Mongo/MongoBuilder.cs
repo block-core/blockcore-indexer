@@ -10,7 +10,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoBuilder : TaskStarter
    {
-      private readonly MongoData mongoData;
+      private readonly IMongoDb db;
 
       private readonly ILogger<MongoBuilder> log;
       readonly ChainSettings chainConfiguration;
@@ -19,13 +19,13 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// <summary>
       /// Initializes a new instance of the <see cref="MongoBuilder"/> class.
       /// </summary>
-      public MongoBuilder(ILogger<MongoBuilder> logger, IStorage data, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainSettings)
+      public MongoBuilder(ILogger<MongoBuilder> logger, IMongoDb data, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainSettings)
           : base(logger)
       {
          log = logger;
-         chainConfiguration = chainSettings.Value;
-         mongoData = (MongoData)data;
+         db = data;
          configuration = nakoConfiguration.Value;
+         chainConfiguration = chainSettings.Value;
       }
 
       public override int Priority
@@ -143,11 +143,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             });
          }
 
-         mongoData.UnspentOutputTable.Indexes
+         db.UnspentOutputTable.Indexes
             .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
-
-
          // To avoid the duplicate trx hash error on btc and save on perf dont create this index on the Bitcoin network.
          if (chainConfiguration.Symbol.ToUpper() != "BTC")
          {
@@ -155,12 +153,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             // however this is not expected and once we sure the code is stable we can remove this index to gain
             // better performance on initial sync, onother options is to add this index at the end of the initial
             // sync where natural reorgs are expected pretty often
-            mongoData.UnspentOutputTable.Indexes
+            db.UnspentOutputTable.Indexes
                .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                   .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint), new CreateIndexOptions { Unique = true }));
          }
 
-         mongoData.ReorgBlock.Indexes
+         db.ReorgBlock.Indexes
             .CreateOne(new CreateIndexModel<ReorgBlockTable>(Builders<ReorgBlockTable>
                .IndexKeys.Descending(_ => _.BlockIndex)));
 

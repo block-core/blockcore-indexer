@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
+using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
@@ -19,15 +20,24 @@ public class MongodbMock
    public Mock<IMongoCollection<TransactionTable>> transactionTable;
 
    private Mock<IMongoDatabase> mongodatabase;
+   private Mock<IMongoDb> db;
 
    public  MongodbMock()
    {
+      db = new Mock<IMongoDb>();
       blockTableCollection = new Mock<IMongoCollection<BlockTable>>();
       transactionBlockTableCollection = new Mock<IMongoCollection<TransactionBlockTable>>();
       outputTableCollection = new Mock<IMongoCollection<OutputTable>>();
       unspentOutputTableCollection = new Mock<IMongoCollection<UnspentOutputTable>>();
       inputTableCollection = new Mock<IMongoCollection<InputTable>>();
       transactionTable = new Mock<IMongoCollection<TransactionTable>>();
+
+      db.Setup(_ => _.BlockTable).Returns(blockTableCollection.Object);
+      db.Setup(_ => _.TransactionBlockTable).Returns(transactionBlockTableCollection.Object);
+      db.Setup(_ => _.OutputTable).Returns(outputTableCollection.Object);
+      db.Setup(_ => _.UnspentOutputTable).Returns(unspentOutputTableCollection.Object);
+      db.Setup(_ => _.InputTable).Returns(inputTableCollection.Object);
+      db.Setup(_ => _.TransactionTable).Returns(transactionTable.Object);
 
       mongodatabase = new Mock<IMongoDatabase>();
       mongodatabase.Setup(_ => _.GetCollection<BlockTable>("Block",null))
@@ -47,7 +57,8 @@ public class MongodbMock
          .Returns(new Mock<IMongoClient>().Object);
    }
 
-   public IMongoDatabase Object => mongodatabase.Object;
+   public IMongoDatabase MongoDatabaseObject => mongodatabase.Object;
+   public IMongoDb MongoDbObject => db.Object;
 
    public void GivenTheDocumentIsReturnedSuccessfullyFromMongoDb<TDocument>(
       Mock<IMongoCollection<TDocument>> collection, TDocument document)

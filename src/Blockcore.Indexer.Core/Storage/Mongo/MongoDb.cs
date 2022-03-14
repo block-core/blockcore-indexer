@@ -8,7 +8,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
-   public class MongoDb
+   public class MongoDb : IMongoDb
    {
       private readonly ILogger<MongoDb> log;
 

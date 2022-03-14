@@ -20,6 +20,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
    public class CirrusMongoData : MongoData, ICirrusStorage
    {
+      readonly IMongoDatabase mongoDatabase;
+
       public CirrusMongoData(
          ILogger<MongoDb> dbLogger,
          SyncConnection connection,
@@ -29,7 +31,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
          ICryptoClientFactory clientFactory,
          IScriptInterpeter scriptInterpeter,
-         IMongoDatabase mongoDatabase)
+         IMongoDatabase mongoDatabase,
+         IMongoDb db)
          : base(
             dbLogger,
             connection,
@@ -38,8 +41,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             mongoBlockToStorageBlock,
             clientFactory,
             scriptInterpeter,
-            mongoDatabase)
+            mongoDatabase,
+            db)
       {
+         this.mongoDatabase = mongoDatabase;
       }
 
       public IMongoCollection<CirrusContractTable> CirrusContractTable

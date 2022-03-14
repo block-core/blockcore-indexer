@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Settings;
-using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,8 +9,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
    public class CirrusMongoBuilder : MongoBuilder
    {
-      public CirrusMongoBuilder(ILogger<MongoBuilder> logger, IStorage data, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainSettings)
-         : base(logger, data, nakoConfiguration, chainSettings)
+      public CirrusMongoBuilder(ILogger<MongoBuilder> logger, IMongoDb data, IOptions<IndexerSettings> nakoConfiguration)
+         : base(logger, data, nakoConfiguration)
       {
       }
 

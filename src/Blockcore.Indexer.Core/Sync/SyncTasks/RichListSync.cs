@@ -17,7 +17,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public class RichListSync : TaskRunner
    {
-      private readonly MongoData mongoData;
+      private readonly IMongoDb db;
       private readonly ILogger<RichListSync> log;
 
       private readonly Stopwatch watch;
@@ -25,10 +25,10 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       private bool syncInProgress;
       DateTime lastSync;
 
-      public RichListSync(IOptions<IndexerSettings> configuration, ILogger<RichListSync> logger,IStorage data)
+      public RichListSync(IOptions<IndexerSettings> configuration, ILogger<RichListSync> logger,IMongoDb data)
          : base(configuration, logger)
       {
-         mongoData = (MongoData)data;
+         db = data;
          log = logger;
          watch = new Stopwatch();
       }
@@ -48,12 +48,12 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
             watch.Restart();
 
-            await mongoData.UnspentOutputTable.Aggregate()
+            await db.UnspentOutputTable.Aggregate()
                .Group(table => table.Address,
                   tables => new { Address = tables.Key, Balance = tables.Sum(table => table.Value) })
                .SortByDescending(arg => arg.Balance)
                .Limit(1000)
-               .OutAsync(mongoData.RichlistTable.CollectionNamespace.CollectionName);
+               .OutAsync(db.RichlistTable.CollectionNamespace.CollectionName);
 
             watch.Stop();
             log.LogDebug($"Finished updating rich list in {watch.Elapsed}");
@@ -182,7 +182,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             new BsonDocument("$limit", 250),
 
             //output to rich list and replace existing
-            new BsonDocument("$out", mongoData.RichlistTable.CollectionNamespace.CollectionName)
+            new BsonDocument("$out", db.RichlistTable.CollectionNamespace.CollectionName)
          };
       }
    }
