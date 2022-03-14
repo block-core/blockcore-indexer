@@ -23,7 +23,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
    {
       private readonly ICryptoClientFactory clientFactory;
       private readonly CirrusClient cirrusClient;
-      readonly CirrusMongoData cirrusMongoData;
+      readonly ICirrusMongoDb cirrusdDb;
 
       public CirrusMongoStorageOperations(
          SyncConnection syncConnection,
@@ -34,7 +34,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
          IScriptInterpeter scriptInterpeter,
          ICryptoClientFactory clientFactory,
-         IMongoDb db) :
+         ICirrusMongoDb db) :
          base(
              syncConnection,
              db,
@@ -47,7 +47,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
       {
          this.clientFactory = clientFactory;
          cirrusClient = this.clientFactory.Create(syncConnection) as CirrusClient;
-         cirrusMongoData = storage as CirrusMongoData;
+         cirrusdDb = db;
       }
 
       protected override void OnAddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
@@ -125,13 +125,13 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          var t1 = Task.Run(() =>
          {
             if (cirrusStorageBatch.CirrusContractTable.Any())
-               cirrusMongoData.CirrusContractTable.InsertMany(cirrusStorageBatch.CirrusContractTable, new InsertManyOptions { IsOrdered = false });
+               cirrusdDb.CirrusContractTable.InsertMany(cirrusStorageBatch.CirrusContractTable, new InsertManyOptions { IsOrdered = false });
          });
 
          var t2 = Task.Run(() =>
          {
             if (cirrusStorageBatch.CirrusContractCodeTable.Any())
-               cirrusMongoData.CirrusContractCodeTable.InsertMany(cirrusStorageBatch.CirrusContractCodeTable, new InsertManyOptions { IsOrdered = false });
+               cirrusdDb.CirrusContractCodeTable.InsertMany(cirrusStorageBatch.CirrusContractCodeTable, new InsertManyOptions { IsOrdered = false });
          });
 
 

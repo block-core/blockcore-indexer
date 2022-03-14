@@ -19,13 +19,13 @@ public class DaoContractAggregator : IDAOContractAggregator
    const string DaoContract = "DAOContract";
 
    readonly ILogger<DaoContractAggregator> logger;
-   readonly CirrusMongoData mongoData;
+   readonly ICirrusMongoDb db;
    readonly ILogReaderFactory logReaderFactory;
    readonly CirrusClient cirrusClient;
 
-   public DaoContractAggregator(ILogger<DaoContractAggregator> logger, ICirrusStorage mongoData, ILogReaderFactory logReaderFactory, ICryptoClientFactory clientFactory, SyncConnection connection)
+   public DaoContractAggregator(ILogger<DaoContractAggregator> logger, ICirrusMongoDb mongoData, ILogReaderFactory logReaderFactory, ICryptoClientFactory clientFactory, SyncConnection connection)
    {
-      this.mongoData = (CirrusMongoData)mongoData;
+      db = mongoData;
       this.logReaderFactory = logReaderFactory;
       this.logger = logger;
 
@@ -39,7 +39,7 @@ public class DaoContractAggregator : IDAOContractAggregator
       if (contract is null)
          return null;
 
-      var contractTransactions = await mongoData.CirrusContractTable
+      var contractTransactions = await db.CirrusContractTable
          .AsQueryable()
          .Where(_ => _.ToAddress == address && _.Success && _.BlockIndex > contract.LastProcessedBlockHeight)
          .ToListAsync();
@@ -54,14 +54,14 @@ public class DaoContractAggregator : IDAOContractAggregator
 
    async Task<DaoContractComputedTable> LookupDaoContractForAddressAsync(string address)
    {
-      DaoContractComputedTable contract = await mongoData.DaoContractComputedTable
+      DaoContractComputedTable contract = await db.DaoContractComputedTable
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
       if (contract is not null)
          return contract;
 
-      var contractCode = await mongoData.CirrusContractCodeTable
+      var contractCode = await db.CirrusContractCodeTable
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
@@ -82,7 +82,7 @@ public class DaoContractAggregator : IDAOContractAggregator
 
    private async Task<DaoContractComputedTable> CreateNewDaoContract(string address)
    {
-      var contractCreationTransaction = await mongoData.CirrusContractTable
+      var contractCreationTransaction = await db.CirrusContractTable
          .AsQueryable()
          .Where(_ => _.NewContractAddress == address)
          .SingleOrDefaultAsync();
@@ -130,7 +130,7 @@ public class DaoContractAggregator : IDAOContractAggregator
    }
 
    async Task SaveTheContractAsync(string address, DaoContractComputedTable contract) =>
-      await mongoData.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
+      await db.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
          _ => _.ContractAddress == address, contract,
          new FindOneAndReplaceOptions<DaoContractComputedTable> { IsUpsert = true },
          CancellationToken.None);

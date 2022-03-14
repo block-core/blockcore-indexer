@@ -21,6 +21,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
    public class CirrusMongoData : MongoData, ICirrusStorage
    {
       readonly IMongoDatabase mongoDatabase;
+      readonly ICirrusMongoDb db;
 
       public CirrusMongoData(
          ILogger<MongoDb> dbLogger,
@@ -32,7 +33,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          ICryptoClientFactory clientFactory,
          IScriptInterpeter scriptInterpeter,
          IMongoDatabase mongoDatabase,
-         IMongoDb db)
+         ICirrusMongoDb db)
          : base(
             dbLogger,
             connection,
@@ -45,48 +46,24 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             db)
       {
          this.mongoDatabase = mongoDatabase;
+         this.db = db;
       }
-
-      public IMongoCollection<CirrusContractTable> CirrusContractTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<CirrusContractTable>("CirrusContract");
-         }
-      }
-
-      public IMongoCollection<CirrusContractCodeTable> CirrusContractCodeTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<CirrusContractCodeTable>("CirrusContractCode");
-         }
-      }
-
-      public IMongoCollection<DaoContractComputedTable> DaoContractComputedTable
-      {
-         get
-         {
-            return mongoDatabase.GetCollection<DaoContractComputedTable>("DaoContractComputed");
-         }
-      }
-
 
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
       {
          // delete the contracts
          FilterDefinition<CirrusContractTable> contractFilter = Builders<CirrusContractTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
-         Task<DeleteResult> contracts = CirrusContractTable.DeleteManyAsync(contractFilter);
+         Task<DeleteResult> contracts = db.CirrusContractTable.DeleteManyAsync(contractFilter);
 
          FilterDefinition<CirrusContractCodeTable> contractCodeFilter = Builders<CirrusContractCodeTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
-         Task<DeleteResult> contractsCode = CirrusContractCodeTable.DeleteManyAsync(contractCodeFilter);
+         Task<DeleteResult> contractsCode = db.CirrusContractCodeTable.DeleteManyAsync(contractCodeFilter);
 
          await Task.WhenAll(contracts, contractsCode);
       }
 
       public QueryContractCreate ContractCreate(string address)
       {
-         IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
+         IMongoQueryable<CirrusContractTable> cirrusContract = db.CirrusContractTable.AsQueryable()
             .Where(q => q.NewContractAddress == address);
 
          var res = cirrusContract.ToList();
@@ -112,7 +89,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
       public QueryResult<QueryContractCall> ContractCall(string address, string filterAddress, int? offset, int limit)
       {
-         IMongoQueryable<CirrusContractTable> totalQuary = CirrusContractTable.AsQueryable()
+         IMongoQueryable<CirrusContractTable> totalQuary = db.CirrusContractTable.AsQueryable()
              .Where(q => q.ToAddress == address);
 
          if (filterAddress != null)
@@ -122,7 +99,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          int total = totalQuary.Count();
 
-         IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
+         IMongoQueryable<CirrusContractTable> cirrusContract = db.CirrusContractTable.AsQueryable()
             .Where(q => q.ToAddress == address);
 
          if (filterAddress != null)
@@ -164,7 +141,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
       public QueryContractTransaction ContractTransaction(string transacitonId)
       {
-         IMongoQueryable<CirrusContractTable> cirrusContract = CirrusContractTable.AsQueryable()
+         IMongoQueryable<CirrusContractTable> cirrusContract = db.CirrusContractTable.AsQueryable()
             .Where(q => q.TransactionId == transacitonId);
 
          var res = cirrusContract.ToList();
@@ -194,7 +171,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
       public QueryContractCode ContractCode(string address)
       {
-         IMongoQueryable<CirrusContractCodeTable> cirrusContractCode = CirrusContractCodeTable.AsQueryable()
+         IMongoQueryable<CirrusContractCodeTable> cirrusContractCode = db.CirrusContractCodeTable.AsQueryable()
             .Where(q => q.ContractAddress == address);
 
          var res = cirrusContractCode.ToList();
