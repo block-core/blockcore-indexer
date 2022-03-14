@@ -27,5 +27,6 @@ class ExecuteProposalLogReader : ILogReader
 
       proposal.WasProposalAccepted = true;
       proposal.ProposalCompletedAtBlock = contractTransaction.BlockIndex;
+      proposal.PayoutTransactionId = contractTransaction.TransactionId;
    }
 }

@@ -34,27 +34,10 @@ public class DaoContractAggregator : IDAOContractAggregator
 
    public async Task<DaoContractComputedTable> ComputeDaoContractForAddressAsync(string address)
    {
-      var contract = await mongoData.DaoContractComputedTable
-         .AsQueryable()
-         .SingleOrDefaultAsync(_ => _.ContractAddress == address);
+      var contract = await LookupDaoContractForAddressAsync(address);
 
-       if (contract is null)
-      {
-         var contractCode = await mongoData.CirrusContractCodeTable
-            .AsQueryable()
-            .SingleOrDefaultAsync(_ => _.ContractAddress == address);
-
-         if (contractCode is null || contractCode.CodeType != DaoContract)
-         {
-            logger.LogInformation($"Request to compute DAO contract for address {address} which was not found in the contract code table");
-            return null;
-         }
-
-         contract = await CreateNewDaoContract(address);
-
-         if (contract is null)
-            throw new ArgumentNullException($"Contract not found in the contract table for address {address}");
-      }
+      if (contract is null)
+         return null;
 
       var contractTransactions = await mongoData.CirrusContractTable
          .AsQueryable()
@@ -65,6 +48,34 @@ public class DaoContractAggregator : IDAOContractAggregator
       {
          await AddNewTransactionsDataToDocumentAsync(address, contractTransactions, contract);
       }
+
+      return contract;
+   }
+
+   async Task<DaoContractComputedTable> LookupDaoContractForAddressAsync(string address)
+   {
+      DaoContractComputedTable contract = await mongoData.DaoContractComputedTable
+         .AsQueryable()
+         .SingleOrDefaultAsync(_ => _.ContractAddress == address);
+
+      if (contract is not null)
+         return contract;
+
+      var contractCode = await mongoData.CirrusContractCodeTable
+         .AsQueryable()
+         .SingleOrDefaultAsync(_ => _.ContractAddress == address);
+
+      if (contractCode is null || contractCode.CodeType != DaoContract)
+      {
+         logger.LogInformation(
+            $"Request to compute DAO contract for address {address} which was not found in the contract code table");
+         return null;
+      }
+
+      contract = await CreateNewDaoContract(address);
+
+      if (contract is null)
+         throw new ArgumentNullException($"Contract not found in the contract table for address {address}");
 
       return contract;
    }
@@ -85,10 +96,7 @@ public class DaoContractAggregator : IDAOContractAggregator
          LastProcessedBlockHeight = contractCreationTransaction.BlockIndex
       };
 
-      await mongoData.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
-         _ => _.ContractAddress == address, contract,
-         new FindOneAndReplaceOptions<DaoContractComputedTable> { IsUpsert = true },
-         CancellationToken.None);
+      await SaveTheContractAsync(address, contract);
 
       return contract;
    }
@@ -118,9 +126,12 @@ public class DaoContractAggregator : IDAOContractAggregator
          contract.LastProcessedBlockHeight = contractTransaction.BlockIndex;
       }
 
+      await SaveTheContractAsync(address, contract);
+   }
+
+   async Task SaveTheContractAsync(string address, DaoContractComputedTable contract) =>
       await mongoData.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
          _ => _.ContractAddress == address, contract,
          new FindOneAndReplaceOptions<DaoContractComputedTable> { IsUpsert = true },
          CancellationToken.None);
-   }
 }

@@ -11,6 +11,6 @@ public class DaoContractProposal
    public bool WasProposalAccepted { get; set; }
    public long ProposalStartedAtBlock { get; set; }
    public long ProposalCompletedAtBlock { get; set; }
-
+   public string PayoutTransactionId { get; set; }
    public List<DaoContractVoteDetails> Votes { get; set; }
 }

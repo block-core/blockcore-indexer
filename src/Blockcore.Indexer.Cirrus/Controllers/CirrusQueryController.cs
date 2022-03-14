@@ -73,16 +73,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         // if (requestsThrottle.IsRequestInProgress(nameof(GetDaoContractByAddress),address)) //TODO change this to an attribute to add on the method
-         // {
-         //    return Accepted();
-         // }
-
-         //requestsThrottle.AddRequestInProgress(nameof(GetDaoContractByAddress),address);
-
          var contract = await DaoContractAggregator.ComputeDaoContractForAddressAsync(address);
-
-         //requestsThrottle.RemoveCompletedRequest(nameof(GetDaoContractByAddress),address);
 
          if (contract is null)
          {

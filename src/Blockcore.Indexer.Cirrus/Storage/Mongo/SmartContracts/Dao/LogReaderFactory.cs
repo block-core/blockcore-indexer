@@ -13,5 +13,13 @@ public class LogReaderFactory : ILogReaderFactory
    }
 
    public ILogReader GetLogReader(string methodName)
-      => readers.FirstOrDefault(_ => _.CanReadLogForMethodType(methodName));
+   {
+      foreach (var reader in readers)
+      {
+         if (reader.CanReadLogForMethodType(methodName))
+            return reader;
+      }
+
+      return null;
+   }
 }
