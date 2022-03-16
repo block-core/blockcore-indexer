@@ -16,12 +16,16 @@ public class DaoContractAggregatorTests
 {
    DaoContractAggregator sut;
 
+   CirrusMongoDbMock mongoDbMock;
+
    static Random Random = new();
    private static string NewRandomString => Guid.NewGuid().ToString();
    private static int NewRandomInt32 => Random.Next();
 
    public DaoContractAggregatorTests()
    {
+      mongoDbMock = new CirrusMongoDbMock();
+
       var indexSettingsMock = new Mock<IOptions<IndexerSettings>>();
 
       var indexSettings = new IndexerSettings
@@ -53,7 +57,7 @@ public class DaoContractAggregatorTests
          chainSetting.Object, networkSettings.Object);
 
 
-      sut = new DaoContractAggregator(null, new Mock<ICirrusMongoDb>().Object,
+      sut = new DaoContractAggregator(null, mongoDbMock.CirrusMongoDbObject,
          new Mock<ILogReaderFactory>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection);
    }
 
