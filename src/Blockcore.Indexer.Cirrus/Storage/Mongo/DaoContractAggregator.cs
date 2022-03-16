@@ -93,6 +93,7 @@ public class DaoContractAggregator : IDAOContractAggregator
       var contract = new DaoContractComputedTable
       {
          ContractAddress = contractCreationTransaction.NewContractAddress,
+         ContractCreateTransactionId = contractCreationTransaction.TransactionId,
          LastProcessedBlockHeight = contractCreationTransaction.BlockIndex
       };
 
