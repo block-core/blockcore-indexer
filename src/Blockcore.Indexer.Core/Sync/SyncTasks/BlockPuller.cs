@@ -231,11 +231,13 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          }
       }
 
-      private static Task<string> NextHashAsync(IBlockchainClient client, long height)
+      private static async Task<string> NextHashAsync(IBlockchainClient client, long height)
       {
          try
          {
-            return client.GetblockHashAsync(height);
+            string blockHash = await client.GetblockHashAsync(height);
+
+            return blockHash;
          }
          catch (Exception e)
          {
