@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Blockcore.Consensus;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Operations.Types;

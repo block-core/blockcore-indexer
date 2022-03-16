@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo;
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 public interface IDAOContractAggregator
 {

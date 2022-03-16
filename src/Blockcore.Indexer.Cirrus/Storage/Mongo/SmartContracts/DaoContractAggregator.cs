@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo;
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 public class DaoContractAggregator : IDAOContractAggregator
 {
