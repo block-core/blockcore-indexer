@@ -70,7 +70,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             await data.InsertPeer(peer);
          }
 
-         log.LogDebug($"Time taken to update peers in database: {watch.Elapsed.TotalSeconds}.");
+         log.LogInformation($"Time taken to update peers in database: {watch.Elapsed.TotalSeconds}.");
 
          return await Task.FromResult(false);
       }
