@@ -10,8 +10,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
    public class CirrusMongoBuilder : MongoBuilder
    {
-      public CirrusMongoBuilder(ILogger<MongoBuilder> logger, IStorage data, IOptions<IndexerSettings> nakoConfiguration)
-         : base(logger, data, nakoConfiguration)
+      public CirrusMongoBuilder(ILogger<MongoBuilder> logger, IStorage data, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainSettings)
+         : base(logger, data, nakoConfiguration, chainSettings)
       {
       }
 

@@ -110,7 +110,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             Runner.GlobalState.PullingTip = await clientFactory.Create(syncConnection).GetBlockAsync(Runner.GlobalState.StoreTip.BlockHash);
             currentStorageBatch = new StorageBatch();
 
-            log.LogDebug($"Fetching block started at block {Runner.GlobalState.PullingTip.Height}({Runner.GlobalState.PullingTip.Hash})");
+            log.LogInformation($"Fetching block started at block {Runner.GlobalState.PullingTip.Height}({Runner.GlobalState.PullingTip.Hash})");
          }
 
          if (collectionProcessor.IsFaulted)
@@ -145,7 +145,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
             if (block.Result.BlockInfo.PreviousBlockHash != previousBlockHash)
             {
-               log.LogDebug($"Reorg detected on block = {Runner.GlobalState.PullingTip.Height} - ({Runner.GlobalState.PullingTip.Hash})");
+               log.LogInformation($"Reorg detected on block = {Runner.GlobalState.PullingTip.Height} - ({Runner.GlobalState.PullingTip.Hash})");
 
                // reorgs are sorted at the store task
                drainBlockingCollection = true;
@@ -222,7 +222,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             double blocksPerSecond = totalBlocks / totalSeconds;
             double secondsPerBlock = totalSeconds / totalBlocks;
 
-            log.LogDebug($"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {block.BlockInfo.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b). ({pendingBlocksToAddToStorage.Count})");
+            log.LogInformation($"Puller - blocks={currentStorageBatch.BlockTable.Count}, height = {block.BlockInfo.Height}, batch size = {((decimal)currentStorageBatch.TotalSize / 1000000):0.00}mb, Seconds = {watchBatch.Elapsed.TotalSeconds}, fetchs = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b). ({pendingBlocksToAddToStorage.Count})");
 
             Runner.Get<BlockStore>().Enqueue(currentStorageBatch);
             currentStorageBatch = new StorageBatch();
@@ -231,11 +231,13 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          }
       }
 
-      private static Task<string> NextHashAsync(IBlockchainClient client, long height)
+      private static async Task<string> NextHashAsync(IBlockchainClient client, long height)
       {
          try
          {
-            return client.GetblockHashAsync(height);
+            string blockHash = await client.GetblockHashAsync(height);
+
+            return blockHash;
          }
          catch (Exception e)
          {

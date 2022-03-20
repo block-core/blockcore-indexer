@@ -1,6 +1,7 @@
-## <small>0.2.30 (2022-03-20)</small>
+## <small>0.2.31 (2022-03-20)</small>
 
 * Better display of Indexer UI (#122) ([34c8186](https://github.com/block-core/blockcore-indexer/commit/34c8186)), closes [#122](https://github.com/block-core/blockcore-indexer/issues/122)
+* Update version and changelog ([2c18e81](https://github.com/block-core/blockcore-indexer/commit/2c18e81))
 * Update version and changelog ([0e2a3fa](https://github.com/block-core/blockcore-indexer/commit/0e2a3fa))
 
 

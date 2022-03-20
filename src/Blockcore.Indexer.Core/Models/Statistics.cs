@@ -75,6 +75,8 @@ namespace Blockcore.Indexer.Core.Models
 
       public long CoinbaseMaturity { get; set; }
 
+      public uint MaxReorgLength { get; set; }
+
       public bool IsProofOfStake { get; set; }
 
       public long MaxMoney { get; set; }

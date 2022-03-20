@@ -85,7 +85,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             string genesisHash = await client.GetblockHashAsync(start);
 
 
-            log.LogDebug($"Processing genesis hash = {genesisHash}");
+            log.LogInformation($"Processing genesis hash = {genesisHash}");
 
             BlockInfo genesisBlock = await client.GetBlockAsync(genesisHash);
             SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(connection, genesisBlock);
