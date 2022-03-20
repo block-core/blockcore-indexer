@@ -1,7 +1,15 @@
 ## <small>0.2.31 (2022-03-20)</small>
 
+* return correct conf count for trx api call (#125) ([aa88a8d](https://github.com/block-core/blockcore-indexer/commit/aa88a8d)), closes [#125](https://github.com/block-core/blockcore-indexer/issues/125)
+
+
+
+## <small>0.2.30 (2022-03-17)</small>
+
+* Add max reorg to info api (#119) ([a4f3c05](https://github.com/block-core/blockcore-indexer/commit/a4f3c05)), closes [#119](https://github.com/block-core/blockcore-indexer/issues/119)
+* Add more logs as information (#121) ([b22232b](https://github.com/block-core/blockcore-indexer/commit/b22232b)), closes [#121](https://github.com/block-core/blockcore-indexer/issues/121)
 * Better display of Indexer UI (#122) ([34c8186](https://github.com/block-core/blockcore-indexer/commit/34c8186)), closes [#122](https://github.com/block-core/blockcore-indexer/issues/122)
-* Update version and changelog ([2c18e81](https://github.com/block-core/blockcore-indexer/commit/2c18e81))
+* Update version and changelog ([7be3a79](https://github.com/block-core/blockcore-indexer/commit/7be3a79))
 * Update version and changelog ([0e2a3fa](https://github.com/block-core/blockcore-indexer/commit/0e2a3fa))
 
 
