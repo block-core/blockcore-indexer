@@ -311,7 +311,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             BlockHash = blk.BlockHash,
             Timestamp = blk.BlockTime,
             TransactionHash = trx.TransactionId,
-            Confirmations = current.BlockIndex - trx.BlockIndex
+            Confirmations = current.BlockIndex + 1 - trx.BlockIndex
          };
       }
 
