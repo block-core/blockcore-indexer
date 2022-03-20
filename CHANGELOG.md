@@ -1,3 +1,10 @@
+## <small>0.2.30 (2022-03-20)</small>
+
+* Better display of Indexer UI (#122) ([34c8186](https://github.com/block-core/blockcore-indexer/commit/34c8186)), closes [#122](https://github.com/block-core/blockcore-indexer/issues/122)
+* Update version and changelog ([0e2a3fa](https://github.com/block-core/blockcore-indexer/commit/0e2a3fa))
+
+
+
 ## <small>0.2.29 (2022-03-04)</small>
 
 * Add an index on the trxs in a block (#110) ([deb83f1](https://github.com/block-core/blockcore-indexer/commit/deb83f1)), closes [#110](https://github.com/block-core/blockcore-indexer/issues/110)
