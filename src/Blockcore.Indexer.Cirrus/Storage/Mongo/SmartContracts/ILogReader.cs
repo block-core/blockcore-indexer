@@ -1,7 +1,7 @@
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 public interface ILogReader<in T> where T : SmartContractComputedBase
 {

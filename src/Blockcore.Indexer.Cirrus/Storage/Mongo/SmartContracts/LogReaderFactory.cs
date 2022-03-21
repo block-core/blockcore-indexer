@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 public class LogReaderFactory<T> : ILogReaderFactory<T>
    where T : SmartContractComputedBase

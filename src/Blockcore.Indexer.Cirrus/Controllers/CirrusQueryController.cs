@@ -19,17 +19,19 @@ namespace Blockcore.Indexer.Cirrus.Controllers
    {
       private readonly IPagingHelper paging;
       private readonly ICirrusStorage cirrusMongoData;
-      readonly IComputeSmartContractService<DaoContractComputedTable> DaoContractAggregator;
+      readonly IComputeSmartContractService<DaoContractComputedTable> daoContractService;
+      readonly IComputeSmartContractService<StandardTokenComputedTable> standardTokenService;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
       public CirrusQueryController(IPagingHelper paging,
-         IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData)
+         IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenComputedTable> standardTokenService)
       {
          this.paging = paging;
-         DaoContractAggregator = daoContractAggregator;
+         this.daoContractService = daoContractAggregator;
          this.cirrusMongoData = cirrusMongoData;
+         this.standardTokenService = standardTokenService;
       }
 
       [HttpGet]
@@ -72,7 +74,22 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await DaoContractAggregator.ComputeSmartContractForAddressAsync(address);
+         var contract = await daoContractService.ComputeSmartContractForAddressAsync(address);
+
+         if (contract is null)
+         {
+            return NotFound();
+         }
+
+         return Ok(contract);
+      }
+
+      [HttpGet]
+      [Route("contract/StandardToken/{address}")]
+      [SlowRequestsFilteerAttribute]
+      public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
+      {
+         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
 
          if (contract is null)
          {

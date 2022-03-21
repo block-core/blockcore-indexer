@@ -25,6 +25,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          SetDocumentMapAndIgnoreExtraElements<CirrusContractTable>();
          SetDocumentMapAndIgnoreExtraElements<CirrusContractCodeTable>();
+         SetDocumentMapAndIgnoreExtraElements<StandardTokenComputedTable>();
 
          if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(DaoContractComputedTable)))
          {
