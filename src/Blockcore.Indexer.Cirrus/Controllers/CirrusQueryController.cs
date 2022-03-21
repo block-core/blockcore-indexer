@@ -70,7 +70,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("contract/Dao/{address}")]
+      [Route("contract/dao/{address}")]
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
