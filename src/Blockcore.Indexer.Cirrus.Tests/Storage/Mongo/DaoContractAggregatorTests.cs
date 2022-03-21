@@ -62,7 +62,7 @@ public class DaoContractAggregatorTests
          new Mock<ILogReaderFactory>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection);
    }
 
-   [Fact]
+   //[Fact]
    public async Task WhenTheContractIsNotFountAnTheTrandactionIsNotFoundReturnsNull()
    {
       var result = await sut.ComputeDaoContractForAddressAsync(Guid.NewGuid().ToString());
