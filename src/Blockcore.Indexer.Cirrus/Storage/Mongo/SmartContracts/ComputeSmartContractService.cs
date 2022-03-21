@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Client;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Operations.Types;
