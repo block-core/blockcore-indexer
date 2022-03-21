@@ -1,18 +1,16 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Blockcore.Indexer.Cirrus.Client;
 using Blockcore.Indexer.Cirrus.Crypto;
 using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
-using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
@@ -22,7 +20,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Newtonsoft.Json;
 
 namespace Blockcore.Indexer.Cirrus
 {
@@ -66,9 +63,23 @@ namespace Blockcore.Indexer.Cirrus
             .AddControllersAsServices();
 
          services.AddTransient(typeof(IComputeSmartContractService<>),typeof(ComputeSmartContractService<>));
-         services.AddTransient<ILogReaderFactory, LogReaderFactory>();
+         services.AddTransient(typeof(ILogReaderFactory<>),typeof(LogReaderFactory<>));
 
-         ScanAssemblyAndRegisterTypeByNameAsTransient(services,typeof(ILogReader<>),typeof(ILogReader<>).Assembly);
+         RegisterLogReaders(services);
+      }
+
+      private static IServiceCollection RegisterLogReaders(IServiceCollection collection)
+      {
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, WhitelistAddressesLogReader>();
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, BlacklistAddressesLogReader>();
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, CreateProposalLogReader>();
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, DepositLogReader>();
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, ExecuteProposalLogReader>();
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, GetOrPropertyCallsLogReader>();
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, UpdateMaxVotingDurationLogReader>();
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, UpdateMinVotingDurationLogReader>();
+         collection.AddTransient<ILogReader<DaoContractComputedTable>, VoteLogReader>();
+         return collection;
       }
 
       private static void ScanAssemblyAndRegisterTypeByNameAsTransient(IServiceCollection services, Type typeToRegister, Assembly assembly)
@@ -80,7 +91,7 @@ namespace Blockcore.Indexer.Cirrus
 
          foreach (var implementation in implementations)
          {
-            services.AddSingleton(implementation.Interface, implementation.ImplementationType);
+            services.AddTransient(implementation.Interface, implementation.ImplementationType);
          }
       }
 

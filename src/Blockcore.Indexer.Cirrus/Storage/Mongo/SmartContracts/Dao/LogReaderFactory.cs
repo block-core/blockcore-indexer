@@ -4,17 +4,17 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-public class LogReaderFactory : ILogReaderFactory
+public class LogReaderFactory<T> : ILogReaderFactory<T>
+   where T : SmartContractComputedBase
 {
-   readonly List<ILogReader<SmartContractComputedBase>> readers;
+   readonly List<ILogReader<T>> readers;
 
-   public LogReaderFactory(IEnumerable<ILogReader<SmartContractComputedBase>> readers)
+   public LogReaderFactory(IEnumerable<ILogReader<T>> readers)
    {
       this.readers = readers.ToList();
    }
 
-   public ILogReader<Tconcrete> GetLogReader<Tconcrete>(string methodName)
-      where Tconcrete : SmartContractComputedBase
+   public ILogReader<T> GetLogReader(string methodName)
    {
       foreach (var reader in readers)
       {

@@ -18,22 +18,23 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
 {
    readonly ILogger<ComputeSmartContractService<T>> logger;
    readonly ICirrusMongoDb mongoDb;
-   readonly ILogReaderFactory logReaderFactory;
+   readonly ILogReaderFactory<T> logReaderFactory;
    readonly CirrusClient cirrusClient;
-
-   readonly IMongoCollection<T> collection;
+   readonly IMongoDatabase mongoDatabase;
 
    readonly T emptyContract;
 
    public ComputeSmartContractService(ILogger<ComputeSmartContractService<T>> logger,
       ICirrusMongoDb mongoData,
-      ILogReaderFactory logReaderFactory,
+      ILogReaderFactory<T> logReaderFactory,
       ICryptoClientFactory clientFactory,
-      SyncConnection connection)
+      SyncConnection connection,
+      IMongoDatabase mongoDatabase)
    {
       mongoDb = mongoData;
       this.logger = logger;
       this.logReaderFactory = logReaderFactory;
+      this.mongoDatabase = mongoDatabase;
       cirrusClient = (CirrusClient)clientFactory.Create(connection);
       emptyContract = new T();
    }
@@ -60,7 +61,7 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
 
    async Task<T> LookupSmartContractForAddressAsync(string address)
    {
-      T contract = await collection
+      T contract = await mongoDatabase.GetCollection<T>(typeof(T).Name)
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
@@ -113,7 +114,7 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
    {
       foreach (var contractTransaction in contractTransactions)
       {
-         var reader = logReaderFactory.GetLogReader<T>(contractTransaction.MethodName);
+         var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
 
          if (reader is null)
          {
@@ -137,8 +138,8 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
    }
 
    async Task SaveTheContractAsync(string address, T contract) =>
-      await collection.FindOneAndReplaceAsync<T>(
-         _ => _.ContractAddress == address, contract,
+      await mongoDatabase.GetCollection<T>(typeof(T).Name)
+         .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
          new FindOneAndReplaceOptions<T> { IsUpsert = true },
          CancellationToken.None);
 }

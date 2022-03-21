@@ -9,6 +9,7 @@ using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using Moq;
 using Xunit;
 
@@ -60,7 +61,8 @@ public class DaoContractAggregatorTests
 
 
       sut = new ComputeSmartContractService<DaoContractComputedTable>(null, mongoDbMock.CirrusMongoDbObject,
-         new Mock<ILogReaderFactory>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection);
+         new Mock<ILogReaderFactory<DaoContractComputedTable>>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection,
+         Mock.Of<IMongoDatabase>());
    }
 
    //[Fact]
