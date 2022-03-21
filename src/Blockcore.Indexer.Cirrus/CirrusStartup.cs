@@ -65,10 +65,10 @@ namespace Blockcore.Indexer.Cirrus
             .AddApplicationPart(typeof(Startup).Assembly)
             .AddControllersAsServices();
 
-         services.AddTransient<IDAOContractAggregator, DaoContractAggregator>();
+         services.AddTransient(typeof(IComputeSmartContractService<>),typeof(ComputeSmartContractService<>));
          services.AddTransient<ILogReaderFactory, LogReaderFactory>();
 
-        ScanAssemblyAndRegisterTypeByNameAsTransient(services,typeof(ILogReader),typeof(ILogReader).Assembly);
+         ScanAssemblyAndRegisterTypeByNameAsTransient(services,typeof(ILogReader<>),typeof(ILogReader<>).Assembly);
       }
 
       private static void ScanAssemblyAndRegisterTypeByNameAsTransient(IServiceCollection services, Type typeToRegister, Assembly assembly)

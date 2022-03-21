@@ -3,7 +3,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-public interface ILogReader
+public interface ILogReader<in T> where T : SmartContractComputedBase
 {
    bool CanReadLogForMethodType(string methodType);
    bool IsTransactionLogComplete(LogResponse[] logs);

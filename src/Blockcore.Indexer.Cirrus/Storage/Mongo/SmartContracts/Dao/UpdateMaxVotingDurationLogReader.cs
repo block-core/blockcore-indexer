@@ -5,7 +5,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class UpdateMaxVotingDurationLogReader : ILogReader
+class UpdateMaxVotingDurationLogReader : ILogReader<DaoContractComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "UpdateMaxVotingDuration";
 

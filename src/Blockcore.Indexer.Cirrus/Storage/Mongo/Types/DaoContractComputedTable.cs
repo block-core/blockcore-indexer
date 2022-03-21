@@ -2,16 +2,14 @@ using System.Collections.Generic;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-public class DaoContractComputedTable
+public class DaoContractComputedTable : SmartContractComputedBase
 {
-   public string ContractAddress { get; set; }
+   public override string ContractType { get; } = "DAOContract";
+
    public long CurrentAmount { get; set; }
    public long MaxVotingDuration { get; set; }
    public long MinVotingDuration { get; set; }
    public long WhitelistedCount { get; set; }
-
-   public string ContractCreateTransactionId { get; set; }
-   public long LastProcessedBlockHeight { get; set; }
 
    public List<DaoContractProposal> Proposals { get; set; }
 

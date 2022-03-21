@@ -1,11 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage;
-using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Paging;
-using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,19 +18,18 @@ namespace Blockcore.Indexer.Cirrus.Controllers
    public class CirrusQueryController : Controller
    {
       private readonly IPagingHelper paging;
-      private readonly IStorage storage;
       private readonly ICirrusStorage cirrusMongoData;
-      readonly IDAOContractAggregator DaoContractAggregator;
+      readonly IComputeSmartContractService<DaoContractComputedTable> DaoContractAggregator;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
-      public CirrusQueryController(IPagingHelper paging, IStorage storage, IDAOContractAggregator daoContractAggregator)
+      public CirrusQueryController(IPagingHelper paging,
+         IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData)
       {
          this.paging = paging;
-         this.storage = storage;
          DaoContractAggregator = daoContractAggregator;
-         cirrusMongoData = storage as CirrusMongoData;
+         this.cirrusMongoData = cirrusMongoData;
       }
 
       [HttpGet]
@@ -74,7 +72,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await DaoContractAggregator.ComputeDaoContractForAddressAsync(address);
+         var contract = await DaoContractAggregator.ComputeSmartContractForAddressAsync(address);
 
          if (contract is null)
          {

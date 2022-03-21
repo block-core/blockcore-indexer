@@ -1,18 +1,20 @@
 using System.Collections.Generic;
 using System.Linq;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
 public class LogReaderFactory : ILogReaderFactory
 {
-   readonly List<ILogReader> readers;
+   readonly List<ILogReader<SmartContractComputedBase>> readers;
 
-   public LogReaderFactory(IEnumerable<ILogReader> readers)
+   public LogReaderFactory(IEnumerable<ILogReader<SmartContractComputedBase>> readers)
    {
       this.readers = readers.ToList();
    }
 
-   public ILogReader GetLogReader(string methodName)
+   public ILogReader<Tconcrete> GetLogReader<Tconcrete>(string methodName)
+      where Tconcrete : SmartContractComputedBase
    {
       foreach (var reader in readers)
       {

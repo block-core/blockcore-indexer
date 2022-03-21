@@ -1,11 +1,10 @@
-using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class WhitelistAddressesLogReader : ILogReader
+class WhitelistAddressesLogReader : ILogReader<DaoContractComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType is "WhitelistAddresses" or "WhitelistAddress";
 

@@ -4,6 +4,7 @@ using Blockcore.Consensus;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
@@ -15,7 +16,7 @@ namespace Blockcore.Indexer.Cirrus.Tests.Storage.Mongo;
 
 public class DaoContractAggregatorTests
 {
-   DaoContractAggregator sut;
+   ComputeSmartContractService<DaoContractComputedTable> sut;
 
    CirrusMongoDbMock mongoDbMock;
 
@@ -58,14 +59,14 @@ public class DaoContractAggregatorTests
          chainSetting.Object, networkSettings.Object);
 
 
-      sut = new DaoContractAggregator(null, mongoDbMock.CirrusMongoDbObject,
+      sut = new ComputeSmartContractService<DaoContractComputedTable>(null, mongoDbMock.CirrusMongoDbObject,
          new Mock<ILogReaderFactory>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection);
    }
 
    //[Fact]
    public async Task WhenTheContractIsNotFountAnTheTrandactionIsNotFoundReturnsNull()
    {
-      var result = await sut.ComputeDaoContractForAddressAsync(Guid.NewGuid().ToString());
+      var result = await sut.ComputeSmartContractForAddressAsync(Guid.NewGuid().ToString());
 
 
       Assert.Null(result);
