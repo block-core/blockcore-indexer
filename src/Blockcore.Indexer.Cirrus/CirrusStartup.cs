@@ -63,35 +63,32 @@ namespace Blockcore.Indexer.Cirrus
             .AddControllersAsServices();
 
          services.AddTransient(typeof(IComputeSmartContractService<>),typeof(ComputeSmartContractService<>));
-         services.AddTransient(typeof(ILogReaderFactory<>),typeof(LogReaderFactory<>));
+         services.AddTransient(typeof(ISmartContractHandlersFactory<>),typeof(SmartContractHandlersFactory<>));
 
          ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<DaoContractComputedTable>),
             typeof(ILogReader<>).Assembly);
 
          ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<StandardTokenComputedTable>),
             typeof(ILogReader<>).Assembly);
+
+         RegisterSmartContractBuilder(services); //No need to scan the assembly as there won't be that many
       }
 
-      // private static IServiceCollection RegisterLogReaders(IServiceCollection collection)
-      // {
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, WhitelistAddressesLogReader>();
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, BlacklistAddressesLogReader>();
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, CreateProposalLogReader>();
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, DepositLogReader>();
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, ExecuteProposalLogReader>();
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, GetOrPropertyCallsLogReader>();
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, UpdateMaxVotingDurationLogReader>();
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, UpdateMinVotingDurationLogReader>();
-      //    collection.AddTransient<ILogReader<DaoContractComputedTable>, VoteLogReader>();
-      //    return collection;
-      // }
+      private static IServiceCollection RegisterSmartContractBuilder(IServiceCollection collection)
+      {
+         collection.AddTransient<ISmartContractBuilder<DaoContractComputedTable>, DaoSmartContractBuilder>();
+         collection.AddTransient<ISmartContractBuilder<StandardTokenComputedTable>, StandardTokenSmartContractBuilder>();
+         return collection;
+      }
 
       private static void ScanAssemblyAndRegisterTypeByNameAsTransient(IServiceCollection services, Type typeToRegister, Assembly assembly)
       {
          // Discovers and registers all type implementation in this assembly.
          var implementations = from type in assembly.GetTypes()
             where type.GetInterface(typeToRegister.Name) != null &&
-                  type.GetGenericArguments().Equals(typeToRegister.GetGenericArguments())
+                  type.GetInterface(typeToRegister.Name)
+                     .GetGenericArguments()
+                     .SequenceEqual(typeToRegister.GetGenericArguments())
             select new { Interface = typeToRegister, ImplementationType = type };
 
          foreach (var implementation in implementations)

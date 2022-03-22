@@ -18,21 +18,21 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
 {
    readonly ILogger<ComputeSmartContractService<T>> logger;
    readonly ICirrusMongoDb mongoDb;
-   readonly ILogReaderFactory<T> logReaderFactory;
+   readonly ISmartContractHandlersFactory<T> logReaderFactory;
    readonly CirrusClient cirrusClient;
    readonly IMongoDatabase mongoDatabase;
 
    readonly T emptyContract;
 
    public ComputeSmartContractService(ILogger<ComputeSmartContractService<T>> logger,
-      ICirrusMongoDb mongoData,
-      ILogReaderFactory<T> logReaderFactory,
+      ICirrusMongoDb db,
+      ISmartContractHandlersFactory<T> logReaderFactory,
       ICryptoClientFactory clientFactory,
       SyncConnection connection,
       IMongoDatabase mongoDatabase)
    {
-      mongoDb = mongoData;
       this.logger = logger;
+      mongoDb = db;
       this.logReaderFactory = logReaderFactory;
       this.mongoDatabase = mongoDatabase;
       cirrusClient = (CirrusClient)clientFactory.Create(connection);
@@ -97,12 +97,9 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
       if (contractCreationTransaction is null)
          throw new ArgumentNullException(nameof(contractCreationTransaction));
 
-      var contract = new T
-      {
-         ContractAddress = contractCreationTransaction.NewContractAddress,
-         ContractCreateTransactionId = contractCreationTransaction.TransactionId,
-         LastProcessedBlockHeight = contractCreationTransaction.BlockIndex
-      };
+      var builder = logReaderFactory.GetSmartContractBuilder(contractCreationTransaction.ContractCodeType);
+
+      var contract = builder.BuildSmartContract(contractCreationTransaction);
 
       await SaveTheContractAsync(address, contract);
 
