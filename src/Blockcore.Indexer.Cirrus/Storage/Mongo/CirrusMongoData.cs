@@ -46,7 +46,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             db)
       {
          this.mongoDatabase = mongoDatabase;
-         this.mongoDb = db;
+         mongoDb = db;
       }
 
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
