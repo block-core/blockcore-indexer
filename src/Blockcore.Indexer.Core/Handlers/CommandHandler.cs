@@ -49,11 +49,8 @@ namespace Blockcore.Indexer.Core.Handlers
          catch (Exception ex)
          {
             log.LogDebug($"Invalid trx received {ex.Message}");
-            return string.Empty;
+            throw;
          }
-
-         if (trx == null)
-            return string.Empty;
 
          try
          {
