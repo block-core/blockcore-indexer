@@ -19,13 +19,13 @@ public class DaoContractAggregator : IDAOContractAggregator
    const string DaoContract = "DAOContract";
 
    readonly ILogger<DaoContractAggregator> logger;
-   readonly ICirrusMongoDb db;
+   readonly ICirrusMongoDb mongoDb;
    readonly ILogReaderFactory logReaderFactory;
    readonly CirrusClient cirrusClient;
 
    public DaoContractAggregator(ILogger<DaoContractAggregator> logger, ICirrusMongoDb mongoData, ILogReaderFactory logReaderFactory, ICryptoClientFactory clientFactory, SyncConnection connection)
    {
-      db = mongoData;
+      mongoDb = mongoData;
       this.logReaderFactory = logReaderFactory;
       this.logger = logger;
 
@@ -39,7 +39,7 @@ public class DaoContractAggregator : IDAOContractAggregator
       if (contract is null)
          return null;
 
-      var contractTransactions = await db.CirrusContractTable
+      var contractTransactions = await mongoDb.CirrusContractTable
          .AsQueryable()
          .Where(_ => _.ToAddress == address && _.Success && _.BlockIndex > contract.LastProcessedBlockHeight)
          .ToListAsync();
@@ -54,14 +54,14 @@ public class DaoContractAggregator : IDAOContractAggregator
 
    async Task<DaoContractComputedTable> LookupDaoContractForAddressAsync(string address)
    {
-      DaoContractComputedTable contract = await db.DaoContractComputedTable
+      DaoContractComputedTable contract = await mongoDb.DaoContractComputedTable
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
       if (contract is not null)
          return contract;
 
-      var contractCode = await db.CirrusContractCodeTable
+      var contractCode = await mongoDb.CirrusContractCodeTable
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
@@ -82,7 +82,7 @@ public class DaoContractAggregator : IDAOContractAggregator
 
    private async Task<DaoContractComputedTable> CreateNewDaoContract(string address)
    {
-      var contractCreationTransaction = await db.CirrusContractTable
+      var contractCreationTransaction = await mongoDb.CirrusContractTable
          .AsQueryable()
          .Where(_ => _.NewContractAddress == address)
          .SingleOrDefaultAsync();
@@ -111,11 +111,11 @@ public class DaoContractAggregator : IDAOContractAggregator
 
          if (reader is null)
          {
-            Console.WriteLine(contractTransaction.MethodName);
+            logger.LogInformation($"No reader found for method {contractTransaction.MethodName} on transaction id - {contractTransaction.TransactionId}");
             continue; //TODO need to verify this is the right way to go
          }
 
-         if (!reader.IsTheTransactionLogComplete(contractTransaction.Logs))
+         if (!reader.IsTransactionLogComplete(contractTransaction.Logs))
          {
             var result = await cirrusClient.GetContractInfoAsync(contractTransaction.TransactionId);
 
@@ -131,7 +131,7 @@ public class DaoContractAggregator : IDAOContractAggregator
    }
 
    async Task SaveTheContractAsync(string address, DaoContractComputedTable contract) =>
-      await db.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
+      await mongoDb.DaoContractComputedTable.FindOneAndReplaceAsync<DaoContractComputedTable>(
          _ => _.ContractAddress == address, contract,
          new FindOneAndReplaceOptions<DaoContractComputedTable> { IsUpsert = true },
          CancellationToken.None);

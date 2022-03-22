@@ -9,7 +9,7 @@ class CreateProposalLogReader : ILogReader
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "CreateProposal";
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
@@ -18,7 +18,7 @@ class CreateProposalLogReader : ILogReader
 
       var proposal = new DaoContractProposal
       {
-         recipient = (string)logData["recipent"],
+         Recipient = (string)logData["recipent"],
          Amount = (long)logData["amount"],
          Id = (int)(long)logData["proposalId"],
          Description = (string)logData["description"],

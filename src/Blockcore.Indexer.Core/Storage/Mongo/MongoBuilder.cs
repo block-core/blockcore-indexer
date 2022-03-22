@@ -10,7 +10,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoBuilder : TaskStarter
    {
-      private readonly IMongoDb db;
+      private readonly IMongoDb mongoDb;
 
       private readonly ILogger<MongoBuilder> log;
       readonly ChainSettings chainConfiguration;
@@ -23,7 +23,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
           : base(logger)
       {
          log = logger;
-         db = data;
+         mongoDb = data;
          configuration = nakoConfiguration.Value;
          chainConfiguration = chainSettings.Value;
       }
@@ -143,7 +143,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             });
          }
 
-         db.UnspentOutputTable.Indexes
+         mongoDb.UnspentOutputTable.Indexes
             .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
          // To avoid the duplicate trx hash error on btc and save on perf dont create this index on the Bitcoin network.
@@ -153,12 +153,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             // however this is not expected and once we sure the code is stable we can remove this index to gain
             // better performance on initial sync, onother options is to add this index at the end of the initial
             // sync where natural reorgs are expected pretty often
-            db.UnspentOutputTable.Indexes
+            mongoDb.UnspentOutputTable.Indexes
                .CreateOne(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                   .IndexKeys.Ascending(trxBlk => trxBlk.Outpoint), new CreateIndexOptions { Unique = true }));
          }
 
-         db.ReorgBlock.Indexes
+         mongoDb.ReorgBlock.Indexes
             .CreateOne(new CreateIndexModel<ReorgBlockTable>(Builders<ReorgBlockTable>
                .IndexKeys.Descending(_ => _.BlockIndex)));
 

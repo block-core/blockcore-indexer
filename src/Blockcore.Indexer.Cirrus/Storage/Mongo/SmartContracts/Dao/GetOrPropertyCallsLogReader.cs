@@ -9,7 +9,7 @@ public class GetOrPropertyCallsLogReader : ILogReader
                                                              methodType.StartsWith("Get") ||
                                                              methodType == "IsWhitelisted";
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)

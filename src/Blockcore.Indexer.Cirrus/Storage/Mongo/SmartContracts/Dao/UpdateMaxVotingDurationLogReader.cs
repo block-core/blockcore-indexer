@@ -9,7 +9,7 @@ class UpdateMaxVotingDurationLogReader : ILogReader
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "UpdateMaxVotingDuration";
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => false;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => false;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)

@@ -17,6 +17,6 @@ public class DaoContractComputedTable
 
    public List<DaoContractDeposit> Deposits { get; set; }
 
-   public List<string> WhiteListedAddresses { get; set; }
+   public List<string> ApprovedAddresses { get; set; }
 
 }

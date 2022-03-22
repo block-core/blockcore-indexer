@@ -10,7 +10,7 @@ class VoteLogReader : ILogReader
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "Vote";
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)

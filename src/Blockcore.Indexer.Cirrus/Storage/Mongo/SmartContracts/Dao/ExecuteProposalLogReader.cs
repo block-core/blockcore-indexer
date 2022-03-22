@@ -9,7 +9,7 @@ class ExecuteProposalLogReader : ILogReader
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "ExecuteProposal";
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
@@ -22,7 +22,7 @@ class ExecuteProposalLogReader : ILogReader
 
       var proposal = computedTable.Proposals[proposalId - 1];
 
-      if (proposal.Id != proposalId || proposal.recipient != (string)log["recipent"])
+      if (proposal.Id != proposalId || proposal.Recipient != (string)log["recipent"])
          throw new ArgumentException(nameof(proposalId));
 
       proposal.WasProposalAccepted = true;
