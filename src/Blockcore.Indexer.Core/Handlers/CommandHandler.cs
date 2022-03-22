@@ -39,41 +39,25 @@ namespace Blockcore.Indexer.Core.Handlers
 
          SyncConnection connection = syncConnection;
          Transaction trx = null;
-         try
+
+         // parse the trx;
+         trx = connection.Network.Consensus.ConsensusFactory.CreateTransaction(transactionHex);
+         trx.PrecomputeHash(false, true);
+
+         IBlockchainClient client = clientFactory.Create(connection);
+         string trxid = await client.SentRawTransactionAsync(transactionHex);
+
+         if (trx.GetHash().ToString() != trxid)
          {
-            // parse the trx;
-            trx = connection.Network.Consensus.ConsensusFactory.CreateTransaction(transactionHex);
-            trx.PrecomputeHash(false, true);
-
+            throw new Exception($"node trxid = {trxid}, serialized trxid = {trx.GetHash().ToString()}");
          }
-         catch (Exception ex)
+
+         storageOperations.InsertMempoolTransactions(new SyncBlockTransactionsOperation
          {
-            log.LogDebug($"Invalid trx received {ex.Message}");
-            throw;
-         }
+            Transactions = new List<Transaction> { trx }
+         });
 
-         try
-         {
-            IBlockchainClient client = clientFactory.Create(connection);
-            string trxid = await client.SentRawTransactionAsync(transactionHex);
-
-            if (trx.GetHash().ToString() != trxid)
-            {
-               throw new Exception($"node trxid = {trxid}, serialized trxid = {trx.GetHash().ToString()}");
-            }
-
-            storageOperations.InsertMempoolTransactions(new SyncBlockTransactionsOperation
-            {
-               Transactions = new List<Transaction> { trx }
-            });
-
-            return trxid;
-         }
-         catch (Exception ex)
-         {
-            log.LogError(ex.ToString());
-            throw;
-         }
+         return trxid;
       }
    }
 }
