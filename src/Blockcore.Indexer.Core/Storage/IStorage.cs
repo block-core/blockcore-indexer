@@ -49,5 +49,9 @@ namespace Blockcore.Indexer.Core.Storage
       Task<QueryResult<OutputTable>> GetUnspentTransactionsByAddressAsync(string address,long confirmations, int offset, int limit);
 
       Task DeleteBlockAsync(string blockHash);
+
+      public List<IndexView> GetIndexesBuildProgress();
+
+      public List<string> GetBlockIndexIndexes();
    }
 }

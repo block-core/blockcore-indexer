@@ -22,19 +22,12 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       public const int ExpectedNumberOfIndexes = 6;
 
       private readonly IndexerSettings config;
-
-      private readonly ISyncOperations syncOperations;
-
-      private readonly SyncConnection syncConnection;
-
       private readonly ILogger<BlockIndexer> log;
-
-      private readonly IStorageOperations storageOperations;
       readonly IStorage data;
 
       private readonly System.Diagnostics.Stopwatch watch;
 
-      private readonly MongoData mongoData;
+      private readonly IMongoDb db;
 
       Task indexingTask;
       Task indexingCompletTask;
@@ -42,22 +35,15 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       public BlockIndexer(
          IOptions<IndexerSettings> configuration,
-         ISyncOperations syncOperations,
-         SyncConnection syncConnection,
          ILogger<BlockIndexer> logger,
-         IStorageOperations storageOperations,
-         IStorage data)
+         IStorage data, IMongoDb db)
           : base(configuration, logger)
       {
          log = logger;
-         this.storageOperations = storageOperations;
          this.data = data;
-         this.syncConnection = syncConnection;
-         this.syncOperations = syncOperations;
+         this.db = db;
          config = configuration.Value;
          watch = Stopwatch.Start();
-
-         mongoData = (MongoData)data;
 
       }
 
@@ -89,7 +75,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          {
             initialized = true;
 
-            List<IndexView> indexes = mongoData.GetIndexesBuildProgress();
+            List<IndexView> indexes = data.GetIndexesBuildProgress();
             if (indexes.Any())
             {
                // if indexes are currently running go directly in to index mode
@@ -108,7 +94,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             Runner.GlobalState.IndexMode = true;
          }
 
-         List<IndexView> ops = mongoData.GetIndexesBuildProgress();
+         List<IndexView> ops = data.GetIndexesBuildProgress();
 
          if (ops.Any())
          {
@@ -133,7 +119,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(BlockTable)}.{nameof(BlockTable.BlockHash)}");
 
-                  await mongoData.BlockTable.Indexes
+                  await db.BlockTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<BlockTable>(Builders<BlockTable>
                         .IndexKeys.Descending(trxBlk => trxBlk.BlockHash)));
 
@@ -141,7 +127,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(TransactionBlockTable)}.{nameof(TransactionBlockTable.BlockIndex)}");
 
-                  await mongoData.TransactionBlockTable.Indexes
+                  await db.TransactionBlockTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<TransactionBlockTable>(Builders<TransactionBlockTable>
                         .IndexKeys.Descending(trxBlk => trxBlk.BlockIndex)));
 
@@ -149,7 +135,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(TransactionBlockTable)}.{nameof(TransactionBlockTable.TransactionId)}");
 
-                  await mongoData.TransactionBlockTable.Indexes
+                  await db.TransactionBlockTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<TransactionBlockTable>(Builders<TransactionBlockTable>
                         .IndexKeys.Hashed(trxBlk => trxBlk.TransactionId)));
                })
@@ -157,7 +143,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(OutputTable)}.{nameof(OutputTable.BlockIndex)}");
 
-                  await mongoData.OutputTable.Indexes
+                  await db.OutputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<OutputTable>(Builders<OutputTable>
                         .IndexKeys.Descending(trxBlk => trxBlk.BlockIndex)));
 
@@ -165,7 +151,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(OutputTable)}.{nameof(OutputTable.Outpoint)}");
 
-                  await mongoData.OutputTable.Indexes
+                  await db.OutputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<OutputTable>(Builders<OutputTable>
                         .IndexKeys.Hashed(trxBlk => trxBlk.Outpoint)));
 
@@ -173,7 +159,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(OutputTable)}.{nameof(OutputTable.Address)}");
 
-                  await mongoData.OutputTable.Indexes
+                  await db.OutputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<OutputTable>(Builders<OutputTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
                })
@@ -181,7 +167,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.BlockIndex)}");
 
-                  await mongoData.InputTable.Indexes
+                  await db.InputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
@@ -189,7 +175,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.BlockIndex)}");
 
-                  await mongoData.InputTable.Indexes
+                  await db.InputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
                         .IndexKeys.Descending(trxBlk => trxBlk.BlockIndex)));
 
@@ -197,7 +183,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(InputTable)}.{nameof(InputTable.Outpoint)}");
 
-                  await mongoData.InputTable.Indexes
+                  await db.InputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<InputTable>(Builders<InputTable>
                         .IndexKeys.Hashed(_=> _.Outpoint)));
 
@@ -205,7 +191,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(UnspentOutputTable)}.{nameof(UnspentOutputTable.Address)}");
 
-                  await mongoData.UnspentOutputTable.Indexes
+                  await db.UnspentOutputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
@@ -213,7 +199,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                {
                   log.LogInformation($"Creating indexes on {nameof(UnspentOutputTable)}.{nameof(UnspentOutputTable.BlockIndex)}");
 
-                  await mongoData.UnspentOutputTable.Indexes
+                  await db.UnspentOutputTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<UnspentOutputTable>(Builders<UnspentOutputTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.BlockIndex)));
 
@@ -223,26 +209,26 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
                   log.LogInformation($"Creating indexes on {nameof(AddressComputedTable)}.{nameof(AddressComputedTable.Address)}");
 
-                  await mongoData.AddressComputedTable.Indexes
+                  await db.AddressComputedTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressComputedTable>(Builders<AddressComputedTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
                   // --- history
                   log.LogInformation($"Creating indexes on {nameof(AddressHistoryComputedTable)}.{nameof(AddressHistoryComputedTable.BlockIndex)}");
 
-                  await mongoData.AddressHistoryComputedTable.Indexes
+                  await db.AddressHistoryComputedTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressHistoryComputedTable>(Builders<AddressHistoryComputedTable>
                         .IndexKeys.Descending(trxBlk => trxBlk.BlockIndex)));
 
                   log.LogInformation($"Creating indexes on {nameof(AddressHistoryComputedTable)}.{nameof(AddressHistoryComputedTable.Position)}");
 
-                  await mongoData.AddressHistoryComputedTable.Indexes
+                  await db.AddressHistoryComputedTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressHistoryComputedTable>(Builders<AddressHistoryComputedTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Position)));
 
                   log.LogInformation($"Creating indexes on {nameof(AddressHistoryComputedTable)}.{nameof(AddressHistoryComputedTable.Address)}");
 
-                  await mongoData.AddressHistoryComputedTable.Indexes
+                  await db.AddressHistoryComputedTable.Indexes
                      .CreateOneAsync(new CreateIndexModel<AddressHistoryComputedTable>(Builders<AddressHistoryComputedTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.Address)));
 
@@ -252,19 +238,19 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
                   // --mempool
                   log.LogInformation($"Creating indexes on {nameof(MempoolTable)}.{nameof(MempoolTable.TransactionId)}");
 
-                  await mongoData.Mempool.Indexes
+                  await db.Mempool.Indexes
                      .CreateOneAsync(new CreateIndexModel<MempoolTable>(Builders<MempoolTable>
                         .IndexKeys.Hashed(trxBlk => trxBlk.TransactionId)));
 
                   log.LogInformation($"Creating indexes on {nameof(MempoolTable)}.{nameof(MempoolTable.AddressOutputs)}");
 
-                  await mongoData.Mempool.Indexes
+                  await db.Mempool.Indexes
                      .CreateOneAsync(new CreateIndexModel<MempoolTable>(Builders<MempoolTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.AddressOutputs)));
 
                   log.LogInformation($"Creating indexes on {nameof(MempoolTable)}.{nameof(MempoolTable.AddressInputs)}");
 
-                  await mongoData.Mempool.Indexes
+                  await db.Mempool.Indexes
                      .CreateOneAsync(new CreateIndexModel<MempoolTable>(Builders<MempoolTable>
                         .IndexKeys.Ascending(trxBlk => trxBlk.AddressInputs)));
                })
@@ -281,7 +267,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             }
             else
             {
-               List<string> allIndexes = mongoData.GetBlockIndexIndexes();
+               List<string> allIndexes = data.GetBlockIndexIndexes();
 
                if (allIndexes.Count != ExpectedNumberOfIndexes)
                {

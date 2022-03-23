@@ -1,8 +1,9 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
-using Blockcore.Indexer.Core.Controllers;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
+using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Paging;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Types;
@@ -19,15 +20,17 @@ namespace Blockcore.Indexer.Cirrus.Controllers
    {
       private readonly IPagingHelper paging;
       private readonly IStorage storage;
-      private readonly CirrusMongoData cirrusMongoData;
+      private readonly ICirrusStorage cirrusMongoData;
+      readonly IDAOContractAggregator DaoContractAggregator;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
-      public CirrusQueryController(IPagingHelper paging, IStorage storage)
+      public CirrusQueryController(IPagingHelper paging, IStorage storage, IDAOContractAggregator daoContractAggregator)
       {
          this.paging = paging;
          this.storage = storage;
+         DaoContractAggregator = daoContractAggregator;
          cirrusMongoData = storage as CirrusMongoData;
       }
 
@@ -64,6 +67,21 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       public IActionResult GetContractCode([MinLength(30)][MaxLength(100)] string address)
       {
          return Ok(cirrusMongoData.ContractCode(address));
+      }
+
+      [HttpGet]
+      [Route("contract/dao/{address}")]
+      [SlowRequestsFilteerAttribute]
+      public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
+      {
+         var contract = await DaoContractAggregator.ComputeDaoContractForAddressAsync(address);
+
+         if (contract is null)
+         {
+            return NotFound();
+         }
+
+         return Ok(contract);
       }
 
       private IActionResult OkPaging<T>(QueryResult<T> result)

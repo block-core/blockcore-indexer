@@ -15,6 +15,8 @@ using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Sync;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
+using Blockcore.Utilities;
+using ConcurrentCollections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -69,6 +71,7 @@ namespace Blockcore.Indexer.Core
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
          services.AddSingleton<IStorage, MongoData>();
+         services.AddSingleton<IMongoDb, MongoDb>();
          services.AddSingleton<IUtxoCache, UtxoCache>();
          services.AddSingleton<IStorageOperations, MongoStorageOperations>();
          services.AddSingleton<TaskStarter, MongoBuilder>();

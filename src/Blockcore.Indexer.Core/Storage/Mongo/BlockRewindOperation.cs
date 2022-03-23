@@ -11,7 +11,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo;
 
 public static class BlockRewindOperation
 {
-   public static async Task RewindBlockOnIbdAsync(this MongoData storage, uint blockIndex)
+   public static async Task RewindBlockOnIbdAsync(this IMongoDb storage, uint blockIndex)
    {
       await StoreRewindBlockAsync(storage, blockIndex);
 
@@ -42,7 +42,7 @@ public static class BlockRewindOperation
       await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, unspent);
    }
 
-   public static async Task RewindBlockAsync(this MongoData storage, uint blockIndex)
+   public static async Task RewindBlockAsync(this IMongoDb storage, uint blockIndex)
    {
       await StoreRewindBlockAsync(storage, blockIndex);
 
@@ -66,7 +66,7 @@ public static class BlockRewindOperation
       Task<DeleteResult> addressHistoryComputed = storage.AddressHistoryComputedTable.DeleteManyAsync(addrCompHistFilter);
 
       // this is an edge case, we delete from the utxo table in case a bath push failed half way and left
-      // item in the utxo table that where suppose to get deleted, to avoid duplicates in recovery processes 
+      // item in the utxo table that where suppose to get deleted, to avoid duplicates in recovery processes
       // we delete just in case (the utxo table has a unique key on outputs), there is no harm in deleting twice.
       FilterDefinition<UnspentOutputTable> unspentOutputFilter1 =
          Builders<UnspentOutputTable>.Filter.Eq(utxo => utxo.BlockIndex, blockIndex);
@@ -90,7 +90,7 @@ public static class BlockRewindOperation
       await Task.WhenAll( inputs, unspentOutput);
    }
 
-   static Task StoreRewindBlockAsync(MongoDb storage, uint blockIndex)
+   static Task StoreRewindBlockAsync(IMongoDb storage, uint blockIndex)
    {
       var blockTask = storage.BlockTable.FindAsync(_ => _.BlockIndex == blockIndex);
       var inputsTask = storage.InputTable.FindAsync(_ => _.BlockIndex == blockIndex);
@@ -115,7 +115,7 @@ public static class BlockRewindOperation
       return storage.ReorgBlock.InsertOneAsync(reorgBlock);
    }
 
-   private static async Task RewindInputDataIntoUnspentTransactionTableAsync(MongoData storage, long blockIndex)
+   private static async Task RewindInputDataIntoUnspentTransactionTableAsync(IMongoDb storage, long blockIndex)
    {
       const int limit = 1000;
       int skip = 0;
@@ -187,7 +187,7 @@ public static class BlockRewindOperation
    /// when a rewind happens we need to bring back outputs that have been deleted from the UnspendOutput so we look for those outputs in the inputs table,
    /// however the block index in the inputs table is the one representing the input not the output we are trying to restore so we have to look it up in the outputs table.
    /// </summary>
-   private static async Task MergeRewindInputsToUnspentTransactionsAsync(MongoData storage, long blockIndex)
+   private static async Task MergeRewindInputsToUnspentTransactionsAsync(IMongoDb storage, long blockIndex)
    {
       List<UnspentOutputTable> unspentOutputs = await storage.InputTable.Aggregate<UnspentOutputTable>(
          new []
@@ -214,7 +214,7 @@ public static class BlockRewindOperation
                })
          }).ToListAsync();
 
-      // this is to unsure the values are unique 
+      // this is to unsure the values are unique
       unspentOutputs.ToDictionary(a => a.Outpoint.ToString());
 
       // TODO: filter out any outputs that belong to the block being reorged.

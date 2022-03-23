@@ -88,11 +88,14 @@ public class MongoStorageOperationsTests
       mongodbMock = new MongodbMock();
 
       sut = new MongoStorageOperations(syncConnection,
-         new MongoData(null, syncConnection, indexSettingsMock.Object,
-            chainSetting.Object, globalState, new MapMongoBlockToStorageBlock(),
-            cryptoClientFactory.Object, scriptInterpeter.Object, mongodbMock.Object),
-         new UtxoCache(null), indexSettingsMock.Object, globalState, new MapMongoBlockToStorageBlock(),
-         scriptInterpeter.Object);
+         mongodbMock.MongoDbObject,
+         new UtxoCache(null),
+         indexSettingsMock.Object,
+         globalState,
+         new MapMongoBlockToStorageBlock(),
+         scriptInterpeter.Object,
+         new MongoData(null, syncConnection, chainSetting.Object, globalState, new MapMongoBlockToStorageBlock(),
+            cryptoClientFactory.Object, scriptInterpeter.Object, mongodbMock.MongoDatabaseObject, mongodbMock.MongoDbObject));
    }
 
    private static BlockInfo NewRandomBlockInfo => new()

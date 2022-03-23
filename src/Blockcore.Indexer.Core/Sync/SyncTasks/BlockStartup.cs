@@ -102,7 +102,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             int fullnodeTipHeight = client.GetBlockCount();
             if (fullnodeTipHeight < Runner.GlobalState.StoreTip.BlockIndex)
             {
-               throw new ApplicationException($"Indexer at height {fullnodeTipHeight} which is behind the fullnode at heigh {Runner.GlobalState.StoreTip.BlockIndex}");
+               throw new ApplicationException($"Full node at height {fullnodeTipHeight} which is behind the Indexer at height {Runner.GlobalState.StoreTip.BlockIndex}");
             }
 
             // reorg happend while indexer was offline rewind the indexer database

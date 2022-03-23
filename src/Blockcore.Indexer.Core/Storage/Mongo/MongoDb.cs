@@ -8,30 +8,15 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
-   public class MongoDb
+   public class MongoDb : IMongoDb
    {
       private readonly ILogger<MongoDb> log;
 
-      protected readonly IMongoClient mongoClient;
-
       protected readonly IMongoDatabase mongoDatabase;
 
-      protected readonly SyncConnection syncConnection;
-      protected readonly GlobalState globalState;
-
-      protected readonly ChainSettings chainConfiguration;
-
-      public MongoDb(ILogger<MongoDb> logger, SyncConnection connection, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainConfiguration, GlobalState globalState,
-         IMongoDatabase mongoDatabase)
+      public MongoDb(ILogger<MongoDb> logger, IMongoDatabase mongoDatabase)
       {
-         this.chainConfiguration = chainConfiguration.Value;
-
-         syncConnection = connection;
-         this.globalState = globalState;
          log = logger;
-
-         mongoClient = mongoDatabase.Client;
-
          this.mongoDatabase = mongoDatabase;
       }
 
