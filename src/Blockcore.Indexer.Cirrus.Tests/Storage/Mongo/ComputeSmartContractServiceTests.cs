@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Blockcore.Indexer.Cirrus.Tests.Storage.Mongo;
 
-public class DaoContractAggregatorTests
+public class ComputeSmartContractServiceTests
 {
    ComputeSmartContractService<DaoContractComputedTable> sut;
 
@@ -25,7 +25,7 @@ public class DaoContractAggregatorTests
    private static string NewRandomString => Guid.NewGuid().ToString();
    private static int NewRandomInt32 => Random.Next();
 
-   public DaoContractAggregatorTests()
+   public ComputeSmartContractServiceTests()
    {
       mongoDbMock = new CirrusMongoDbMock();
 

@@ -29,7 +29,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
          IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenComputedTable> standardTokenService)
       {
          this.paging = paging;
-         this.daoContractService = daoContractAggregator;
+         daoContractService = daoContractAggregator;
          this.cirrusMongoData = cirrusMongoData;
          this.standardTokenService = standardTokenService;
       }
