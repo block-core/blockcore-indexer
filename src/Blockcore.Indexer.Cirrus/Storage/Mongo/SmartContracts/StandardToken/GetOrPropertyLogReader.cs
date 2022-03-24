@@ -10,7 +10,7 @@ class GetOrPropertyLogReader : ILogReader<StandardTokenComputedTable>
                                                              methodType.Equals("Allowance") ||
                                                              methodType.Equals("Approve");
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       StandardTokenComputedTable computedTable)

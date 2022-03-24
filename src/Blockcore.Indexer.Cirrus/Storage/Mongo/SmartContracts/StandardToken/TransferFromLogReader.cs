@@ -8,7 +8,7 @@ public class TransferFromLogReader : ILogReader<StandardTokenComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferFrom");
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       StandardTokenComputedTable computedTable)
