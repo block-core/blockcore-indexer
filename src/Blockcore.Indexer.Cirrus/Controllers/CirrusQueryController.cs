@@ -99,6 +99,21 @@ namespace Blockcore.Indexer.Cirrus.Controllers
          return Ok(contract);
       }
 
+      [HttpGet]
+      [Route("contract/NonFungibleToken/{address}")]
+      [SlowRequestsFilteerAttribute]
+      public async Task<IActionResult> GetNonFungibleTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
+      {
+         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
+
+         if (contract is null)
+         {
+            return NotFound();
+         }
+
+         return Ok(contract);
+      }
+
       private IActionResult OkPaging<T>(QueryResult<T> result)
       {
          paging.Write(HttpContext, result);
