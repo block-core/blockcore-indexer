@@ -34,6 +34,9 @@ namespace Blockcore.Indexer.Core.Controllers
 
          string trx = data;
 
+
+         // todo: add throttling on this endpoint.
+
          string ret = await commandHandler.SendTransaction(trx);
          return new OkObjectResult(ret);
       }
