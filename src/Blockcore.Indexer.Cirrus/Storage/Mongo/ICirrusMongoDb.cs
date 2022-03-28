@@ -1,3 +1,4 @@
+using System;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using MongoDB.Driver;
@@ -10,5 +11,4 @@ public interface ICirrusMongoDb : IMongoDb
    public IMongoCollection<CirrusContractCodeTable> CirrusContractCodeTable { get; }
    public IMongoCollection<DaoContractComputedTable> DaoContractComputedTable { get; }
    public IMongoCollection<StandardTokenComputedTable> StandardTokenComputedTable { get; }
-
 }

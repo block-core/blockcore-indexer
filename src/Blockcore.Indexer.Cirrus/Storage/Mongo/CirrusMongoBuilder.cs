@@ -25,17 +25,9 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          SetDocumentMapAndIgnoreExtraElements<CirrusContractTable>();
          SetDocumentMapAndIgnoreExtraElements<CirrusContractCodeTable>();
+         SetDocumentMapAndIgnoreExtraElements<DaoContractComputedTable>();
          SetDocumentMapAndIgnoreExtraElements<StandardTokenComputedTable>();
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(DaoContractComputedTable)))
-         {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<DaoContractComputedTable>(cm =>
-            {
-               cm.MapIdField(_ => _.ContractAddress);
-               cm.AutoMap();
-               cm.SetIgnoreExtraElements(true);
-            });
-         }
 
          return Task.FromResult(1);
       }

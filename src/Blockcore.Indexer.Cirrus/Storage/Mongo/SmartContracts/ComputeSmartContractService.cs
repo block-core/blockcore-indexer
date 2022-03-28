@@ -61,7 +61,7 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
 
    async Task<T> LookupSmartContractForAddressAsync(string address)
    {
-      T contract = await mongoDatabase.GetCollection<T>(typeof(T).Name)
+      T contract = await GetSmartContractCollection()
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
@@ -135,8 +135,14 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
    }
 
    async Task SaveTheContractAsync(string address, T contract) =>
-      await mongoDatabase.GetCollection<T>(typeof(T).Name)
+      await GetSmartContractCollection()
          .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
          new FindOneAndReplaceOptions<T> { IsUpsert = true },
          CancellationToken.None);
+
+
+   private IMongoCollection<T> GetSmartContractCollection()
+   {
+      return mongoDatabase.GetCollection<T>(typeof(T).Name.Replace("Table",string.Empty));
+   }
 }
