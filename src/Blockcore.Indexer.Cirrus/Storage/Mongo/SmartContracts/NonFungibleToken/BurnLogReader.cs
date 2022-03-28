@@ -16,6 +16,6 @@ public class BurnLogReader: ILogReader<NonFungibleTokenComputedTable>
       long tokenId = (long)contractTransaction.Logs.SingleOrDefault().Log.Data["tokenId"];
 
       computedTable.Tokens.Single(_ => _.Id == tokenId)
-         .IsBurnet = true;
+         .IsBurned = true;
    }
 }

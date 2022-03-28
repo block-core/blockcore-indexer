@@ -21,17 +21,19 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       private readonly ICirrusStorage cirrusMongoData;
       readonly IComputeSmartContractService<DaoContractComputedTable> daoContractService;
       readonly IComputeSmartContractService<StandardTokenComputedTable> standardTokenService;
+      readonly IComputeSmartContractService<NonFungibleTokenComputedTable> nonFungibleTokenService;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
       public CirrusQueryController(IPagingHelper paging,
-         IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenComputedTable> standardTokenService)
+         IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenComputedTable> standardTokenService, IComputeSmartContractService<NonFungibleTokenComputedTable> nonFungibleTokenService)
       {
          this.paging = paging;
          daoContractService = daoContractAggregator;
          this.cirrusMongoData = cirrusMongoData;
          this.standardTokenService = standardTokenService;
+         this.nonFungibleTokenService = nonFungibleTokenService;
       }
 
       [HttpGet]
@@ -104,7 +106,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetNonFungibleTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
+         var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
 
          if (contract is null)
          {

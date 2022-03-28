@@ -41,4 +41,12 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
          return mongoDatabase.GetCollection<StandardTokenComputedTable>("StandardTokenComputed");
       }
    }
+
+   public IMongoCollection<NonFungibleTokenComputedTable> NonFungibleTokenComputedTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<NonFungibleTokenComputedTable>("NonFungibleTokenComputed");
+      }
+   }
 }
