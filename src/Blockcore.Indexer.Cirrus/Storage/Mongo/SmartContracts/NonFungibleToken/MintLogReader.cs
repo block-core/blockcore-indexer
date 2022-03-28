@@ -9,7 +9,7 @@ public class MintLogReader : ILogReader<NonFungibleTokenComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Mint") || methodType.Equals("SafeMint");
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)

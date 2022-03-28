@@ -8,7 +8,7 @@ public class ClaimOwnershipLogReader : ILogReader<NonFungibleTokenComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("ClaimOwnership");
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)

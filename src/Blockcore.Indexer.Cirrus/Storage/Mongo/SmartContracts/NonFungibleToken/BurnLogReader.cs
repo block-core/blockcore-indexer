@@ -8,7 +8,7 @@ public class BurnLogReader: ILogReader<NonFungibleTokenComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Burn");
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)

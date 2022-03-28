@@ -9,6 +9,7 @@ using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;

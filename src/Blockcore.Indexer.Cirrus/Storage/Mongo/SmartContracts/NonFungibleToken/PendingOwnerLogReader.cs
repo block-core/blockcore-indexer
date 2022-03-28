@@ -8,7 +8,7 @@ public class PendingOwnerLogReader : ILogReader<NonFungibleTokenComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("SetPendingOwner");
 
-   public bool IsTheTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)
