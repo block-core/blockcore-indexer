@@ -20,10 +20,23 @@ public class MintLogReader : ILogReader<NonFungibleTokenComputedTable>
       if (log is null || uriLog is null)
          throw new ArgumentNullException(nameof(log));
 
+      object tokenId = log.Data["tokenId"];
+      long id = 0;
+
+      if (tokenId is string)
+      {
+         id = Convert.ToInt64(tokenId);
+      }
+      else
+      {
+         id = (long)tokenId;
+      }
+
+
       computedTable.Tokens.Add(new Token
       {
          Address = (string)log.Data["to"],
-         Id = (long)log.Data["tokenId"],
+         Id = id,
          Uri = (string)uriLog.Data["tokenUri"]
       });
    }
