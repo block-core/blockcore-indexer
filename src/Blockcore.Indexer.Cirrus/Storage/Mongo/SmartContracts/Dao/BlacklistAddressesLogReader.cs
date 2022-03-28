@@ -3,9 +3,9 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class BlacklistAddressesLogReader : ILogReader
+class BlacklistAddressesLogReader : ILogReader<DaoContractComputedTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType == "BlacklistAddresses" || methodType == "BlacklistAddress";
+   public bool CanReadLogForMethodType(string methodType) => methodType is "BlacklistAddresses" or "BlacklistAddress";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => false;
 

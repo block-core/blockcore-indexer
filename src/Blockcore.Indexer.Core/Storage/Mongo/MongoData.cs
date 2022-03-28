@@ -45,7 +45,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          this.clientFactory = clientFactory;
          this.scriptInterpeter = scriptInterpeter;
          this.mongoDatabase = mongoDatabase;
-         this.mongoDb = db;
+         mongoDb = db;
       }
 
       /// <summary>

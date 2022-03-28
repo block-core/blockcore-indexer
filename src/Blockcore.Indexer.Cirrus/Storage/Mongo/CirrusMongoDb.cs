@@ -33,4 +33,12 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
          return mongoDatabase.GetCollection<DaoContractComputedTable>("DaoContractComputed");
       }
    }
+
+   public IMongoCollection<StandardTokenComputedTable> StandardTokenComputedTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<StandardTokenComputedTable>("StandardTokenComputed");
+      }
+   }
 }

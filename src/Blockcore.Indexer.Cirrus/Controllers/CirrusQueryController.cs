@@ -1,11 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage;
-using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Paging;
-using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,19 +18,20 @@ namespace Blockcore.Indexer.Cirrus.Controllers
    public class CirrusQueryController : Controller
    {
       private readonly IPagingHelper paging;
-      private readonly IStorage storage;
       private readonly ICirrusStorage cirrusMongoData;
-      readonly IDAOContractAggregator DaoContractAggregator;
+      readonly IComputeSmartContractService<DaoContractComputedTable> daoContractService;
+      readonly IComputeSmartContractService<StandardTokenComputedTable> standardTokenService;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
-      public CirrusQueryController(IPagingHelper paging, IStorage storage, IDAOContractAggregator daoContractAggregator)
+      public CirrusQueryController(IPagingHelper paging,
+         IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenComputedTable> standardTokenService)
       {
          this.paging = paging;
-         this.storage = storage;
-         DaoContractAggregator = daoContractAggregator;
-         cirrusMongoData = storage as CirrusMongoData;
+         daoContractService = daoContractAggregator;
+         this.cirrusMongoData = cirrusMongoData;
+         this.standardTokenService = standardTokenService;
       }
 
       [HttpGet]
@@ -74,7 +74,22 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await DaoContractAggregator.ComputeDaoContractForAddressAsync(address);
+         var contract = await daoContractService.ComputeSmartContractForAddressAsync(address);
+
+         if (contract is null)
+         {
+            return NotFound();
+         }
+
+         return Ok(contract);
+      }
+
+      [HttpGet]
+      [Route("contract/StandardToken/{address}")]
+      [SlowRequestsFilteerAttribute]
+      public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
+      {
+         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
 
          if (contract is null)
          {

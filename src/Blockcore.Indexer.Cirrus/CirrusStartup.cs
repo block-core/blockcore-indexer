@@ -1,18 +1,16 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Blockcore.Indexer.Cirrus.Client;
 using Blockcore.Indexer.Cirrus.Crypto;
 using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
-using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
@@ -22,7 +20,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Newtonsoft.Json;
 
 namespace Blockcore.Indexer.Cirrus
 {
@@ -65,22 +62,38 @@ namespace Blockcore.Indexer.Cirrus
             .AddApplicationPart(typeof(Startup).Assembly)
             .AddControllersAsServices();
 
-         services.AddTransient<IDAOContractAggregator, DaoContractAggregator>();
-         services.AddTransient<ILogReaderFactory, LogReaderFactory>();
+         services.AddTransient(typeof(IComputeSmartContractService<>),typeof(ComputeSmartContractService<>));
+         services.AddTransient(typeof(ISmartContractHandlersFactory<>),typeof(SmartContractHandlersFactory<>));
 
-        ScanAssemblyAndRegisterTypeByNameAsTransient(services,typeof(ILogReader),typeof(ILogReader).Assembly);
+         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<DaoContractComputedTable>),
+            typeof(ILogReader<>).Assembly);
+
+         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<StandardTokenComputedTable>),
+            typeof(ILogReader<>).Assembly);
+
+         RegisterSmartContractBuilder(services); //No need to scan the assembly as there won't be that many
+      }
+
+      private static IServiceCollection RegisterSmartContractBuilder(IServiceCollection collection)
+      {
+         collection.AddTransient<ISmartContractBuilder<DaoContractComputedTable>, DaoSmartContractBuilder>();
+         collection.AddTransient<ISmartContractBuilder<StandardTokenComputedTable>, StandardTokenSmartContractBuilder>();
+         return collection;
       }
 
       private static void ScanAssemblyAndRegisterTypeByNameAsTransient(IServiceCollection services, Type typeToRegister, Assembly assembly)
       {
          // Discovers and registers all type implementation in this assembly.
          var implementations = from type in assembly.GetTypes()
-            where type.GetInterface(typeToRegister.Name) != null
+            where type.GetInterface(typeToRegister.Name) != null &&
+                  type.GetInterface(typeToRegister.Name)
+                     .GetGenericArguments()
+                     .SequenceEqual(typeToRegister.GetGenericArguments())
             select new { Interface = typeToRegister, ImplementationType = type };
 
          foreach (var implementation in implementations)
          {
-            services.AddSingleton(implementation.Interface, implementation.ImplementationType);
+            services.AddTransient(implementation.Interface, implementation.ImplementationType);
          }
       }
 

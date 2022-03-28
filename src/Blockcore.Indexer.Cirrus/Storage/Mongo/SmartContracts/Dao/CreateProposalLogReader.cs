@@ -5,7 +5,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class CreateProposalLogReader : ILogReader
+class CreateProposalLogReader : ILogReader<DaoContractComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "CreateProposal";
 

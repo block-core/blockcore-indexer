@@ -3,7 +3,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public interface IDAOContractAggregator
+public interface IComputeSmartContractService<T> where T : SmartContractComputedBase
 {
-   Task<DaoContractComputedTable> ComputeDaoContractForAddressAsync(string address);
+   Task<T> ComputeSmartContractForAddressAsync(string address);
 }
