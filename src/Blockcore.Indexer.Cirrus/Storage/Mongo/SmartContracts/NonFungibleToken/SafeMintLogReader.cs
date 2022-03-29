@@ -10,17 +10,14 @@ public class SafeMintLogReader : ILogReader<NonFungibleTokenComputedTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("SafeMint");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => false;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 3 };
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)
    {
-      var log = contractTransaction.Logs[0]?.Log;
-      var saleLog = contractTransaction.Logs[1]?.Log;
-      var uriLog = contractTransaction.Logs[2]?.Log;
-
-      if (log is null || saleLog is null || uriLog is null)
-         throw new ArgumentNullException(nameof(log));
+      LogData log = contractTransaction.Logs[0].Log;
+      LogData saleLog = contractTransaction.Logs[1].Log;
+      LogData uriLog = contractTransaction.Logs[2].Log;
 
       object tokenId = log.Data["tokenId"];
       string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
@@ -28,10 +25,10 @@ public class SafeMintLogReader : ILogReader<NonFungibleTokenComputedTable>
       computedTable.Tokens.Add(new()
       {
          Creator = contractTransaction.FromAddress,
-         Owner = (string)log.Data["to"],
+         Owner = contractTransaction.FromAddress,
          Id = id,
          Uri = (string)uriLog.Data["tokenUri"],
-         SalesHistory = new() { SalesEventReader.SaleDetails(contractTransaction, saleLog, log) }
+         SalesHistory = new() { SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log) }
       });
    }
 

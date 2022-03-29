@@ -23,6 +23,8 @@ public class TransferLogReader : ILogReader<NonFungibleTokenComputedTable>
 
       var token = computedTable.Tokens.First(_ => _.Id == tokenId);
 
+      token.Owner = (string)log.Log.Data["to"];
+
       token.SalesHistory.Add(new OwnershipTransfer
       {
          From = (string)log.Log.Data["from"],

@@ -13,33 +13,26 @@ using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
-   where T : SmartContractComputedBase, new()
+public class NftComputationService : IComputeSmartContractService<NonFungibleTokenComputedTable>
 {
-   readonly ILogger<ComputeSmartContractService<T>> logger;
+   readonly ILogger<NftComputationService> logger;
    readonly ICirrusMongoDb mongoDb;
-   readonly ISmartContractHandlersFactory<T> logReaderFactory;
+   readonly ISmartContractHandlersFactory<NonFungibleTokenComputedTable> logReaderFactory;
    readonly CirrusClient cirrusClient;
-   readonly IMongoDatabase mongoDatabase;
 
-   readonly T emptyContract;
-
-   public ComputeSmartContractService(ILogger<ComputeSmartContractService<T>> logger,
-      ICirrusMongoDb db,
-      ISmartContractHandlersFactory<T> logReaderFactory,
+   public NftComputationService(ILogger<NftComputationService> logger,
+      ICirrusMongoDb mongoDb,
+      ISmartContractHandlersFactory<NonFungibleTokenComputedTable> logReaderFactory,
       ICryptoClientFactory clientFactory,
-      SyncConnection connection,
-      IMongoDatabase mongoDatabase)
+      SyncConnection connection)
    {
       this.logger = logger;
-      mongoDb = db;
+      this.mongoDb = mongoDb;
       this.logReaderFactory = logReaderFactory;
-      this.mongoDatabase = mongoDatabase;
       cirrusClient = (CirrusClient)clientFactory.Create(connection);
-      emptyContract = new T();
    }
 
-   public async Task<T> ComputeSmartContractForAddressAsync(string address)
+   public async Task<NonFungibleTokenComputedTable> ComputeSmartContractForAddressAsync(string address)
    {
       var contract = await LookupSmartContractForAddressAsync(address);
 
@@ -48,7 +41,9 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
 
       var contractTransactions = await mongoDb.CirrusContractTable
          .AsQueryable()
-         .Where(_ => _.ToAddress == address && _.Success && _.BlockIndex > contract.LastProcessedBlockHeight)
+         .Where(_ => (_.ToAddress == address ||
+                      _.Logs.Any(_ => _.Log.Data.ContainsKey("contract") && _.Log.Data["contract"] == address) ) &&
+                     (_.Success && _.BlockIndex > contract.LastProcessedBlockHeight ))
          .ToListAsync();
 
       if (contractTransactions.Any())
@@ -59,9 +54,10 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
       return contract;
    }
 
-   async Task<T> LookupSmartContractForAddressAsync(string address)
+
+   async Task<NonFungibleTokenComputedTable> LookupSmartContractForAddressAsync(string address)
    {
-      T contract = await GetSmartContractCollection()
+      NonFungibleTokenComputedTable contract = await mongoDb.NonFungibleTokenComputedTable
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
@@ -72,7 +68,7 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
-      if (contractCode is null || contractCode.CodeType != emptyContract.ContractType)
+      if (contractCode is null || contractCode.CodeType != "NonFungibleToken")
       {
          logger.LogInformation(
             $"Request to compute smart contract for address {address} which was not found in the contract code table");
@@ -87,7 +83,7 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
       return contract;
    }
 
-   private async Task<T> CreateNewSmartContract(string address)
+   private async Task<NonFungibleTokenComputedTable> CreateNewSmartContract(string address)
    {
       var contractCreationTransaction = await mongoDb.CirrusContractTable
          .AsQueryable()
@@ -107,7 +103,7 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
    }
 
    private async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions,
-      T contract)
+      NonFungibleTokenComputedTable contract)
    {
       foreach (var contractTransaction in contractTransactions)
       {
@@ -135,15 +131,10 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
       await SaveTheContractAsync(address, contract);
    }
 
-   async Task SaveTheContractAsync(string address, T contract) =>
-      await GetSmartContractCollection()
-         .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
-         new FindOneAndReplaceOptions<T> { IsUpsert = true },
+   async Task SaveTheContractAsync(string address, NonFungibleTokenComputedTable contract) =>
+      await mongoDb.NonFungibleTokenComputedTable
+         .FindOneAndReplaceAsync<NonFungibleTokenComputedTable>(_ => _.ContractAddress == address, contract,
+         new FindOneAndReplaceOptions<NonFungibleTokenComputedTable> { IsUpsert = true },
          CancellationToken.None);
 
-
-   private IMongoCollection<T> GetSmartContractCollection()
-   {
-      return mongoDatabase.GetCollection<T>(typeof(T).Name.Replace("Table",string.Empty));
-   }
 }

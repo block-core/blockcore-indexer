@@ -63,6 +63,7 @@ namespace Blockcore.Indexer.Cirrus
             .AddApplicationPart(typeof(Startup).Assembly)
             .AddControllersAsServices();
 
+         services.AddTransient<IComputeSmartContractService<NonFungibleTokenComputedTable>,NftComputationService>();
          services.AddTransient(typeof(IComputeSmartContractService<>),typeof(ComputeSmartContractService<>));
          services.AddTransient(typeof(ISmartContractHandlersFactory<>),typeof(SmartContractHandlersFactory<>));
 
