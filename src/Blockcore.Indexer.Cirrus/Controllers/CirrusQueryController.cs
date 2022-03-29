@@ -35,6 +35,20 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
+      [Route("contract/list")]
+      public IActionResult GetGroupedContracts()
+      {
+         return OkPaging(cirrusMongoData.GroupedContracts());
+      }
+
+      [HttpGet]
+      [Route("contract/list/{contractType}")]
+      public IActionResult GetContracts([MinLength(2)][MaxLength(100)] string contractType, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      {
+         return OkPaging(cirrusMongoData.ListContracts(contractType, offset, limit));
+      }
+
+      [HttpGet]
       [Route("contract/{address}")]
       public IActionResult GetAddressContract([MinLength(30)][MaxLength(100)] string address)
       {
