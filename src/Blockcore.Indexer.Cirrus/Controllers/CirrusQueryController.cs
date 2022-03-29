@@ -35,7 +35,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("contract/group")]
+      [Route("contract/list")]
       public IActionResult GetGroupedContracts()
       {
          return OkPaging(cirrusMongoData.GroupedContracts());
