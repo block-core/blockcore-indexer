@@ -5,29 +5,28 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class MintLogReader : ILogReader<NonFungibleTokenComputedTable>
+public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenComputedTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Mint");
+   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("SafeTransferFrom");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => false;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)
    {
       var log = contractTransaction.Logs.First()?.Log;
-      var uriLog = contractTransaction.Logs.Last()?.Log;
+      var saleLog = contractTransaction.Logs.Last()?.Log;
 
-      if (log is null || uriLog is null)
+      if (log is null || saleLog is null)
          throw new ArgumentNullException(nameof(log));
 
       object tokenId = log.Data["tokenId"];
       string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
 
-      computedTable.Tokens.Add(new Token
-      {
-         Owner = (string)log.Data["to"],
-         Id = id,
-         Uri = (string)uriLog.Data["tokenUri"]
-      });
+      var token = computedTable.Tokens.First(_ => _.Id == id);
+
+      token.Owner = (string)log.Data["to"];
+
+      token.SalesHistory.Add(SalesEventReader.SaleDetails(contractTransaction, saleLog, log));
    }
 }

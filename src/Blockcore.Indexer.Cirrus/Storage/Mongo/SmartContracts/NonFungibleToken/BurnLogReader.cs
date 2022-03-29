@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -13,9 +14,11 @@ public class BurnLogReader: ILogReader<NonFungibleTokenComputedTable>
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)
    {
-      long tokenId = (long)contractTransaction.Logs.SingleOrDefault().Log.Data["tokenId"];
+      object tokenId = contractTransaction.Logs.SingleOrDefault().Log.Data["tokenId"];
 
-      computedTable.Tokens.Single(_ => _.Id == tokenId)
+      string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
+
+      computedTable.Tokens.Single(_ => _.Id == id)
          .IsBurned = true;
    }
 }
