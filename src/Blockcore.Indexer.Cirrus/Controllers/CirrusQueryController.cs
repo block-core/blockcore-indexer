@@ -86,7 +86,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("contract/StandardToken/{address}")]
+      [Route("contract/standardtoken/{address}")]
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
@@ -101,7 +101,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("contract/StandardToken/{address}/{filterAddress}")]
+      [Route("contract/standardtoken/{address}/{filterAddress}")]
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress)
       {
