@@ -105,6 +105,11 @@ namespace Blockcore.Indexer.Core.Models
       public string Progress { get; set; }
 
       /// <summary>
+      /// How many blocks are let to sync (doest no include indexing time)
+      /// </summary>
+      public long BlocksLeftToSync { get; set; }
+
+      /// <summary>
       /// Gets or sets the number of transactions in pool.
       /// </summary>
       public int TransactionsInPool { get; set; }

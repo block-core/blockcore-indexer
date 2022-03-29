@@ -155,6 +155,7 @@ namespace Blockcore.Indexer.Core.Handlers
             {
                stats.SyncBlockIndex = latestBlock.BlockIndex;
                stats.Progress = $"{stats.SyncBlockIndex}/{stats.Blockchain.Blocks} - {stats.Blockchain.Blocks - stats.SyncBlockIndex}";
+               stats.BlocksLeftToSync = stats.Blockchain.Blocks - stats.SyncBlockIndex;
 
                if (globalState.IndexMode)
                {
