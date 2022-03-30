@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
@@ -99,7 +100,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("contract/StandardToken/{address}")]
+      [Route("contract/standardtoken/{address}")]
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
@@ -109,6 +110,23 @@ namespace Blockcore.Indexer.Cirrus.Controllers
          {
             return NotFound();
          }
+
+         return Ok(contract);
+      }
+
+      [HttpGet]
+      [Route("contract/standardtoken/{address}/{filterAddress}")]
+      [SlowRequestsFilteerAttribute]
+      public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress)
+      {
+         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
+
+         if (contract is null)
+         {
+            return NotFound();
+         }
+
+         contract.TokenHolders = contract.TokenHolders.Where(t => t.Address == filterAddress).ToList();
 
          return Ok(contract);
       }
