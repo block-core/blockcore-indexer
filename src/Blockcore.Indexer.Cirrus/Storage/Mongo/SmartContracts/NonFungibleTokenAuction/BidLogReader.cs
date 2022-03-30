@@ -1,10 +1,8 @@
-using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
-using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo.NonFungibleTokenAuction;
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenAuction;
 
 public class BidLogReader : ILogReader<NonFungibleTokenComputedTable>
 {

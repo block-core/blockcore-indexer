@@ -1,10 +1,9 @@
 using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
-using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-namespace Blockcore.Indexer.Cirrus.Storage.Mongo.NonFungibleTokenStore;
+namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenStore;
 
 public class CancelSaleLogReader : ILogReader<NonFungibleTokenComputedTable>
 {
