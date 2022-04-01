@@ -61,6 +61,61 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          await Task.WhenAll(contracts, contractsCode);
       }
 
+      public QueryResult<QueryContractGroup> GroupedContracts()
+      {
+         var groupedContracts = mongoDb.CirrusContractCodeTable.Aggregate()
+            .Group(_ => _.CodeType, ac => new QueryContractGroup
+            {
+               ContractCodeType = ac.Key,
+               Count = ac.Count(),
+               ContractHash = ac.First().ContractHash
+            })
+            .ToList();
+
+         return new QueryResult<QueryContractGroup>
+         {
+            Items = groupedContracts,
+            Offset = 0,
+            Limit = groupedContracts.Count,
+            Total = groupedContracts.Count
+         };
+      }
+
+      public QueryResult<QueryContractList> ListContracts(string contractType, int? offset, int limit)
+      {
+         IMongoQueryable<CirrusContractTable> totalQuary = mongoDb.CirrusContractTable.AsQueryable()
+            .Where(q => q.ContractOpcode == "create" && q.ContractCodeType == contractType && q.Success == true);
+
+         int total = totalQuary.Count();
+
+         int itemsToSkip = offset ?? (total < limit ? 0 : total - limit);
+
+         IMongoQueryable<CirrusContractTable> cirrusContract = mongoDb.CirrusContractTable.AsQueryable()
+            .Where(q => q.ContractOpcode == "create" &&  q.ContractCodeType == contractType && q.Success == true)
+            .OrderBy(b => b.BlockIndex)
+            .Skip(itemsToSkip)
+            .Take(limit);
+
+         var res = cirrusContract.ToList();
+
+         IEnumerable<QueryContractList> transactions = res.Select(item => new QueryContractList
+         {
+            ContractAddress = item.NewContractAddress,
+            ContractCodeType = item.ContractCodeType,
+            Error = item.Error,
+            BlockIndex = item.BlockIndex,
+            TransactionId = item.TransactionId
+         });
+
+         return new QueryResult<QueryContractList>
+         {
+            Items = transactions,
+            Offset = itemsToSkip,
+            Limit = limit,
+            Total = total
+         };
+      }
+
       public QueryContractCreate ContractCreate(string address)
       {
          IMongoQueryable<CirrusContractTable> cirrusContract = mongoDb.CirrusContractTable.AsQueryable()
@@ -86,6 +141,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             TransactionId = item.TransactionId
          }).FirstOrDefault();
       }
+
+     
 
       public QueryResult<QueryContractCall> ContractCall(string address, string filterAddress, int? offset, int limit)
       {
