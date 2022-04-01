@@ -11,4 +11,5 @@ public interface ICirrusMongoDb : IMongoDb
    public IMongoCollection<CirrusContractCodeTable> CirrusContractCodeTable { get; }
    public IMongoCollection<DaoContractComputedTable> DaoContractComputedTable { get; }
    public IMongoCollection<StandardTokenComputedTable> StandardTokenComputedTable { get; }
+   public IMongoCollection<NonFungibleTokenComputedTable> NonFungibleTokenComputedTable { get; }
 }

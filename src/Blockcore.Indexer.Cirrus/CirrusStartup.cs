@@ -7,6 +7,7 @@ using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Client;
@@ -62,13 +63,15 @@ namespace Blockcore.Indexer.Cirrus
             .AddApplicationPart(typeof(Startup).Assembly)
             .AddControllersAsServices();
 
+         services.AddTransient<IComputeSmartContractService<NonFungibleTokenComputedTable>,NftComputationService>();
          services.AddTransient(typeof(IComputeSmartContractService<>),typeof(ComputeSmartContractService<>));
          services.AddTransient(typeof(ISmartContractHandlersFactory<>),typeof(SmartContractHandlersFactory<>));
 
          ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<DaoContractComputedTable>),
             typeof(ILogReader<>).Assembly);
-
          ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<StandardTokenComputedTable>),
+            typeof(ILogReader<>).Assembly);
+         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<NonFungibleTokenComputedTable>),
             typeof(ILogReader<>).Assembly);
 
          RegisterSmartContractBuilder(services); //No need to scan the assembly as there won't be that many
@@ -78,6 +81,7 @@ namespace Blockcore.Indexer.Cirrus
       {
          collection.AddTransient<ISmartContractBuilder<DaoContractComputedTable>, DaoSmartContractBuilder>();
          collection.AddTransient<ISmartContractBuilder<StandardTokenComputedTable>, StandardTokenSmartContractBuilder>();
+         collection.AddTransient<ISmartContractBuilder<NonFungibleTokenComputedTable>, NonFungibleTokenSmartContractBuilder>();
          return collection;
       }
 
