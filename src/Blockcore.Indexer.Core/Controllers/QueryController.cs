@@ -157,6 +157,18 @@ namespace Blockcore.Indexer.Core.Controllers
       }
 
       /// <summary>
+      /// Returns a block based on the block id (hash).
+      /// </summary>
+      /// <param name="hash">Hash (ID) of the block to return.</param>
+      /// <returns></returns>
+      [HttpGet]
+      [Route("block/{hash}/hex")]
+      public IActionResult GetBlockHex(string hash)
+      {
+         return OkItem(storage.GetRawBlock(hash));
+      }
+
+      /// <summary>
       /// Returns orphan blocks based on the offset and limit. Orphan blocks are blocks that are not part of the main chain.
       /// </summary>
       /// <param name="offset">If value set to null, then query will start from block tip, not from 0 (genesis).</param>
