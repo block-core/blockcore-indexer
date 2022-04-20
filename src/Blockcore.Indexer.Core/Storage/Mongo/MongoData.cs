@@ -136,6 +136,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             Confirmations = transaction?.Confirmations ?? 0,
             Timestamp = transaction?.Timestamp ?? 0,
             TransactionId = transaction?.TransactionHash ?? transactionId,
+            TransactionIndex = transaction?.TransactionIndex,
             RBF = transactionItems.RBF,
             LockTime = transactionItems.LockTime.ToString(),
             Version = transactionItems.Version,
@@ -323,6 +324,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             BlockHash = blk.BlockHash,
             Timestamp = blk.BlockTime,
             TransactionHash = trx.TransactionId,
+            TransactionIndex = trx.TransactionIndex,
             Confirmations = current.BlockIndex + 1 - trx.BlockIndex
          };
       }

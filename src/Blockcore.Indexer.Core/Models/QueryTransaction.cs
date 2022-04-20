@@ -29,6 +29,8 @@ namespace Blockcore.Indexer.Core.Models
       /// </summary>
       public string TransactionId { get; set; }
 
+      public int? TransactionIndex { get; set; }
+
       /// <summary>
       /// Gets or sets the confirmations.
       /// </summary>
