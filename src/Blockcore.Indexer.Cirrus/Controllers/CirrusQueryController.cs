@@ -37,6 +37,13 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
+      [Route("{address}/assets")]
+      public IActionResult GetAddressAssets([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      {
+         return Ok(cirrusMongoData.GetAssetsForAddressAsync(address,offset,limit).Result);
+      }
+
+      [HttpGet]
       [Route("contract/{address}")]
       public IActionResult GetAddressContract([MinLength(30)][MaxLength(100)] string address)
       {

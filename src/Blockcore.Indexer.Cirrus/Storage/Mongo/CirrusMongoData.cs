@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Models;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
@@ -20,20 +21,20 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
    public class CirrusMongoData : MongoData, ICirrusStorage
    {
-      readonly IMongoDatabase mongoDatabase;
       readonly ICirrusMongoDb mongoDb;
+      readonly IComputeSmartContractService<NonFungibleTokenComputedTable> smartContractService;
 
       public CirrusMongoData(
          ILogger<MongoDb> dbLogger,
          SyncConnection connection,
-         IOptions<IndexerSettings> nakoConfiguration,
          IOptions<ChainSettings> chainConfiguration,
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
          ICryptoClientFactory clientFactory,
          IScriptInterpeter scriptInterpeter,
          IMongoDatabase mongoDatabase,
-         ICirrusMongoDb db)
+         ICirrusMongoDb db,
+         IComputeSmartContractService<NonFungibleTokenComputedTable> smartContractService)
          : base(
             dbLogger,
             connection,
@@ -45,8 +46,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             mongoDatabase,
             db)
       {
-         this.mongoDatabase = mongoDatabase;
          mongoDb = db;
+         this.smartContractService = smartContractService;
       }
 
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
@@ -183,6 +184,90 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             ContractHash = item.ContractHash,
             SourceCode = item.SourceCode
          }).FirstOrDefault();
+      }
+
+      public async Task<QueryResult<QueryAddressAsset>> GetAssetsForAddressAsync(string address, int? offset, int limit)
+      {
+         int total = await mongoDb.NonFungibleTokenComputedTable
+            .AsQueryable()
+            .SumAsync(_ => _.Tokens.Count(t => t.Owner == address));
+
+         var test = await mongoDb.NonFungibleTokenComputedTable.Aggregate()
+            .Match(_ => _.Tokens.Any(t => t.Owner == address))
+            .Unwind(_ => _.Tokens)
+            //.Match(_ => _["Owner"] == address)
+            .ToListAsync();
+
+         var mongoTest = await mongoDb.NonFungibleTokenComputedTable
+            .Find(table => table.Tokens.Any(_ => _.Owner == address))
+            .Project(_ => _.Tokens.Select
+            (
+               t => new QueryAddressAsset
+               {
+                  Creator = t.Creator,
+                  ContractId = _.ContractAddress,
+                  Id = t.Id,
+                  Uri = t.Uri,
+                  IsBurned = t.IsBurned,
+                  TransactionId = t.SalesHistory.Any() ? t.SalesHistory.Last().TransactionId : null,
+                  PricePaid = t.SalesHistory.Any()
+                     ? t.SalesHistory.Last() is OnSale
+                        ? ((OnSale)t.SalesHistory.Last()).Price
+                        : t.SalesHistory.Last() is Auction
+                           ? ((Auction)t.SalesHistory.Last()).HighestBid
+                           : null
+                     : null
+               }))
+            .ToListAsync();
+
+          var contracts = await mongoDb.NonFungibleTokenComputedTable
+            .AsQueryable()
+            .Where(_ => _.Tokens.Any(t => t.Owner == address))
+            .ToListAsync();
+
+
+
+         int startPosition = offset ?? total - limit;
+         int endPosition = startPosition + limit;
+
+         var assets = contracts.SelectMany(_ => _.Tokens
+            .Where(t => t.Owner == address)
+            .Select(t => new { _, t }));
+
+         var tokens = assets
+            .Select(_ =>
+               new QueryAddressAsset
+               {
+                  Creator = _.t.Creator,
+                  ContractId = _._.ContractAddress,
+                  Id = _.t.Id,
+                  Uri = _.t.Uri,
+                  IsBurned = _.t.IsBurned,
+                  TransactionId = _.t.SalesHistory.Any() ? _.t.SalesHistory.Last().TransactionId : null,
+                  PricePaid = GetPricePaidFromHistory(_.t.SalesHistory),
+               });
+         // .Skip(startPosition)
+         // .Take(endPosition);
+
+
+         return new QueryResult<QueryAddressAsset>
+         {
+            Items = tokens, Limit = limit, Offset = offset ?? 0, Total = total
+         };
+      }
+
+      private static long? GetPricePaidFromHistory(IList<TokenSaleEvent> saleEvents)
+      {
+         if (!saleEvents.Any())
+            return null;
+
+         var last = saleEvents.Last();
+         return last.GetType().Name switch
+         {
+            nameof(Auction) => ((Auction)last).HighestBid,
+            nameof(OnSale) => ((OnSale)last).Price,
+            _ => 0
+         };
       }
    }
 }
