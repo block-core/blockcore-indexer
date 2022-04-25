@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
@@ -121,6 +122,24 @@ namespace Blockcore.Indexer.Cirrus.Controllers
          }
 
          return Ok(contract);
+      }
+
+      [HttpGet]
+      [Route("contract/NonFungibleToken/{address}/tokens/{id}")]
+      [SlowRequestsFilteerAttribute]
+      public async Task<IActionResult> GetNonFungibleTokenById([MinLength(30)][MaxLength(100)] string address,
+         [MinLength(1)][MaxLength(100)] string id)
+      {
+         var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
+
+         var token = contract.Tokens.FirstOrDefault(_ => _.Id == id);
+
+         if (token is null)
+         {
+            return NotFound();
+         }
+
+         return Ok(token);
       }
 
       private IActionResult OkPaging<T>(QueryResult<T> result)
