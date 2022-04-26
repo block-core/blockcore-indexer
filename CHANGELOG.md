@@ -1,3 +1,18 @@
+## <small>0.2.33 (2022-04-01)</small>
+
+* Add BlocksLeftToSync to stats (#133) ([381a34b](https://github.com/block-core/blockcore-indexer/commit/381a34b)), closes [#133](https://github.com/block-core/blockcore-indexer/issues/133)
+* Added an endpoint for NFT (#136) ([6a0df69](https://github.com/block-core/blockcore-indexer/commit/6a0df69)), closes [#136](https://github.com/block-core/blockcore-indexer/issues/136)
+* Added support for standard token (#129) ([3865653](https://github.com/block-core/blockcore-indexer/commit/3865653)), closes [#129](https://github.com/block-core/blockcore-indexer/issues/129)
+* Create grouped lists of contract api calls (#132) ([deaf809](https://github.com/block-core/blockcore-indexer/commit/deaf809)), closes [#132](https://github.com/block-core/blockcore-indexer/issues/132)
+* Endpoint to expose DAO contract details (#126) ([d7fd90d](https://github.com/block-core/blockcore-indexer/commit/d7fd90d)), closes [#126](https://github.com/block-core/blockcore-indexer/issues/126)
+* standard token - add api end point to filter based on a single address (#131) ([9857666](https://github.com/block-core/blockcore-indexer/commit/9857666)), closes [#131](https://github.com/block-core/blockcore-indexer/issues/131)
+* Update CHANGELOG.md ([ba88263](https://github.com/block-core/blockcore-indexer/commit/ba88263))
+* Update version ([2097c74](https://github.com/block-core/blockcore-indexer/commit/2097c74))
+* Update version and changelog ([2c18e81](https://github.com/block-core/blockcore-indexer/commit/2c18e81))
+* When broadcasting a trx add it also to the mempool (#128) ([043b100](https://github.com/block-core/blockcore-indexer/commit/043b100)), closes [#128](https://github.com/block-core/blockcore-indexer/issues/128)
+
+
+
 ## <small>0.2.31 (2022-03-20)</small>
 
 * return correct conf count for trx api call (#125) ([aa88a8d](https://github.com/block-core/blockcore-indexer/commit/aa88a8d)), closes [#125](https://github.com/block-core/blockcore-indexer/issues/125)

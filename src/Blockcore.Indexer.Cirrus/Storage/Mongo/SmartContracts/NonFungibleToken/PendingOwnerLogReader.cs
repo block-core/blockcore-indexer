@@ -13,6 +13,6 @@ public class PendingOwnerLogReader : ILogReader<NonFungibleTokenComputedTable>
    public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)
    {
-      computedTable.PendingOwner = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["PendingOwner"];
+      computedTable.PendingOwner = (string)contractTransaction.Logs.SingleOrDefault()?.Log.Data["PendingOwner"] ?? string.Empty;
    }
 }

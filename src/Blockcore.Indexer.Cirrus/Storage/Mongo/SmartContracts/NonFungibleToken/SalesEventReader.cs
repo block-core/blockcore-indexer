@@ -19,12 +19,11 @@ public class SalesEventReader
       }
       catch (Exception e)
       {
-         Console.WriteLine(e);
          throw;
       }
    }
 
-   static OnSale GetSaleDetails(string transactionId, LogData saleLog, LogData log) =>
+   private static OnSale GetSaleDetails(string transactionId, LogData saleLog, LogData log) =>
       new()
       {
          Seller = (string)saleLog.Data["seller"],
@@ -32,7 +31,7 @@ public class SalesEventReader
          TransactionId = transactionId
       };
 
-   static Auction GetAuctionDetails(string transactionId, LogData saleLog, LogData log) =>
+   private static Auction GetAuctionDetails(string transactionId, LogData saleLog, LogData log) =>
       new()
       {//TODO need to understand the auction logic and if it should have it's own reader
          Seller = (string)log.Data["from"],
