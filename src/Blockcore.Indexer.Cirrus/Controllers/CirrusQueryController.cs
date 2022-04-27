@@ -156,22 +156,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("contract/NonFungibleToken/{address}")]
-      [SlowRequestsFilteerAttribute]
-      public async Task<IActionResult> GetNonFungibleTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
-      {
-         var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
-
-         if (contract is null)
-         {
-            return NotFound();
-         }
-
-         return Ok(contract);
-      }
-
-      [HttpGet]
-      [Route("contract/NonFungibleToken/{address}/tokens/{id}")]
+      [Route("contract/nonfungibletoken/{address}/tokens/{id}")]
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetNonFungibleTokenById([MinLength(30)][MaxLength(100)] string address,
          [MinLength(1)][MaxLength(100)] string id)
