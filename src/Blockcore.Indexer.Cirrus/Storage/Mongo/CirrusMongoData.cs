@@ -126,6 +126,12 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          if (res.Count > 1)
             throw new ApplicationException("This is unexpected"); // todo: remove this temporary code
 
+         CirrusContractTable lastEntry = mongoDb.CirrusContractTable.AsQueryable()
+            .OrderBy(b => b.BlockIndex)
+            .Where(q => q.ToAddress == address)
+            .FirstOrDefault();
+
+
          return res.Select(item => new QueryContractCreate
          {
             Success = item.Success,
@@ -134,6 +140,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             GasUsed = item.GasUsed,
             GasPrice = item.GasPrice,
             Amount = item.Amount,
+            ContractBalance = lastEntry?.ContractBalance ?? 0,
             FromAddress = item.FromAddress,
             Error = item.Error,
             ContractOpcode = item.ContractOpcode,
@@ -141,8 +148,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             TransactionId = item.TransactionId
          }).FirstOrDefault();
       }
-
-     
 
       public QueryResult<QueryContractCall> ContractCall(string address, string filterAddress, int? offset, int limit)
       {
@@ -181,6 +186,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             GasUsed = item.GasUsed,
             GasPrice = item.GasPrice,
             Amount = item.Amount,
+            ContractBalance = item.ContractBalance,
             FromAddress = item.FromAddress,
             Error = item.Error,
             BlockIndex = item.BlockIndex,

@@ -95,6 +95,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                      GasUsed = receipt.GasUsed,
                      GasPrice = receipt.GasPrice,
                      Amount = receipt.Amount,
+                     ContractBalance = receipt.ContractBalance,
                      Logs = receipt.Logs
                   });
 
