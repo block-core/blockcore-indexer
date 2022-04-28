@@ -11,37 +11,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo;
 
 public static class BlockRewindOperation
 {
-   public static async Task RewindBlockOnIbdAsync(this IMongoDb storage, uint blockIndex)
-   {
-      await StoreRewindBlockAsync(storage, blockIndex);
-
-      await RewindInputDataIntoUnspentTransactionTableAsync(storage, blockIndex);
-
-      var unspent = DeleteBlockInCollectionFromTopOfTable(storage.UnspentOutputTable, nameof(UnspentOutputTable.BlockIndex),
-         blockIndex);
-
-      var output =
-         DeleteBlockInCollectionFromTopOfTable(storage.OutputTable, nameof(OutputTable.BlockIndex), blockIndex);
-
-      var input =
-         DeleteBlockInCollectionFromTopOfTable(storage.InputTable, nameof(InputTable.BlockIndex), blockIndex);
-
-      var transactions =
-         DeleteBlockInCollectionFromTopOfTable(storage.TransactionBlockTable, nameof(TransactionBlockTable.BlockIndex),
-            blockIndex);
-
-      var addressComputed =
-         DeleteBlockInCollectionFromTopOfTable(storage.AddressComputedTable,
-            nameof(AddressComputedTable.ComputedBlockIndex), blockIndex);
-
-      var addressHistoryComputed =
-         DeleteBlockInCollectionFromTopOfTable(storage.AddressHistoryComputedTable,
-            nameof(AddressHistoryComputedTable.BlockIndex), blockIndex);
-
-
-      await Task.WhenAll(input, output, transactions, addressComputed, addressHistoryComputed, unspent);
-   }
-
    public static async Task RewindBlockAsync(this IMongoDb storage, uint blockIndex)
    {
       await StoreRewindBlockAsync(storage, blockIndex);
@@ -90,7 +59,7 @@ public static class BlockRewindOperation
       await Task.WhenAll( inputs, unspentOutput);
    }
 
-   static Task StoreRewindBlockAsync(IMongoDb storage, uint blockIndex)
+   private static Task StoreRewindBlockAsync(IMongoDb storage, uint blockIndex)
    {
       var blockTask = storage.BlockTable.FindAsync(_ => _.BlockIndex == blockIndex);
       var inputsTask = storage.InputTable.FindAsync(_ => _.BlockIndex == blockIndex);
@@ -115,72 +84,6 @@ public static class BlockRewindOperation
       return storage.ReorgBlock.InsertOneAsync(reorgBlock);
    }
 
-   private static async Task RewindInputDataIntoUnspentTransactionTableAsync(IMongoDb storage, long blockIndex)
-   {
-      const int limit = 1000;
-      int skip = 0;
-      bool moreItemsToCopy;
-
-      do
-      {
-         var lookupItems =
-            await GetTopNDocumentsFromCollectionAsync<InputTable, InputTable>(storage.InputTable, limit * skip++,
-               limit);
-
-         var itemsToCopy = lookupItems
-            .Where(_ => _.BlockIndex == blockIndex)
-            .ToList();
-
-         var outpoints = itemsToCopy.Select(_ => _.Outpoint).ToList();
-
-         var existingOutpoint = (await storage.UnspentOutputTable
-               .FindAsync(_ => outpoints.Contains(_.Outpoint)))
-            .ToList();
-
-         var filteredItemsToCopy = itemsToCopy
-            .Where(_ => existingOutpoint.All(e => e.Outpoint.ToString() != _.Outpoint.ToString()))
-            .Select(_ => new UnspentOutputTable
-            {
-               Address = _.Address, Outpoint = _.Outpoint, Value = _.Value, BlockIndex = int.MaxValue
-            })
-            .ToList();
-
-         if (!filteredItemsToCopy.Any())
-            break;
-
-         await storage.UnspentOutputTable.InsertManyAsync(filteredItemsToCopy);
-         moreItemsToCopy = itemsToCopy.Count == lookupItems.Count;
-
-
-      } while (moreItemsToCopy);
-   }
-
-   private static async Task DeleteBlockInCollectionFromTopOfTable<T>(IMongoCollection<T> collection,
-      string propertyName, long blockIndex)
-   {
-      const int limit = 10000;
-
-      do
-      {
-         var lookupItems = await GetTopNDocumentsFromCollectionAsync<T, BsonDocument>(collection, 0, limit);
-
-         if (!lookupItems.Any())
-            break;
-
-         foreach (BsonDocument bsonDocument in lookupItems)
-         {
-            if (bsonDocument[propertyName] != blockIndex)
-               return;
-
-            await collection.FindOneAndDeleteAsync(FilterDefinition<T>.Empty,
-               new FindOneAndDeleteOptions<T>
-               {
-                  Sort = new BsonDocumentSortDefinition<T>(new BsonDocument("_id", -1))
-               });
-         }
-
-      } while (true);
-   }
 
    /// <summary>
    /// Inputs spend outputs, when an output is spent it gets deleted from the UnspendOutput table and the action of the delete is represented in the inputs table,
@@ -223,21 +126,5 @@ public static class BlockRewindOperation
 
       if (unspentOutputs.Any())
          await storage.UnspentOutputTable.InsertManyAsync(unspentOutputs);
-   }
-
-   private static async Task<List<TProjection>> GetTopNDocumentsFromCollectionAsync<T, TProjection>(
-      IMongoCollection<T> collection, int skip, int limit)
-   {
-      return (await collection.FindAsync(FilterDefinition<T>.Empty,
-               new FindOptions<T, TProjection>
-               {
-                  Sort = new BsonDocumentSortDefinition<T>(new BsonDocument("_id", -1)),
-                  Limit = limit,
-                  Skip = skip,
-                  ShowRecordId = true
-               },
-               new CancellationToken(false))
-            .ConfigureAwait(false))
-         .ToList();
    }
 }
