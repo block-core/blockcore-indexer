@@ -220,6 +220,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             GasUsed = item.GasUsed,
             GasPrice = item.GasPrice,
             Amount = item.Amount,
+            ContractBalance = item.ContractBalance,
             FromAddress = item.FromAddress,
             ToAddress = item.ToAddress,
             Logs = item.Logs,

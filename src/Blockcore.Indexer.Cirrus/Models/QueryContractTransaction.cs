@@ -59,6 +59,11 @@ namespace Blockcore.Indexer.Cirrus.Models
       public ulong Amount { get; set; }
 
       /// <summary>
+      /// The balance of the contract after this trx as executed.
+      /// </summary>
+      public ulong ContractBalance { get; set; }
+
+      /// <summary>
       /// The address that created the contract.
       /// </summary>
       public string FromAddress { get; set; }
