@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Models;
 using Blockcore.Indexer.Core.Storage.Types;
 
@@ -11,4 +12,6 @@ public interface ICirrusStorage
    QueryContractCode ContractCode(string address);
    QueryResult<QueryContractGroup> GroupedContracts();
    QueryResult<QueryContractList> ListContracts(string contractType, int? offset, int limit);
+
+   Task<QueryResult<QueryAddressAsset>> GetAssetsForAddressAsync(string address, int? offset, int limit);
 }

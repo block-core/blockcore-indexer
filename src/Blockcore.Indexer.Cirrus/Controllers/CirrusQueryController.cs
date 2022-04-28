@@ -52,6 +52,13 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
+      [Route("{address}/assets")]
+      public IActionResult GetAddressAssets([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      {
+         return Ok(cirrusMongoData.GetAssetsForAddressAsync(address,offset,limit).Result);
+      }
+
+      [HttpGet]
       [Route("contract/{address}")]
       public IActionResult GetAddressContract([MinLength(30)][MaxLength(100)] string address)
       {
@@ -146,6 +153,24 @@ namespace Blockcore.Indexer.Cirrus.Controllers
          }
 
          return Ok(contract);
+      }
+
+      [HttpGet]
+      [Route("contract/nonfungibletoken/{address}/tokens/{id}")]
+      [SlowRequestsFilteerAttribute]
+      public async Task<IActionResult> GetNonFungibleTokenById([MinLength(30)][MaxLength(100)] string address,
+         [MinLength(1)][MaxLength(100)] string id)
+      {
+         var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
+
+         var token = contract.Tokens.FirstOrDefault(_ => _.Id == id);
+
+         if (token is null)
+         {
+            return NotFound();
+         }
+
+         return Ok(token);
       }
 
       private IActionResult OkPaging<T>(QueryResult<T> result)

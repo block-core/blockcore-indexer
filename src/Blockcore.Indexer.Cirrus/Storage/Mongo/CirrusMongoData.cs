@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Models;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
@@ -13,6 +14,7 @@ using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
@@ -20,20 +22,20 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
    public class CirrusMongoData : MongoData, ICirrusStorage
    {
-      readonly IMongoDatabase mongoDatabase;
       readonly ICirrusMongoDb mongoDb;
+      readonly IComputeSmartContractService<NonFungibleTokenComputedTable> smartContractService;
 
       public CirrusMongoData(
          ILogger<MongoDb> dbLogger,
          SyncConnection connection,
-         IOptions<IndexerSettings> nakoConfiguration,
          IOptions<ChainSettings> chainConfiguration,
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
          ICryptoClientFactory clientFactory,
          IScriptInterpeter scriptInterpeter,
          IMongoDatabase mongoDatabase,
-         ICirrusMongoDb db)
+         ICirrusMongoDb db,
+         IComputeSmartContractService<NonFungibleTokenComputedTable> smartContractService)
          : base(
             dbLogger,
             connection,
@@ -45,8 +47,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             mongoDatabase,
             db)
       {
-         this.mongoDatabase = mongoDatabase;
          mongoDb = db;
+         this.smartContractService = smartContractService;
       }
 
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
@@ -240,6 +242,59 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             ContractHash = item.ContractHash,
             SourceCode = item.SourceCode
          }).FirstOrDefault();
+      }
+
+      public async Task<QueryResult<QueryAddressAsset>> GetAssetsForAddressAsync(string address, int? offset, int limit)
+      {
+         int total = await mongoDb.NonFungibleTokenComputedTable
+            .AsQueryable()
+            .SumAsync(_ => _.Tokens.Count(t => t.Owner == address));
+
+         int startPosition = offset ?? total - limit;
+         int endPosition = startPosition + limit;
+
+         var contracts = await mongoDb.NonFungibleTokenComputedTable.Aggregate()
+            .Match(_ => _.Tokens.Any(t => t.Owner == address))
+            .Unwind(_ => _.Tokens)
+            .Match(_ => _["Tokens"]["Owner"] == address)
+            .Skip(startPosition)
+            .Limit(endPosition)
+            .ToListAsync();
+
+         var tokens =
+            contracts.Select(contract =>
+               new QueryAddressAsset
+                  {
+                     Creator = contract["Tokens"]["Creator"].AsString,
+                     ContractId = contract["_id"].AsString,
+                     Id = contract["Tokens"]["_id"].AsString,
+                     Uri = contract["Tokens"]["Uri"].AsString,
+                     IsBurned = contract["Tokens"]["IsBurned"].AsBoolean,
+                     TransactionId =
+                        contract["Tokens"]["SalesHistory"].AsBsonArray.Any()
+                           ? contract["Tokens"]["SalesHistory"].AsBsonArray.Last()["TransactionId"].AsString
+                           : null,
+                     PricePaid = GetPricePaidFromHistory(contract["Tokens"]["SalesHistory"].AsBsonArray)
+                  });
+
+         return new QueryResult<QueryAddressAsset>
+         {
+            Items = tokens, Limit = limit, Offset = offset ?? 0, Total = total
+         };
+      }
+
+      private static long? GetPricePaidFromHistory(BsonArray saleEvents)
+      {
+         if (!saleEvents.Any())
+            return null;
+
+         var last = saleEvents.Last();
+         return last["_t"].AsBsonArray.Last().AsString switch
+         {
+            nameof(Auction) => last["HighestBid"].AsInt64,
+            nameof(OnSale) => last["Price"].AsInt64,
+            _ => 0
+         };
       }
    }
 }
