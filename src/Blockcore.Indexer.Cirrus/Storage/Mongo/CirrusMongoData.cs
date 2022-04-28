@@ -127,7 +127,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             throw new ApplicationException("This is unexpected"); // todo: remove this temporary code
 
          CirrusContractTable lastEntry = mongoDb.CirrusContractTable.AsQueryable()
-            .OrderBy(b => b.BlockIndex)
+            .OrderByDescending(b => b.BlockIndex)
             .Where(q => q.ToAddress == address)
             .FirstOrDefault();
 
