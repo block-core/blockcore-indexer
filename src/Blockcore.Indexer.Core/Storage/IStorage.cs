@@ -32,6 +32,8 @@ namespace Blockcore.Indexer.Core.Storage
 
       SyncBlockInfo BlockByHash(string blockHash);
 
+      string GetRawBlock(string blockHash);
+
       SyncBlockInfo BlockByIndex(long blockIndex);
 
       QueryResult<QueryOrphanBlock> OrphanBlocks(int? offset, int limit);

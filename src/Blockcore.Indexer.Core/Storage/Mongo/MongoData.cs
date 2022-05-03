@@ -349,6 +349,16 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return null;
       }
 
+      public string GetRawBlock(string blockHash)
+      {
+         IBlockchainClient client = clientFactory.Create(syncConnection);
+
+         string res = client.GetBlockHex(blockHash);
+
+         return res;
+      }
+
+
       public SyncTransactionItems TransactionItemsGet(string transactionId, Transaction transaction = null)
       {
 
