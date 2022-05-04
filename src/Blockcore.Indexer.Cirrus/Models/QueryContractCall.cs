@@ -37,6 +37,11 @@ namespace Blockcore.Indexer.Cirrus.Models
       public ulong Amount { get; set; }
 
       /// <summary>
+      /// The balance of the contract after this trx as executed.
+      /// </summary>
+      public ulong ContractBalance { get; set; }
+
+      /// <summary>
       /// The method that is executed on teh smart contract class.
       /// </summary>
       public string MethodName { get; set; }

@@ -11,6 +11,6 @@ namespace Blockcore.Indexer.Cirrus.Client.Types
       public string ContractCSharp { get; set; }
       public ulong GasPrice { get; set; }
       public ulong Amount { get; set; }
+      public ulong ContractBalance { get; set; }
    }
-
 }

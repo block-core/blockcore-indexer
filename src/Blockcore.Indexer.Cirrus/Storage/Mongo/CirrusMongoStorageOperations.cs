@@ -61,6 +61,12 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          foreach (Transaction transaction in item.Transactions)
          {
+            TxOut smartContractInternalCallTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractInternalCall());
+            if (smartContractInternalCallTxOut != null)
+            {
+               // handle sc internal transfer
+            }
+
             TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => txOut.ScriptPubKey.IsSmartContractExec());
 
             if (smartContractTxOut != null)
@@ -95,6 +101,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                      GasUsed = receipt.GasUsed,
                      GasPrice = receipt.GasPrice,
                      Amount = receipt.Amount,
+                     ContractBalance = receipt.ContractBalance,
                      Logs = receipt.Logs
                   });
 
