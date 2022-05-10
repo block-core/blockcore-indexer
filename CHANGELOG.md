@@ -1,4 +1,15 @@
-## <small>0.2.33 (2022-04-01)</small>
+## <small>0.2.33 (2022-05-10)</small>
+
+* Add trx index to trx api (#139) ([f906d1e](https://github.com/block-core/blockcore-indexer/commit/f906d1e)), closes [#139](https://github.com/block-core/blockcore-indexer/issues/139)
+* Added NFT and asstets enpoints (#142) ([37601f8](https://github.com/block-core/blockcore-indexer/commit/37601f8)), closes [#142](https://github.com/block-core/blockcore-indexer/issues/142)
+* Fetch block hex api (#140) ([9d60b34](https://github.com/block-core/blockcore-indexer/commit/9d60b34)), closes [#140](https://github.com/block-core/blockcore-indexer/issues/140)
+* Removing rewind without indexes and adding a warning message (#144) ([d25c1a7](https://github.com/block-core/blockcore-indexer/commit/d25c1a7)), closes [#144](https://github.com/block-core/blockcore-indexer/issues/144)
+* Store and fetch the contract balance on each recipt (#143) ([4b958fe](https://github.com/block-core/blockcore-indexer/commit/4b958fe)), closes [#143](https://github.com/block-core/blockcore-indexer/issues/143)
+* Update version and changelog ([ee6d42f](https://github.com/block-core/blockcore-indexer/commit/ee6d42f))
+
+
+
+## <small>0.2.32 (2022-04-01)</small>
 
 * Add BlocksLeftToSync to stats (#133) ([381a34b](https://github.com/block-core/blockcore-indexer/commit/381a34b)), closes [#133](https://github.com/block-core/blockcore-indexer/issues/133)
 * Added an endpoint for NFT (#136) ([6a0df69](https://github.com/block-core/blockcore-indexer/commit/6a0df69)), closes [#136](https://github.com/block-core/blockcore-indexer/issues/136)
