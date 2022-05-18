@@ -5,8 +5,8 @@ body {
    padding-right: 15%;
    padding-top: 40px;
    padding-bottom: 40px;
-   background-image: url(/img/background.png);
-   background-repeat: repeat;
+   background-image: url("/img/background.png");
+   background-repeat: repeat-x;
 }
 .flex-container {
    display: flex;
