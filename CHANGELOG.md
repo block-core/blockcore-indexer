@@ -1,4 +1,12 @@
-## <small>0.2.33 (2022-05-10)</small>
+## <small>0.2.34 (2022-05-28)</small>
+
+* change background-image in index.html (#145) ([2c7557b](https://github.com/block-core/blockcore-indexer/commit/2c7557b)), closes [#145](https://github.com/block-core/blockcore-indexer/issues/145)
+* Fixed typo to fit the Cirrus on release 1.1.44 (#146) ([501bee2](https://github.com/block-core/blockcore-indexer/commit/501bee2)), closes [#146](https://github.com/block-core/blockcore-indexer/issues/146)
+* Update version and changelog ([4c4a597](https://github.com/block-core/blockcore-indexer/commit/4c4a597))
+
+
+
+## <small>0.2.33 (2022-05-04)</small>
 
 * Add trx index to trx api (#139) ([f906d1e](https://github.com/block-core/blockcore-indexer/commit/f906d1e)), closes [#139](https://github.com/block-core/blockcore-indexer/issues/139)
 * Added NFT and asstets enpoints (#142) ([37601f8](https://github.com/block-core/blockcore-indexer/commit/37601f8)), closes [#142](https://github.com/block-core/blockcore-indexer/issues/142)
