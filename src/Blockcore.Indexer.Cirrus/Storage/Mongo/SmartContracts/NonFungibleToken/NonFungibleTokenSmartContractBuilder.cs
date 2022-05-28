@@ -22,7 +22,7 @@ public class NonFungibleTokenSmartContractBuilder : ISmartContractBuilder<NonFun
          ContractCreateTransactionId = createContractTransaction.TransactionId,
          LastProcessedBlockHeight = createContractTransaction.BlockIndex,
          Name = (string)logs.Data["nftName"],
-         Symbol = (string)logs.Data["nftSymbole"],
+         Symbol =  (string)logs.Data["nftSymbol"],
          Owner = (string)logs.Data["nftOwner"],
          OwnerOnlyMinting = (bool)logs.Data["nftOwnerOnlyMinting"],
          Tokens = new List<Token>()
