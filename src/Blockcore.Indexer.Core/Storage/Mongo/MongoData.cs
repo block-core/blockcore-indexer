@@ -223,7 +223,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          SyncBlockInfo tip = globalState.StoreTip;
 
-         if (tip != null)
+         if (tip != null && block != null)
             block.Confirmations = tip.BlockIndex + 1 - block.BlockIndex;
 
          return block;
@@ -237,7 +237,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          SyncBlockInfo tip = globalState.StoreTip;
 
-         if (tip != null)
+         if (tip != null && block != null)
             block.Confirmations = tip.BlockIndex + 1 - block.BlockIndex;
 
          return block;
