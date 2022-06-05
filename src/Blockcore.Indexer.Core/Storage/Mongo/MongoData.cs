@@ -219,14 +219,28 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       {
          FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(info => info.BlockIndex, blockIndex);
 
-         return mongoDb.BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
+         SyncBlockInfo block = mongoDb.BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
+
+         SyncBlockInfo tip = globalState.StoreTip;
+
+         if (tip != null && block != null)
+            block.Confirmations = tip.BlockIndex + 1 - block.BlockIndex;
+
+         return block;
       }
 
       public SyncBlockInfo BlockByHash(string blockHash)
       {
          FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
 
-         return mongoDb.BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
+         SyncBlockInfo block = mongoDb.BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
+
+         SyncBlockInfo tip = globalState.StoreTip;
+
+         if (tip != null && block != null)
+            block.Confirmations = tip.BlockIndex + 1 - block.BlockIndex;
+
+         return block;
       }
 
       public QueryResult<QueryOrphanBlock> OrphanBlocks(int? offset, int limit)
