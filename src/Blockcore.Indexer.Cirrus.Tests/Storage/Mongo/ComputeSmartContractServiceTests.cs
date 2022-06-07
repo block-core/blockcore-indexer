@@ -62,7 +62,7 @@ public class ComputeSmartContractServiceTests
 
       sut = new ComputeSmartContractService<DaoContractComputedTable>(null, mongoDbMock.CirrusMongoDbObject,
          new Mock<ISmartContractHandlersFactory<DaoContractComputedTable>>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection,
-         Mock.Of<IMongoDatabase>());
+         Mock.Of<IMongoDatabase>(), new Mock<ISmartContractTransactionsLookup<DaoContractComputedTable>>().Object);
    }
 
    //[Fact]

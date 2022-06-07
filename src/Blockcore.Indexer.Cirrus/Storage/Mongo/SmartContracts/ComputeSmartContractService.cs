@@ -21,6 +21,7 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
    readonly ISmartContractHandlersFactory<T> logReaderFactory;
    readonly CirrusClient cirrusClient;
    readonly IMongoDatabase mongoDatabase;
+   readonly ISmartContractTransactionsLookup<T> transactionsLookup;
 
    readonly T emptyContract;
 
@@ -29,12 +30,14 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
       ISmartContractHandlersFactory<T> logReaderFactory,
       ICryptoClientFactory clientFactory,
       SyncConnection connection,
-      IMongoDatabase mongoDatabase)
+      IMongoDatabase mongoDatabase,
+      ISmartContractTransactionsLookup<T> transactionsLookup)
    {
       this.logger = logger;
       mongoDb = db;
       this.logReaderFactory = logReaderFactory;
       this.mongoDatabase = mongoDatabase;
+      this.transactionsLookup = transactionsLookup;
       cirrusClient = (CirrusClient)clientFactory.Create(connection);
       emptyContract = new T();
    }
@@ -46,10 +49,8 @@ public class ComputeSmartContractService<T> : IComputeSmartContractService<T>
       if (contract is null)
          return null;
 
-      var contractTransactions = await mongoDb.CirrusContractTable
-         .AsQueryable()
-         .Where(_ => _.ToAddress == address && _.Success && _.BlockIndex > contract.LastProcessedBlockHeight)
-         .ToListAsync();
+      var contractTransactions =
+         await transactionsLookup.GetTransactionsForSmartContractAsync(address, contract.LastProcessedBlockHeight);
 
       if (contractTransactions.Any())
       {
