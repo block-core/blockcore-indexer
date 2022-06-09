@@ -136,7 +136,7 @@ namespace Blockcore.Indexer.Core.Handlers
 
       public async Task<Statistics> Statistics()
       {
-         var cachedStats = cache.Get<Statistics>("Statistics");
+         var cachedStats = cache.Get<Statistics>(Key);
 
          if (cachedStats != null &&
              cachedStats.Blockchain.BestBlockHash == globalState.StoreTip.BlockHash)
