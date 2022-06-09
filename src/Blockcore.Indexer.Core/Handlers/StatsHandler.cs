@@ -38,7 +38,7 @@ namespace Blockcore.Indexer.Core.Handlers
       readonly GlobalState globalState;
 
       readonly IMemoryCache cache;
-      readonly object key;
+      const string Key = "Statistics";
 
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsHandler"/> class.
@@ -61,8 +61,6 @@ namespace Blockcore.Indexer.Core.Handlers
          this.configuration = configuration.Value;
          this.chainConfiguration = chainConfiguration.Value;
          this.networkConfig = networkConfig.Value;
-
-         key = new object();
       }
 
       public async Task<StatsConnection> StatsConnection()
@@ -138,7 +136,7 @@ namespace Blockcore.Indexer.Core.Handlers
 
       public async Task<Statistics> Statistics()
       {
-         var cachedStats = cache.Get<Statistics>(key);
+         var cachedStats = cache.Get<Statistics>("Statistics");
 
          if (cachedStats != null &&
              cachedStats.Blockchain.BestBlockHash == globalState.StoreTip.BlockHash)
@@ -195,7 +193,7 @@ namespace Blockcore.Indexer.Core.Handlers
 
          stats.IsInIBDMode = globalState.IbdMode();
 
-         cache.Set(key,stats);
+         cache.Set(Key,stats);
 
          return stats;
       }
