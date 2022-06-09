@@ -138,10 +138,14 @@ namespace Blockcore.Indexer.Core.Handlers
 
       public async Task<Statistics> Statistics()
       {
-         var cachedStats = cache.Get<CachedStats>(key);
+         var cachedStats = cache.Get<Statistics>(key);
 
-         if (cachedStats != null && cachedStats.CacheTime >= DateTime.UtcNow)
-            return cachedStats.Statistics;
+         if (cachedStats != null &&
+             cachedStats.Blockchain.BestBlockHash == globalState.StoreTip.BlockHash)
+         {
+            return cachedStats;
+         }
+
 
          SyncConnection connection = syncConnection;
          var client = clientFactory.Create(connection);
@@ -191,12 +195,7 @@ namespace Blockcore.Indexer.Core.Handlers
 
          stats.IsInIBDMode = globalState.IbdMode();
 
-         cachedStats = new CachedStats
-         {
-            Statistics = stats, CacheTime = DateTime.UtcNow.AddSeconds(configuration.SyncInterval)
-         };
-
-         cache.Set(key,cachedStats);
+         cache.Set(key,stats);
 
          return stats;
       }
@@ -270,12 +269,5 @@ namespace Blockcore.Indexer.Core.Handlers
          result = null;
          return false;
       }
-
-      class CachedStats
-      {
-         public DateTime CacheTime { get; set; }
-         public Statistics Statistics { get; set; }
-      }
-
    }
 }
