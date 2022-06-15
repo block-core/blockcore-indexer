@@ -3,22 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class VoteLogReader : ILogReader<DaoContractComputedTable>
+class VoteLogReader : ILogReader<DaoContractComputedTable, DaoContractProposal>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "Vote";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
    {
       if (contractTransaction.Logs.Length == 0)
       {
          //TODO need to handle this wierd issue (example transaction id - 5faa9c5347ba378ea1b4dd9e957e398867f724a6ba4951ed65cde6529dbfd6a0)
-         return;
+         return null;
       }
 
       int id = (int)(long)contractTransaction.Logs.First().Log.Data["proposalId"];
@@ -34,6 +35,14 @@ class VoteLogReader : ILogReader<DaoContractComputedTable>
       }
 
       var vote = proposal.Votes.FirstOrDefault(_ => _.VoterAddress == voterAddress);
+
+      var update = Builders<DaoContractProposal>.Update.AddToSet(_ => _.Votes,new DaoContractVoteDetails
+      {
+         IsApproved = voteYesNo,
+         ProposalId = id,
+         VoterAddress = voterAddress,
+         VotedOnBlock = contractTransaction.BlockIndex,
+      });
 
       if (vote != null)
       {
@@ -52,5 +61,7 @@ class VoteLogReader : ILogReader<DaoContractComputedTable>
             VotedOnBlock = contractTransaction.BlockIndex,
          });
       }
+
+      return null; //TODO
    }
 }

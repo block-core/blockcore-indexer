@@ -1,16 +1,17 @@
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.StandardToken;
 
-public class TransferFromLogReader : ILogReader<StandardTokenComputedTable>
+public class TransferFromLogReader : ILogReader<StandardTokenComputedTable,StandardTokenHolder>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferFrom");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<StandardTokenHolder>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       StandardTokenComputedTable computedTable)
    {
       string fromAddress = (string)contractTransaction.Logs.Single().Log.Data["from"];
@@ -28,5 +29,15 @@ public class TransferFromLogReader : ILogReader<StandardTokenComputedTable>
       }
 
       toHolder.Amount += amount;
+
+      return new[]
+      {
+         new UpdateOneModel<StandardTokenHolder>(Builders<StandardTokenHolder>.Filter
+               .Where(_ => _.Address == fromAddress),
+            Builders<StandardTokenHolder>.Update.Inc(_ => _.Amount, -amount)),
+         new UpdateOneModel<StandardTokenHolder>(Builders<StandardTokenHolder>.Filter
+               .Where(_ => _.Address == toAddress),
+            Builders<StandardTokenHolder>.Update.Inc(_ => _.Amount, amount))
+      };
    }
 }

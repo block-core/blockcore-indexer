@@ -2,16 +2,17 @@ using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenComputedTable>
+public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonFungibleToken>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("SafeTransferFrom");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenComputedTable computedTable)
    {
       var log = contractTransaction.Logs.First().Log;
@@ -20,10 +21,15 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenComputedTabl
       object tokenId = log.Data["tokenId"];
       string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
 
-      var token = computedTable.Tokens.First(_ => _.Id == id);
+    //  var token = computedTable.Tokens.First(_ => _.Id == id);
 
-      token.Owner = (string)saleLog.Data["seller"];
+      string owner = (string)saleLog.Data["seller"];
 
-      token.SalesHistory.Add(SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log));
+       var sale =SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log);
+
+       return new [] { new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter.Where(_
+             => _.Id == id && _.SmartContractAddress == computedTable.ContractAddress),
+          Builders<Types.NonFungibleToken>.Update.Set(_ => _.Owner, owner)
+             .AddToSet(_ => _.SalesHistory, sale))};
    }
 }

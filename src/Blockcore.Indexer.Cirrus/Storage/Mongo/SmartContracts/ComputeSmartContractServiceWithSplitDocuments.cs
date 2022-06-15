@@ -13,8 +13,7 @@ using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public class ComputeSmartContractService<T,TDocument> : IComputeSmartContractService<T>
-   where T : SmartContractComputedBase, new() where TDocument : new()
+public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : IComputeSmartContractService<T> where T : SmartContractComputedBase, new() where TDocument : new()
 {
    readonly ILogger<ComputeSmartContractService<T,TDocument>> logger;
    readonly ICirrusMongoDb mongoDb;
@@ -23,23 +22,14 @@ public class ComputeSmartContractService<T,TDocument> : IComputeSmartContractSer
    readonly IMongoDatabase mongoDatabase;
    readonly ISmartContractTransactionsLookup<T> transactionsLookup;
 
-   readonly T emptyContract;
-
-   public ComputeSmartContractService(ILogger<ComputeSmartContractService<T,TDocument>> logger,
-      ICirrusMongoDb db,
-      ISmartContractHandlersFactory<T,TDocument> logReaderFactory,
-      ICryptoClientFactory clientFactory,
-      SyncConnection connection,
-      IMongoDatabase mongoDatabase,
-      ISmartContractTransactionsLookup<T> transactionsLookup)
+   public ComputeSmartContractServiceWithSplitDocuments(ILogger<ComputeSmartContractService<T, TDocument>> logger, ICirrusMongoDb mongoDb, ISmartContractHandlersFactory<T, TDocument> logReaderFactory, ICryptoClientFactory clientFactory,SyncConnection connection, IMongoDatabase mongoDatabase, ISmartContractTransactionsLookup<T> transactionsLookup)
    {
       this.logger = logger;
-      mongoDb = db;
+      this.mongoDb = mongoDb;
       this.logReaderFactory = logReaderFactory;
+      cirrusClient = (CirrusClient)clientFactory.Create(connection);;
       this.mongoDatabase = mongoDatabase;
       this.transactionsLookup = transactionsLookup;
-      cirrusClient = (CirrusClient)clientFactory.Create(connection);
-      emptyContract = new T();
    }
 
    public async Task<T> ComputeSmartContractForAddressAsync(string address)
@@ -60,9 +50,48 @@ public class ComputeSmartContractService<T,TDocument> : IComputeSmartContractSer
       return contract;
    }
 
+   async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions, T contract)
+   {
+      var writeModels = new List<WriteModel<TDocument>>();
+
+      foreach (var contractTransaction in contractTransactions)
+      {
+         var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
+
+         if (reader is null)
+         {
+            logger.LogInformation($"No reader found for method {contractTransaction.MethodName} on transaction id - {contractTransaction.TransactionId}");
+            throw new InvalidOperationException(
+               $"Reader was not found for transaction - {contractTransaction.TransactionId}");
+         }
+
+         if (!reader.IsTransactionLogComplete(contractTransaction.Logs))
+         {
+            var result = await cirrusClient.GetContractInfoAsync(contractTransaction.TransactionId);
+
+            contractTransaction.Logs = result.Logs;
+         }
+
+         WriteModel<TDocument>[] instructions = reader.UpdateContractFromTransactionLog(contractTransaction, contract);
+
+         if (instructions is not null)
+            writeModels.AddRange(instructions);
+
+         contract.LastProcessedBlockHeight = contractTransaction.BlockIndex;
+      }
+
+      await GetSmartContractCollection<T>()
+         .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
+            new FindOneAndReplaceOptions<T> { IsUpsert = true },
+            CancellationToken.None);
+
+      var bulkWriteResult = GetSmartContractCollection<TDocument>()
+         .BulkWrite(writeModels);
+   }
+
    async Task<T> LookupSmartContractForAddressAsync(string address)
    {
-      T contract = await GetSmartContractCollection()
+      T contract = await GetSmartContractCollection<T>()
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
@@ -73,7 +102,7 @@ public class ComputeSmartContractService<T,TDocument> : IComputeSmartContractSer
          .AsQueryable()
          .SingleOrDefaultAsync(_ => _.ContractAddress == address);
 
-      if (contractCode is null || contractCode.CodeType != emptyContract.ContractType)
+      if (contractCode is null )
       {
          logger.LogInformation(
             $"Request to compute smart contract for address {address} which was not found in the contract code table");
@@ -107,44 +136,14 @@ public class ComputeSmartContractService<T,TDocument> : IComputeSmartContractSer
       return contract;
    }
 
-   private async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions,
-      T contract)
-   {
-      foreach (var contractTransaction in contractTransactions)
-      {
-         var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
-
-         if (reader is null)
-         {
-            logger.LogInformation($"No reader found for method {contractTransaction.MethodName} on transaction id - {contractTransaction.TransactionId}");
-            throw new InvalidOperationException(
-               $"Reader was not found for transaction - {contractTransaction.TransactionId}");
-         }
-
-         if (!reader.IsTransactionLogComplete(contractTransaction.Logs))
-         {
-            var result = await cirrusClient.GetContractInfoAsync(contractTransaction.TransactionId);
-
-            contractTransaction.Logs = result.Logs;
-         }
-
-         reader.UpdateContractFromTransactionLog(contractTransaction, contract);
-
-         contract.LastProcessedBlockHeight = contractTransaction.BlockIndex;
-      }
-
-      await SaveTheContractAsync(address, contract);
-   }
-
    async Task SaveTheContractAsync(string address, T contract) =>
-      await GetSmartContractCollection()
+      await GetSmartContractCollection<T>()
          .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
-         new FindOneAndReplaceOptions<T> { IsUpsert = true },
-         CancellationToken.None);
+            new FindOneAndReplaceOptions<T> { IsUpsert = true },
+            CancellationToken.None);
 
-
-   private IMongoCollection<T> GetSmartContractCollection()
+   private IMongoCollection<TType> GetSmartContractCollection<TType>()
    {
-      return mongoDatabase.GetCollection<T>(typeof(T).Name.Replace("Table",string.Empty));
+      return mongoDatabase.GetCollection<TType>(typeof(TType).Name.Replace("Table",string.Empty));
    }
 }

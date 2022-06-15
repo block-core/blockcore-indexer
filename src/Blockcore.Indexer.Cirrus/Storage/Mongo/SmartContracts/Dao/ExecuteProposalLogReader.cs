@@ -2,16 +2,17 @@ using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class ExecuteProposalLogReader : ILogReader<DaoContractComputedTable>
+class ExecuteProposalLogReader : ILogReader<DaoContractComputedTable, DaoContractProposal>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "ExecuteProposal";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
    {
       var log = contractTransaction.Logs.First().Log.Data;
@@ -28,5 +29,11 @@ class ExecuteProposalLogReader : ILogReader<DaoContractComputedTable>
       proposal.WasProposalAccepted = true;
       proposal.ProposalCompletedAtBlock = contractTransaction.BlockIndex;
       proposal.PayoutTransactionId = contractTransaction.TransactionId;
+
+      return new [] { new UpdateOneModel<DaoContractProposal>(Builders<DaoContractProposal>.Filter.Eq(_ => _.Id, proposalId),
+         Builders<DaoContractProposal>.Update
+            .Set(_ => _.WasProposalAccepted,true)
+            .Set(_ => _.ProposalCompletedAtBlock,contractTransaction.BlockIndex)
+            .Set(_ => _.PayoutTransactionId,contractTransaction.TransactionId))};
    }
 }

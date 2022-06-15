@@ -63,20 +63,25 @@ namespace Blockcore.Indexer.Cirrus
             .AddApplicationPart(typeof(Startup).Assembly)
             .AddControllersAsServices();
 
-         services.AddTransient(typeof(IComputeSmartContractService<>),typeof(ComputeSmartContractService<>));
-         services.AddTransient(typeof(ISmartContractHandlersFactory<>),typeof(SmartContractHandlersFactory<>));
+         services.AddTransient<IComputeSmartContractService<DaoContractComputedTable>,ComputeSmartContractServiceWithSplitDocuments<DaoContractComputedTable,DaoContractProposal>>();
+         services.AddTransient<IComputeSmartContractService<StandardTokenComputedTable>,ComputeSmartContractServiceWithSplitDocuments<StandardTokenComputedTable,StandardTokenHolder>>();
+         services.AddTransient<IComputeSmartContractService<NonFungibleTokenComputedTable>,ComputeSmartContractServiceWithSplitDocuments<NonFungibleTokenComputedTable,NonFungibleToken>>();
 
          services.AddTransient<ISmartContractTransactionsLookup<NonFungibleTokenComputedTable>,NonFungibleTokenSmartContractTransactionsLookup>();
          services.AddTransient(typeof(ISmartContractTransactionsLookup<>), typeof(SmartContractTransactionsLookup<>));
 
 
 
-         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<DaoContractComputedTable>),
-            typeof(ILogReader<>).Assembly);
-         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<StandardTokenComputedTable>),
-            typeof(ILogReader<>).Assembly);
-         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<NonFungibleTokenComputedTable>),
-            typeof(ILogReader<>).Assembly);
+         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<DaoContractComputedTable,DaoContractProposal>),
+            typeof(ILogReader<DaoContractComputedTable,DaoContractProposal>).Assembly);
+         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<StandardTokenComputedTable,StandardTokenHolder>),
+            typeof(ILogReader<StandardTokenComputedTable,StandardTokenHolder>).Assembly);
+         ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<NonFungibleTokenComputedTable,NonFungibleToken>),
+            typeof(ILogReader<NonFungibleTokenComputedTable,NonFungibleToken>).Assembly);
+
+         services.AddTransient<ISmartContractHandlersFactory<DaoContractComputedTable,DaoContractProposal>,SmartContractHandlersFactory<DaoContractComputedTable,DaoContractProposal>>();
+         services.AddTransient<ISmartContractHandlersFactory<StandardTokenComputedTable,StandardTokenHolder>,SmartContractHandlersFactory<StandardTokenComputedTable,StandardTokenHolder>>();
+         services.AddTransient<ISmartContractHandlersFactory<NonFungibleTokenComputedTable,NonFungibleToken>,SmartContractHandlersFactory<NonFungibleTokenComputedTable,NonFungibleToken>>();
 
          RegisterSmartContractBuilder(services); //No need to scan the assembly as there won't be that many
       }

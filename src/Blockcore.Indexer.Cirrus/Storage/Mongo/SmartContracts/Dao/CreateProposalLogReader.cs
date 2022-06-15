@@ -2,16 +2,17 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class CreateProposalLogReader : ILogReader<DaoContractComputedTable>
+class CreateProposalLogReader : ILogReader<DaoContractComputedTable,DaoContractProposal>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "CreateProposal";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
    {
       var logData = contractTransaction.Logs.First().Log.Data;
@@ -32,5 +33,7 @@ class CreateProposalLogReader : ILogReader<DaoContractComputedTable>
          computedTable.Proposals.Capacity = (proposal.Id);
 
       computedTable.Proposals.Insert(proposal.Id - 1,proposal);
+
+      return new [] { new InsertOneModel<DaoContractProposal>(proposal)};
    }
 }

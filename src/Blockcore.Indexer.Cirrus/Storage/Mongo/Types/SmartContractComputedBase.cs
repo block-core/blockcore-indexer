@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;

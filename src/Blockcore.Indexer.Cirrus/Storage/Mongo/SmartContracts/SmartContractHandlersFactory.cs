@@ -4,19 +4,20 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public class SmartContractHandlersFactory<T> : ISmartContractHandlersFactory<T>
+public class SmartContractHandlersFactory<T,TDocument> : ISmartContractHandlersFactory<T,TDocument>
    where T : SmartContractComputedBase
+   where TDocument : new()
 {
    readonly IEnumerable<ISmartContractBuilder<T>> builders;
-   readonly List<ILogReader<T>> readers;
+   readonly List<ILogReader<T,TDocument>> readers;
 
-   public SmartContractHandlersFactory(IEnumerable<ILogReader<T>> readers, IEnumerable<ISmartContractBuilder<T>> builders)
+   public SmartContractHandlersFactory(IEnumerable<ILogReader<T,TDocument>> readers, IEnumerable<ISmartContractBuilder<T>> builders)
    {
       this.builders = builders;
       this.readers = readers.ToList();
    }
 
-   public ILogReader<T> GetLogReader(string methodName)
+   public ILogReader<T, TDocument> GetLogReader(string methodName)
    {
       foreach (var reader in readers)
       {

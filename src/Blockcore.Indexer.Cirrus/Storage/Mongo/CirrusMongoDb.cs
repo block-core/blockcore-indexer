@@ -49,4 +49,6 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
          return mongoDatabase.GetCollection<NonFungibleTokenComputedTable>("NonFungibleTokenComputed");
       }
    }
+
+   public IMongoCollection<NonFungibleToken> NonFungibleTokensTable { get; }
 }

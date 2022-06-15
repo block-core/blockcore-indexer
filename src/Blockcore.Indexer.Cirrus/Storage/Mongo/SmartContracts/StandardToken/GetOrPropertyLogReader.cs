@@ -1,9 +1,10 @@
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.StandardToken;
 
-class GetOrPropertyLogReader : ILogReader<StandardTokenComputedTable>
+class GetOrPropertyLogReader : ILogReader<StandardTokenComputedTable,StandardTokenHolder>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.StartsWith("get_") ||
                                                              methodType.StartsWith("Get") ||
@@ -12,9 +13,9 @@ class GetOrPropertyLogReader : ILogReader<StandardTokenComputedTable>
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<StandardTokenHolder>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       StandardTokenComputedTable computedTable)
    {
-
+      return null;
    }
 }

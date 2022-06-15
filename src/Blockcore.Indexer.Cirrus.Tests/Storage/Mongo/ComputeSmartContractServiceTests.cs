@@ -17,7 +17,7 @@ namespace Blockcore.Indexer.Cirrus.Tests.Storage.Mongo;
 
 public class ComputeSmartContractServiceTests
 {
-   ComputeSmartContractService<DaoContractComputedTable> sut;
+   ComputeSmartContractService<DaoContractComputedTable,DaoContractProposal> sut;
 
    CirrusMongoDbMock mongoDbMock;
 
@@ -60,8 +60,8 @@ public class ComputeSmartContractServiceTests
          chainSetting.Object, networkSettings.Object);
 
 
-      sut = new ComputeSmartContractService<DaoContractComputedTable>(null, mongoDbMock.CirrusMongoDbObject,
-         new Mock<ISmartContractHandlersFactory<DaoContractComputedTable>>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection,
+      sut = new ComputeSmartContractService<DaoContractComputedTable,DaoContractProposal>(null, mongoDbMock.CirrusMongoDbObject,
+         new Mock<ISmartContractHandlersFactory<DaoContractComputedTable,DaoContractProposal>>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection,
          Mock.Of<IMongoDatabase>(), new Mock<ISmartContractTransactionsLookup<DaoContractComputedTable>>().Object);
    }
 
