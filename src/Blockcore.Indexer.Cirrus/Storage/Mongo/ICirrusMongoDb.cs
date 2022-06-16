@@ -14,5 +14,5 @@ public interface ICirrusMongoDb : IMongoDb
    public IMongoCollection<NonFungibleTokenComputedTable> NonFungibleTokenComputedTable { get; }
 
 
-   public IMongoCollection<NonFungibleToken> NonFungibleTokensTable { get; }
+   public IMongoCollection<NonFungibleToken> NonFungibleTokenTable { get; }
 }

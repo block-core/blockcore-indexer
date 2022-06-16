@@ -14,7 +14,6 @@ using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
@@ -253,53 +252,46 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
       public async Task<QueryResult<QueryAddressAsset>> GetAssetsForAddressAsync(string address, int? offset, int limit)
       {
-         int total = await mongoDb.NonFungibleTokenComputedTable
+         int total = await mongoDb.NonFungibleTokenTable
             .AsQueryable()
-            .SumAsync(_ => _.Tokens.Count(t => t.Owner == address));
+            .CountAsync(_ => _.Owner == address);
 
          int startPosition = offset ?? total - limit;
          int endPosition = startPosition + limit;
 
-         var contracts = await mongoDb.NonFungibleTokenComputedTable.Aggregate()
-            .Match(_ => _.Tokens.Any(t => t.Owner == address))
-            .Unwind(_ => _.Tokens)
-            .Match(_ => _["Tokens"]["Owner"] == address)
+         var dbTokens = await mongoDb.NonFungibleTokenTable.Aggregate()
+            .Match(_ => _.Owner == address)
             .Skip(startPosition)
             .Limit(endPosition)
             .ToListAsync();
 
-         var tokens =
-            contracts.Select(contract =>
-               new QueryAddressAsset
-                  {
-                     Creator = contract["Tokens"]["Creator"].AsString,
-                     ContractId = contract["_id"].AsString,
-                     Id = contract["Tokens"]["_id"].AsString,
-                     Uri = contract["Tokens"]["Uri"].AsString,
-                     IsBurned = contract["Tokens"]["IsBurned"].AsBoolean,
-                     TransactionId =
-                        contract["Tokens"]["SalesHistory"].AsBsonArray.Any()
-                           ? contract["Tokens"]["SalesHistory"].AsBsonArray.Last()["TransactionId"].AsString
-                           : null,
-                     PricePaid = GetPricePaidFromHistory(contract["Tokens"]["SalesHistory"].AsBsonArray)
-                  });
-
+         var tokens = dbTokens.Select(_ => new QueryAddressAsset
+         {
+            Creator = _.Creator,
+            ContractId = _.Id.ContractAddress,
+            Id = _.Id.TokenId,
+            Uri = _.Uri,
+            IsBurned = _.IsBurned,
+            TransactionId = _.SalesHistory.LastOrDefault()?.TransactionId,
+            PricePaid = GetPricePaidFromHistory(_.SalesHistory)
+         });
          return new QueryResult<QueryAddressAsset>
          {
             Items = tokens, Limit = limit, Offset = offset ?? 0, Total = total
          };
       }
 
-      private static long? GetPricePaidFromHistory(BsonArray saleEvents)
+      private static long GetPricePaidFromHistory(IEnumerable<TokenSaleEvent> saleEvents)
       {
          if (!saleEvents.Any())
-            return null;
+            return 0;
 
          var last = saleEvents.Last();
-         return last["_t"].AsBsonArray.Last().AsString switch
+
+         return last switch
          {
-            nameof(Auction) => last["HighestBid"].AsInt64,
-            nameof(OnSale) => last["Price"].AsInt64,
+            Auction auction => auction.HighestBid,
+            OnSale sale => sale.Price,
             _ => 0
          };
       }

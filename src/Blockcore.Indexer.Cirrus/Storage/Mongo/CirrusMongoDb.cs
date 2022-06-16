@@ -50,5 +50,11 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
       }
    }
 
-   public IMongoCollection<NonFungibleToken> NonFungibleTokensTable { get; }
+   public IMongoCollection<NonFungibleToken> NonFungibleTokenTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<NonFungibleToken>("NonFungibleToken");
+      }
+   }
 }
