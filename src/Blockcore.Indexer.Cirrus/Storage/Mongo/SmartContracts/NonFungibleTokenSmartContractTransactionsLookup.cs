@@ -22,7 +22,8 @@ public class NonFungibleTokenSmartContractTransactionsLookup : ISmartContractTra
       return await mongoDb.CirrusContractTable
          .AsQueryable()
          .Where(_ => (_.ToAddress == address ||
-                      _.Logs.Any(_ => _.Log.Data.ContainsKey("contract") && _.Log.Data["contract"] == address)) &&
+                      _.Logs.Any(l => l.Address == address)) &&
+                  //    _.Logs.Any(_ => _.Log.Data.ContainsKey("contract") && (string)_.Log.Data["contract"] == address)) &&
                      (_.Success && _.BlockIndex > lastProcessedBlockHeight))
          .ToListAsync();
    }

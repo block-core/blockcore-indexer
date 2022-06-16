@@ -27,9 +27,9 @@ public class BuyLogReader : ILogReader<NonFungibleTokenComputedTable, Types.NonF
       var updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleToken>.Update.Set(_ => _.Owner, buyer)
-            .Set("SalesHistory.$[i]", buyer)
-            .Set("SalesHistory.$[i]", true)
-            .Set("SalesHistory.$[i]", contractTransaction.TransactionId));
+            .Set("SalesHistory.$[i].Buyer", buyer)
+            .Set("SalesHistory.$[i].Sold", true)
+            .Set("SalesHistory.$[i].PurchaseTransactionId", contractTransaction.TransactionId));
 
       updateInstruction.ArrayFilters = new[]
       {
