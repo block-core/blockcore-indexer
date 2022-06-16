@@ -117,6 +117,13 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          };
       }
 
+      public Task<NonFungibleToken> GetTokenByIdAsync(string contractAddress, string tokenId)
+      {
+         return mongoDb.NonFungibleTokenTable.Find(_ =>
+               _.Id.ContractAddress == contractAddress && _.Id.TokenId == tokenId)
+            .SingleOrDefaultAsync();
+      }
+
       public QueryContractCreate ContractCreate(string address)
       {
          IMongoQueryable<CirrusContractTable> cirrusContract = mongoDb.CirrusContractTable.AsQueryable()
@@ -127,10 +134,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          if (res.Count > 1)
             throw new ApplicationException("This is unexpected"); // todo: remove this temporary code
 
-         CirrusContractTable lastEntry = mongoDb.CirrusContractTable.AsQueryable()
+         CirrusContractTable lastEntry = mongoDb.CirrusContractTable
+            .AsQueryable()
             .OrderByDescending(b => b.BlockIndex)
-            .Where(q => q.ToAddress == address)
-            .FirstOrDefault();
+            .FirstOrDefault(q => q.ToAddress == address);
 
 
          return res.Select(item => new QueryContractCreate
@@ -261,6 +268,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          var dbTokens = await mongoDb.NonFungibleTokenTable.Aggregate()
             .Match(_ => _.Owner == address)
+            //.SortBy(_ => _.) TODO David check if we need sorting for the FE
             .Skip(startPosition)
             .Limit(endPosition)
             .ToListAsync();

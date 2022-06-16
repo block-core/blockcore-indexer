@@ -161,11 +161,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       public async Task<IActionResult> GetNonFungibleTokenById([MinLength(30)][MaxLength(100)] string address,
          [MinLength(1)][MaxLength(100)] string id)
       {
-         var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
-
-         // var token = contract.Tokens.FirstOrDefault(_ => _.Id == id);
-
-         NonFungibleTokenComputedTable token = null; //TODO David fix
+         var token = await cirrusMongoData.GetTokenByIdAsync(address, id);
 
          if (token is null)
          {
