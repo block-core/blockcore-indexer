@@ -37,7 +37,7 @@ public class BuyLogReader : ILogReader<NonFungibleTokenComputedTable, Types.NonF
             new BsonArray(new[]
             {
                new BsonDocument("i.Seller", seller),
-               new BsonDocument("i._type", "OnSale"),
+               new BsonDocument("i._t", "OnSale"),
                new BsonDocument("i.Sold", false)
             })))
       };

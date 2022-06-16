@@ -44,6 +44,18 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenComputedTable,Type
                .Set(_ => _.Owner, (string)auctionLog.Log.Data["highestBidder"])
                .Set("SalesHistory.$[i].Success", true)
                .Set("SalesHistory.$[i].AuctionEnded", true));
+
+         // updateInstruction.ArrayFilters = new[]
+         // {
+         //    new BsonDocumentArrayFilterDefinition<Auction>(
+         //       new BsonDocument("$and", new BsonArray(
+         //          new[]
+         //          {
+         //             new BsonDocument("i._t[1]", nameof(Auction)),
+         //             new BsonDocument("i.HighestBidTransactionId",
+         //                contractTransaction.TransactionId)
+         //          })))
+         // };
       }
       else
       {
@@ -59,9 +71,8 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenComputedTable,Type
             new BsonDocument("$and", new BsonArray(
                new[]
                {
-                  new BsonDocument("i._t[1]", nameof(Auction)),
-                  new BsonDocument("i.HighestBidTransactionId",
-                     contractTransaction.TransactionId)
+                  new BsonDocument("i._t", nameof(Auction)),
+                  new BsonDocument("i.AuctionEnded",false)
                })))
       };
 

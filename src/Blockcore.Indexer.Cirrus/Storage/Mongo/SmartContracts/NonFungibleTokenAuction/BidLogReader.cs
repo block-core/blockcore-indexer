@@ -26,27 +26,26 @@ public class BidLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonFu
 
       string tokenId = (string)auctionLog.Log.Data["tokenId"];
 
-      UpdateOneModel<Types.NonFungibleToken> writeModel;
+      UpdateOneModel<Types.NonFungibleToken> updateInstruction;
 
-      writeModel = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+      updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleToken>.Update
             .Set("SalesHistory.$[i].HighestBid", (long)auctionLog.Log.Data["bid"])
             .Set("SalesHistory.$[i].HighestBidder", (string)auctionLog.Log.Data["bidder"])
             .Set("SalesHistory.$[i].HighestBidTransactionId", contractTransaction.TransactionId));
 
-      writeModel.ArrayFilters = new[]
+      updateInstruction.ArrayFilters = new[]
       {
          new BsonDocumentArrayFilterDefinition<Auction>(
             new BsonDocument("$and", new BsonArray(
                new[]
                {
-                  new BsonDocument("i._t[1]", nameof(Auction)),
-                  new BsonDocument("i.HighestBidTransactionId",
-                     contractTransaction.TransactionId)
+                  new BsonDocument("i._t", nameof(Auction)),
+                  new BsonDocument("i.AuctionEnded",false)
                })))
       };
 
-      return new[] { writeModel };
+      return new[] { updateInstruction };
    }
 }

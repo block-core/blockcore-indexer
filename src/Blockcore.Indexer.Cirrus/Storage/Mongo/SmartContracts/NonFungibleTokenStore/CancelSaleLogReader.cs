@@ -41,7 +41,7 @@ public class CancelSaleLogReader : ILogReader<NonFungibleTokenComputedTable,Type
             new BsonArray(new[]
             {
                new BsonDocument("i.Seller", contractTransaction.FromAddress),
-               new BsonDocument("i._type", "OnSale"),
+               new BsonDocument("i._t", "OnSale"),
                new BsonDocument("i.Sold", false)
             })))
       };

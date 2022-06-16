@@ -6,14 +6,14 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class SalesEventReader
 {
-   public static TokenSaleEvent SaleDetails(string transactionId, LogData saleLog, LogData log)
+   public static TokenSaleEvent SaleDetails(string transactionId, LogData detailsLog, LogData log)
    {
       try
       {
-         return saleLog.Event switch
+         return detailsLog.Event switch
          {
-            "TokenOnSaleLog" => GetSaleDetails(transactionId, saleLog, log),
-            "AuctionStartedLog" => GetAuctionDetails(transactionId, saleLog, log),
+            "TokenOnSaleLog" => GetSaleDetails(transactionId, detailsLog, log),
+            "AuctionStartedLog" => GetAuctionDetails(transactionId, detailsLog, log),
             _ => null
          };
       }
@@ -31,12 +31,12 @@ public class SalesEventReader
          TransactionId = transactionId
       };
 
-   private static Auction GetAuctionDetails(string transactionId, LogData saleLog, LogData log) =>
+   private static Auction GetAuctionDetails(string transactionId, LogData auctionLog, LogData log) =>
       new()
       {
-         Seller = (string)log.Data["from"],
-         StartingPrice = (long)saleLog.Data["startingPrice"],
-         EndBlock = (long)saleLog.Data["endBlock"],
+         Seller = (string)auctionLog.Data["seller"],
+         StartingPrice = (long)auctionLog.Data["startingPrice"],
+         EndBlock = (long)auctionLog.Data["endBlock"],
          TransactionId = transactionId
       };
 }
