@@ -19,18 +19,10 @@ class ExecuteProposalLogReader : ILogReader<DaoContractComputedTable, DaoContrac
 
       computedTable.CurrentAmount -= (long)log["amount"];
 
-      int proposalId = (int)(long)log["proposalId"];
+      string proposalId = ((long)log["proposalId"]).ToString();
 
-      var proposal = computedTable.Proposals[proposalId - 1];
-
-      if (proposal.Id != proposalId || proposal.Recipient != (string)log["recipent"])
-         throw new ArgumentException(nameof(proposalId));
-
-      proposal.WasProposalAccepted = true;
-      proposal.ProposalCompletedAtBlock = contractTransaction.BlockIndex;
-      proposal.PayoutTransactionId = contractTransaction.TransactionId;
-
-      return new [] { new UpdateOneModel<DaoContractProposal>(Builders<DaoContractProposal>.Filter.Eq(_ => _.Id, proposalId),
+      return new [] { new UpdateOneModel<DaoContractProposal>(Builders<DaoContractProposal>.Filter
+            .Where(_ => _.Id.TokenId ==  proposalId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<DaoContractProposal>.Update
             .Set(_ => _.WasProposalAccepted,true)
             .Set(_ => _.ProposalCompletedAtBlock,contractTransaction.BlockIndex)

@@ -50,43 +50,54 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
       return contract;
    }
 
-   async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions, T contract)
+   async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions,
+      T contract)
    {
-      var writeModels = new List<WriteModel<TDocument>>();
-
-      foreach (var contractTransaction in contractTransactions)
+      try
       {
-         var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
+         var writeModels = new List<WriteModel<TDocument>>();
 
-         if (reader is null)
+         foreach (var contractTransaction in contractTransactions)
          {
-            logger.LogInformation($"No reader found for method {contractTransaction.MethodName} on transaction id - {contractTransaction.TransactionId}");
-            throw new InvalidOperationException(
-               $"Reader was not found for transaction - {contractTransaction.TransactionId}");
+            var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
+
+            if (reader is null)
+            {
+               logger.LogInformation(
+                  $"No reader found for method {contractTransaction.MethodName} on transaction id - {contractTransaction.TransactionId}");
+               throw new InvalidOperationException(
+                  $"Reader was not found for transaction - {contractTransaction.TransactionId}");
+            }
+
+            if (!reader.IsTransactionLogComplete(contractTransaction.Logs))
+            {
+               var result = await cirrusClient.GetContractInfoAsync(contractTransaction.TransactionId);
+
+               contractTransaction.Logs = result.Logs;
+            }
+
+            WriteModel<TDocument>[] instructions =
+               reader.UpdateContractFromTransactionLog(contractTransaction, contract);
+
+            if (instructions is not null)
+               writeModels.AddRange(instructions);
+
+            contract.LastProcessedBlockHeight = contractTransaction.BlockIndex;
          }
 
-         if (!reader.IsTransactionLogComplete(contractTransaction.Logs))
-         {
-            var result = await cirrusClient.GetContractInfoAsync(contractTransaction.TransactionId);
+         await GetSmartContractCollection<T>()
+            .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
+               new FindOneAndReplaceOptions<T> { IsUpsert = true },
+               CancellationToken.None);
 
-            contractTransaction.Logs = result.Logs;
-         }
-
-         WriteModel<TDocument>[] instructions = reader.UpdateContractFromTransactionLog(contractTransaction, contract);
-
-         if (instructions is not null)
-            writeModels.AddRange(instructions);
-
-         contract.LastProcessedBlockHeight = contractTransaction.BlockIndex;
+         var bulkWriteResult = GetSmartContractCollection<TDocument>()
+            .BulkWrite(writeModels, new BulkWriteOptions { IsOrdered = true });
       }
-
-      await GetSmartContractCollection<T>()
-         .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
-            new FindOneAndReplaceOptions<T> { IsUpsert = true },
-            CancellationToken.None);
-
-      var bulkWriteResult = GetSmartContractCollection<TDocument>()
-         .BulkWrite(writeModels);
+      catch (Exception e)
+      {
+         Console.WriteLine(e);
+         throw;
+      }
    }
 
    async Task<T> LookupSmartContractForAddressAsync(string address)

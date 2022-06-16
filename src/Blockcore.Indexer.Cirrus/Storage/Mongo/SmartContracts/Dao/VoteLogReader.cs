@@ -25,43 +25,43 @@ class VoteLogReader : ILogReader<DaoContractComputedTable, DaoContractProposal>
       int id = (int)(long)contractTransaction.Logs.First().Log.Data["proposalId"];
       bool voteYesNo = (bool)contractTransaction.Logs.First().Log.Data["vote"];
       string voterAddress = (string)contractTransaction.Logs.First().Log.Data["voter"];
+      //
+      // var proposal = computedTable.Proposals.SingleOrDefault(_ => _.Id == id);
+      //
+      // if (proposal is null)
+      // {
+      //    throw new InvalidOperationException(
+      //       $"Proposal {id} not found for the vote transaction id - {contractTransaction.TransactionId}");
+      // }
+      //
+      // var vote = proposal.Votes.FirstOrDefault(_ => _.VoterAddress == voterAddress);
+      //
+      // var update = Builders<DaoContractProposal>.Update.AddToSet(_ => _.Votes,new DaoContractVoteDetails
+      // {
+      //    IsApproved = voteYesNo,
+      //    ProposalId = id,
+      //    VoterAddress = voterAddress,
+      //    VotedOnBlock = contractTransaction.BlockIndex,
+      // });
+      //
+      // if (vote != null)
+      // {
+      //    vote.PreviousVotes ??= new List<DaoContractVote>();
+      //    vote.PreviousVotes.Add(new DaoContractVote { IsApproved = vote.IsApproved,VotedOnBlock = vote.VotedOnBlock });
+      //    vote.IsApproved = voteYesNo;
+      //    vote.VotedOnBlock = contractTransaction.BlockIndex;
+      // }
+      // else
+      // {
+      //    proposal.Votes.Add(new DaoContractVoteDetails
+      //    {
+      //       IsApproved = voteYesNo,
+      //       ProposalId = id,
+      //       VoterAddress = voterAddress,
+      //       VotedOnBlock = contractTransaction.BlockIndex,
+      //    });
+      // }
 
-      var proposal = computedTable.Proposals.SingleOrDefault(_ => _.Id == id);
-
-      if (proposal is null)
-      {
-         throw new InvalidOperationException(
-            $"Proposal {id} not found for the vote transaction id - {contractTransaction.TransactionId}");
-      }
-
-      var vote = proposal.Votes.FirstOrDefault(_ => _.VoterAddress == voterAddress);
-
-      var update = Builders<DaoContractProposal>.Update.AddToSet(_ => _.Votes,new DaoContractVoteDetails
-      {
-         IsApproved = voteYesNo,
-         ProposalId = id,
-         VoterAddress = voterAddress,
-         VotedOnBlock = contractTransaction.BlockIndex,
-      });
-
-      if (vote != null)
-      {
-         vote.PreviousVotes ??= new List<DaoContractVote>();
-         vote.PreviousVotes.Add(new DaoContractVote { IsApproved = vote.IsApproved,VotedOnBlock = vote.VotedOnBlock });
-         vote.IsApproved = voteYesNo;
-         vote.VotedOnBlock = contractTransaction.BlockIndex;
-      }
-      else
-      {
-         proposal.Votes.Add(new DaoContractVoteDetails
-         {
-            IsApproved = voteYesNo,
-            ProposalId = id,
-            VoterAddress = voterAddress,
-            VotedOnBlock = contractTransaction.BlockIndex,
-         });
-      }
-
-      return null; //TODO
+      return null; //TODO need to change the document here
    }
 }

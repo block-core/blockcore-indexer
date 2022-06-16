@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.AccessControl;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenStore;
@@ -30,8 +31,21 @@ public class CancelSaleLogReader : ILogReader<NonFungibleTokenComputedTable,Type
 
       //token.SalesHistory.Remove(saleEvent);
 
-      return new[]{new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
-            .Where(_ => _.Id == tokenId && _.SmartContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleToken>.Update.Unset(_ => _.SalesHistory.FindLast(p => p is OnSale)))};
+      var updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+            .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
+         Builders<Types.NonFungibleToken>.Update.Unset("SalesHistory.$[i]"));
+
+      updateInstruction.ArrayFilters = new[]
+      {
+         new BsonDocumentArrayFilterDefinition<OnSale>(new BsonDocument("$and",
+            new BsonArray(new[]
+            {
+               new BsonDocument("i.Seller", contractTransaction.FromAddress),
+               new BsonDocument("i._type", "OnSale"),
+               new BsonDocument("i.Sold", false)
+            })))
+      };
+
+      return new[] { updateInstruction };
    }
 }

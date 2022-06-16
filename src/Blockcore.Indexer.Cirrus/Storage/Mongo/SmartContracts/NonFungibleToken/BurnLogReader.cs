@@ -23,8 +23,8 @@ public class BurnLogReader: ILogReader<NonFungibleTokenComputedTable,Types.NonFu
       //    .IsBurned = true;
 
       return new [] { new UpdateOneModel<Types.NonFungibleToken>(
-         Builders<Types.NonFungibleToken>.Filter.Where(_ =>
-            _.Id == id && _.SmartContractAddress == computedTable.ContractAddress),
+         Builders<Types.NonFungibleToken>.Filter
+            .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleToken>.Update.Set(_ => _.IsBurned, true))};
    }
 }

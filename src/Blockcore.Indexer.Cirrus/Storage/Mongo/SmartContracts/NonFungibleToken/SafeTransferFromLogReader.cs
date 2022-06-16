@@ -21,14 +21,12 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenComputedTabl
       object tokenId = log.Data["tokenId"];
       string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
 
-    //  var token = computedTable.Tokens.First(_ => _.Id == id);
-
       string owner = (string)saleLog.Data["seller"];
 
        var sale =SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log);
 
-       return new [] { new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter.Where(_
-             => _.Id == id && _.SmartContractAddress == computedTable.ContractAddress),
+       return new [] { new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
           Builders<Types.NonFungibleToken>.Update.Set(_ => _.Owner, owner)
              .AddToSet(_ => _.SalesHistory, sale))};
    }

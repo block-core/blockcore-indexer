@@ -33,7 +33,7 @@ public class SalesEventReader
 
    private static Auction GetAuctionDetails(string transactionId, LogData saleLog, LogData log) =>
       new()
-      {//TODO need to understand the auction logic and if it should have it's own reader
+      {
          Seller = (string)log.Data["from"],
          StartingPrice = (long)saleLog.Data["startingPrice"],
          EndBlock = (long)saleLog.Data["endBlock"],

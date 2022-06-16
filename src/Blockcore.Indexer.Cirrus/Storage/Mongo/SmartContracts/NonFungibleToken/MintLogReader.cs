@@ -26,7 +26,11 @@ public class MintLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonF
 
       return new [] { new InsertOneModel<Types.NonFungibleToken>(new Types.NonFungibleToken
       {
-         Owner = (string)log.Data["to"], Id = id, Uri = (string)uriLog.Data["tokenUri"]
+         Owner = (string)log.Data["to"], Id = new SmartContractTokenId
+         {
+            TokenId = id,ContractAddress = computedTable.ContractAddress
+         },
+         Uri = (string)uriLog.Data["tokenUri"]
       })};
    }
 }

@@ -22,23 +22,10 @@ public class BuyLogReader : ILogReader<NonFungibleTokenComputedTable, Types.NonF
 
       string tokenId = (string)transferLog.Log.Data["tokenId"];
 
-     //var token = computedTable.Tokens.Single(_ => _.Id == tokenId);
-
-      // token.Owner = (string)tokenPurchaseLog.Log.Data["buyer"];
-      //
-      // var onSale = (OnSale)token.SalesHistory.Last(_ => _ is OnSale sale
-      //                                                   && sale.Seller == seller
-      //                                                   && !sale.Sold);
-      //
-      //
-      // onSale.Buyer = (string)tokenPurchaseLog.Log.Data["buyer"];
-      // onSale.Sold = true;
-      // onSale.PurchaseTransactionId = contractTransaction.TransactionId;
-
       string buyer =(string)tokenPurchaseLog.Log.Data["buyer"];
 
       var updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
-            .Where(_ => _.Id == tokenId && _.SmartContractAddress == computedTable.ContractAddress),
+            .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleToken>.Update.Set(_ => _.Owner, buyer)
             .Set("SalesHistory.$[i]", buyer)
             .Set("SalesHistory.$[i]", true)
@@ -46,9 +33,13 @@ public class BuyLogReader : ILogReader<NonFungibleTokenComputedTable, Types.NonF
 
       updateInstruction.ArrayFilters = new[]
       {
-         new BsonDocumentArrayFilterDefinition<OnSale>(new BsonDocument("i.Seller", seller)),
-         new BsonDocumentArrayFilterDefinition<OnSale>(new BsonDocument("i._type", "OnSale")),
-         new BsonDocumentArrayFilterDefinition<OnSale>(new BsonDocument("i.Sold", false))
+         new BsonDocumentArrayFilterDefinition<OnSale>(new BsonDocument("$and",
+            new BsonArray(new[]
+            {
+               new BsonDocument("i.Seller", seller),
+               new BsonDocument("i._type", "OnSale"),
+               new BsonDocument("i.Sold", false)
+            })))
       };
 
 

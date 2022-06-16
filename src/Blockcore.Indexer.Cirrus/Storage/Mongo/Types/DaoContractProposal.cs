@@ -4,7 +4,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 public class DaoContractProposal
 {
-   public int Id { get; set; }
+   public SmartContractTokenId Id { get; set; }
    public string Recipient { get; set; }
    public long Amount { get; set; }
    public string Description { get; set; }

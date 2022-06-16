@@ -1,13 +1,20 @@
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
-using Microsoft.AspNetCore.Server.IIS.Core;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenAuction;
 
 public class AuctionEndLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonFungibleToken>
 {
+   ICirrusMongoDb db;
+
+   public AuctionEndLogReader(ICirrusMongoDb db)
+   {
+      this.db = db;
+   }
+
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("AuctionEnd");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
@@ -20,28 +27,44 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenComputedTable,Type
 
       string tokenId = (string)transferLog.Log.Data["tokenId"];
 
-      //var token = computedTable.Tokens.Single(_ => _.Id == tokenId);
-
-      //var auctionEvent = (Auction) token.SalesHistory.Last(_ => _ is Auction);
-
       bool success = auctionLog.Log.Event switch
       {
          "AuctionEndFailedLog" => false,
          "AuctionEndSucceedLog" => true,
          _ => false
       };
+
+      UpdateOneModel<Types.NonFungibleToken> updateInstruction;
+
       if (success)
       {
-         return new [] {new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
-               .Where(_ => _.Id == tokenId && _.SmartContractAddress == computedTable.ContractAddress),
+         updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+               .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
             Builders<Types.NonFungibleToken>.Update
-               .Set(_ => _.Owner, "") //TODO David solve this issue !!!
-               .Set(_ => ((Auction)_.SalesHistory.FindLast(p => p is Auction)).Success, true))};
+               .Set(_ => _.Owner, (string)auctionLog.Log.Data["highestBidder"])
+               .Set("SalesHistory.$[i].Success", true)
+               .Set("SalesHistory.$[i].AuctionEnded", true));
+      }
+      else
+      {
+         updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+               .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
+            Builders<Types.NonFungibleToken>.Update
+               .Set("SalesHistory.$[i].AuctionEnded", true));
       }
 
-      return new [] {new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
-            .Where(_ => _.Id == tokenId && _.SmartContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleToken>.Update
-            .Set(_ => ((Auction)_.SalesHistory.FindLast(p => p is Auction)).Success, false))};
+      updateInstruction.ArrayFilters = new[]
+      {
+         new BsonDocumentArrayFilterDefinition<Auction>(
+            new BsonDocument("$and", new BsonArray(
+               new[]
+               {
+                  new BsonDocument("i._t[1]", nameof(Auction)),
+                  new BsonDocument("i.HighestBidTransactionId",
+                     contractTransaction.TransactionId)
+               })))
+      };
+
+      return new[] { updateInstruction };
    }
 }

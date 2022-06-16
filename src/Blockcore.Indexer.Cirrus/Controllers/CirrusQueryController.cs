@@ -163,7 +163,9 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       {
          var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
 
-         var token = contract.Tokens.FirstOrDefault(_ => _.Id == id);
+         // var token = contract.Tokens.FirstOrDefault(_ => _.Id == id);
+
+         NonFungibleTokenComputedTable token = null; //TODO David fix
 
          if (token is null)
          {

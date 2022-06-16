@@ -34,7 +34,7 @@ public class TransferLogReader : ILogReader<NonFungibleTokenComputedTable, Types
       };
 
       return new [] {new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
-            .Where(_ => _.Id == tokenId && _.SmartContractAddress == computedTable.ContractAddress),
+            .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleToken>.Update.Set(_ => _.Owner, owner)
             .AddToSet(_ => _.SalesHistory, sale)) };
    }

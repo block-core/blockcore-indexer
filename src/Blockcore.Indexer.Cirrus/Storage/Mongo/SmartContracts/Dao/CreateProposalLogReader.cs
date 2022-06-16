@@ -21,18 +21,22 @@ class CreateProposalLogReader : ILogReader<DaoContractComputedTable,DaoContractP
       {
          Recipient = (string)logData["recipent"],
          Amount = (long)logData["amount"],
-         Id = (int)(long)logData["proposalId"],
+         Id = new SmartContractTokenId
+         {
+            TokenId = ((long)logData["proposalId"]).ToString(),
+            ContractAddress = computedTable.ContractAddress
+         } ,
          Description = (string)logData["description"],
          ProposalStartedAtBlock = contractTransaction.BlockIndex,
          Votes = new List<DaoContractVoteDetails>()
       };
 
-      computedTable.Proposals ??= new List<DaoContractProposal>(proposal.Id);
-
-      if (computedTable.Proposals.Capacity < proposal.Id)
-         computedTable.Proposals.Capacity = (proposal.Id);
-
-      computedTable.Proposals.Insert(proposal.Id - 1,proposal);
+      // computedTable.Proposals ??= new List<DaoContractProposal>(proposal.Id);
+      //
+      // if (computedTable.Proposals.Capacity < proposal.Id)
+      //    computedTable.Proposals.Capacity = (proposal.Id);
+      //
+      // computedTable.Proposals.Insert(proposal.Id - 1,proposal);
 
       return new [] { new InsertOneModel<DaoContractProposal>(proposal)};
    }
