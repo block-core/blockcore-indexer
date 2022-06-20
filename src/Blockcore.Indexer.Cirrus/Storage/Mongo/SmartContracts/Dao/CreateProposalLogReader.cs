@@ -31,13 +31,6 @@ class CreateProposalLogReader : ILogReader<DaoContractComputedTable,DaoContractP
          Votes = new List<DaoContractVoteDetails>()
       };
 
-      // computedTable.Proposals ??= new List<DaoContractProposal>(proposal.Id);
-      //
-      // if (computedTable.Proposals.Capacity < proposal.Id)
-      //    computedTable.Proposals.Capacity = (proposal.Id);
-      //
-      // computedTable.Proposals.Insert(proposal.Id - 1,proposal);
-
       return new [] { new InsertOneModel<DaoContractProposal>(proposal)};
    }
 }

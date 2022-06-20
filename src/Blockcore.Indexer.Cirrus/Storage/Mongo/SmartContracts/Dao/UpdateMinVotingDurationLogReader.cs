@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -18,6 +19,6 @@ class UpdateMinVotingDurationLogReader : ILogReader<DaoContractComputedTable, Da
          return null;
       computedTable.MinVotingDuration = (long)contractTransaction.Logs.Single().Log.Data["minVotingDuration"];
 
-      return null;
+      return Array.Empty<WriteModel<DaoContractProposal>>();
    }
 }

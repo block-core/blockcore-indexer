@@ -17,14 +17,14 @@ class UpdateMaxVotingDurationLogReader : ILogReader<DaoContractComputedTable,Dao
    {
       var log = contractTransaction.Logs.SingleOrDefault();
 
-      if (log == null)
+      if (log == null) //TODO check if this issue persists
       {
-         return null;
+         return Array.Empty<WriteModel<DaoContractProposal>>();;
          // throw new ArgumentException(contractTransaction.TransactionId);
       }
 
       computedTable.MaxVotingDuration = (long)log.Log.Data["maxVotingDuration"];
 
-      return null;
+      return Array.Empty<WriteModel<DaoContractProposal>>();
    }
 }

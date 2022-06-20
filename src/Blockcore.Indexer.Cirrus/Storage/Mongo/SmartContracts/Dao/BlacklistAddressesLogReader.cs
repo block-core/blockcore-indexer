@@ -1,3 +1,4 @@
+using System;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using MongoDB.Driver;
@@ -14,6 +15,6 @@ class BlacklistAddressesLogReader : ILogReader<DaoContractComputedTable, DaoCont
       DaoContractComputedTable computedTable)
    {
       //TODO
-      return null;
+      return Array.Empty<WriteModel<DaoContractProposal>>();
    }
 }

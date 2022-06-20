@@ -57,4 +57,12 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
          return mongoDatabase.GetCollection<NonFungibleToken>("NonFungibleToken");
       }
    }
+
+   public IMongoCollection<DaoContractProposal> DaoContractProposalTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<DaoContractProposal>("DaoContractProposal");
+      }
+   }
 }

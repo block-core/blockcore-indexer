@@ -9,7 +9,7 @@ class WhitelistAddressesLogReader : ILogReader<DaoContractComputedTable,DaoContr
 {
    public bool CanReadLogForMethodType(string methodType) => methodType is "WhitelistAddresses" or "WhitelistAddress";
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => false;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractComputedTable computedTable)
