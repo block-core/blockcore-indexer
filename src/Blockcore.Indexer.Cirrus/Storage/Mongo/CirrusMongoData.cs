@@ -22,7 +22,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
    public class CirrusMongoData : MongoData, ICirrusStorage
    {
       readonly ICirrusMongoDb mongoDb;
-      readonly IComputeSmartContractService<NonFungibleTokenComputedTable> smartContractService;
 
       public CirrusMongoData(
          ILogger<MongoDb> dbLogger,
@@ -33,8 +32,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          ICryptoClientFactory clientFactory,
          IScriptInterpeter scriptInterpeter,
          IMongoDatabase mongoDatabase,
-         ICirrusMongoDb db,
-         IComputeSmartContractService<NonFungibleTokenComputedTable> smartContractService)
+         ICirrusMongoDb db)
          : base(
             dbLogger,
             connection,
@@ -47,7 +45,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             db)
       {
          mongoDb = db;
-         this.smartContractService = smartContractService;
       }
 
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
@@ -117,11 +114,29 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          };
       }
 
-      public Task<NonFungibleToken> GetTokenByIdAsync(string contractAddress, string tokenId)
+      public Task<NonFungibleToken> GetNonFungibleTokenByIdAsync(string contractAddress, string tokenId)
       {
          return mongoDb.NonFungibleTokenTable.Find(_ =>
                _.Id.ContractAddress == contractAddress && _.Id.TokenId == tokenId)
-            .SingleOrDefaultAsync();
+            .FirstOrDefaultAsync();
+      }
+
+      public async Task<QueryStandardToken> GetStandardTokenByIdAsync(string contractAddress, string tokenId)
+      {
+         var token = await mongoDb.StandardTokenComputedTable.Find(_ => _.ContractAddress == contractAddress)
+            .FirstOrDefaultAsync();
+         var tokenAmounts = await mongoDb.StandardTokenHolderTable.Find(_ => _.Id.ContractAddress == contractAddress &&
+                                                           _.Id.TokenId == tokenId)
+            .FirstOrDefaultAsync();
+
+         return new QueryStandardToken
+         {
+            Name = token.Name,
+            Symbol = token.Symbol,
+            TotalSupply = token.TotalSupply,
+            Address = tokenAmounts.Id.TokenId,
+            Amount = tokenAmounts.AmountChangesHistory.Sum(_ => _.Amount)
+         };
       }
 
       public QueryContractCreate ContractCreate(string address)

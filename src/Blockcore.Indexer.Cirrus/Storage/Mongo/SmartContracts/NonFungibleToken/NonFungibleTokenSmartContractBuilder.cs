@@ -25,7 +25,6 @@ public class NonFungibleTokenSmartContractBuilder : ISmartContractBuilder<NonFun
          Symbol =  (string)logs.Data["nftSymbol"],
          Owner = (string)logs.Data["nftOwner"],
          OwnerOnlyMinting = (bool)logs.Data["nftOwnerOnlyMinting"],
-         Tokens = new List<Types.NonFungibleToken>()
       };
    }
 }

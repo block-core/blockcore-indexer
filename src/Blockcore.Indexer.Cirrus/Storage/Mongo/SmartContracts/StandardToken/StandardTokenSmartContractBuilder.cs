@@ -7,6 +7,13 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 class StandardTokenSmartContractBuilder : ISmartContractBuilder<StandardTokenComputedTable>
 {
+   readonly ICirrusMongoDb db;
+
+   public StandardTokenSmartContractBuilder(ICirrusMongoDb db)
+   {
+      this.db = db;
+   }
+
    public bool CanBuildSmartContract(string contractCodeType) => contractCodeType.Equals("StandardToken");
 
    public StandardTokenComputedTable BuildSmartContract(CirrusContractTable createContractTransaction)
@@ -16,7 +23,7 @@ class StandardTokenSmartContractBuilder : ISmartContractBuilder<StandardTokenCom
       if (logs is null)
          throw new InvalidOperationException("Missing logs for create transaction of smart contract");
 
-      return new()
+      return new StandardTokenComputedTable
       {
          ContractAddress = createContractTransaction.NewContractAddress,
          ContractCreateTransactionId = createContractTransaction.TransactionId,
@@ -25,14 +32,8 @@ class StandardTokenSmartContractBuilder : ISmartContractBuilder<StandardTokenCom
          Name = (string)logs.Data["tokenName"],
          Symbol = (string)logs.Data["tokenSymbole"],
          TotalSupply = (long)logs.Data["tokenTotalSupply"],
-         TokenHolders = new List<StandardTokenHolder>
-         {
-            new()
-            {
-               Address = createContractTransaction.FromAddress,
-               Amount = (long)logs.Data["tokenTotalSupply"]
-            }
-         }
+         CreatedOnBlock = createContractTransaction.BlockIndex,
+         CreatorAddress = createContractTransaction.FromAddress,
       };
    }
 }

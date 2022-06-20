@@ -13,7 +13,6 @@ public class StandardTokenComputedTable : SmartContractComputedBase
    public long TotalSupply { get; set; }
 
    public long Decimals { get; set; }
-
-
-   public List<StandardTokenHolder> TokenHolders { get; set; } = new();
+   public long CreatedOnBlock { get; set; }
+   public string CreatorAddress { get; set; }
 }

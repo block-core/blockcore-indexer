@@ -15,4 +15,7 @@ public interface ICirrusMongoDb : IMongoDb
 
 
    public IMongoCollection<NonFungibleToken> NonFungibleTokenTable { get; }
+   public IMongoCollection<DaoContractProposal> DaoContractProposalTable{ get; }
+
+   public IMongoCollection<StandardTokenHolder> StandardTokenHolderTable{ get; }
 }

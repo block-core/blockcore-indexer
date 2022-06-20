@@ -65,4 +65,12 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
          return mongoDatabase.GetCollection<DaoContractProposal>("DaoContractProposal");
       }
    }
+
+   public IMongoCollection<StandardTokenHolder> StandardTokenHolderTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<StandardTokenHolder>("StandardTokenHolder");
+      }
+   }
 }

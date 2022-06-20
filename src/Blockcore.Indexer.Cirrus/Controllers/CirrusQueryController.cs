@@ -128,14 +128,12 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress)
       {
-         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
+         var contract = await cirrusMongoData.GetStandardTokenByIdAsync(address, filterAddress);
 
          if (contract is null)
          {
             return NotFound();
          }
-
-         contract.TokenHolders = contract.TokenHolders.Where(t => t.Address == filterAddress).ToList();
 
          return Ok(contract);
       }
@@ -161,7 +159,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       public async Task<IActionResult> GetNonFungibleTokenById([MinLength(30)][MaxLength(100)] string address,
          [MinLength(1)][MaxLength(100)] string id)
       {
-         var token = await cirrusMongoData.GetTokenByIdAsync(address, id);
+         var token = await cirrusMongoData.GetNonFungibleTokenByIdAsync(address, id);
 
          if (token is null)
          {
