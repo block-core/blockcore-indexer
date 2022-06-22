@@ -1,11 +1,7 @@
-using System.Collections.Generic;
-
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-public class StandardTokenComputedTable : SmartContractComputedBase
+public class StandardTokenContractTable : SmartContractTable
 {
-   public override string ContractType { get; } = "StandardToken";
-
    public string Name { get; set; }
 
    public string Symbol { get; set; }

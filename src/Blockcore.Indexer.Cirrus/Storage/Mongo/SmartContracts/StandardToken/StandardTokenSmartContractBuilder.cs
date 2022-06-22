@@ -5,7 +5,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-class StandardTokenSmartContractBuilder : ISmartContractBuilder<StandardTokenComputedTable>
+class StandardTokenSmartContractBuilder : ISmartContractBuilder<StandardTokenContractTable>
 {
    readonly ICirrusMongoDb db;
 
@@ -16,14 +16,14 @@ class StandardTokenSmartContractBuilder : ISmartContractBuilder<StandardTokenCom
 
    public bool CanBuildSmartContract(string contractCodeType) => contractCodeType.Equals("StandardToken");
 
-   public StandardTokenComputedTable BuildSmartContract(CirrusContractTable createContractTransaction)
+   public StandardTokenContractTable BuildSmartContract(CirrusContractTable createContractTransaction)
    {
       var logs = createContractTransaction.Logs.SingleOrDefault()?.Log;
 
       if (logs is null)
          throw new InvalidOperationException("Missing logs for create transaction of smart contract");
 
-      return new StandardTokenComputedTable
+      return new StandardTokenContractTable
       {
          ContractAddress = createContractTransaction.NewContractAddress,
          ContractCreateTransactionId = createContractTransaction.TransactionId,

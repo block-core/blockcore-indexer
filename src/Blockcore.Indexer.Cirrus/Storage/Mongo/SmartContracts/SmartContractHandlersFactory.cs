@@ -5,7 +5,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 public class SmartContractHandlersFactory<T,TDocument> : ISmartContractHandlersFactory<T,TDocument>
-   where T : SmartContractComputedBase
+   where T : SmartContractTable
    where TDocument : new()
 {
    readonly IEnumerable<ISmartContractBuilder<T>> builders;

@@ -8,14 +8,14 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenStore;
 
-public class CancelSaleLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonFungibleToken>
+public class CancelSaleLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("CancelSale");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
 
-   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       var transferLog = contractTransaction.Logs[0];
       var tokenPurchaseLog = contractTransaction.Logs[1];
@@ -31,9 +31,9 @@ public class CancelSaleLogReader : ILogReader<NonFungibleTokenComputedTable,Type
 
       //token.SalesHistory.Remove(saleEvent);
 
-      var updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+      var updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleToken>.Update.Unset("SalesHistory.$[i]"));
+         Builders<Types.NonFungibleTokenTable>.Update.Unset("SalesHistory.$[i]"));
 
       updateInstruction.ArrayFilters = new[]
       {

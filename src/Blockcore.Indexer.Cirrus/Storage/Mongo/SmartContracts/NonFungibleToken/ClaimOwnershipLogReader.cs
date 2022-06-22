@@ -5,14 +5,14 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class ClaimOwnershipLogReader : ILogReader<NonFungibleTokenComputedTable, Types.NonFungibleToken>
+public class ClaimOwnershipLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("ClaimOwnership");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       computedTable.Owner = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["NewOwner"];
       computedTable.PreviousOwners.Add((string)contractTransaction.Logs.SingleOrDefault().Log.Data["PreviousOwner"]);

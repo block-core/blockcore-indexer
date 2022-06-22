@@ -26,51 +26,51 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
       }
    }
 
-   public IMongoCollection<DaoContractComputedTable> DaoContractComputedTable
+   public IMongoCollection<DaoContractTable> DaoContractComputedTable
    {
       get
       {
-         return mongoDatabase.GetCollection<DaoContractComputedTable>("DaoContractComputed");
+         return mongoDatabase.GetCollection<DaoContractTable>("SmartContractTable");
       }
    }
 
-   public IMongoCollection<StandardTokenComputedTable> StandardTokenComputedTable
+   public IMongoCollection<StandardTokenContractTable> StandardTokenComputedTable
    {
       get
       {
-         return mongoDatabase.GetCollection<StandardTokenComputedTable>("StandardTokenComputed");
+         return mongoDatabase.GetCollection<StandardTokenContractTable>("SmartContractTable");
       }
    }
 
-   public IMongoCollection<NonFungibleTokenComputedTable> NonFungibleTokenComputedTable
+   public IMongoCollection<NonFungibleTokenContractTable> NonFungibleTokenComputedTable
    {
       get
       {
-         return mongoDatabase.GetCollection<NonFungibleTokenComputedTable>("NonFungibleTokenComputed");
+         return mongoDatabase.GetCollection<NonFungibleTokenContractTable>("SmartContractTable");
       }
    }
 
-   public IMongoCollection<NonFungibleToken> NonFungibleTokenTable
+   public IMongoCollection<NonFungibleTokenTable> NonFungibleTokenTable
    {
       get
       {
-         return mongoDatabase.GetCollection<NonFungibleToken>("NonFungibleToken");
+         return mongoDatabase.GetCollection<NonFungibleTokenTable>("NonFungibleToken");
       }
    }
 
-   public IMongoCollection<DaoContractProposal> DaoContractProposalTable
+   public IMongoCollection<DaoContractProposalTable> DaoContractProposalTable
    {
       get
       {
-         return mongoDatabase.GetCollection<DaoContractProposal>("DaoContractProposal");
+         return mongoDatabase.GetCollection<DaoContractProposalTable>("DaoContractProposal");
       }
    }
 
-   public IMongoCollection<StandardTokenHolder> StandardTokenHolderTable
+   public IMongoCollection<StandardTokenHolderTable> StandardTokenHolderTable
    {
       get
       {
-         return mongoDatabase.GetCollection<StandardTokenHolder>("StandardTokenHolder");
+         return mongoDatabase.GetCollection<StandardTokenHolderTable>("StandardTokenHolder");
       }
    }
 }

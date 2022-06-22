@@ -6,7 +6,7 @@ using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public class SmartContractTransactionsLookup<T> : ISmartContractTransactionsLookup<T> where T : SmartContractComputedBase
+public class SmartContractTransactionsLookup<T> : ISmartContractTransactionsLookup<T> where T : SmartContractTable
 {
    readonly ICirrusMongoDb mongoDb;
 

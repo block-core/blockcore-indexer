@@ -6,14 +6,14 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class MintLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonFungibleToken>
+public class MintLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Mint");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => false;
 
-   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       var log = contractTransaction.Logs.First()?.Log;
       var uriLog = contractTransaction.Logs.Last()?.Log;
@@ -24,7 +24,7 @@ public class MintLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonF
       object tokenId = log.Data["tokenId"];
       string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
 
-      return new [] { new InsertOneModel<Types.NonFungibleToken>(new Types.NonFungibleToken
+      return new [] { new InsertOneModel<Types.NonFungibleTokenTable>(new Types.NonFungibleTokenTable
       {
          Owner = (string)log.Data["to"],
          Id = new SmartContractTokenId

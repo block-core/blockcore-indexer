@@ -3,7 +3,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 public interface ISmartContractBuilder<T>
-where T : SmartContractComputedBase
+where T : SmartContractTable
 {
    bool CanBuildSmartContract(string contractCodeType);
 

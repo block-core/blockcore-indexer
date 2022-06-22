@@ -2,11 +2,11 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class DaoSmartContractBuilder : ISmartContractBuilder<DaoContractComputedTable>
+class DaoSmartContractBuilder : ISmartContractBuilder<DaoContractTable>
 {
    public bool CanBuildSmartContract(string contractCodeType) => contractCodeType.Equals("DAOContract");
 
-   public DaoContractComputedTable BuildSmartContract(CirrusContractTable createContractTransaction)
+   public DaoContractTable BuildSmartContract(CirrusContractTable createContractTransaction)
    {
       return new()
       {

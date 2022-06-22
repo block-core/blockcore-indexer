@@ -7,14 +7,14 @@ using MongoDB.Driver.Core.WireProtocol.Messages;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class DepositLogReader : ILogReader<DaoContractComputedTable,DaoContractProposal>
+class DepositLogReader : ILogReader<DaoContractTable,DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "Deposit";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      DaoContractComputedTable computedTable)
+   public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      DaoContractTable computedTable)
    {
       long amount = (long)contractTransaction.Logs[0].Log.Data["amount"];
 
@@ -31,6 +31,6 @@ class DepositLogReader : ILogReader<DaoContractComputedTable,DaoContractProposal
       computedTable.CurrentAmount += amount; //TODO sum the deposits subtract the proposals
       computedTable.Deposits.Add(deposit);
 
-      return Array.Empty<WriteModel<DaoContractProposal>>();
+      return Array.Empty<WriteModel<DaoContractProposalTable>>();
    }
 }

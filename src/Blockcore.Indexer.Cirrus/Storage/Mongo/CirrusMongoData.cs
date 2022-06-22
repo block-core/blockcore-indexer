@@ -114,7 +114,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          };
       }
 
-      public Task<NonFungibleToken> GetNonFungibleTokenByIdAsync(string contractAddress, string tokenId)
+      public Task<NonFungibleTokenTable> GetNonFungibleTokenByIdAsync(string contractAddress, string tokenId)
       {
          return mongoDb.NonFungibleTokenTable.Find(_ =>
                _.Id.ContractAddress == contractAddress && _.Id.TokenId == tokenId)
@@ -296,27 +296,26 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             Uri = _.Uri,
             IsBurned = _.IsBurned,
             TransactionId = _.SalesHistory.LastOrDefault()?.TransactionId,
-            PricePaid = GetPricePaidFromHistory(_.SalesHistory)
+            PricePaid = _.SalesHistory.LastOrDefault() switch
+            {
+               Auction auction => auction.HighestBid,
+               OnSale sale => sale.Price,
+               _ => 0
+            }
          });
+
          return new QueryResult<QueryAddressAsset>
          {
             Items = tokens, Limit = limit, Offset = offset ?? 0, Total = total
          };
       }
 
-      private static long GetPricePaidFromHistory(IEnumerable<TokenSaleEvent> saleEvents)
+      public Task<List<SmartContractTable>> GetSmartContractsThatNeedsUpdatingAsync()
       {
-         if (!saleEvents.Any())
-            return 0;
-
-         var last = saleEvents.Last();
-
-         return last switch
-         {
-            Auction auction => auction.HighestBid,
-            OnSale sale => sale.Price,
-            _ => 0
-         };
+         // var nonFungibleTokens = mongoDb.CirrusContractCodeTable.Aggregate()
+         //    .Lookup(mongoDb.NonFungibleTokenComputedTable.CollectionNamespace.CollectionName,
+         //       _ => _.ContractAddress,_ => _.ContractAddress,
+         return Task.FromResult(new List<SmartContractTable>());
       }
    }
 }

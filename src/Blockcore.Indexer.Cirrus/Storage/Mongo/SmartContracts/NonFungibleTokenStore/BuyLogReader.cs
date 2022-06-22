@@ -6,14 +6,14 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenStore;
 
-public class BuyLogReader : ILogReader<NonFungibleTokenComputedTable, Types.NonFungibleToken>
+public class BuyLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Buy");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
 
-   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       var transferLog = contractTransaction.Logs[0];
       var tokenPurchaseLog = contractTransaction.Logs[1];
@@ -24,9 +24,9 @@ public class BuyLogReader : ILogReader<NonFungibleTokenComputedTable, Types.NonF
 
       string buyer =(string)tokenPurchaseLog.Log.Data["buyer"];
 
-      var updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+      var updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleToken>.Update.Set(_ => _.Owner, buyer)
+         Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, buyer)
             .Set("SalesHistory.$[i].Buyer", buyer)
             .Set("SalesHistory.$[i].Sold", true)
             .Set("SalesHistory.$[i].PurchaseTransactionId", contractTransaction.TransactionId));

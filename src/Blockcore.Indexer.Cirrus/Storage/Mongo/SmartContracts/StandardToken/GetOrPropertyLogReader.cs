@@ -4,7 +4,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.StandardToken;
 
-class GetOrPropertyLogReader : ILogReader<StandardTokenComputedTable,StandardTokenHolder>
+class GetOrPropertyLogReader : ILogReader<StandardTokenContractTable,StandardTokenHolderTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.StartsWith("get_") ||
                                                              methodType.StartsWith("Get") ||
@@ -13,8 +13,8 @@ class GetOrPropertyLogReader : ILogReader<StandardTokenComputedTable,StandardTok
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<StandardTokenHolder>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      StandardTokenComputedTable computedTable)
+   public WriteModel<StandardTokenHolderTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      StandardTokenContractTable computedTable)
    {
       return null;
    }

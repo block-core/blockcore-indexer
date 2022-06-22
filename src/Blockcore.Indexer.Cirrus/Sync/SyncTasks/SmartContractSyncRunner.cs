@@ -20,8 +20,8 @@ public class SmartContractSyncRunner : TaskRunner
    public override Task<bool> OnExecute() => throw new System.NotImplementedException();
 
 
-   private async Task<List<object>> GetSmartContracts()
-   {
-      return new List<object>();
-   }
+   // private async Task<List<object>> GetSmartContracts()
+   // {
+   //    return storage.ContractCall();
+   // }
 }

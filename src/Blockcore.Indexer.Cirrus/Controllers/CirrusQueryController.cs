@@ -20,15 +20,15 @@ namespace Blockcore.Indexer.Cirrus.Controllers
    {
       private readonly IPagingHelper paging;
       private readonly ICirrusStorage cirrusMongoData;
-      readonly IComputeSmartContractService<DaoContractComputedTable> daoContractService;
-      readonly IComputeSmartContractService<StandardTokenComputedTable> standardTokenService;
-      readonly IComputeSmartContractService<NonFungibleTokenComputedTable> nonFungibleTokenService;
+      readonly IComputeSmartContractService<DaoContractTable> daoContractService;
+      readonly IComputeSmartContractService<StandardTokenContractTable> standardTokenService;
+      readonly IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
       public CirrusQueryController(IPagingHelper paging,
-         IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenComputedTable> standardTokenService, IComputeSmartContractService<NonFungibleTokenComputedTable> nonFungibleTokenService)
+         IComputeSmartContractService<DaoContractTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenContractTable> standardTokenService, IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService)
       {
          this.paging = paging;
          daoContractService = daoContractAggregator;

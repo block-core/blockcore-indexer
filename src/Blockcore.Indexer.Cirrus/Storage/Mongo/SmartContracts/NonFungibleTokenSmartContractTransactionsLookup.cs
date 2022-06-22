@@ -7,7 +7,7 @@ using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public class NonFungibleTokenSmartContractTransactionsLookup : ISmartContractTransactionsLookup<NonFungibleTokenComputedTable>
+public class NonFungibleTokenSmartContractTransactionsLookup : ISmartContractTransactionsLookup<NonFungibleTokenContractTable>
 {
    readonly ICirrusMongoDb mongoDb;
 

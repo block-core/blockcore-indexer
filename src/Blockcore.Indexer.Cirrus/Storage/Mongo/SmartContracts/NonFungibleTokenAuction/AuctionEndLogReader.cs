@@ -6,7 +6,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenAuction;
 
-public class AuctionEndLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonFungibleToken>
+public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
    ICirrusMongoDb db;
 
@@ -19,8 +19,8 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenComputedTable,Type
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
 
-   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       var transferLog = contractTransaction.Logs[0];
       var auctionLog = contractTransaction.Logs[1];
@@ -34,13 +34,13 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenComputedTable,Type
          _ => false
       };
 
-      UpdateOneModel<Types.NonFungibleToken> updateInstruction;
+      UpdateOneModel<Types.NonFungibleTokenTable> updateInstruction;
 
       if (success)
       {
-         updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+         updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
                .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-            Builders<Types.NonFungibleToken>.Update
+            Builders<Types.NonFungibleTokenTable>.Update
                .Set(_ => _.Owner, (string)auctionLog.Log.Data["highestBidder"])
                .Set("SalesHistory.$[i].Success", true)
                .Set("SalesHistory.$[i].AuctionEnded", true));
@@ -59,9 +59,9 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenComputedTable,Type
       }
       else
       {
-         updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+         updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
                .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-            Builders<Types.NonFungibleToken>.Update
+            Builders<Types.NonFungibleTokenTable>.Update
                .Set("SalesHistory.$[i].AuctionEnded", true));
       }
 

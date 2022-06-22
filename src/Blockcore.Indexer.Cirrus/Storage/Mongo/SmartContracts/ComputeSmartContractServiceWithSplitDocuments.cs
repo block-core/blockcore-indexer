@@ -13,21 +13,26 @@ using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : IComputeSmartContractService<T> where T : SmartContractComputedBase, new() where TDocument : new()
+public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : IComputeSmartContractService<T> where T : SmartContractTable, new() where TDocument : new()
 {
-   readonly ILogger<ComputeSmartContractService<T,TDocument>> logger;
+   readonly ILogger<ComputeSmartContractServiceWithSplitDocuments<T,TDocument>> logger;
    readonly ICirrusMongoDb mongoDb;
    readonly ISmartContractHandlersFactory<T,TDocument> logReaderFactory;
    readonly CirrusClient cirrusClient;
    readonly IMongoDatabase mongoDatabase;
    readonly ISmartContractTransactionsLookup<T> transactionsLookup;
 
-   public ComputeSmartContractServiceWithSplitDocuments(ILogger<ComputeSmartContractService<T, TDocument>> logger, ICirrusMongoDb mongoDb, ISmartContractHandlersFactory<T, TDocument> logReaderFactory, ICryptoClientFactory clientFactory,SyncConnection connection, IMongoDatabase mongoDatabase, ISmartContractTransactionsLookup<T> transactionsLookup)
+   public ComputeSmartContractServiceWithSplitDocuments(
+      ILogger<ComputeSmartContractServiceWithSplitDocuments<T, TDocument>> logger,
+      ICirrusMongoDb mongoDb, ISmartContractHandlersFactory<T, TDocument> logReaderFactory,
+      ICryptoClientFactory clientFactory, SyncConnection connection, IMongoDatabase mongoDatabase,
+      ISmartContractTransactionsLookup<T> transactionsLookup)
    {
       this.logger = logger;
       this.mongoDb = mongoDb;
       this.logReaderFactory = logReaderFactory;
-      cirrusClient = (CirrusClient)clientFactory.Create(connection);;
+      cirrusClient = (CirrusClient)clientFactory.Create(connection);
+      ;
       this.mongoDatabase = mongoDatabase;
       this.transactionsLookup = transactionsLookup;
    }
@@ -53,50 +58,48 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
    async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions,
       T contract)
    {
-      try
+      var writeModels = new List<WriteModel<TDocument>>();
+
+      foreach (var contractTransaction in contractTransactions)
       {
-         var writeModels = new List<WriteModel<TDocument>>();
+         var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
 
-         foreach (var contractTransaction in contractTransactions)
+         if (reader is null)
          {
-            var reader = logReaderFactory.GetLogReader(contractTransaction.MethodName);
-
-            if (reader is null)
-            {
-               logger.LogInformation(
-                  $"No reader found for method {contractTransaction.MethodName} on transaction id - {contractTransaction.TransactionId}");
-               throw new InvalidOperationException(
-                  $"Reader was not found for transaction - {contractTransaction.TransactionId}");
-            }
-
-            if (!reader.IsTransactionLogComplete(contractTransaction.Logs))
-            {
-               var result = await cirrusClient.GetContractInfoAsync(contractTransaction.TransactionId);
-
-               contractTransaction.Logs = result.Logs;
-            }
-
-            WriteModel<TDocument>[] instructions =
-               reader.UpdateContractFromTransactionLog(contractTransaction, contract);
-
-            if (instructions is not null)
-               writeModels.AddRange(instructions);
-
-            contract.LastProcessedBlockHeight = contractTransaction.BlockIndex;
+            logger.LogInformation(
+               $"No reader found for method {contractTransaction.MethodName} on transaction id - {contractTransaction.TransactionId}");
+            throw new InvalidOperationException(
+               $"Reader was not found for transaction - {contractTransaction.TransactionId}");
          }
 
-         await GetSmartContractCollection<T>()
-            .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
-               new FindOneAndReplaceOptions<T> { IsUpsert = true },
-               CancellationToken.None);
+         if (!reader.IsTransactionLogComplete(contractTransaction.Logs))
+         {
+            var result = await cirrusClient.GetContractInfoAsync(contractTransaction.TransactionId);
 
-         var bulkWriteResult = GetSmartContractCollection<TDocument>()
-            .BulkWrite(writeModels, new BulkWriteOptions { IsOrdered = true });
+            contractTransaction.Logs = result.Logs;
+         }
+
+         WriteModel<TDocument>[] instructions =
+            reader.UpdateContractFromTransactionLog(contractTransaction, contract);
+
+         if (instructions is not null)
+            writeModels.AddRange(instructions);
+
+         contract.LastProcessedBlockHeight = contractTransaction.BlockIndex;
       }
-      catch (Exception e)
+
+      await GetSmartContractCollection<T>()
+         .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
+            new FindOneAndReplaceOptions<T> { IsUpsert = true },
+            CancellationToken.None);
+
+      var bulkWriteResult = await GetSmartContractTokenCollection<TDocument>()
+         .BulkWriteAsync(writeModels, new BulkWriteOptions { IsOrdered = true });
+
+      if (bulkWriteResult.ProcessedRequests.Count != writeModels.Count)
       {
-         Console.WriteLine(e);
-         throw;
+         logger.LogError($"The bulk write operation on table {typeof(TDocument).Name}Table has failed");
+         throw new Exception("The bulk write operation has failed");
       }
    }
 
@@ -154,6 +157,11 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
             CancellationToken.None);
 
    private IMongoCollection<TType> GetSmartContractCollection<TType>()
+   {
+      return mongoDatabase.GetCollection<TType>(nameof(SmartContractTable));
+   }
+
+   private IMongoCollection<TType> GetSmartContractTokenCollection<TType>()
    {
       return mongoDatabase.GetCollection<TType>(typeof(TType).Name.Replace("Table",string.Empty));
    }

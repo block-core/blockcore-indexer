@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-public class DaoContractProposal
+public class DaoContractProposalTable
 {
    public SmartContractTokenId Id { get; set; }
    public string Recipient { get; set; }

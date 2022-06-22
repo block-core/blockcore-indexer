@@ -23,11 +23,25 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<CirrusBlock>();
          }
 
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(SmartContractTable)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<SmartContractTable>(_ =>
+            {
+               _.AutoMap();
+               _.MapIdProperty(_ => _.ContractAddress);
+               _.SetIsRootClass(true);
+               _.SetDiscriminator(nameof(SmartContractTable));
+            });
+         }
+
          SetDocumentMapAndIgnoreExtraElements<CirrusContractTable>();
          SetDocumentMapAndIgnoreExtraElements<CirrusContractCodeTable>();
-         SetDocumentMapAndIgnoreExtraElements<DaoContractComputedTable>();
-         SetDocumentMapAndIgnoreExtraElements<StandardTokenComputedTable>();
-         SetDocumentMapAndIgnoreExtraElements<NonFungibleTokenComputedTable>();
+         SetDocumentMapAndIgnoreExtraElements<DaoContractTable>();
+         // SetDocumentMapAndIgnoreExtraElements<StandardTokenContractTable>();
+         // SetDocumentMapAndIgnoreExtraElements<NonFungibleTokenContractTable>();
+         // SetDocumentMapAndIgnoreExtraElements<NonFungibleTokenTable>();
+         SetDocumentMapAndIgnoreExtraElements<StandardTokenHolderTable>();
+         SetDocumentMapAndIgnoreExtraElements<DaoContractProposalTable>();
 
          return Task.CompletedTask;
       }

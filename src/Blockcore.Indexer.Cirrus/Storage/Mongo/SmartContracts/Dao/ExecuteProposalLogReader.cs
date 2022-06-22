@@ -6,14 +6,14 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class ExecuteProposalLogReader : ILogReader<DaoContractComputedTable, DaoContractProposal>
+class ExecuteProposalLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "ExecuteProposal";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      DaoContractComputedTable computedTable)
+   public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      DaoContractTable computedTable)
    {
       var log = contractTransaction.Logs.First().Log.Data;
 
@@ -21,9 +21,9 @@ class ExecuteProposalLogReader : ILogReader<DaoContractComputedTable, DaoContrac
 
       string proposalId = ((long)log["proposalId"]).ToString();
 
-      return new [] { new UpdateOneModel<DaoContractProposal>(Builders<DaoContractProposal>.Filter
+      return new [] { new UpdateOneModel<DaoContractProposalTable>(Builders<DaoContractProposalTable>.Filter
             .Where(_ => _.Id.TokenId ==  proposalId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<DaoContractProposal>.Update
+         Builders<DaoContractProposalTable>.Update
             .Set(_ => _.WasProposalAccepted,true)
             .Set(_ => _.ProposalCompletedAtBlock,contractTransaction.BlockIndex)
             .Set(_ => _.PayoutTransactionId,contractTransaction.TransactionId))};

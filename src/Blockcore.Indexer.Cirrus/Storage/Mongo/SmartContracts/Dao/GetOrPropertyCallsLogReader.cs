@@ -4,7 +4,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-public class GetOrPropertyCallsLogReader : ILogReader<DaoContractComputedTable,DaoContractProposal>
+public class GetOrPropertyCallsLogReader : ILogReader<DaoContractTable,DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.StartsWith("get_") ||
                                                              methodType.StartsWith("Get") ||
@@ -12,8 +12,8 @@ public class GetOrPropertyCallsLogReader : ILogReader<DaoContractComputedTable,D
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      DaoContractComputedTable computedTable)
+   public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      DaoContractTable computedTable)
    {
       return null;
    }

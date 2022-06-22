@@ -6,14 +6,14 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class BurnLogReader: ILogReader<NonFungibleTokenComputedTable,Types.NonFungibleToken>
+public class BurnLogReader: ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Burn");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       object tokenId = contractTransaction.Logs.SingleOrDefault().Log.Data["tokenId"];
 
@@ -22,9 +22,9 @@ public class BurnLogReader: ILogReader<NonFungibleTokenComputedTable,Types.NonFu
       // computedTable.Tokens.Single(_ => _.Id == id)
       //    .IsBurned = true;
 
-      return new [] { new UpdateOneModel<Types.NonFungibleToken>(
-         Builders<Types.NonFungibleToken>.Filter
+      return new [] { new UpdateOneModel<Types.NonFungibleTokenTable>(
+         Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleToken>.Update.Set(_ => _.IsBurned, true))};
+         Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.IsBurned, true))};
    }
 }

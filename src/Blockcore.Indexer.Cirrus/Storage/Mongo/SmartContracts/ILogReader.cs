@@ -4,7 +4,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public interface ILogReader<in T, TDocument> where T : SmartContractComputedBase
+public interface ILogReader<in T, TDocument> where T : SmartContractTable
 where TDocument : new()
 {
    bool CanReadLogForMethodType(string methodType);

@@ -8,14 +8,14 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class VoteLogReader : ILogReader<DaoContractComputedTable, DaoContractProposal>
+class VoteLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "Vote";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event == "ProposalVotedLog");
 
-   public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      DaoContractComputedTable computedTable)
+   public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      DaoContractTable computedTable)
    {
       if (contractTransaction.Logs.All(_ => _.Log.Event != "ProposalVotedLog"))
       {
@@ -27,14 +27,14 @@ class VoteLogReader : ILogReader<DaoContractComputedTable, DaoContractProposal>
       bool voteYesNo = (bool)contractTransaction.Logs.First().Log.Data["vote"];
       string voterAddress = (string)contractTransaction.Logs.First().Log.Data["voter"];
 
-      var upsertVoter = new UpdateOneModel<DaoContractProposal>(Builders<DaoContractProposal>.Filter
+      var upsertVoter = new UpdateOneModel<DaoContractProposalTable>(Builders<DaoContractProposalTable>.Filter
             .Where(_ => _.Id.ContractAddress == computedTable.ContractAddress && _.Id.TokenId == id.ToString()),
-         Builders<DaoContractProposal>.Update.AddToSet(_ => _.Votes,
+         Builders<DaoContractProposalTable>.Update.AddToSet(_ => _.Votes,
             new DaoContractVoteDetails { ProposalId = id, VoterAddress = voterAddress, PreviousVotes = new List<DaoContractVote>()}));
 
-      var insertVoteForVoter = new UpdateOneModel<DaoContractProposal>(Builders<DaoContractProposal>.Filter
+      var insertVoteForVoter = new UpdateOneModel<DaoContractProposalTable>(Builders<DaoContractProposalTable>.Filter
             .Where(_ => _.Id.ContractAddress == computedTable.ContractAddress && _.Id.TokenId == id.ToString()),
-         Builders<DaoContractProposal>.Update.AddToSet("Votes.$[j].PreviousVotes",
+         Builders<DaoContractProposalTable>.Update.AddToSet("Votes.$[j].PreviousVotes",
             new DaoContractVote { IsApproved = voteYesNo, VotedOnBlock = contractTransaction.BlockIndex }));
 
       insertVoteForVoter.ArrayFilters = new[]

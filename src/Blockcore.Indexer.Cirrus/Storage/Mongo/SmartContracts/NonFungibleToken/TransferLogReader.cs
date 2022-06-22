@@ -6,14 +6,14 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class TransferLogReader : ILogReader<NonFungibleTokenComputedTable, Types.NonFungibleToken>
+public class TransferLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferLog") || methodType.Equals("TransferFrom");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       var log = contractTransaction.Logs?.First();
 
@@ -33,9 +33,9 @@ public class TransferLogReader : ILogReader<NonFungibleTokenComputedTable, Types
          TransactionId = contractTransaction.TransactionId,
       };
 
-      return new [] {new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+      return new [] {new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleToken>.Update.Set(_ => _.Owner, owner)
+         Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, owner)
             .AddToSet(_ => _.SalesHistory, sale)) };
    }
 }

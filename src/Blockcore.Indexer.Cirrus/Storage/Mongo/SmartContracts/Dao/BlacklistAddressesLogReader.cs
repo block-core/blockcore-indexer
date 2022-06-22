@@ -5,16 +5,16 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class BlacklistAddressesLogReader : ILogReader<DaoContractComputedTable, DaoContractProposal>
+class BlacklistAddressesLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType is "BlacklistAddresses" or "BlacklistAddress";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => false;
 
-   public WriteModel<DaoContractProposal>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      DaoContractComputedTable computedTable)
+   public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      DaoContractTable computedTable)
    {
       //TODO
-      return Array.Empty<WriteModel<DaoContractProposal>>();
+      return Array.Empty<WriteModel<DaoContractProposalTable>>();
    }
 }

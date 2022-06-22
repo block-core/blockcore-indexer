@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-public class StandardTokenHolder
+public class StandardTokenHolderTable
 {
    [BsonId]
    public SmartContractTokenId Id { get; set; }

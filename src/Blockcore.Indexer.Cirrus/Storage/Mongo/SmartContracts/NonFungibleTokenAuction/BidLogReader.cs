@@ -6,7 +6,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenAuction;
 
-public class BidLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonFungibleToken>
+public class BidLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
    ICirrusMongoDb db;
 
@@ -19,18 +19,18 @@ public class BidLogReader : ILogReader<NonFungibleTokenComputedTable,Types.NonFu
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<Types.NonFungibleToken>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       var auctionLog = contractTransaction.Logs?[0];
 
       string tokenId = (string)auctionLog.Log.Data["tokenId"];
 
-      UpdateOneModel<Types.NonFungibleToken> updateInstruction;
+      UpdateOneModel<Types.NonFungibleTokenTable> updateInstruction;
 
-      updateInstruction = new UpdateOneModel<Types.NonFungibleToken>(Builders<Types.NonFungibleToken>.Filter
+      updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleToken>.Update
+         Builders<Types.NonFungibleTokenTable>.Update
             .Set("SalesHistory.$[i].HighestBid", (long)auctionLog.Log.Data["bid"])
             .Set("SalesHistory.$[i].HighestBidder", (string)auctionLog.Log.Data["bidder"])
             .Set("SalesHistory.$[i].HighestBidTransactionId", contractTransaction.TransactionId));
