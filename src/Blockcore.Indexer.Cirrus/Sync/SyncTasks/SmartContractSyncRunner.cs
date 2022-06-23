@@ -47,7 +47,23 @@ public class SmartContractSyncRunner : TaskRunner
 
    public override async Task<bool> OnExecute()
    {
+      if (!Runner.GlobalState.IndexModeCompleted ||
+          Runner.GlobalState.Blocked ||
+          Runner.GlobalState.ReorgMode ||
+          Runner.GlobalState.StoreTip == null ||
+          Runner.GlobalState.IndexMode)
+      {
+         return false;
+      }
+
+      logger.LogDebug($"Calling {nameof(storage.GetSmartContractsThatNeedsUpdatingAsync)}");
+
       var smartContractAddresses = await storage.GetSmartContractsThatNeedsUpdatingAsync(supportedSmartContractTypes.Keys.ToArray());
+
+      logger.LogDebug($"Lookup found {smartContractAddresses.Count} that needs updating");
+
+      if (!smartContractAddresses.Any())
+         return false;
 
       var types = db.CirrusContractCodeTable.AsQueryable()
          .Where(_ => smartContractAddresses.Contains(_.ContractAddress))
@@ -72,6 +88,8 @@ public class SmartContractSyncRunner : TaskRunner
          }
       }
 
-      return true;
+      logger.LogDebug($"Completed execution of {nameof(SmartContractSyncRunner)}");
+
+      return false;
    }
 }

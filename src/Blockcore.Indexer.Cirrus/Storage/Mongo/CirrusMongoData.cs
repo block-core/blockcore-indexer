@@ -435,11 +435,11 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
       public async Task<List<string>> GetSmartContractsThatNeedsUpdatingAsync(params string[] supportedTypes)
       {
          var smartContractsNotComputed = await mongoDb.CirrusContractCodeTable.Aggregate()
+            .Match(Builders<CirrusContractCodeTable>.Filter.In(_ => _.CodeType, supportedTypes))
             .Lookup("SmartContractTable",
                new StringFieldDefinition<CirrusContractCodeTable>("ContractAddress"),
                new StringFieldDefinition<BsonDocument>("_id"),
                new StringFieldDefinition<BsonDocument>("output"))
-            .Match(Builders<BsonDocument>.Filter.In(_ => _["CodeType"].AsString,supportedTypes))
             .Match(_ => _["output"] == new BsonArray())
             .Project(_ => new { address = _["ContractAddress"] })
             .ToListAsync();
@@ -482,8 +482,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                      new BsonDocument("address", "$ContractAddress"))
                }))
             .ToListAsync();
-
-         //var missingSmartContractAddresses = smartContracts.Where(_ => computedSmartContracts.Any(c => c.addtres == _)).ToList();
 
          return smartContractsNotUpdated.Select(_ => _["_id"].AsString).ToList().Concat(smartContractsNotComputed.Select(s => s.address.AsString)).ToList();
       }
