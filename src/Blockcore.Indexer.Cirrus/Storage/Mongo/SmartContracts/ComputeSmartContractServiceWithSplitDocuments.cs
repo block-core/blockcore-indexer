@@ -37,12 +37,12 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
       this.transactionsLookup = transactionsLookup;
    }
 
-   public async Task<T> ComputeSmartContractForAddressAsync(string address)
+   public async Task ComputeSmartContractForAddressAsync(string address)
    {
       var contract = await LookupSmartContractForAddressAsync(address);
 
       if (contract is null)
-         return null;
+         return;
 
       var contractTransactions =
          await transactionsLookup.GetTransactionsForSmartContractAsync(address, contract.LastProcessedBlockHeight);
@@ -51,8 +51,6 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
       {
          await AddNewTransactionsDataToDocumentAsync(address, contractTransactions, contract);
       }
-
-      return contract;
    }
 
    async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions,
@@ -92,6 +90,9 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
          .FindOneAndReplaceAsync<T>(_ => _.ContractAddress == address, contract,
             new FindOneAndReplaceOptions<T> { IsUpsert = true },
             CancellationToken.None);
+
+      if (!writeModels.Any())
+         return;
 
       var bulkWriteResult = await GetSmartContractTokenCollection<TDocument>()
          .BulkWriteAsync(writeModels, new BulkWriteOptions { IsOrdered = true });

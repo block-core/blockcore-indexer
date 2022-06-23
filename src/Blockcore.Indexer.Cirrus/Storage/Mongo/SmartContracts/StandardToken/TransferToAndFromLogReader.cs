@@ -25,7 +25,16 @@ public class TransferToAndFromLogReader : ILogReader<StandardTokenContractTable,
 
       string fromAddress = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["from"];
       string toAddress = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["to"];
-      long? amount = (long?)contractTransaction.Logs.SingleOrDefault().Log.Data["amount"];
+      object objectAmount = contractTransaction.Logs.SingleOrDefault().Log.Data["amount"];
+
+
+
+      long? amount = objectAmount switch
+      {
+         string => Convert.ToInt64(objectAmount),
+         long => (long?)objectAmount,
+         _ => throw new InvalidCastException(objectAmount.ToString())
+      };
 
       var addCreatorTokenIfNotExists = new UpdateOneModel<StandardTokenHolderTable>(Builders<StandardTokenHolderTable>.Filter
             .Where(_ => _.Id.TokenId == computedTable.CreatorAddress &&

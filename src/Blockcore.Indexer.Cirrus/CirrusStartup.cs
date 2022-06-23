@@ -9,6 +9,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using Blockcore.Indexer.Cirrus.Sync.SyncTasks;
 using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
@@ -84,6 +85,8 @@ namespace Blockcore.Indexer.Cirrus
          services.AddTransient<ISmartContractHandlersFactory<NonFungibleTokenContractTable,NonFungibleTokenTable>,SmartContractHandlersFactory<NonFungibleTokenContractTable,NonFungibleTokenTable>>();
 
          RegisterSmartContractBuilder(services); //No need to scan the assembly as there won't be that many
+
+         services.AddScoped<TaskRunner,SmartContractSyncRunner>();
       }
 
       private static IServiceCollection RegisterSmartContractBuilder(IServiceCollection collection)

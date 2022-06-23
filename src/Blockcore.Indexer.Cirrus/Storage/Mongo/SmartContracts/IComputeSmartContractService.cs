@@ -5,5 +5,5 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 public interface IComputeSmartContractService<T> where T : SmartContractTable
 {
-   Task<T> ComputeSmartContractForAddressAsync(string address);
+   Task ComputeSmartContractForAddressAsync(string address);
 }

@@ -98,7 +98,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await daoContractService.ComputeSmartContractForAddressAsync(address);
+         var contract = await cirrusMongoData.GetDaoContractByAddressAsync(address);
 
          if (contract is null)
          {
@@ -113,7 +113,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
+         var contract = await cirrusMongoData.GetStandardTokenContractByAddressAsync(address);
 
          if (contract is null)
          {
@@ -143,7 +143,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetNonFungibleTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
+         var contract = await cirrusMongoData.GetNonFungibleTokenContractByAddressAsync(address);
 
          if (contract is null)
          {

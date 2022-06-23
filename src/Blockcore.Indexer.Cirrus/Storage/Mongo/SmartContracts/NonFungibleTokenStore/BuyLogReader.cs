@@ -15,10 +15,13 @@ public class BuyLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonF
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      var transferLog = contractTransaction.Logs[0];
-      var tokenPurchaseLog = contractTransaction.Logs[1];
+      var transferLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "TransferLog");
+      var tokenPurchaseLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "TokenPurchasedLog");
+      var royaltyPaidLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "RoyaltyPaidLog");
 
-      string seller = (string)tokenPurchaseLog.Log.Data["seller"];
+      string seller = tokenPurchaseLog.Log.Data.ContainsKey("seller")
+         ? (string)tokenPurchaseLog.Log.Data["seller"]
+         : (string)royaltyPaidLog.Log.Data["recipient"];
 
       string tokenId = (string)transferLog.Log.Data["tokenId"];
 

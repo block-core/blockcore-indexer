@@ -7,8 +7,18 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo;
 
 public class CirrusMongoDb : MongoDb, ICirrusMongoDb
 {
+   private const string SmartContractTableName = "SmartContract";
+
    public CirrusMongoDb(ILogger<MongoDb> logger, IMongoDatabase mongoDatabase) : base(logger, mongoDatabase)
    { }
+
+   public IMongoCollection<SmartContractTable> SmartContractTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<SmartContractTable>(SmartContractTableName);
+      }
+   }
 
    public IMongoCollection<CirrusContractTable> CirrusContractTable
    {
@@ -26,27 +36,27 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
       }
    }
 
-   public IMongoCollection<DaoContractTable> DaoContractComputedTable
+   public IMongoCollection<DaoContractTable> DaoContractTable
    {
       get
       {
-         return mongoDatabase.GetCollection<DaoContractTable>("SmartContractTable");
+         return mongoDatabase.GetCollection<DaoContractTable>(SmartContractTableName);
       }
    }
 
-   public IMongoCollection<StandardTokenContractTable> StandardTokenComputedTable
+   public IMongoCollection<StandardTokenContractTable> StandardTokenContractTable
    {
       get
       {
-         return mongoDatabase.GetCollection<StandardTokenContractTable>("SmartContractTable");
+         return mongoDatabase.GetCollection<StandardTokenContractTable>(SmartContractTableName);
       }
    }
 
-   public IMongoCollection<NonFungibleTokenContractTable> NonFungibleTokenComputedTable
+   public IMongoCollection<NonFungibleTokenContractTable> NonFungibleTokenContractTable
    {
       get
       {
-         return mongoDatabase.GetCollection<NonFungibleTokenContractTable>("SmartContractTable");
+         return mongoDatabase.GetCollection<NonFungibleTokenContractTable>(SmartContractTableName);
       }
    }
 

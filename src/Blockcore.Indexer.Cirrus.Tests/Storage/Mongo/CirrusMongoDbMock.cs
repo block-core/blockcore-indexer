@@ -31,9 +31,9 @@ public class CirrusMongoDbMock : MongodbMock
 
       cirrusDb.Setup(_ => _.CirrusContractTable).Returns(CirrusContractTableCollection.Object);
       cirrusDb.Setup(_ => _.CirrusContractCodeTable).Returns(CirrusContractCodeTableCollection.Object);
-      cirrusDb.Setup(_ => _.DaoContractComputedTable).Returns(DaoContractComputedTableCollection.Object);
+      cirrusDb.Setup(_ => _.DaoContractTable).Returns(DaoContractComputedTableCollection.Object);
 
-      cirrusDb.Setup(_ => _.DaoContractComputedTable.Database)
+      cirrusDb.Setup(_ => _.DaoContractTable.Database)
         .Returns(MongoDatabaseObject);
       
      DaoContractComputedTableCollection.Setup(_ => _.Settings)
