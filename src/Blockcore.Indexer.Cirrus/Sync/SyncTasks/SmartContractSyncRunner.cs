@@ -41,6 +41,8 @@ public class SmartContractSyncRunner : TaskRunner
          { "StandardToken", standardTokenService.ComputeSmartContractForAddressAsync },
          { "NonFungibleToken", nonFungibleTokenService.ComputeSmartContractForAddressAsync },
       };
+
+      Delay = TimeSpan.FromMinutes(1);
    }
 
    public override async Task<bool> OnExecute()
@@ -66,7 +68,7 @@ public class SmartContractSyncRunner : TaskRunner
          catch (Exception e)
          {
             //We won't stop the loop so all other smart contracts can be computed
-            logger.LogError(type.address,e);
+            logger.LogError(e,$"unable to compute smart contract - {type.contractType} for address - {type.address}");
          }
       }
 
