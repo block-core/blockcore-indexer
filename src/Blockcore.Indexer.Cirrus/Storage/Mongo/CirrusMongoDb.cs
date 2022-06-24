@@ -7,7 +7,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo;
 
 public class CirrusMongoDb : MongoDb, ICirrusMongoDb
 {
-   private const string SmartContractTableName = "SmartContract";
+   private const string SmartContractTableName = "SmartContractTable";
 
    public CirrusMongoDb(ILogger<MongoDb> logger, IMongoDatabase mongoDatabase) : base(logger, mongoDatabase)
    { }

@@ -34,6 +34,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             });
          }
 
+         SetDocumentMapAndIgnoreExtraElements<DaoContractTable>();
+         SetDocumentMapAndIgnoreExtraElements<StandardTokenContractTable>();
+         SetDocumentMapAndIgnoreExtraElements<NonFungibleTokenContractTable>();
+
          SetDocumentMapAndIgnoreExtraElements<CirrusContractTable>();
          SetDocumentMapAndIgnoreExtraElements<CirrusContractCodeTable>();
          SetDocumentMapAndIgnoreExtraElements<DaoContractTable>();

@@ -140,8 +140,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
       public async Task<QueryStandardTokenContract> GetStandardTokenContractByAddressAsync(string contractAddress)
       {
-         var contract = await mongoDb.StandardTokenContractTable.Find(_ => _.ContractAddress == contractAddress)
-            .SingleOrDefaultAsync();
+         var contract = await mongoDb.SmartContractTable.Find(_ => _.ContractAddress == contractAddress)
+            .SingleOrDefaultAsync() as StandardTokenContractTable;
 
          if (contract is null)
             return null;

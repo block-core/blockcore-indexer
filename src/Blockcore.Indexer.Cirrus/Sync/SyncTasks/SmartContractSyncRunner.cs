@@ -60,10 +60,10 @@ public class SmartContractSyncRunner : TaskRunner
 
       var smartContractAddresses = await storage.GetSmartContractsThatNeedsUpdatingAsync(supportedSmartContractTypes.Keys.ToArray());
 
-      logger.LogDebug($"Lookup found {smartContractAddresses.Count} that needs updating");
-
       if (!smartContractAddresses.Any())
          return false;
+
+      logger.LogDebug($"Lookup found {smartContractAddresses.Count} that needs updating");
 
       var types = db.CirrusContractCodeTable.AsQueryable()
          .Where(_ => smartContractAddresses.Contains(_.ContractAddress))
