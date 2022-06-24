@@ -1,8 +1,17 @@
+## <small>0.2.35 (2022-06-24)</small>
+
+* Added caching for stats endpoint (#150) ([719f891](https://github.com/block-core/blockcore-indexer/commit/719f891)), closes [#150](https://github.com/block-core/blockcore-indexer/issues/150)
+* Return confirmation count on block header (#148) ([82f5660](https://github.com/block-core/blockcore-indexer/commit/82f5660)), closes [#148](https://github.com/block-core/blockcore-indexer/issues/148)
+* Update Swashbuckle package (#152) ([7e65edf](https://github.com/block-core/blockcore-indexer/commit/7e65edf)), closes [#152](https://github.com/block-core/blockcore-indexer/issues/152)
+
+
+
 ## <small>0.2.34 (2022-05-28)</small>
 
 * change background-image in index.html (#145) ([2c7557b](https://github.com/block-core/blockcore-indexer/commit/2c7557b)), closes [#145](https://github.com/block-core/blockcore-indexer/issues/145)
 * Fixed typo to fit the Cirrus on release 1.1.44 (#146) ([501bee2](https://github.com/block-core/blockcore-indexer/commit/501bee2)), closes [#146](https://github.com/block-core/blockcore-indexer/issues/146)
 * Update version and changelog ([4c4a597](https://github.com/block-core/blockcore-indexer/commit/4c4a597))
+* Updated change log ([83f67f3](https://github.com/block-core/blockcore-indexer/commit/83f67f3))
 
 
 
