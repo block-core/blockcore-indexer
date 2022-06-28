@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using MongoDB.Bson.Serialization.Attributes;
+using System.Collections.Generic; 
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-public class StandardTokenHolderTable
+public class StandardTokenHolderTable : SmartContractData
 {
-   [BsonId]
-   public SmartContractTokenId Id { get; set; }
    // public string Address { get; set; }
    public List<StandardTokenAmountChange> AmountChangesHistory { get; set; }
 }

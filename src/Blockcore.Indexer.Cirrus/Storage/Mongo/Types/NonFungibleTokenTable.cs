@@ -2,9 +2,8 @@ using System.Collections.Generic;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-public class NonFungibleTokenTable
+public class NonFungibleTokenTable : SmartContractData
 {
-   public SmartContractTokenId Id { get; set; }
    public string Creator { get; set; }
    public string Owner { get; set; }
    public string Uri { get; set; }

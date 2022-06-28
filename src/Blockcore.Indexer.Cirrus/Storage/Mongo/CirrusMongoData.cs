@@ -33,7 +33,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          ICryptoClientFactory clientFactory,
          IScriptInterpeter scriptInterpeter,
          IMongoDatabase mongoDatabase,
-         ICirrusMongoDb db)
+         ICirrusMongoDb db,
+         IBlockRewindOperation rewindOperation)
          : base(
             dbLogger,
             connection,
@@ -43,7 +44,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             clientFactory,
             scriptInterpeter,
             mongoDatabase,
-            db)
+            db,
+            rewindOperation)
       {
          mongoDb = db;
       }
