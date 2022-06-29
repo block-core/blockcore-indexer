@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -19,9 +20,9 @@ public class BuyLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonF
       var tokenPurchaseLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "TokenPurchasedLog");
       var royaltyPaidLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "RoyaltyPaidLog");
 
-      string seller = tokenPurchaseLog.Log.Data.ContainsKey("seller")
+      string seller = tokenPurchaseLog?.Log.Data.ContainsKey("seller") ?? false
          ? (string)tokenPurchaseLog.Log.Data["seller"]
-         : (string)royaltyPaidLog.Log.Data["recipient"];
+         :  string.Empty;
 
       string tokenId = (string)transferLog.Log.Data["tokenId"];
 
@@ -34,16 +35,23 @@ public class BuyLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonF
             .Set("SalesHistory.$[i].Sold", true)
             .Set("SalesHistory.$[i].PurchaseTransactionId", contractTransaction.TransactionId));
 
-      updateInstruction.ArrayFilters = new[]
+
+      var bsonFilterArray = new BsonArray(new[]
       {
-         new BsonDocumentArrayFilterDefinition<OnSale>(new BsonDocument("$and",
-            new BsonArray(new[]
-            {
-               new BsonDocument("i.Seller", seller),
-               new BsonDocument("i._t", "OnSale"),
-               new BsonDocument("i.Sold", false)
-            })))
-      };
+         new BsonDocument("i._t", "OnSale"),
+         new BsonDocument("i.Sold", false)
+      });
+
+      if (seller != string.Empty)
+         bsonFilterArray.Add(new BsonDocument("i.Seller", seller));
+
+      updateInstruction.ArrayFilters = new[] { new BsonDocumentArrayFilterDefinition<OnSale>(
+         new BsonDocument("$and",bsonFilterArray)) };
+
+      if (royaltyPaidLog != null)
+      {
+         //TODO add the royalty data to the sale history
+      }
 
 
       return new[] { updateInstruction };

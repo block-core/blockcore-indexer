@@ -23,7 +23,7 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenContractTabl
 
       string owner = (string)saleLog.Data["seller"];
 
-       var sale =SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log);
+      var sale = SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log);
 
        return new [] { new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
              .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
