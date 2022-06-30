@@ -20,6 +20,6 @@ public interface ICirrusStorage
    Task<QueryNonFungibleTokenContract> GetNonFungibleTokenContractByAddressAsync(string contractAddress);
    Task<NonFungibleTokenTable> GetNonFungibleTokenByIdAsync(string contractAddress, string tokenId);
    Task<QueryStandardToken> GetStandardTokenByIdAsync(string contractAddress, string tokenId);
-   Task<QueryResult<QueryAddressAsset>> GetAssetsForAddressAsync(string address, int? offset, int limit);
+   Task<QueryResult<QueryAddressAsset>> GetNonFungibleTokensForAddressAsync(string address, int? offset, int limit);
    Task<List<string>> GetSmartContractsThatNeedsUpdatingAsync(params  string[] supportedTypes);
 }

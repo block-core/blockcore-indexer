@@ -52,10 +52,10 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("{address}/assets")]
-      public IActionResult GetAddressAssets([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      [Route("collectables/${(ownerAddress)}")]
+      public IActionResult GetAddressAssets([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return Ok(cirrusMongoData.GetAssetsForAddressAsync(address,offset,limit).Result);
+         return Ok(cirrusMongoData.GetNonFungibleTokensForAddressAsync(ownerAddress,offset,limit).Result);
       }
 
       [HttpGet]
