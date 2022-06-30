@@ -382,6 +382,51 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          };
       }
 
+      public async Task<QueryResult<QueryStandardToken>> GetStandardTokensForAddressAsync(string address, int? offset, int limit)
+      {
+         int total = await mongoDb.StandardTokenHolderTable
+            .AsQueryable()
+            .CountAsync(_ => _.Id.TokenId == address);
+
+         if (total == 0)
+            return new QueryResult<QueryStandardToken> { Limit = limit, Offset = offset ?? 0, Total = total };
+
+         int startPosition = offset ?? total - limit;
+         int endPosition = startPosition + limit;
+
+         var dbTokens = await mongoDb.StandardTokenHolderTable.Aggregate()
+            .Match(_ => _.Id.TokenId == address)
+            .SortBy(_ => _.Id.ContractAddress)
+            .Skip(startPosition)
+            .Limit(endPosition)
+            .ToListAsync();
+
+         var addresses = dbTokens.Select(_ => _.Id.ContractAddress);
+
+         var smartContractDetails = await mongoDb.StandardTokenContractTable.AsQueryable()
+            .Where(_ => addresses.Contains(_.ContractAddress))
+            .ToListAsync();
+
+         var tokens = dbTokens.Select(_ =>
+         {
+            var smartContract = smartContractDetails.First(s => s.ContractAddress == _.Id.ContractAddress);
+
+            return new QueryStandardToken
+            {
+               Address = _.Id.TokenId,
+               Amount = _.AmountChangesHistory.Sum(a => a.Amount),
+               Name = smartContract.Name,
+               Symbol = smartContract.Symbol,
+               TotalSupply = smartContract.TotalSupply
+            };
+         });
+
+         return new QueryResult<QueryStandardToken>
+         {
+            Items = tokens, Limit = limit, Offset = offset ?? 0, Total = total
+         };
+      }
+
       public async Task<List<SmartContractTable>> GetSmartContractsThatNeedsUpdatingAsync(long blockIndex)
       {
          var smartContractsNotComputed = await mongoDb.CirrusContractCodeTable.Aggregate()
