@@ -3,54 +3,46 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class VoteLogReader : ILogReader<DaoContractComputedTable>
+class VoteLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "Vote";
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event == "ProposalVotedLog");
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      DaoContractComputedTable computedTable)
+   public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      DaoContractTable computedTable)
    {
-      if (contractTransaction.Logs.Length == 0)
+      if (contractTransaction.Logs.All(_ => _.Log.Event != "ProposalVotedLog"))
       {
          //TODO need to handle this wierd issue (example transaction id - 5faa9c5347ba378ea1b4dd9e957e398867f724a6ba4951ed65cde6529dbfd6a0)
-         return;
+         return null;
       }
 
       int id = (int)(long)contractTransaction.Logs.First().Log.Data["proposalId"];
       bool voteYesNo = (bool)contractTransaction.Logs.First().Log.Data["vote"];
       string voterAddress = (string)contractTransaction.Logs.First().Log.Data["voter"];
 
-      var proposal = computedTable.Proposals.SingleOrDefault(_ => _.Id == id);
+      var upsertVoter = new UpdateOneModel<DaoContractProposalTable>(Builders<DaoContractProposalTable>.Filter
+            .Where(_ => _.Id.ContractAddress == computedTable.ContractAddress && _.Id.TokenId == id.ToString()),
+         Builders<DaoContractProposalTable>.Update.AddToSet(_ => _.Votes,
+            new DaoContractVoteDetails { ProposalId = id, VoterAddress = voterAddress, PreviousVotes = new List<DaoContractVote>()}));
 
-      if (proposal is null)
-      {
-         throw new InvalidOperationException(
-            $"Proposal {id} not found for the vote transaction id - {contractTransaction.TransactionId}");
-      }
+      var insertVoteForVoter = new UpdateOneModel<DaoContractProposalTable>(Builders<DaoContractProposalTable>.Filter
+            .Where(_ => _.Id.ContractAddress == computedTable.ContractAddress && _.Id.TokenId == id.ToString()),
+         Builders<DaoContractProposalTable>.Update.AddToSet("Votes.$[j].PreviousVotes",
+            new DaoContractVote { IsApproved = voteYesNo, VotedOnBlock = contractTransaction.BlockIndex }));
 
-      var vote = proposal.Votes.FirstOrDefault(_ => _.VoterAddress == voterAddress);
+      insertVoteForVoter.ArrayFilters = new[]
+      {
+         new BsonDocumentArrayFilterDefinition<DaoContractVoteDetails>(
+            new BsonDocument("j.VoterAddress", voterAddress))
+      };
 
-      if (vote != null)
-      {
-         vote.PreviousVotes ??= new List<DaoContractVote>();
-         vote.PreviousVotes.Add(new DaoContractVote { IsApproved = vote.IsApproved,VotedOnBlock = vote.VotedOnBlock });
-         vote.IsApproved = voteYesNo;
-         vote.VotedOnBlock = contractTransaction.BlockIndex;
-      }
-      else
-      {
-         proposal.Votes.Add(new DaoContractVoteDetails
-         {
-            IsApproved = voteYesNo,
-            ProposalId = id,
-            VoterAddress = voterAddress,
-            VotedOnBlock = contractTransaction.BlockIndex,
-         });
-      }
+      return new[] { upsertVoter, insertVoteForVoter };
    }
 }

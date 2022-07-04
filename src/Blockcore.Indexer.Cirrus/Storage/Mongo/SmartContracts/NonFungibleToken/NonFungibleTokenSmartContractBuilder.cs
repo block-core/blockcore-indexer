@@ -5,11 +5,11 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class NonFungibleTokenSmartContractBuilder : ISmartContractBuilder<NonFungibleTokenComputedTable>
+public class NonFungibleTokenSmartContractBuilder : ISmartContractBuilder<NonFungibleTokenContractTable>
 {
    public bool CanBuildSmartContract(string contractCodeType) => contractCodeType.Equals("NonFungibleToken");
 
-   public NonFungibleTokenComputedTable BuildSmartContract(CirrusContractTable createContractTransaction)
+   public NonFungibleTokenContractTable BuildSmartContract(CirrusContractTable createContractTransaction)
    {
       var logs = createContractTransaction.Logs.SingleOrDefault()?.Log;
 
@@ -25,7 +25,6 @@ public class NonFungibleTokenSmartContractBuilder : ISmartContractBuilder<NonFun
          Symbol =  (string)logs.Data["nftSymbol"],
          Owner = (string)logs.Data["nftOwner"],
          OwnerOnlyMinting = (bool)logs.Data["nftOwnerOnlyMinting"],
-         Tokens = new List<Token>()
       };
    }
 }

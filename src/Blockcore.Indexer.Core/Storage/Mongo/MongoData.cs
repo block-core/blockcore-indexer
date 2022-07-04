@@ -34,9 +34,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       private readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
       readonly ICryptoClientFactory clientFactory;
 
+      readonly IBlockRewindOperation rewindOperation;
+
       public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<ChainSettings> chainConfiguration,
          GlobalState globalState, IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,
-         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db)
+         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db, IBlockRewindOperation rewindOperation)
       {
          log = dbLogger;
          this.chainConfiguration = chainConfiguration.Value;
@@ -48,6 +50,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          this.scriptInterpeter = scriptInterpeter;
          this.mongoDatabase = mongoDatabase;
          mongoDb = db;
+         this.rewindOperation = rewindOperation;
       }
 
       /// <summary>
@@ -981,7 +984,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             log.LogWarning("Rewinding block without indexes this can be a long operation!");
          }
 
-         await mongoDb.RewindBlockAsync((uint)block.BlockIndex);
+         await rewindOperation.RewindBlockAsync((uint)block.BlockIndex);
 
          // signal to any child classes to deleted a block.
          await OnDeleteBlockAsync(block);

@@ -1,28 +1,51 @@
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenAuction;
 
-public class BidLogReader : ILogReader<NonFungibleTokenComputedTable>
+public class BidLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
+   ICirrusMongoDb db;
+
+   public BidLogReader(ICirrusMongoDb db)
+   {
+      this.db = db;
+   }
+
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Bid");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      NonFungibleTokenComputedTable computedTable)
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      NonFungibleTokenContractTable computedTable)
    {
       var auctionLog = contractTransaction.Logs?[0];
 
-     string tokenId = (string)auctionLog.Log.Data["tokenId"];
+      string tokenId = (string)auctionLog.Log.Data["tokenId"];
 
-      var token = computedTable.Tokens.Single(_ => _.Id == tokenId);
+      UpdateOneModel<Types.NonFungibleTokenTable> updateInstruction;
 
-      var auctionEvent = (Auction) token.SalesHistory.Last(_ => _ is Auction);
+      updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
+            .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
+         Builders<Types.NonFungibleTokenTable>.Update
+            .Set("SalesHistory.$[i].HighestBid", (long)auctionLog.Log.Data["bid"])
+            .Set("SalesHistory.$[i].HighestBidder", (string)auctionLog.Log.Data["bidder"])
+            .Set("SalesHistory.$[i].HighestBidTransactionId", contractTransaction.TransactionId));
 
-      auctionEvent.HighestBid = (long)auctionLog.Log.Data["bid"];
-      auctionEvent.HighestBidder = (string)auctionLog.Log.Data["bidder"];
-      auctionEvent.HighestBidTransactionId = contractTransaction.TransactionId;
+      updateInstruction.ArrayFilters = new[]
+      {
+         new BsonDocumentArrayFilterDefinition<Auction>(
+            new BsonDocument("$and", new BsonArray(
+               new[]
+               {
+                  new BsonDocument("i._t", nameof(Auction)),
+                  new BsonDocument("i.AuctionEnded",false)
+               })))
+      };
+
+      return new[] { updateInstruction };
    }
 }

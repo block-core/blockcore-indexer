@@ -1,6 +1,4 @@
-using Blockcore.Indexer.Cirrus.Client.Types;
-using Blockcore.Indexer.Core.Storage.Mongo.Types;
-using NBitcoin;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
 {

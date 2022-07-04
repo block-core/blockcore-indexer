@@ -17,7 +17,7 @@ namespace Blockcore.Indexer.Cirrus.Tests.Storage.Mongo;
 
 public class ComputeSmartContractServiceTests
 {
-   ComputeSmartContractService<DaoContractComputedTable> sut;
+   ComputeSmartContractServiceWithSplitDocuments<DaoContractTable,DaoContractProposalTable> sut;
 
    CirrusMongoDbMock mongoDbMock;
 
@@ -60,17 +60,14 @@ public class ComputeSmartContractServiceTests
          chainSetting.Object, networkSettings.Object);
 
 
-      sut = new ComputeSmartContractService<DaoContractComputedTable>(null, mongoDbMock.CirrusMongoDbObject,
-         new Mock<ISmartContractHandlersFactory<DaoContractComputedTable>>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection,
-         Mock.Of<IMongoDatabase>());
+      sut = new ComputeSmartContractServiceWithSplitDocuments<DaoContractTable, DaoContractProposalTable>(null, mongoDbMock.CirrusMongoDbObject,
+         new Mock<ISmartContractHandlersFactory<DaoContractTable,DaoContractProposalTable>>().Object, new Mock<ICryptoClientFactory>().Object, syncConnection,
+         Mock.Of<IMongoDatabase>(), new Mock<ISmartContractTransactionsLookup<DaoContractTable>>().Object);
    }
 
    //[Fact]
    public async Task WhenTheContractIsNotFountAnTheTrandactionIsNotFoundReturnsNull()
    {
-      var result = await sut.ComputeSmartContractForAddressAsync(Guid.NewGuid().ToString());
-
-
-      Assert.Null(result);
+       await sut.ComputeSmartContractForAddressAsync(Guid.NewGuid().ToString());
    }
 }

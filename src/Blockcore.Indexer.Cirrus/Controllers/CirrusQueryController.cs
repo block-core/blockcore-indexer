@@ -20,15 +20,15 @@ namespace Blockcore.Indexer.Cirrus.Controllers
    {
       private readonly IPagingHelper paging;
       private readonly ICirrusStorage cirrusMongoData;
-      readonly IComputeSmartContractService<DaoContractComputedTable> daoContractService;
-      readonly IComputeSmartContractService<StandardTokenComputedTable> standardTokenService;
-      readonly IComputeSmartContractService<NonFungibleTokenComputedTable> nonFungibleTokenService;
+      readonly IComputeSmartContractService<DaoContractTable> daoContractService;
+      readonly IComputeSmartContractService<StandardTokenContractTable> standardTokenService;
+      readonly IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
       public CirrusQueryController(IPagingHelper paging,
-         IComputeSmartContractService<DaoContractComputedTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenComputedTable> standardTokenService, IComputeSmartContractService<NonFungibleTokenComputedTable> nonFungibleTokenService)
+         IComputeSmartContractService<DaoContractTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenContractTable> standardTokenService, IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService)
       {
          this.paging = paging;
          daoContractService = daoContractAggregator;
@@ -52,10 +52,17 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
-      [Route("{address}/assets")]
-      public IActionResult GetAddressAssets([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      [Route("collectables/{ownerAddress}")]
+      public IActionResult GetAddressAssets([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
-         return Ok(cirrusMongoData.GetAssetsForAddressAsync(address,offset,limit).Result);
+         return Ok(cirrusMongoData.GetNonFungibleTokensForAddressAsync(ownerAddress,offset,limit).Result);
+      }
+
+      [HttpGet]
+      [Route("tokens/{ownerAddress}")]
+      public IActionResult GettokensForAddress([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      {
+         return Ok(cirrusMongoData.GetStandardTokensForAddressAsync(ownerAddress,offset,limit).Result);
       }
 
       [HttpGet]
@@ -98,7 +105,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await daoContractService.ComputeSmartContractForAddressAsync(address);
+         var contract = await cirrusMongoData.GetDaoContractByAddressAsync(address);
 
          if (contract is null)
          {
@@ -113,7 +120,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
+         var contract = await cirrusMongoData.GetStandardTokenContractByAddressAsync(address);
 
          if (contract is null)
          {
@@ -128,14 +135,12 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress)
       {
-         var contract = await standardTokenService.ComputeSmartContractForAddressAsync(address);
+         var contract = await cirrusMongoData.GetStandardTokenByIdAsync(address, filterAddress);
 
          if (contract is null)
          {
             return NotFound();
          }
-
-         contract.TokenHolders = contract.TokenHolders.Where(t => t.Address == filterAddress).ToList();
 
          return Ok(contract);
       }
@@ -145,7 +150,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [SlowRequestsFilteerAttribute]
       public async Task<IActionResult> GetNonFungibleTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
-         var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
+         var contract = await cirrusMongoData.GetNonFungibleTokenContractByAddressAsync(address);
 
          if (contract is null)
          {
@@ -161,9 +166,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       public async Task<IActionResult> GetNonFungibleTokenById([MinLength(30)][MaxLength(100)] string address,
          [MinLength(1)][MaxLength(100)] string id)
       {
-         var contract = await nonFungibleTokenService.ComputeSmartContractForAddressAsync(address);
-
-         var token = contract.Tokens.FirstOrDefault(_ => _.Id == id);
+         var token = await cirrusMongoData.GetNonFungibleTokenByIdAsync(address, id);
 
          if (token is null)
          {
