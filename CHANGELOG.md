@@ -1,3 +1,30 @@
+## <small>0.2.36 (2022-07-04)</small>
+
+* Added endpoint that lists tokens for an owner address ([53c05c4](https://github.com/block-core/blockcore-indexer/commit/53c05c4))
+* Added rewind logic for smart contracts ([83f5b28](https://github.com/block-core/blockcore-indexer/commit/83f5b28))
+* Changed the assets endpoint to get data from the tokens table ([00e539f](https://github.com/block-core/blockcore-indexer/commit/00e539f))
+* Changed tokens to another table and fixing of debug issues - not complete ([8129f16](https://github.com/block-core/blockcore-indexer/commit/8129f16))
+* Deleted commented code ([2e9d14e](https://github.com/block-core/blockcore-indexer/commit/2e9d14e))
+* Deleted explicit code for NFT token (all is in the generic service now) ([3e1a66d](https://github.com/block-core/blockcore-indexer/commit/3e1a66d))
+* First step of changing smart contract saving of tokens to another document ([9847887](https://github.com/block-core/blockcore-indexer/commit/9847887))
+* Fix for change in the NFT store smart contract ([b7f8b5e](https://github.com/block-core/blockcore-indexer/commit/b7f8b5e))
+* Fixed API endpoints ([1cd1669](https://github.com/block-core/blockcore-indexer/commit/1cd1669))
+* Fixed error message and added delay time ([b0dac91](https://github.com/block-core/blockcore-indexer/commit/b0dac91))
+* Fixed issue with lookup ([5ffb39e](https://github.com/block-core/blockcore-indexer/commit/5ffb39e))
+* Fixed issued with the auction events ([6a53f72](https://github.com/block-core/blockcore-indexer/commit/6a53f72))
+* Fixed login on generic service to support NFT as well. ([45aab22](https://github.com/block-core/blockcore-indexer/commit/45aab22))
+* Fixed standard contract to work with split tables ([0568234](https://github.com/block-core/blockcore-indexer/commit/0568234))
+* Fixed the Dao smart contract to work with split tables ([eedf6a8](https://github.com/block-core/blockcore-indexer/commit/eedf6a8))
+* Fixed the logic in the runner to update smart contracts periodically ([270d8dc](https://github.com/block-core/blockcore-indexer/commit/270d8dc))
+* Fixed the OnSale event updating ([f137dc5](https://github.com/block-core/blockcore-indexer/commit/f137dc5))
+* Fixed token filter by id endpoint ([7c922f0](https://github.com/block-core/blockcore-indexer/commit/7c922f0))
+* Minor changes after PR ([bab404d](https://github.com/block-core/blockcore-indexer/commit/bab404d))
+* Moved all smart contracts to one table ([40e843d](https://github.com/block-core/blockcore-indexer/commit/40e843d))
+* Renamed methods ([84a3df6](https://github.com/block-core/blockcore-indexer/commit/84a3df6))
+* Updated version ([f62dc87](https://github.com/block-core/blockcore-indexer/commit/f62dc87))
+
+
+
 ## <small>0.2.35 (2022-06-24)</small>
 
 * Added caching for stats endpoint (#150) ([719f891](https://github.com/block-core/blockcore-indexer/commit/719f891)), closes [#150](https://github.com/block-core/blockcore-indexer/issues/150)
