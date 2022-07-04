@@ -32,7 +32,6 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
       this.mongoDb = mongoDb;
       this.logReaderFactory = logReaderFactory;
       cirrusClient = (CirrusClient)clientFactory.Create(connection);
-      ;
       this.mongoDatabase = mongoDatabase;
       this.transactionsLookup = transactionsLookup;
    }
@@ -53,7 +52,7 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
       }
    }
 
-   async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions,
+   private async Task AddNewTransactionsDataToDocumentAsync(string address, List<CirrusContractTable> contractTransactions,
       T contract)
    {
       var writeModels = new List<WriteModel<TDocument>>();
