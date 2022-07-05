@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Paging;
@@ -37,6 +38,18 @@ namespace Blockcore.Indexer.Core.Controllers
       public IActionResult GetAddress([MinLength(4)][MaxLength(100)] string address)
       {
          return Ok(storage.AddressBalance(address));
+      }
+
+      /// <summary>
+      /// Get the balance of multiple addresses.
+      /// </summary>
+      /// <param name="addresses"></param>
+      /// <returns></returns>
+      [HttpPost]
+      [Route("addressbalances")]
+      public IActionResult GetMultipleAddressBalances(List<string> addresses)
+      {
+         return Ok(storage.MultipleAddressBalances(addresses));
       }
 
       /// <summary>

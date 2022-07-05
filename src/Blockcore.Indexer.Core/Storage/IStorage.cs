@@ -55,5 +55,6 @@ namespace Blockcore.Indexer.Core.Storage
       public List<IndexView> GetIndexesBuildProgress();
 
       public List<string> GetBlockIndexIndexes();
+      List<AddressBalanceResult> MultipleAddressBalances(List<string> addresses);
    }
 }

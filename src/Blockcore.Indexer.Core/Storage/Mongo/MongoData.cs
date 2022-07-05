@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,7 +18,6 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using NBitcoin.DataEncoders;
-
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public class MongoData : IStorage
@@ -79,48 +79,48 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public List<IndexView> GetIndexesBuildProgress()
       {
-            IMongoDatabase db = mongoDatabase.Client.GetDatabase("admin");
-            var command = new BsonDocument {
+         IMongoDatabase db = mongoDatabase.Client.GetDatabase("admin");
+         var command = new BsonDocument {
                { "currentOp", "1"},
             };
-            BsonDocument currentOp = db.RunCommand<BsonDocument>(command);
+         BsonDocument currentOp = db.RunCommand<BsonDocument>(command);
 
-            BsonElement inproc = currentOp.GetElement(0);
-            var arr = inproc.Value as BsonArray;
+         BsonElement inproc = currentOp.GetElement(0);
+         var arr = inproc.Value as BsonArray;
 
-            var ret = new List<IndexView>();
+         var ret = new List<IndexView>();
 
-            foreach (BsonValue bsonValue in arr)
+         foreach (BsonValue bsonValue in arr)
+         {
+            BsonElement? desc = bsonValue.AsBsonDocument?.GetElement("desc");
+            if (desc != null)
             {
-               BsonElement? desc = bsonValue.AsBsonDocument?.GetElement("desc");
-               if (desc != null)
+               bool track = desc?.Value.AsString.Contains("IndexBuildsCoordinatorMongod") ?? false;
+
+               if (track)
                {
-                  bool track = desc?.Value.AsString.Contains("IndexBuildsCoordinatorMongod") ?? false;
+                  var indexed = new IndexView { Msg = bsonValue.AsBsonDocument?.GetElement("msg").Value.ToString() };
 
-                  if (track)
+                  BsonElement? commandElement = bsonValue.AsBsonDocument?.GetElement("command");
+
+                  string dbName = string.Empty;
+                  if (commandElement.HasValue)
                   {
-                     var indexed = new IndexView {Msg = bsonValue.AsBsonDocument?.GetElement("msg").Value.ToString()};
-
-                     BsonElement? commandElement = bsonValue.AsBsonDocument?.GetElement("command");
-
-                     string dbName = string.Empty;
-                     if (commandElement.HasValue)
-                     {
-                        BsonDocument bsn = commandElement.Value.Value.AsBsonDocument;
-                        dbName = bsn.GetElement("$db").Value.ToString();
-                        indexed.Command = $"{bsn.GetElement(0).Value}-{bsn.GetElement(1).Value}";
-                     }
-
-                     if (dbName == mongoDatabase.DatabaseNamespace.DatabaseName)
-                     {
-                        ret.Add(indexed);
-                     }
-
+                     BsonDocument bsn = commandElement.Value.Value.AsBsonDocument;
+                     dbName = bsn.GetElement("$db").Value.ToString();
+                     indexed.Command = $"{bsn.GetElement(0).Value}-{bsn.GetElement(1).Value}";
                   }
+
+                  if (dbName == mongoDatabase.DatabaseNamespace.DatabaseName)
+                  {
+                     ret.Add(indexed);
+                  }
+
                }
             }
+         }
 
-            return ret;
+         return ret;
       }
 
       public QueryTransaction GetTransaction(string transactionId)
@@ -412,7 +412,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          bool hasWitness = transaction.HasWitness;
          int witnessScaleFactor = syncConnection.Network.Consensus.Options?.WitnessScaleFactor ?? 4;
 
-         int size = NBitcoin.BitcoinSerializableExtensions.GetSerializedSize(transaction, syncConnection.Network.Consensus.ConsensusFactory) ;
+         int size = NBitcoin.BitcoinSerializableExtensions.GetSerializedSize(transaction, syncConnection.Network.Consensus.ConsensusFactory);
          int virtualSize = hasWitness ? transaction.GetVirtualSize(witnessScaleFactor) : size;
          int weight = virtualSize * witnessScaleFactor - (witnessScaleFactor - 1);
 
@@ -680,6 +680,29 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
+
+      /// <summary>
+      /// Calculates the balance for specified list of addresses.
+      /// </summary>
+      /// <param name="addresses"></param>
+      public List<AddressBalanceResult> MultipleAddressBalances(List<string> addresses)
+      {
+         var result = new ConcurrentBag<AddressBalanceResult>();
+
+         Parallel.ForEach(addresses, address =>
+         {
+            result.Add(new AddressBalanceResult()
+            {
+               Address = address,
+               Balance = ComputeAddressBalance(address).Available
+            });
+
+         });
+
+         return result.ToList();
+      }
+
+
       private List<MapMempoolAddressBag> MempoolBalance(string address)
       {
          var mapMempoolAddressBag = new List<MapMempoolAddressBag>();
@@ -791,13 +814,13 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                }
                else
                {
-                  var bag = new MapAddressBag {BlockIndex = item.BlockIndex, CoinBase = item.CoinBase, CoinStake = item.CoinStake};
+                  var bag = new MapAddressBag { BlockIndex = item.BlockIndex, CoinBase = item.CoinBase, CoinStake = item.CoinStake };
                   bag.Ouputs.Add(item);
                   transcations.Add(item.Outpoint.TransactionId, bag);
                }
 
                // add to the utxo table
-               utxoToAdd.Add(item.Outpoint.ToString(), new AddressUtxoComputedTable {Outpoint = item.Outpoint, BlockIndex = item.BlockIndex, Address = item.Address, CoinBase = item.CoinBase, CoinStake = item.CoinStake, ScriptHex = item.ScriptHex, Value = item.Value});
+               utxoToAdd.Add(item.Outpoint.ToString(), new AddressUtxoComputedTable { Outpoint = item.Outpoint, BlockIndex = item.BlockIndex, Address = item.Address, CoinBase = item.CoinBase, CoinStake = item.CoinStake, ScriptHex = item.ScriptHex, Value = item.Value });
             }
          }
 
@@ -937,7 +960,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                try
                {
                   // if we managed to update the address we can safely insert history
-                  mongoDb.AddressHistoryComputedTable.InsertMany(history.Values, new InsertManyOptions {IsOrdered = false});
+                  mongoDb.AddressHistoryComputedTable.InsertMany(history.Values, new InsertManyOptions { IsOrdered = false });
                }
                catch (MongoBulkWriteException mbwex)
                {
@@ -977,7 +1000,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public async Task DeleteBlockAsync(string blockHash)
       {
-          SyncBlockInfo block = BlockByHash(blockHash);
+         SyncBlockInfo block = BlockByHash(blockHash);
 
          if (!globalState.IndexModeCompleted)
          {
