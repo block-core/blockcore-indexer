@@ -87,6 +87,8 @@ namespace Blockcore.Indexer.Cirrus
          RegisterSmartContractBuilder(services); //No need to scan the assembly as there won't be that many
 
          services.AddScoped<TaskRunner,SmartContractSyncRunner>();
+
+         services.AddTransient<IBlockRewindOperation, CirrusBlockRewindOperation>();
       }
 
       private static IServiceCollection RegisterSmartContractBuilder(IServiceCollection collection)
