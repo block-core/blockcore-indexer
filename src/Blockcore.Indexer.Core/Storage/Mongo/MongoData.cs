@@ -34,9 +34,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       private readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
       readonly ICryptoClientFactory clientFactory;
 
+      readonly IBlockRewindOperation rewindOperation;
+
       public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<ChainSettings> chainConfiguration,
          GlobalState globalState, IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,
-         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db)
+         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db, IBlockRewindOperation rewindOperation)
       {
          log = dbLogger;
          this.chainConfiguration = chainConfiguration.Value;
@@ -48,6 +50,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          this.scriptInterpeter = scriptInterpeter;
          this.mongoDatabase = mongoDatabase;
          mongoDb = db;
+         this.rewindOperation = rewindOperation;
       }
 
       /// <summary>
@@ -219,14 +222,28 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       {
          FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(info => info.BlockIndex, blockIndex);
 
-         return mongoDb.BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
+         SyncBlockInfo block = mongoDb.BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
+
+         SyncBlockInfo tip = globalState.StoreTip;
+
+         if (tip != null && block != null)
+            block.Confirmations = tip.BlockIndex + 1 - block.BlockIndex;
+
+         return block;
       }
 
       public SyncBlockInfo BlockByHash(string blockHash)
       {
          FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
 
-         return mongoDb.BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
+         SyncBlockInfo block = mongoDb.BlockTable.Find(filter).ToList().Select(mongoBlockToStorageBlock.Map).FirstOrDefault();
+
+         SyncBlockInfo tip = globalState.StoreTip;
+
+         if (tip != null && block != null)
+            block.Confirmations = tip.BlockIndex + 1 - block.BlockIndex;
+
+         return block;
       }
 
       public QueryResult<QueryOrphanBlock> OrphanBlocks(int? offset, int limit)
@@ -967,7 +984,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             log.LogWarning("Rewinding block without indexes this can be a long operation!");
          }
 
-         await mongoDb.RewindBlockAsync((uint)block.BlockIndex);
+         await rewindOperation.RewindBlockAsync((uint)block.BlockIndex);
 
          // signal to any child classes to deleted a block.
          await OnDeleteBlockAsync(block);

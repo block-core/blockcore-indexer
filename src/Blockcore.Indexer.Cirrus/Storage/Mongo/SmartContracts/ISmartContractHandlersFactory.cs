@@ -2,9 +2,11 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
-public interface ISmartContractHandlersFactory<T> where T : SmartContractComputedBase
+public interface ISmartContractHandlersFactory<T,TDocument>
+   where T : SmartContractTable
+   where TDocument : new()
 {
-   ILogReader<T> GetLogReader(string methodName);
+   ILogReader<T, TDocument> GetLogReader(string methodName);
 
    ISmartContractBuilder<T> GetSmartContractBuilder(string contractType);
 }

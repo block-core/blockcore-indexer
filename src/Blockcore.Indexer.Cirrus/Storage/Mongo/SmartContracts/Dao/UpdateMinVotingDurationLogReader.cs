@@ -1,20 +1,24 @@
+using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class UpdateMinVotingDurationLogReader : ILogReader<DaoContractComputedTable>
+class UpdateMinVotingDurationLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "UpdateMinVotingDuration";
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => false;
 
-   public void UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
-      DaoContractComputedTable computedTable)
+   public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+      DaoContractTable computedTable)
    {
       if (!contractTransaction.Logs.Any())
-         return;
+         return null;
       computedTable.MinVotingDuration = (long)contractTransaction.Logs.Single().Log.Data["minVotingDuration"];
+
+      return Array.Empty<WriteModel<DaoContractProposalTable>>();
    }
 }

@@ -14,6 +14,7 @@ using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.Networks;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace Blockcore.Indexer.Core.Handlers
@@ -36,6 +37,9 @@ namespace Blockcore.Indexer.Core.Handlers
       readonly ICryptoClientFactory clientFactory;
       readonly GlobalState globalState;
 
+      readonly IMemoryCache cache;
+      const string Key = "Statistics";
+
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsHandler"/> class.
       /// </summary>
@@ -46,11 +50,13 @@ namespace Blockcore.Indexer.Core.Handlers
          IOptions<IndexerSettings> configuration,
          IOptions<ChainSettings> chainConfiguration,
          ICryptoClientFactory clientFactory,
-         GlobalState globalState)
+         GlobalState globalState,
+         IMemoryCache cache)
       {
          this.storage = storage;
          this.clientFactory = clientFactory;
          this.globalState = globalState;
+         this.cache = cache;
          syncConnection = connection;
          this.configuration = configuration.Value;
          this.chainConfiguration = chainConfiguration.Value;
@@ -130,6 +136,15 @@ namespace Blockcore.Indexer.Core.Handlers
 
       public async Task<Statistics> Statistics()
       {
+         var cachedStats = cache.Get<Statistics>(Key);
+
+         if (cachedStats != null &&
+             cachedStats.Blockchain.BestBlockHash == globalState.StoreTip.BlockHash)
+         {
+            return cachedStats;
+         }
+
+
          SyncConnection connection = syncConnection;
          var client = clientFactory.Create(connection);
          var stats = new Statistics { Symbol = syncConnection.Symbol };
@@ -168,19 +183,6 @@ namespace Blockcore.Indexer.Core.Handlers
                long totalSize = syncConnection.RecentItems.Sum(s => s.Size);
                stats.AvgBlockSizeKb = Math.Round((double)totalSize / syncConnection.RecentItems.Count, 0);
 
-               //var groupedByMin = syncConnection.RecentItems
-               //   //.GroupBy(g => g.Inserted.Hour + g.Inserted.Minute)
-               //   .OrderByDescending(o => o.Inserted)
-               //   .GroupBy(g => g.Inserted.Minute)
-               //   .Take(10)
-               //   .ToDictionary(s => s.Key,
-               //      s => s.ToList().Count);
-
-               //int totalBlocks = groupedByMin.Skip(1).Take(5).Sum(s => s.Value);
-               //int totalSecondsPerBlok = groupedByMin.Skip(1).Take(5).Count();
-
-               //stats.BlocksPerMinute = (int)Math.Round((double)totalBlocks / totalSecondsPerBlok);
-
                stats.BlocksPerMinute = syncConnection.RecentItems.Count(w => w.Inserted > DateTime.UtcNow.AddMinutes(-1));
             }
          }
@@ -188,6 +190,10 @@ namespace Blockcore.Indexer.Core.Handlers
          {
             stats.Progress = ex.Message;
          }
+
+         stats.IsInIBDMode = globalState.IbdMode();
+
+         cache.Set(Key,stats);
 
          return stats;
       }

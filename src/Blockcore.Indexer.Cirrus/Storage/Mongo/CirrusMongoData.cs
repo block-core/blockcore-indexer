@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper.Internal;
 using Blockcore.Indexer.Cirrus.Models;
-using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
@@ -23,7 +23,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
    public class CirrusMongoData : MongoData, ICirrusStorage
    {
       readonly ICirrusMongoDb mongoDb;
-      readonly IComputeSmartContractService<NonFungibleTokenComputedTable> smartContractService;
 
       public CirrusMongoData(
          ILogger<MongoDb> dbLogger,
@@ -35,7 +34,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          IScriptInterpeter scriptInterpeter,
          IMongoDatabase mongoDatabase,
          ICirrusMongoDb db,
-         IComputeSmartContractService<NonFungibleTokenComputedTable> smartContractService)
+         IBlockRewindOperation rewindOperation)
          : base(
             dbLogger,
             connection,
@@ -45,10 +44,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             clientFactory,
             scriptInterpeter,
             mongoDatabase,
-            db)
+            db,
+            rewindOperation)
       {
          mongoDb = db;
-         this.smartContractService = smartContractService;
       }
 
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
@@ -118,6 +117,100 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          };
       }
 
+      public async Task<QueryDAOContract> GetDaoContractByAddressAsync(string contractAddress)
+      {
+         var contract = await mongoDb.DaoContractTable.Find(_ => _.ContractAddress == contractAddress)
+            .SingleOrDefaultAsync();
+
+         if (contract is null)
+            return null;
+
+         var tokens = await mongoDb.DaoContractProposalTable.Find(_ => _.Id.ContractAddress == contractAddress)
+            .ToListAsync();
+
+         return new QueryDAOContract
+         {
+            Deposits = contract.Deposits,
+            Proposals = tokens,
+            ApprovedAddresses = contract.ApprovedAddresses,
+            CurrentAmount = contract.CurrentAmount,
+            WhitelistedCount = contract.WhitelistedCount,
+            MaxVotingDuration = contract.MaxVotingDuration,
+            MinVotingDuration = contract.MaxVotingDuration
+         };
+      }
+
+      public async Task<QueryStandardTokenContract> GetStandardTokenContractByAddressAsync(string contractAddress)
+      {
+         var contract = await mongoDb.SmartContractTable.Find(_ => _.ContractAddress == contractAddress)
+            .SingleOrDefaultAsync() as StandardTokenContractTable;
+
+         if (contract is null)
+            return null;
+
+         var tokens = await mongoDb.StandardTokenHolderTable.Find(_ => _.Id.ContractAddress == contractAddress)
+            .ToListAsync();
+
+         return new QueryStandardTokenContract
+         {
+            tokens = tokens,
+            Decimals = contract.Decimals,
+            Name = contract.Name,
+            Symbol = contract.Symbol,
+            CreatorAddress = contract.CreatorAddress,
+            TotalSupply = contract.TotalSupply,
+            CreatedOnBlock = contract.CreatedOnBlock
+         };
+      }
+
+      public async Task<QueryNonFungibleTokenContract> GetNonFungibleTokenContractByAddressAsync(string contractAddress)
+      {
+         var contract = await mongoDb.NonFungibleTokenContractTable.Find(_ => _.ContractAddress == contractAddress)
+            .SingleOrDefaultAsync();
+
+         if (contract is null)
+            return null;
+
+         var tokens = await mongoDb.NonFungibleTokenTable.Find(_ => _.Id.ContractAddress == contractAddress)
+            .ToListAsync();
+
+         return new QueryNonFungibleTokenContract
+         {
+            Name = contract.Name,
+            Owner = contract.Owner,
+            Symbol = contract.Symbol,
+            Tokens = tokens,
+            PendingOwner = contract.PendingOwner,
+            PreviousOwners = contract.PreviousOwners,
+            OwnerOnlyMinting = contract.OwnerOnlyMinting
+         };
+      }
+
+      public Task<NonFungibleTokenTable> GetNonFungibleTokenByIdAsync(string contractAddress, string tokenId)
+      {
+         return mongoDb.NonFungibleTokenTable.Find(_ =>
+               _.Id.ContractAddress == contractAddress && _.Id.TokenId == tokenId)
+            .FirstOrDefaultAsync();
+      }
+
+      public async Task<QueryStandardToken> GetStandardTokenByIdAsync(string contractAddress, string tokenId)
+      {
+         var token = await mongoDb.StandardTokenContractTable.Find(_ => _.ContractAddress == contractAddress)
+            .FirstOrDefaultAsync();
+         var tokenAmounts = await mongoDb.StandardTokenHolderTable.Find(_ => _.Id.ContractAddress == contractAddress &&
+                                                           _.Id.TokenId == tokenId)
+            .FirstOrDefaultAsync();
+
+         return new QueryStandardToken
+         {
+            Name = token.Name,
+            Symbol = token.Symbol,
+            TotalSupply = token.TotalSupply,
+            Address = tokenAmounts.Id.TokenId,
+            Amount = tokenAmounts.AmountChangesHistory.Sum(_ => _.Amount)
+         };
+      }
+
       public QueryContractCreate ContractCreate(string address)
       {
          IMongoQueryable<CirrusContractTable> cirrusContract = mongoDb.CirrusContractTable.AsQueryable()
@@ -128,10 +221,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          if (res.Count > 1)
             throw new ApplicationException("This is unexpected"); // todo: remove this temporary code
 
-         CirrusContractTable lastEntry = mongoDb.CirrusContractTable.AsQueryable()
+         CirrusContractTable lastEntry = mongoDb.CirrusContractTable
+            .AsQueryable()
             .OrderByDescending(b => b.BlockIndex)
-            .Where(q => q.ToAddress == address)
-            .FirstOrDefault();
+            .FirstOrDefault(q => q.ToAddress == address);
 
 
          return res.Select(item => new QueryContractCreate
@@ -251,38 +344,37 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          }).FirstOrDefault();
       }
 
-      public async Task<QueryResult<QueryAddressAsset>> GetAssetsForAddressAsync(string address, int? offset, int limit)
+      public async Task<QueryResult<QueryAddressAsset>> GetNonFungibleTokensForAddressAsync(string address, int? offset, int limit)
       {
-         int total = await mongoDb.NonFungibleTokenComputedTable
+         int total = await mongoDb.NonFungibleTokenTable
             .AsQueryable()
-            .SumAsync(_ => _.Tokens.Count(t => t.Owner == address));
+            .CountAsync(_ => _.Owner == address);
 
          int startPosition = offset ?? total - limit;
          int endPosition = startPosition + limit;
 
-         var contracts = await mongoDb.NonFungibleTokenComputedTable.Aggregate()
-            .Match(_ => _.Tokens.Any(t => t.Owner == address))
-            .Unwind(_ => _.Tokens)
-            .Match(_ => _["Tokens"]["Owner"] == address)
+         var dbTokens = await mongoDb.NonFungibleTokenTable.Aggregate()
+            .Match(_ => _.Owner == address)
+            //.SortBy(_ => _.) TODO David check if we need sorting for the FE
             .Skip(startPosition)
             .Limit(endPosition)
             .ToListAsync();
 
-         var tokens =
-            contracts.Select(contract =>
-               new QueryAddressAsset
-                  {
-                     Creator = contract["Tokens"]["Creator"].AsString,
-                     ContractId = contract["_id"].AsString,
-                     Id = contract["Tokens"]["_id"].AsString,
-                     Uri = contract["Tokens"]["Uri"].AsString,
-                     IsBurned = contract["Tokens"]["IsBurned"].AsBoolean,
-                     TransactionId =
-                        contract["Tokens"]["SalesHistory"].AsBsonArray.Any()
-                           ? contract["Tokens"]["SalesHistory"].AsBsonArray.Last()["TransactionId"].AsString
-                           : null,
-                     PricePaid = GetPricePaidFromHistory(contract["Tokens"]["SalesHistory"].AsBsonArray)
-                  });
+         var tokens = dbTokens.Select(_ => new QueryAddressAsset
+         {
+            Creator = _.Creator,
+            ContractId = _.Id.ContractAddress,
+            Id = _.Id.TokenId,
+            Uri = _.Uri,
+            IsBurned = _.IsBurned,
+            TransactionId = _.SalesHistory.LastOrDefault()?.TransactionId,
+            PricePaid = _.SalesHistory.LastOrDefault() switch
+            {
+               Auction auction => auction.HighestBid,
+               OnSale sale => sale.Price,
+               _ => 0
+            }
+         });
 
          return new QueryResult<QueryAddressAsset>
          {
@@ -290,18 +382,155 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          };
       }
 
-      private static long? GetPricePaidFromHistory(BsonArray saleEvents)
+      public async Task<QueryResult<QueryStandardToken>> GetStandardTokensForAddressAsync(string address, int? offset, int limit)
       {
-         if (!saleEvents.Any())
-            return null;
+         int total = await mongoDb.StandardTokenHolderTable
+            .AsQueryable()
+            .CountAsync(_ => _.Id.TokenId == address);
 
-         var last = saleEvents.Last();
-         return last["_t"].AsBsonArray.Last().AsString switch
+         if (total == 0)
+            return new QueryResult<QueryStandardToken> { Limit = limit, Offset = offset ?? 0, Total = total };
+
+         int startPosition = offset ?? total - limit;
+         int endPosition = startPosition + limit;
+
+         var dbTokens = await mongoDb.StandardTokenHolderTable.Aggregate()
+            .Match(_ => _.Id.TokenId == address)
+            .SortBy(_ => _.Id.ContractAddress)
+            .Skip(startPosition)
+            .Limit(endPosition)
+            .ToListAsync();
+
+         var addresses = dbTokens.Select(_ => _.Id.ContractAddress);
+
+         var smartContractDetails = await mongoDb.StandardTokenContractTable.AsQueryable()
+            .Where(_ => addresses.Contains(_.ContractAddress))
+            .ToListAsync();
+
+         var tokens = dbTokens.Select(_ =>
          {
-            nameof(Auction) => last["HighestBid"].AsInt64,
-            nameof(OnSale) => last["Price"].AsInt64,
-            _ => 0
+            var smartContract = smartContractDetails.First(s => s.ContractAddress == _.Id.ContractAddress);
+
+            return new QueryStandardToken
+            {
+               Address = _.Id.TokenId,
+               Amount = _.AmountChangesHistory.Sum(a => a.Amount),
+               Name = smartContract.Name,
+               Symbol = smartContract.Symbol,
+               TotalSupply = smartContract.TotalSupply
+            };
+         });
+
+         return new QueryResult<QueryStandardToken>
+         {
+            Items = tokens, Limit = limit, Offset = offset ?? 0, Total = total
          };
+      }
+
+      public async Task<List<SmartContractTable>> GetSmartContractsThatNeedsUpdatingAsync(long blockIndex)
+      {
+         var smartContractsNotComputed = await mongoDb.CirrusContractCodeTable.Aggregate()
+            .Lookup(mongoDb.SmartContractTable.CollectionNamespace.CollectionName,
+               new StringFieldDefinition<CirrusContractCodeTable>(nameof(CirrusContractCodeTable.ContractAddress)),
+               new StringFieldDefinition<SmartContractTable>(nameof(SmartContractTable.ContractAddress)),
+               new StringFieldDefinition<SmartContractTable[]>("output"))
+            .Unwind("output")
+            .Match(_ => _["output"].IsBsonNull ||
+                        _["output.BlockIndex"] < blockIndex)
+            .ReplaceRoot(_ => _["output"])
+            .As<SmartContractTable>()
+            .ToListAsync();
+
+         var smartContractsNotUpdated = await mongoDb.CirrusContractTable.Aggregate(PipelineDefinition<CirrusContractTable,SmartContractTable>.Create(
+            new []
+            {
+               new BsonDocument("$match",
+                  new BsonDocument { { "Success", true }, { "ToAddress", new BsonDocument("$ne", BsonNull.Value) } }),
+               new BsonDocument("$group",
+                  new BsonDocument
+                  {
+                     { "_id", "$ToAddress" },
+                     { "ContractCodeType", new BsonDocument("$first", "$ContractCodeType") },
+                     { "BlockIndex", new BsonDocument("$max", "$BlockIndex") }
+                  }),
+               new BsonDocument("$lookup",
+                  new BsonDocument
+                  {
+                     { "from", "SmartContractTable" },
+                     { "localField", "_id" },
+                     { "foreignField", "_id" },
+                     { "as", "output" }
+                  }),
+               new BsonDocument("$match",
+                  new BsonDocument("output",
+                     new BsonDocument("$ne",
+                        new BsonArray()))),
+               new BsonDocument("$unwind",
+                  new BsonDocument { { "path", "$output" }, { "preserveNullAndEmptyArrays", false } }),
+               new BsonDocument("$match",
+                  new BsonDocument("$expr",
+                     new BsonDocument("$gt",
+                        new BsonArray { "$BlockIndex", "$output.LastProcessedBlockHeight" }))),
+               new BsonDocument("$replaceRoot",
+                  new BsonDocument("newRoot", "$output"))
+            }))
+            .ToListAsync();
+
+         return smartContractsNotComputed.Concat(smartContractsNotUpdated).ToList();
+      }
+
+      public async Task<List<string>> GetSmartContractsThatNeedsUpdatingAsync(params string[] supportedTypes)
+      {
+         var smartContractsNotComputed = await mongoDb.CirrusContractCodeTable.Aggregate()
+            .Match(Builders<CirrusContractCodeTable>.Filter.In(_ => _.CodeType, supportedTypes))
+            .Lookup("SmartContractTable",
+               new StringFieldDefinition<CirrusContractCodeTable>("ContractAddress"),
+               new StringFieldDefinition<BsonDocument>("_id"),
+               new StringFieldDefinition<BsonDocument>("output"))
+            .Match(_ => _["output"] == new BsonArray())
+            .Project(_ => new { address = _["ContractAddress"] })
+            .ToListAsync();
+
+         var smartContractsNotUpdated = await mongoDb.CirrusContractTable.Aggregate(PipelineDefinition<CirrusContractTable,BsonDocument>.Create(
+               new []
+               {
+                  new BsonDocument("$match",
+                     new BsonDocument { { "Success", true }, { "ToAddress", new BsonDocument("$ne", BsonNull.Value) } }),
+                  new BsonDocument("$group",
+                     new BsonDocument
+                     {
+                        { "_id", "$ToAddress" },
+                        { "ContractCodeType", new BsonDocument("$first", "$ContractCodeType") },
+                        { "BlockIndex", new BsonDocument("$max", "$BlockIndex") }
+                     }),
+                  new BsonDocument("$lookup",
+                     new BsonDocument
+                     {
+                        { "from", "SmartContractTable" },
+                        { "localField", "_id" },
+                        { "foreignField", "_id" },
+                        { "as", "output" }
+                     }),
+                  new BsonDocument("$match",
+                     new BsonDocument("CodeType",
+                        new BsonDocument("$nin",
+                           new BsonArray(supportedTypes)))),
+                  new BsonDocument("$match",
+                     new BsonDocument("output",
+                        new BsonDocument("$ne",
+                           new BsonArray()))),
+                  new BsonDocument("$unwind",
+                     new BsonDocument { { "path", "$output" }, { "preserveNullAndEmptyArrays", false } }),
+                  new BsonDocument("$match",
+                     new BsonDocument("$expr",
+                        new BsonDocument("$gt",
+                           new BsonArray { "$BlockIndex", "$output.LastProcessedBlockHeight" }))),
+                  new BsonDocument("$project",
+                     new BsonDocument("address", "$ContractAddress"))
+               }))
+            .ToListAsync();
+
+         return smartContractsNotUpdated.Select(_ => _["_id"].AsString).ToList().Concat(smartContractsNotComputed.Select(s => s.address.AsString)).ToList();
       }
    }
 }

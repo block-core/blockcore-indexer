@@ -1,4 +1,35 @@
-## <small>0.2.33 (2022-05-10)</small>
+## <small>0.2.37 (2022-07-05)</small>
+
+* Added missing binding for block rewind (#154) ([aaa1358](https://github.com/block-core/blockcore-indexer/commit/aaa1358)), closes [#154](https://github.com/block-core/blockcore-indexer/issues/154)
+
+
+
+## <small>0.2.36 (2022-07-04)</small>
+
+* Changed smart contracts to be seperate token and contract (#153) ([312c206](https://github.com/block-core/blockcore-indexer/commit/312c206)), closes [#153](https://github.com/block-core/blockcore-indexer/issues/153)
+* Updated version ([0acf070](https://github.com/block-core/blockcore-indexer/commit/0acf070))
+* Updated version ([f62dc87](https://github.com/block-core/blockcore-indexer/commit/f62dc87))
+
+
+
+## <small>0.2.35 (2022-06-24)</small>
+
+* Added caching for stats endpoint (#150) ([719f891](https://github.com/block-core/blockcore-indexer/commit/719f891)), closes [#150](https://github.com/block-core/blockcore-indexer/issues/150)
+* Return confirmation count on block header (#148) ([82f5660](https://github.com/block-core/blockcore-indexer/commit/82f5660)), closes [#148](https://github.com/block-core/blockcore-indexer/issues/148)
+* Update Swashbuckle package (#152) ([7e65edf](https://github.com/block-core/blockcore-indexer/commit/7e65edf)), closes [#152](https://github.com/block-core/blockcore-indexer/issues/152)
+
+
+
+## <small>0.2.34 (2022-05-28)</small>
+
+* change background-image in index.html (#145) ([2c7557b](https://github.com/block-core/blockcore-indexer/commit/2c7557b)), closes [#145](https://github.com/block-core/blockcore-indexer/issues/145)
+* Fixed typo to fit the Cirrus on release 1.1.44 (#146) ([501bee2](https://github.com/block-core/blockcore-indexer/commit/501bee2)), closes [#146](https://github.com/block-core/blockcore-indexer/issues/146)
+* Update version and changelog ([4c4a597](https://github.com/block-core/blockcore-indexer/commit/4c4a597))
+* Updated change log ([83f67f3](https://github.com/block-core/blockcore-indexer/commit/83f67f3))
+
+
+
+## <small>0.2.33 (2022-05-04)</small>
 
 * Add trx index to trx api (#139) ([f906d1e](https://github.com/block-core/blockcore-indexer/commit/f906d1e)), closes [#139](https://github.com/block-core/blockcore-indexer/issues/139)
 * Added NFT and asstets enpoints (#142) ([37601f8](https://github.com/block-core/blockcore-indexer/commit/37601f8)), closes [#142](https://github.com/block-core/blockcore-indexer/issues/142)

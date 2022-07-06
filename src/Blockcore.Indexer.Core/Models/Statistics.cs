@@ -131,5 +131,7 @@ namespace Blockcore.Indexer.Core.Models
 
       public string Error { get; set; }
 
+      public bool IsInIBDMode { get; set; }
+
    }
 }

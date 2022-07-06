@@ -7,8 +7,18 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo;
 
 public class CirrusMongoDb : MongoDb, ICirrusMongoDb
 {
+   private const string SmartContractTableName = "SmartContractTable";
+
    public CirrusMongoDb(ILogger<MongoDb> logger, IMongoDatabase mongoDatabase) : base(logger, mongoDatabase)
    { }
+
+   public IMongoCollection<SmartContractTable> SmartContractTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<SmartContractTable>(SmartContractTableName);
+      }
+   }
 
    public IMongoCollection<CirrusContractTable> CirrusContractTable
    {
@@ -26,27 +36,51 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
       }
    }
 
-   public IMongoCollection<DaoContractComputedTable> DaoContractComputedTable
+   public IMongoCollection<DaoContractTable> DaoContractTable
    {
       get
       {
-         return mongoDatabase.GetCollection<DaoContractComputedTable>("DaoContractComputed");
+         return mongoDatabase.GetCollection<DaoContractTable>(SmartContractTableName);
       }
    }
 
-   public IMongoCollection<StandardTokenComputedTable> StandardTokenComputedTable
+   public IMongoCollection<StandardTokenContractTable> StandardTokenContractTable
    {
       get
       {
-         return mongoDatabase.GetCollection<StandardTokenComputedTable>("StandardTokenComputed");
+         return mongoDatabase.GetCollection<StandardTokenContractTable>(SmartContractTableName);
       }
    }
 
-   public IMongoCollection<NonFungibleTokenComputedTable> NonFungibleTokenComputedTable
+   public IMongoCollection<NonFungibleTokenContractTable> NonFungibleTokenContractTable
    {
       get
       {
-         return mongoDatabase.GetCollection<NonFungibleTokenComputedTable>("NonFungibleTokenComputed");
+         return mongoDatabase.GetCollection<NonFungibleTokenContractTable>(SmartContractTableName);
+      }
+   }
+
+   public IMongoCollection<NonFungibleTokenTable> NonFungibleTokenTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<NonFungibleTokenTable>("NonFungibleToken");
+      }
+   }
+
+   public IMongoCollection<DaoContractProposalTable> DaoContractProposalTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<DaoContractProposalTable>("DaoContractProposal");
+      }
+   }
+
+   public IMongoCollection<StandardTokenHolderTable> StandardTokenHolderTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<StandardTokenHolderTable>("StandardTokenHolder");
       }
    }
 }

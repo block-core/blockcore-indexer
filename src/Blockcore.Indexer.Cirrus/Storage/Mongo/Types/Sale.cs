@@ -30,6 +30,7 @@ public class Auction : TokenSaleEvent
    public string Seller { get; set; }
    public long StartingPrice { get; set; }
    public long EndBlock { get; set; }
+   public bool AuctionEnded { get; set; }
 
    public string HighestBidder { get; set; }
    public long HighestBid { get; set; }

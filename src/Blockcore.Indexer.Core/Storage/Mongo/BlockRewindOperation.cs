@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using MongoDB.Bson;
@@ -9,9 +7,16 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo;
 
-public static class BlockRewindOperation
+public class BlockRewindOperation : IBlockRewindOperation
 {
-   public static async Task RewindBlockAsync(this IMongoDb storage, uint blockIndex)
+   protected IMongoDb storage;
+
+   public BlockRewindOperation(IMongoDb storage)
+   {
+      this.storage = storage;
+   }
+
+   public async Task RewindBlockAsync(uint blockIndex)
    {
       await StoreRewindBlockAsync(storage, blockIndex);
 

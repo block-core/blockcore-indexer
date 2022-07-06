@@ -14,8 +14,8 @@ public class CirrusMongoDbMock : MongodbMock
    public Mock<IMongoQueryable<CirrusContractTable>> CirrusContractTableQuariable;
    public Mock<IMongoCollection<CirrusContractCodeTable>> CirrusContractCodeTableCollection;
    public Mock<IMongoQueryable<CirrusContractCodeTable>> CirrusContractCodeTableQuariable;
-   public Mock<IMongoCollection<DaoContractComputedTable>> DaoContractComputedTableCollection;
-   public Mock<IMongoQueryable<DaoContractComputedTable>> DaoContractComputedTableQuariable;
+   public Mock<IMongoCollection<DaoContractTable>> DaoContractComputedTableCollection;
+   public Mock<IMongoQueryable<DaoContractTable>> DaoContractComputedTableQuariable;
 
    private Mock<ICirrusMongoDb> cirrusDb;
 
@@ -25,15 +25,15 @@ public class CirrusMongoDbMock : MongodbMock
       CirrusContractTableCollection = new Mock<IMongoCollection<CirrusContractTable>>();
       CirrusContractTableQuariable = new Mock<IMongoQueryable<CirrusContractTable>>();
       CirrusContractCodeTableCollection = new Mock<IMongoCollection<CirrusContractCodeTable>>();
-      DaoContractComputedTableCollection = new Mock<IMongoCollection<DaoContractComputedTable>>();
+      DaoContractComputedTableCollection = new Mock<IMongoCollection<DaoContractTable>>();
 
       cirrusDb = new Mock<ICirrusMongoDb>();
 
       cirrusDb.Setup(_ => _.CirrusContractTable).Returns(CirrusContractTableCollection.Object);
       cirrusDb.Setup(_ => _.CirrusContractCodeTable).Returns(CirrusContractCodeTableCollection.Object);
-      cirrusDb.Setup(_ => _.DaoContractComputedTable).Returns(DaoContractComputedTableCollection.Object);
+      cirrusDb.Setup(_ => _.DaoContractTable).Returns(DaoContractComputedTableCollection.Object);
 
-      cirrusDb.Setup(_ => _.DaoContractComputedTable.Database)
+      cirrusDb.Setup(_ => _.DaoContractTable.Database)
         .Returns(MongoDatabaseObject);
       
      DaoContractComputedTableCollection.Setup(_ => _.Settings)

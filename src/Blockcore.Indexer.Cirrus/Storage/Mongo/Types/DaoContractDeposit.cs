@@ -6,4 +6,5 @@ public class DaoContractDeposit
    public long Amount { get; set; }
 
    public string TransactionId { get; set; }
+   public long BlockIndex { get; set; }
 }
