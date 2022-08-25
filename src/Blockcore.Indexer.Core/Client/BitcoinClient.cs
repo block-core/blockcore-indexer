@@ -581,6 +581,11 @@ namespace Blockcore.Indexer.Core.Client
 
                   JsonRpcResponse<T> ret = JsonConvert.DeserializeObject<JsonRpcResponse<T>>(jsonResult);
 
+                  if (ret?.Error != null)
+                  {
+                     HandleError(jsonResult, response);
+                  }
+
                   return ret == null ? default(T) : ret.Result;
                }
             }
@@ -628,29 +633,21 @@ namespace Blockcore.Indexer.Core.Client
             {
                using (var jsonStreamReader = new StreamReader(jsonStream))
                {
+                  string jsonResult = jsonStreamReader.ReadToEndAsync().Result;
+
                   if (response.StatusCode != HttpStatusCode.OK)
                   {
-                     JsonRpcResponse<T> errRet = null;
-                     string res = jsonStreamReader.ReadToEndAsync().Result;
-
-                     try
-                     {
-                        errRet = JsonConvert.DeserializeObject<JsonRpcResponse<T>>(res);
-                     }
-                     catch
-                     {
-                        throw CreateException(response, 0, res);
-                     }
-
-                     int code = errRet != null && errRet.Error != null ? errRet.Error.Code : 0;
-                     string msg = errRet != null && errRet.Error != null ? errRet.Error.Message : "Error";
-
-                     throw CreateException(response, code, msg);
+                     HandleError(jsonResult, response);
                   }
 
-                  JsonRpcResponse<T> ret = JsonConvert.DeserializeObject<JsonRpcResponse<T>>(jsonStreamReader.ReadToEndAsync().Result);
+                  JsonRpcResponse<T> ret = JsonConvert.DeserializeObject<JsonRpcResponse<T>>(jsonResult);
 
-                  return ret.Result;
+                  if (ret?.Error != null)
+                  {
+                     HandleError(jsonResult, response);
+                  }
+
+                  return ret == null ? default(T) : ret.Result;
                }
             }
          }
