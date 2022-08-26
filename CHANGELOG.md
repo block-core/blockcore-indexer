@@ -1,6 +1,14 @@
+## <small>0.2.38 (2022-08-26)</small>
+
+* Handle error message returned from the node (#157) ([11e5b96](https://github.com/block-core/blockcore-indexer/commit/11e5b96)), closes [#157](https://github.com/block-core/blockcore-indexer/issues/157)
+* Update Node.js version for workflow ([6caf0c2](https://github.com/block-core/blockcore-indexer/commit/6caf0c2))
+
+
+
 ## <small>0.2.37 (2022-07-05)</small>
 
 * Added missing binding for block rewind (#154) ([aaa1358](https://github.com/block-core/blockcore-indexer/commit/aaa1358)), closes [#154](https://github.com/block-core/blockcore-indexer/issues/154)
+* Updated version and changelog ([cc00145](https://github.com/block-core/blockcore-indexer/commit/cc00145))
 
 
 
