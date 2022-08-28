@@ -44,7 +44,7 @@ namespace Blockcore.Indexer.Core.Sync
          log.LogInformation($"Start sync for {chainConfiguration.Symbol}");
          log.LogInformation("Starting the Sync Service...");
 
-         mainTask = Task.Run(async () =>
+         mainTask = Task.Run(() =>
          {
             mainCancellationTokenSource = new CancellationTokenSource();
 

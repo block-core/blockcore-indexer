@@ -20,7 +20,7 @@ public class MongodbMock
    public Mock<IMongoCollection<TransactionTable>> transactionTable;
 
    protected Mock<IMongoDatabase> mongodatabase;
-   private Mock<IMongoDb> db;
+   private readonly Mock<IMongoDb> db;
 
    public  MongodbMock()
    {

@@ -26,7 +26,9 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenContractTabl
       var sale = SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log);
 
        return new [] { new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
+#pragma warning disable CS0253 // Possible unintended reference comparison; right hand side needs cast
              .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
+#pragma warning restore CS0253 // Possible unintended reference comparison; right hand side needs cast
           Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, owner)
              .AddToSet(_ => _.SalesHistory, sale))};
    }

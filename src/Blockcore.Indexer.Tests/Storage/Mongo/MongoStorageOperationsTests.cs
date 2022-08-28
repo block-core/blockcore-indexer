@@ -31,17 +31,16 @@ namespace Blockcore.Indexer.Tests.Storage.Mongo;
 
 public class MongoStorageOperationsTests
 {
-   MongoStorageOperations sut;
+   readonly MongoStorageOperations sut;
 
-   static Random Random = new();
+   static readonly Random Random = new();
    private static string NewRandomString => Guid.NewGuid().ToString();
    private static int NewRandomInt32 => Random.Next();
    private static long NewRandomInt64  => Random.NextInt64();
 
-   IndexerSettings indexSettings;
+   readonly IndexerSettings indexSettings;
    ScriptOutputInfo scriptOutputInfo;
-
-   MongodbMock mongodbMock;
+   readonly MongodbMock mongodbMock;
 
    public MongoStorageOperationsTests()
    {
@@ -485,7 +484,9 @@ public class MongoStorageOperationsTests
    }
 
    //[Fact] TODO we need to add to the new List<BulkWriteError>{} an error with duplicate category to actually check the code otherwise it goes green as a false positive
+#pragma warning disable xUnit1013 // Public method should be marked as test
    public void PushStorageBatchIgnoresDuplicatsOnInputTableForDuplicateKeyException()
+#pragma warning restore xUnit1013 // Public method should be marked as test
    {
       StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 

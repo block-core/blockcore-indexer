@@ -17,7 +17,7 @@ public class SalesEventReader
             _ => null
          };
       }
-      catch (Exception e)
+      catch (Exception)
       {
          throw;
       }

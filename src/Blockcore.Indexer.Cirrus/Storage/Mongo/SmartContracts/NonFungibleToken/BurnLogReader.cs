@@ -5,6 +5,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
+#pragma warning disable CS0253 // Possible unintended reference comparison; right hand side needs cast
 
 public class BurnLogReader: ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {

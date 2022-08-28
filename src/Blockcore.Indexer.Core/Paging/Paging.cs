@@ -24,7 +24,7 @@ namespace Blockcore.Indexer.Core.Paging
    public class PagingLinkBuilder
    {
       private readonly RequestContextDelegate requestPath;
-      private readonly RequestContextDelegate requestQuery;
+      //private readonly RequestContextDelegate requestQuery;
       readonly Dictionary<string, StringValues> list;
 
       public PagingLinkBuilder(RequestContextDelegate requestPath, RequestContextDelegate requestQuery)

@@ -12,7 +12,7 @@ namespace Blockcore.Indexer.Cirrus
 
    public class Program //: Blockcore.Indexer.Program
    {
-      public static new void Main(string[] args)
+      public static void Main(string[] args)
       {
          CreateHostBuilder(args).Build().Run();
       }

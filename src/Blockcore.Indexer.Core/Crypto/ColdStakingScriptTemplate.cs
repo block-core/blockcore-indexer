@@ -100,15 +100,14 @@ namespace Blockcore.Indexer.Core.Crypto
       /// wallet key allows amounts to be moved to different addresses. This makes it possible to perform
       /// staking using the hot wallet key so that even if the key becomes compromised it can't be used
       /// to reduce the balance. Only the person with the cold wallet key can retrieve the coins and move
-      /// them elsewhere. This behavior is enforced by the <see cref="OP_CHECKCOLDSTAKEVERIFY"/>
-      /// opcode within the script flow related to hot wallet key usage. It sets the <see cref="PosTransaction.IsColdCoinStake"/>
+      /// them elsewhere. This behavior is enforced by the OP_CHECKCOLDSTAKEVERIFY
+      /// opcode within the script flow related to hot wallet key usage. It sets the PosTransaction.IsColdCoinStake
       /// flag if the transaction spending an output, which contains this instruction, is a coinstake
-      /// transaction. If this flag is set then further rules are enforced by <see cref="Stratis.Bitcoin.Features.Consensus.Rules.CommonRules.PosColdStakingRule"/>.
+      /// transaction. If this flag is set then further rules are enforced byStratis.Bitcoin.Features.Consensus.Rules.CommonRules.PosColdStakingRule
       /// </remarks>
       /// <param name="hotPubKeyHash">The hot wallet public key hash to use.</param>
       /// <param name="coldPubKeyHash">The cold wallet public key hash to use.</param>
       /// <returns>The cold staking script.</returns>
-      /// <seealso cref="Consensus.Rules.CommonRules.PosColdStakingRule"/>
       public Script GenerateScriptPubKey(KeyId hotPubKeyHash, KeyId coldPubKeyHash)
       {
          // The initial stack consumed by this script will be set up differently depending on whether a

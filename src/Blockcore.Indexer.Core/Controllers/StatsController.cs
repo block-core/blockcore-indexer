@@ -81,7 +81,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("peers/{date}")]
-      public async Task<IActionResult> Peers(DateTime date)
+      public IActionResult Peers(DateTime date)
       {
          List<Client.Types.PeerInfo> list = storage.GetPeerFromDate(date);
          return Ok(list);

@@ -8,6 +8,8 @@ using Moq;
 
 namespace Blockcore.Indexer.Cirrus.Tests.Storage.Mongo;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 public class CirrusMongoDbMock : MongodbMock
 {
    public Mock<IMongoCollection<CirrusContractTable>> CirrusContractTableCollection;
@@ -17,7 +19,7 @@ public class CirrusMongoDbMock : MongodbMock
    public Mock<IMongoCollection<DaoContractTable>> DaoContractComputedTableCollection;
    public Mock<IMongoQueryable<DaoContractTable>> DaoContractComputedTableQuariable;
 
-   private Mock<ICirrusMongoDb> cirrusDb;
+   private readonly Mock<ICirrusMongoDb> cirrusDb;
 
    public CirrusMongoDbMock()
    : base()

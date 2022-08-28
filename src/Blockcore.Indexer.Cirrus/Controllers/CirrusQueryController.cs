@@ -24,9 +24,6 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       readonly IComputeSmartContractService<StandardTokenContractTable> standardTokenService;
       readonly IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService;
 
-      /// <summary>
-      /// Initializes a new instance of the <see cref="QueryController"/> class.
-      /// </summary>
       public CirrusQueryController(IPagingHelper paging,
          IComputeSmartContractService<DaoContractTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenContractTable> standardTokenService, IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService)
       {
