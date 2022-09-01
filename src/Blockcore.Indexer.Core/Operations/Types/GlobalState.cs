@@ -65,7 +65,12 @@ namespace Blockcore.Indexer.Core.Operations.Types
       /// </summary>
       public bool IbdMode()
       {
-         DateTime tipTime = UnixUtils.UnixTimestampToDate(StoreTip.BlockTime);
+         var storeTip = StoreTip;
+
+         if (storeTip == null)
+            return true;
+
+         DateTime tipTime = UnixUtils.UnixTimestampToDate(storeTip.BlockTime);
          if ((DateTime.UtcNow - tipTime).TotalHours > 2)
          {
             return true;
