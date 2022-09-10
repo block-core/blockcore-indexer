@@ -9,4 +9,6 @@ public class QueryStandardToken
    public long TotalSupply { get; set; }
    public string Address { get; set; }
    public long Amount { get; set; }
+
+   public long Decimals { get; set; }
 }

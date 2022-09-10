@@ -417,7 +417,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                Amount = _.AmountChangesHistory.Sum(a => a.Amount),
                Name = smartContract.Name,
                Symbol = smartContract.Symbol,
-               TotalSupply = smartContract.TotalSupply
+               TotalSupply = smartContract.TotalSupply,
+               Decimals = smartContract.Decimals
             };
          });
 
