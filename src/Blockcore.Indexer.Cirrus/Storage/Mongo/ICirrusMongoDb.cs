@@ -17,4 +17,5 @@ public interface ICirrusMongoDb : IMongoDb
    public IMongoCollection<DaoContractProposalTable> DaoContractProposalTable{ get; }
    public IMongoCollection<NonFungibleTokenTable> NonFungibleTokenTable { get; }
    public IMongoCollection<StandardTokenHolderTable> StandardTokenHolderTable{ get; }
+   public IMongoCollection<OpdexMinedTokenContractTable> OpdexMinedTokenContractTable{ get; }
 }

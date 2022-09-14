@@ -27,6 +27,7 @@ public class SmartContractSyncRunner : TaskRunner
       IComputeSmartContractService<DaoContractTable> daoContractService,
       IComputeSmartContractService<StandardTokenContractTable> standardTokenService,
       IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService,
+      IComputeSmartContractService<OpdexMinedTokenContractTable> OpdexMindTokenService,
       ICirrusMongoDb db,
       ILogger<SmartContractSyncRunner> logger)
       : base(configuration, logger)
@@ -40,6 +41,7 @@ public class SmartContractSyncRunner : TaskRunner
          { "DAOContract", daoContractService.ComputeSmartContractForAddressAsync },
          { "StandardToken", standardTokenService.ComputeSmartContractForAddressAsync },
          { "NonFungibleToken", nonFungibleTokenService.ComputeSmartContractForAddressAsync },
+         { "OpdexMinedToken", OpdexMindTokenService.ComputeSmartContractForAddressAsync },
       };
 
       Delay = TimeSpan.FromMinutes(1);

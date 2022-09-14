@@ -42,7 +42,7 @@ public class TransferToAndFromLogReader : ILogReader<StandardTokenContractTable,
          Builders<StandardTokenHolderTable>.Update.SetOnInsert(_ => _.Id.TokenId, computedTable.CreatorAddress)
             .SetOnInsert(_ => _.Id.ContractAddress, computedTable.ContractAddress)
             .SetOnInsert(_ => _.AmountChangesHistory,
-               new List<StandardTokenAmountChange>
+               new List<TokenAmountChange>
                {
                   new ()
                   {
@@ -67,10 +67,10 @@ public class TransferToAndFromLogReader : ILogReader<StandardTokenContractTable,
          addToAddressIfNotExists,
          new UpdateOneModel<StandardTokenHolderTable>(Builders<StandardTokenHolderTable>.Filter
                .Where(_ => _.Id.TokenId == fromAddress && _.Id.ContractAddress == computedTable.ContractAddress),
-            Builders<StandardTokenHolderTable>.Update.AddToSet(_ => _.AmountChangesHistory, new StandardTokenAmountChange{Amount = -amount ?? 0,BlockIndex = contractTransaction.BlockIndex,TransactionId = contractTransaction.TransactionId})),
+            Builders<StandardTokenHolderTable>.Update.AddToSet(_ => _.AmountChangesHistory, new TokenAmountChange{Amount = -amount ?? 0,BlockIndex = contractTransaction.BlockIndex,TransactionId = contractTransaction.TransactionId})),
          new UpdateOneModel<StandardTokenHolderTable>(Builders<StandardTokenHolderTable>.Filter
                .Where(_ => _.Id.TokenId == toAddress && _.Id.ContractAddress == computedTable.ContractAddress),
-            Builders<StandardTokenHolderTable>.Update.AddToSet(_ => _.AmountChangesHistory, new StandardTokenAmountChange{Amount = amount ?? 0,BlockIndex = contractTransaction.BlockIndex,TransactionId = contractTransaction.TransactionId}))
+            Builders<StandardTokenHolderTable>.Update.AddToSet(_ => _.AmountChangesHistory, new TokenAmountChange{Amount = amount ?? 0,BlockIndex = contractTransaction.BlockIndex,TransactionId = contractTransaction.TransactionId}))
       };
    }
 }

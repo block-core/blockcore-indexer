@@ -83,4 +83,12 @@ public class CirrusMongoDb : MongoDb, ICirrusMongoDb
          return mongoDatabase.GetCollection<StandardTokenHolderTable>("StandardTokenHolder");
       }
    }
+
+   public IMongoCollection<OpdexMinedTokenContractTable> OpdexMinedTokenContractTable
+   {
+      get
+      {
+         return mongoDatabase.GetCollection<OpdexMinedTokenContractTable>("OpdexMinedTokenContract");
+      }
+   }
 }

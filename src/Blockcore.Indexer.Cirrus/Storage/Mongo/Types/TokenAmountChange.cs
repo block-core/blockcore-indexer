@@ -1,6 +1,6 @@
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 
-public class StandardTokenAmountChange
+public class TokenAmountChange
 {
    public long BlockIndex { get; set; } //This is for rewinds
    public string TransactionId { get; set; }

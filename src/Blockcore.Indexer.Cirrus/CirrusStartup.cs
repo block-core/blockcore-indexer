@@ -8,6 +8,7 @@ using Blockcore.Indexer.Cirrus.Storage.Mongo;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.OPDEX;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Cirrus.Sync.SyncTasks;
 using Blockcore.Indexer.Core;
@@ -67,6 +68,7 @@ namespace Blockcore.Indexer.Cirrus
          services.AddTransient<IComputeSmartContractService<DaoContractTable>,ComputeSmartContractServiceWithSplitDocuments<DaoContractTable,DaoContractProposalTable>>();
          services.AddTransient<IComputeSmartContractService<StandardTokenContractTable>,ComputeSmartContractServiceWithSplitDocuments<StandardTokenContractTable,StandardTokenHolderTable>>();
          services.AddTransient<IComputeSmartContractService<NonFungibleTokenContractTable>,ComputeSmartContractServiceWithSplitDocuments<NonFungibleTokenContractTable,NonFungibleTokenTable>>();
+         services.AddTransient<IComputeSmartContractService<OpdexMinedTokenContractTable>,ComputeSmartContractServiceWithSplitDocuments<OpdexMinedTokenContractTable,OpdexMIndTokenHolderTable>>();
 
          services.AddTransient<ISmartContractTransactionsLookup<NonFungibleTokenContractTable>,NonFungibleTokenSmartContractTransactionsLookup>();
          services.AddTransient(typeof(ISmartContractTransactionsLookup<>), typeof(SmartContractTransactionsLookup<>));
@@ -83,6 +85,7 @@ namespace Blockcore.Indexer.Cirrus
          services.AddTransient<ISmartContractHandlersFactory<DaoContractTable,DaoContractProposalTable>,SmartContractHandlersFactory<DaoContractTable,DaoContractProposalTable>>();
          services.AddTransient<ISmartContractHandlersFactory<StandardTokenContractTable,StandardTokenHolderTable>,SmartContractHandlersFactory<StandardTokenContractTable,StandardTokenHolderTable>>();
          services.AddTransient<ISmartContractHandlersFactory<NonFungibleTokenContractTable,NonFungibleTokenTable>,SmartContractHandlersFactory<NonFungibleTokenContractTable,NonFungibleTokenTable>>();
+         services.AddTransient<ISmartContractHandlersFactory<OpdexMinedTokenContractTable,OpdexMIndTokenHolderTable>,SmartContractHandlersFactory<OpdexMinedTokenContractTable,OpdexMIndTokenHolderTable>>();
 
          RegisterSmartContractBuilder(services); //No need to scan the assembly as there won't be that many
 
@@ -96,6 +99,7 @@ namespace Blockcore.Indexer.Cirrus
          collection.AddTransient<ISmartContractBuilder<DaoContractTable>, DaoSmartContractBuilder>();
          collection.AddTransient<ISmartContractBuilder<StandardTokenContractTable>, StandardTokenSmartContractBuilder>();
          collection.AddTransient<ISmartContractBuilder<NonFungibleTokenContractTable>, NonFungibleTokenSmartContractBuilder>();
+         collection.AddTransient<ISmartContractBuilder<OpdexMinedTokenContractTable>, OpdexMindTokenSmartContractBuilder>();
          return collection;
       }
 
