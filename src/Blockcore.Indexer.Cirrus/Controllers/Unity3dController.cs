@@ -23,13 +23,33 @@ public class Unity3dController : Controller
 
    [HttpGet]
    [Route("get-owned-nfts")]
-   public IActionResult GetAddressAssetsInUnity3dFormat([MinLength(30)][MaxLength(100)][FromQuery] string ownerAddress, [Range(0, 50)] int limit, [Range(0, long.MaxValue)] int? offset = 0)
+   public IActionResult GetAddressAssetsInUnity3dFormat(
+      [MinLength(30)] [MaxLength(100)] [FromQuery] string ownerAddress, [Range(0, 50)] int limit,
+      [Range(0, long.MaxValue)] int? offset = 0)
    {
-      QueryResult<QueryAddressAsset> nfts = cirrusMongoData.GetNonFungibleTokensForAddressAsync(ownerAddress, offset, limit).Result;
+      try
+      {
+         QueryResult<QueryAddressAsset> nfts =
+            cirrusMongoData.GetNonFungibleTokensForAddressAsync(ownerAddress, offset, limit)
+               .Result;
 
-      Dictionary<string, List<int>> unityResponse = nfts.Items.GroupBy(_ => _.ContractId)
-         .ToDictionary(_ => _.Key, _ => _.Select(k => Convert.ToInt32(k.Id)).ToList());
+         Dictionary<string, List<int>> unityResponse = nfts.Items
+            .GroupBy(_ => _.ContractId)
+            .ToDictionary(
+               _ => _.Key,
+               _ => _.Select(value => Convert.ToInt32(value.Id)).ToList());
 
-      return Ok(new Unity3dNftResponse { OwnedIDsByContractAddress = unityResponse });
+         return Ok(new Unity3dNftResponse { OwnedIDsByContractAddress = unityResponse });
+      }
+      catch (Exception e)
+      {
+         return BadRequest(new
+         {
+            //errors = new { requiredField = new[] { e.Message } },
+            type = "https://httpstatuses.com/400",
+            title = "Error: Bad Request",
+            status = 400
+         });
+      }
    }
 }
