@@ -43,6 +43,7 @@ public class Unity3dController : Controller
       }
       catch (Exception e)
       {
+         // The unity API expects a ProblemDetails response object https://github.com/ProblemDetails/Problem.Details
          return BadRequest(new
          {
             //errors = new { requiredField = new[] { e.Message } },
