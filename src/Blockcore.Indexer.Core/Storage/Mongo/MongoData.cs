@@ -1111,17 +1111,25 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          var outpointsToFetchTask = Task.Run(() => mongoDb.UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
-            .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
+            .Match(_ => _.BlockIndex <= storeTip.BlockIndex - confirmations)
             .Sort(Builders<UnspentOutputTable>.Sort.Descending(x => x.BlockIndex).Ascending(x => x.Outpoint.OutputIndex))
             .Skip(offset)
             .Limit(limit)
             .ToList()
             .Select(_ => _.Outpoint));
 
-         await Task.WhenAll(totalTask, outpointsToFetchTask);
+         var mempoolBalanceTask = Task.Run(() => MempoolBalance(address));
+
+         await Task.WhenAll(totalTask, outpointsToFetchTask, mempoolBalanceTask);
+
+         var unspentOutputs = outpointsToFetchTask.Result.ToList();
+         var mempoolInputs = mempoolBalanceTask.Result;
+
+         // remove any outputs that are spent in the mempool
+         mempoolBalanceTask.Result.ForEach(mp => mp.Mempool.Inputs.ForEach(inp => unspentOutputs.Remove(inp.Outpoint)));
 
          var results = await mongoDb.OutputTable.Aggregate()
-            .Match(_ => outpointsToFetchTask.Result.Contains(_.Outpoint))
+            .Match(_ => unspentOutputs.Contains(_.Outpoint))
             .ToListAsync();
 
          return new QueryResult<OutputTable>
