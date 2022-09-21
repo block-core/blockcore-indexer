@@ -351,6 +351,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             .CountAsync(_ => _.Owner == address);
 
          int startPosition = offset ?? total - limit;
+
+         if (limit == 0)
+            limit = total;
+
          int endPosition = startPosition + limit;
 
          var dbTokens = await mongoDb.NonFungibleTokenTable.Aggregate()
