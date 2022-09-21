@@ -1,5 +1,15 @@
+## <small>0.2.39 (2022-09-21)</small>
+
+* Added decimal places to the token response (#161) ([30d9412](https://github.com/block-core/blockcore-indexer/commit/30d9412)), closes [#161](https://github.com/block-core/blockcore-indexer/issues/161)
+* Fix bug where store tip is null for ibd check (#158) ([4e4b5a4](https://github.com/block-core/blockcore-indexer/commit/4e4b5a4)), closes [#158](https://github.com/block-core/blockcore-indexer/issues/158)
+* Remove all warning ([f5a5f87](https://github.com/block-core/blockcore-indexer/commit/f5a5f87))
+* Update version ([fc16b14](https://github.com/block-core/blockcore-indexer/commit/fc16b14))
+
+
+
 ## <small>0.2.38 (2022-08-26)</small>
 
+* Bump version and change logs ([db7f129](https://github.com/block-core/blockcore-indexer/commit/db7f129))
 * Handle error message returned from the node (#157) ([11e5b96](https://github.com/block-core/blockcore-indexer/commit/11e5b96)), closes [#157](https://github.com/block-core/blockcore-indexer/issues/157)
 * Update Node.js version for workflow ([6caf0c2](https://github.com/block-core/blockcore-indexer/commit/6caf0c2))
 
