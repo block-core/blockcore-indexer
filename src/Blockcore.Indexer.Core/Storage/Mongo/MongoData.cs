@@ -1118,19 +1118,49 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             .ToList()
             .Select(_ => _.Outpoint));
 
-         var mempoolBalanceTask = Task.Run(() => MempoolBalance(address));
+         var mempoolBalanceTask = confirmations == 0 ?
+            Task.Run(() => MempoolBalance(address)) :
+            Task.FromResult<List<MapMempoolAddressBag>>(null);
 
          await Task.WhenAll(totalTask, outpointsToFetchTask, mempoolBalanceTask);
 
          var unspentOutputs = outpointsToFetchTask.Result.ToList();
-         var mempoolInputs = mempoolBalanceTask.Result;
+         var mempoolItems = mempoolBalanceTask.Result;
 
-         // remove any outputs that are spent in the mempool
-         mempoolBalanceTask.Result.ForEach(mp => mp.Mempool.Inputs.ForEach(inp => unspentOutputs.Remove(inp.Outpoint)));
+         // remove any outputs that have been spent in the mempool
+         mempoolItems?.ForEach(mp => mp.Mempool.Inputs.ForEach(input =>
+         {
+            var item = unspentOutputs.Where(w => w.ToString() == input.Outpoint.ToString()).FirstOrDefault();
+            if (item != null)
+               unspentOutputs.Remove(item);
+
+          }));
 
          var results = await mongoDb.OutputTable.Aggregate()
             .Match(_ => unspentOutputs.Contains(_.Outpoint))
             .ToListAsync();
+
+         // add any new unconfirmed outputs to the list
+         mempoolItems?.ForEach(mp =>
+         {
+            int index = 0;
+            foreach (MempoolOutput mempoolOutput in mp.Mempool.Outputs)
+            {
+               if (mempoolOutput.Address == address)
+               {
+                  results.Add(new OutputTable
+                  {
+                     Address = address,
+                     BlockIndex = 0,
+                     ScriptHex = mempoolOutput.ScriptHex,
+                     Value = mempoolOutput.Value,
+                     Outpoint = new Outpoint { TransactionId = mp.Mempool.TransactionId, OutputIndex = index }
+                  });
+               }
+
+               index++;
+            }
+         });
 
          return new QueryResult<OutputTable>
          {

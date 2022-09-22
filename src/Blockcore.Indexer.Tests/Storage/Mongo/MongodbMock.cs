@@ -18,6 +18,7 @@ public class MongodbMock
    public Mock<IMongoCollection<UnspentOutputTable>> unspentOutputTableCollection;
    public Mock<IMongoCollection<InputTable>> inputTableCollection;
    public Mock<IMongoCollection<TransactionTable>> transactionTable;
+   public Mock<IMongoCollection<MempoolTable>> mempoolTable;
 
    protected Mock<IMongoDatabase> mongodatabase;
    private readonly Mock<IMongoDb> db;
@@ -31,6 +32,7 @@ public class MongodbMock
       unspentOutputTableCollection = new Mock<IMongoCollection<UnspentOutputTable>>();
       inputTableCollection = new Mock<IMongoCollection<InputTable>>();
       transactionTable = new Mock<IMongoCollection<TransactionTable>>();
+      mempoolTable = new Mock<IMongoCollection<MempoolTable>>();
 
       db.Setup(_ => _.BlockTable).Returns(blockTableCollection.Object);
       db.Setup(_ => _.TransactionBlockTable).Returns(transactionBlockTableCollection.Object);
@@ -52,6 +54,8 @@ public class MongodbMock
          .Returns(inputTableCollection.Object);
       mongodatabase.Setup(_ => _.GetCollection<TransactionTable>("Transaction",null))
          .Returns(transactionTable.Object);
+      mongodatabase.Setup(_ => _.GetCollection<MempoolTable>("Mempool", null))
+         .Returns(mempoolTable.Object);
 
       mongodatabase.Setup(_ => _.Client)
          .Returns(new Mock<IMongoClient>().Object);
