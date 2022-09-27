@@ -687,8 +687,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          if (globalState.LocalMempoolView.IsEmpty)
             return mapMempoolAddressBag;
 
-         IQueryable<MempoolTable> mempoolForAddress = mongoDb.Mempool.AsQueryable()
-            .Where(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address));
+         var mempoolForAddress = mongoDb.Mempool
+            .Aggregate()
+            .Match(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address))
+            .ToList();
+
+         // IQueryable<MempoolTable> mempoolForAddress = mongoDb.Mempool
+         //    .AsQueryable()
+         //    .Where(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address));
 
          foreach (MempoolTable mempool in mempoolForAddress)
          {
@@ -1130,11 +1136,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          // remove any outputs that have been spent in the mempool
          mempoolItems?.ForEach(mp => mp.Mempool.Inputs.ForEach(input =>
          {
-            var item = unspentOutputs.Where(w => w.ToString() == input.Outpoint.ToString()).FirstOrDefault();
+            Outpoint item = unspentOutputs.FirstOrDefault(w => w.ToString() == input.Outpoint.ToString());
             if (item != null)
                unspentOutputs.Remove(item);
 
-          }));
+         }));
 
          var results = await mongoDb.OutputTable.Aggregate()
             .Match(_ => unspentOutputs.Contains(_.Outpoint))

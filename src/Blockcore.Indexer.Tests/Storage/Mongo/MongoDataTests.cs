@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using Blockcore.Consensus;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Indexer.Core.Client;
@@ -80,7 +83,7 @@ public class MongoDataTests
    }
 
    // TODO dan: fix this test
-   // [Fact] 
+    [Fact]
    public void GetUnspentTransactionsByAddressWithItemsInMempool()
    {
       var addressMain = NewRandomString;
@@ -95,23 +98,41 @@ public class MongoDataTests
       var outpoint3 = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
       var unspentOutput3 = new UnspentOutputTable { Outpoint = outpoint3, Address = addressSecondery, Value = NewRandomInt64, BlockIndex = 100 };
 
-      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.unspentOutputTableCollection, unspentOutput1);
-      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.unspentOutputTableCollection, unspentOutput2);
-      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.unspentOutputTableCollection, unspentOutput3);
-
 
       var mempoolTable = new MempoolTable
       {
          TransactionId = NewRandomString,
+         Inputs = new List<MempoolInput>
+         {
+            new() { Address = addressMain, Outpoint = outpoint1, Value = 5 },
+            new() { Address = addressSecondery, Outpoint = outpoint2, Value = 5 }
+         },
+         Outputs = new List<MempoolOutput>
+         {
+            new() { Address = addressMain, Value = 5 },
+            new() { Address = addressSecondery, Value = 6 }
+         }
       };
 
-      mempoolTable.Inputs.Add(new MempoolInput { Address = addressMain, Outpoint = outpoint1, Value = 5 });
-      mempoolTable.Inputs.Add(new MempoolInput { Address = addressSecondery, Outpoint = outpoint2, Value = 5 });
-      mempoolTable.Outputs.Add(new MempoolOutput { Address = addressMain, Value = 5 });
-      mempoolTable.Outputs.Add(new MempoolOutput { Address = addressSecondery, Value = 5 });
+      globalState.LocalMempoolView = new ConcurrentDictionary<string, string>();
+      globalState.LocalMempoolView.TryAdd(mempoolTable.TransactionId, string.Empty);
 
-      mongodbMock.GivenTheDocumentIsReturnedSuccessfullyFromMongoDb(mongodbMock.mempoolTable, mempoolTable);
+      mongodbMock.GivenTheAggregateListReturnsTheExpectedSet(mongodbMock.unspentOutputTableCollection,
+         new List<UnspentOutputTable> { unspentOutput1, unspentOutput2, unspentOutput3 });
+
+      mongodbMock.GivenTheAggregateCountReturnsTheExpectesSet(mongodbMock.unspentOutputTableCollection,1);
+
+      mongodbMock.GivenTheAggregateListAsyncReturnsTheExpectedSet(mongodbMock.outputTableCollection,  new List<OutputTable>());
+
+      mongodbMock.GivenTheAggregateListReturnsTheExpectedSet(mongodbMock.mempoolTable, new List<MempoolTable> { mempoolTable });
 
       var res = sut.GetUnspentTransactionsByAddressAsync(addressMain, 0, 0, 10).Result;
+
+      Assert.Single(res.Items);
+      var item = res.Items.First();
+      Assert.Equal(item.Outpoint.TransactionId,mempoolTable.TransactionId);
+      Assert.Equal(item.Outpoint.OutputIndex,0);
+      Assert.Equal(item.Value,5);
+      Assert.Equal(item.Address,addressMain);
    }
 }
