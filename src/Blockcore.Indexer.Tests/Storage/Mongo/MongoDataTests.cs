@@ -92,26 +92,35 @@ public class MongoDataTests
       globalState.StoreTip = new Core.Storage.Types.SyncBlockInfo { BlockIndex = 100 };
 
       var outpoint1 = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
-      var unspentOutput1 = new UnspentOutputTable { Outpoint = outpoint1, Address = NewRandomString, Value = NewRandomInt64, BlockIndex = 100 };
+      var unspentOutput1 = new UnspentOutputTable { Outpoint = outpoint1, Address = addressMain, Value = NewRandomInt64, BlockIndex = 100 };
       var outpoint2 = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
-      var unspentOutput2 = new UnspentOutputTable { Outpoint = outpoint2, Address = NewRandomString, Value = NewRandomInt64, BlockIndex = 100 };
+      var unspentOutput2 = new UnspentOutputTable { Outpoint = outpoint2, Address = addressMain, Value = NewRandomInt64, BlockIndex = 100 };
       var outpoint3 = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
       var unspentOutput3 = new UnspentOutputTable { Outpoint = outpoint3, Address = addressSecondery, Value = NewRandomInt64, BlockIndex = 100 };
 
+      var outpoint4 = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString }; // not returned from the utxo table
 
       var mempoolTable = new MempoolTable
       {
          TransactionId = NewRandomString,
          Inputs = new List<MempoolInput>
          {
-            new() { Address = addressMain, Outpoint = outpoint1, Value = 5 },
-            new() { Address = addressSecondery, Outpoint = outpoint2, Value = 5 }
+            new() { Address = addressMain, Outpoint = outpoint1, Value = NewRandomInt64 },
+            new() { Address = addressMain, Outpoint = outpoint4, Value = NewRandomInt64 },
+            new() { Address = addressSecondery, Outpoint = outpoint3, Value = NewRandomInt64 }
          },
          Outputs = new List<MempoolOutput>
          {
-            new() { Address = addressMain, Value = 5 },
-            new() { Address = addressSecondery, Value = 6 }
+            new() { Address = addressMain, Value = NewRandomInt64 },
+            new() { Address = addressSecondery, Value = NewRandomInt64 }
          }
+      };
+
+      OutputTable outputTable1 = new OutputTable
+      {
+         Address = addressMain,
+         Outpoint = unspentOutput2.Outpoint,
+         Value = unspentOutput2.Value,
       };
 
       globalState.LocalMempoolView = new ConcurrentDictionary<string, string>();
@@ -120,19 +129,24 @@ public class MongoDataTests
       mongodbMock.GivenTheAggregateListReturnsTheExpectedSet(mongodbMock.unspentOutputTableCollection,
          new List<UnspentOutputTable> { unspentOutput1, unspentOutput2, unspentOutput3 });
 
-      mongodbMock.GivenTheAggregateCountReturnsTheExpectesSet(mongodbMock.unspentOutputTableCollection,1);
+      mongodbMock.GivenTheAggregateCountReturnsTheExpectesSet(mongodbMock.unspentOutputTableCollection, 3);
 
-      mongodbMock.GivenTheAggregateListAsyncReturnsTheExpectedSet(mongodbMock.outputTableCollection,  new List<OutputTable>());
+      mongodbMock.GivenTheAggregateListAsyncReturnsTheExpectedSet(mongodbMock.outputTableCollection,  new List<OutputTable>() { outputTable1 });
 
       mongodbMock.GivenTheAggregateListReturnsTheExpectedSet(mongodbMock.mempoolTable, new List<MempoolTable> { mempoolTable });
 
       var res = sut.GetUnspentTransactionsByAddressAsync(addressMain, 0, 0, 10).Result;
 
-      Assert.Single(res.Items);
-      var item = res.Items.First();
-      Assert.Equal(item.Outpoint.TransactionId,mempoolTable.TransactionId);
-      Assert.Equal(item.Outpoint.OutputIndex,0);
-      Assert.Equal(item.Value,5);
-      Assert.Equal(item.Address,addressMain);
+      Assert.Equal(2, res.Items.Count());
+
+      Assert.Equal(outputTable1.Outpoint.TransactionId, res.Items.ElementAt(0).Outpoint.TransactionId);
+      Assert.Equal(outputTable1.Outpoint.OutputIndex, res.Items.ElementAt(0).Outpoint.OutputIndex);
+      Assert.Equal(outputTable1.Value, res.Items.ElementAt(0).Value);
+      Assert.Equal(addressMain, res.Items.ElementAt(0).Address);
+
+      Assert.Equal(mempoolTable.TransactionId, res.Items.ElementAt(1).Outpoint.TransactionId);
+      Assert.Equal(0, res.Items.ElementAt(1).Outpoint.OutputIndex);
+      Assert.Equal(mempoolTable.Outputs[0].Value, res.Items.ElementAt(1).Value);
+      Assert.Equal(addressMain, res.Items.ElementAt(1).Address);
    }
 }

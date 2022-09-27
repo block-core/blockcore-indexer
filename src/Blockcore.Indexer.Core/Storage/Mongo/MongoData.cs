@@ -1136,10 +1136,12 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          // remove any outputs that have been spent in the mempool
          mempoolItems?.ForEach(mp => mp.Mempool.Inputs.ForEach(input =>
          {
-            Outpoint item = unspentOutputs.FirstOrDefault(w => w.ToString() == input.Outpoint.ToString());
-            if (item != null)
-               unspentOutputs.Remove(item);
-
+            if (input.Address == address)
+            {
+               Outpoint item = unspentOutputs.FirstOrDefault(w => w.ToString() == input.Outpoint.ToString());
+               if (item != null)
+                  unspentOutputs.Remove(item);
+            }
          }));
 
          var results = await mongoDb.OutputTable.Aggregate()
