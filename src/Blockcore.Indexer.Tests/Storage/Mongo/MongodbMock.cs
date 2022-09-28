@@ -18,6 +18,7 @@ public class MongodbMock
    public Mock<IMongoCollection<UnspentOutputTable>> unspentOutputTableCollection;
    public Mock<IMongoCollection<InputTable>> inputTableCollection;
    public Mock<IMongoCollection<TransactionTable>> transactionTable;
+   public Mock<IMongoCollection<MempoolTable>> mempoolTable;
 
    protected Mock<IMongoDatabase> mongodatabase;
    private readonly Mock<IMongoDb> db;
@@ -31,6 +32,7 @@ public class MongodbMock
       unspentOutputTableCollection = new Mock<IMongoCollection<UnspentOutputTable>>();
       inputTableCollection = new Mock<IMongoCollection<InputTable>>();
       transactionTable = new Mock<IMongoCollection<TransactionTable>>();
+      mempoolTable = new Mock<IMongoCollection<MempoolTable>>();
 
       db.Setup(_ => _.BlockTable).Returns(blockTableCollection.Object);
       db.Setup(_ => _.TransactionBlockTable).Returns(transactionBlockTableCollection.Object);
@@ -38,6 +40,7 @@ public class MongodbMock
       db.Setup(_ => _.UnspentOutputTable).Returns(unspentOutputTableCollection.Object);
       db.Setup(_ => _.InputTable).Returns(inputTableCollection.Object);
       db.Setup(_ => _.TransactionTable).Returns(transactionTable.Object);
+      db.Setup(_ => _.Mempool).Returns(mempoolTable.Object);
 
       mongodatabase = new Mock<IMongoDatabase>();
       mongodatabase.Setup(_ => _.GetCollection<BlockTable>("Block",null))
@@ -52,6 +55,8 @@ public class MongodbMock
          .Returns(inputTableCollection.Object);
       mongodatabase.Setup(_ => _.GetCollection<TransactionTable>("Transaction",null))
          .Returns(transactionTable.Object);
+      mongodatabase.Setup(_ => _.GetCollection<MempoolTable>("Mempool", null))
+         .Returns(mempoolTable.Object);
 
       mongodatabase.Setup(_ => _.Client)
          .Returns(new Mock<IMongoClient>().Object);
@@ -138,5 +143,59 @@ public class MongodbMock
       var serializerRegistry = BsonSerializer.SerializerRegistry;
       var documentSerializer = serializerRegistry.GetSerializer<TDocument>();
       return (documentSerializer, serializerRegistry);
+   }
+
+   public Mock<IAsyncCursor<AggregateCountResult>> GivenTheAggregateCountReturnsTheExpectesSet<T>(Mock<IMongoCollection<T>> collection, int countResult)
+   {
+      var countCursor = new Mock<IAsyncCursor<AggregateCountResult>>();
+
+      collection.Setup(_ =>
+            _.Aggregate(It.IsAny<AppendedStagePipelineDefinition<T, AggregateCountResult, AggregateCountResult>>(),
+               It.IsAny<AggregateOptions>(), It.IsAny<CancellationToken>()))
+         .Returns((AppendedStagePipelineDefinition<T, AggregateCountResult, AggregateCountResult> e, AggregateOptions o,
+            CancellationToken t) => countCursor.Object);
+
+      countCursor.SetupSequence(_ => _.MoveNext(It.IsAny<CancellationToken>()))
+         .Returns(true)
+         .Returns(false);
+
+      countCursor.Setup(_ => _.Current).Returns(new List<AggregateCountResult> { new AggregateCountResult(countResult) });
+
+      return countCursor;
+   }
+
+   public Mock<IAsyncCursor<T>> GivenTheAggregateListReturnsTheExpectedSet<T>(Mock<IMongoCollection<T>> collection, IEnumerable<T> returnedData)
+   {
+      var cursor = new Mock<IAsyncCursor<T>>();
+
+      collection.Setup(_ =>
+            _.Aggregate(It.IsAny<AppendedStagePipelineDefinition<T,T,T>>(), It.IsAny<AggregateOptions>(), It.IsAny<CancellationToken>()))
+         .Returns((AppendedStagePipelineDefinition<T,T,T> e,AggregateOptions o,CancellationToken t) => cursor.Object);
+
+      cursor.SetupSequence(_ => _.MoveNext(It.IsAny<CancellationToken>()))
+         .Returns(true)
+         .Returns(false);
+
+      cursor.Setup(_ => _.Current)
+         .Returns(returnedData);
+
+      return cursor;
+   }
+
+   public Mock<IAsyncCursor<T>> GivenTheAggregateListAsyncReturnsTheExpectedSet<T>(Mock<IMongoCollection<T>> collection, IEnumerable<T> returnedData)
+   {
+      var asyncCursor = new Mock<IAsyncCursor<T>>();
+
+      collection.Setup(_ =>
+            _.AggregateAsync(It.IsAny<AppendedStagePipelineDefinition<T,T,T>>(), It.IsAny<AggregateOptions>(), It.IsAny<CancellationToken>()))
+         .ReturnsAsync((AppendedStagePipelineDefinition<T,T,T> e,AggregateOptions o,CancellationToken t) => asyncCursor.Object);
+
+      asyncCursor.SetupSequence(_ => _.MoveNextAsync(It.IsAny<CancellationToken>()))
+         .ReturnsAsync(true)
+         .ReturnsAsync(false);
+
+      asyncCursor.Setup(_ => _.Current).Returns(returnedData);
+
+      return asyncCursor;
    }
 }

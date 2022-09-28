@@ -687,8 +687,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          if (globalState.LocalMempoolView.IsEmpty)
             return mapMempoolAddressBag;
 
-         IQueryable<MempoolTable> mempoolForAddress = mongoDb.Mempool.AsQueryable()
-            .Where(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address));
+         var mempoolForAddress = mongoDb.Mempool
+            .Aggregate()
+            .Match(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address))
+            .ToList();
 
          foreach (MempoolTable mempool in mempoolForAddress)
          {
@@ -1111,18 +1113,58 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          var outpointsToFetchTask = Task.Run(() => mongoDb.UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
-            .Match(_ => _.BlockIndex <= globalState.StoreTip.BlockIndex - confirmations)
+            .Match(_ => _.BlockIndex <= storeTip.BlockIndex - confirmations)
             .Sort(Builders<UnspentOutputTable>.Sort.Descending(x => x.BlockIndex).Ascending(x => x.Outpoint.OutputIndex))
             .Skip(offset)
             .Limit(limit)
             .ToList()
             .Select(_ => _.Outpoint));
 
-         await Task.WhenAll(totalTask, outpointsToFetchTask);
+         var mempoolBalanceTask = confirmations == 0 ?
+            Task.Run(() => MempoolBalance(address)) :
+            Task.FromResult<List<MapMempoolAddressBag>>(null);
+
+         await Task.WhenAll(totalTask, outpointsToFetchTask, mempoolBalanceTask);
+
+         var unspentOutputs = outpointsToFetchTask.Result.ToList();
+         var mempoolItems = mempoolBalanceTask.Result;
+
+         // remove any outputs that have been spent in the mempool
+         mempoolItems?.ForEach(mp => mp.Mempool.Inputs.ForEach(input =>
+         {
+            if (input.Address == address)
+            {
+               Outpoint item = unspentOutputs.FirstOrDefault(w => w.ToString() == input.Outpoint.ToString());
+               if (item != null)
+                  unspentOutputs.Remove(item);
+            }
+         }));
 
          var results = await mongoDb.OutputTable.Aggregate()
-            .Match(_ => outpointsToFetchTask.Result.Contains(_.Outpoint))
+            .Match(_ => unspentOutputs.Contains(_.Outpoint))
             .ToListAsync();
+
+         // add any new unconfirmed outputs to the list
+         mempoolItems?.ForEach(mp =>
+         {
+            int index = 0;
+            foreach (MempoolOutput mempoolOutput in mp.Mempool.Outputs)
+            {
+               if (mempoolOutput.Address == address)
+               {
+                  results.Add(new OutputTable
+                  {
+                     Address = address,
+                     BlockIndex = 0,
+                     ScriptHex = mempoolOutput.ScriptHex,
+                     Value = mempoolOutput.Value,
+                     Outpoint = new Outpoint { TransactionId = mp.Mempool.TransactionId, OutputIndex = index }
+                  });
+               }
+
+               index++;
+            }
+         });
 
          return new QueryResult<OutputTable>
          {
