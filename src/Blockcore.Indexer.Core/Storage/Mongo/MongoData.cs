@@ -692,10 +692,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             .Match(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address))
             .ToList();
 
-         // IQueryable<MempoolTable> mempoolForAddress = mongoDb.Mempool
-         //    .AsQueryable()
-         //    .Where(m => m.AddressInputs.Contains(address) || m.AddressOutputs.Contains(address));
-
          foreach (MempoolTable mempool in mempoolForAddress)
          {
             var bag = new MapMempoolAddressBag { Mempool = mempool };
