@@ -554,7 +554,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// <returns></returns>
       public QueryResult<SyncTransactionInfo> TransactionsByBlock(long index, int offset, int limit)
       {
-         FilterDefinition<TransactionBlockTable> filter = Builders<TransactionBlockTable>.Filter.Eq(info => info.BlockIndex, index);
+         FilterDefinition<TransactionBlockTable> filter = Builders<TransactionBlockTable>.Filter
+            .Eq(info => info.BlockIndex, index);
 
          int total = (int)mongoDb.TransactionBlockTable.Find(filter).CountDocuments();
 
@@ -566,6 +567,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                    {
                       TransactionHash = s.TransactionId,
                       TransactionIndex = s.TransactionIndex,
+                      Confirmations = globalState.StoreTip.BlockIndex - s.BlockIndex,
+                      BlockIndex = s.BlockIndex,
                    });
 
          return new QueryResult<SyncTransactionInfo>

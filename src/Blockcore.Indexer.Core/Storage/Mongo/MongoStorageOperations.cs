@@ -9,9 +9,11 @@ using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using NBitcoin;
+using TransactionOptions = Blockcore.Consensus.TransactionInfo.TransactionOptions;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -62,6 +64,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                   BlockIndex = item.BlockInfo.HeightAsUint32,
                   TransactionId = trxHash,
                   TransactionIndex = transactionIndex++,
+                  TotalInputs = trx.Inputs.Count,
+                  TotalOutputs = trx.Outputs.Count,
+                  Size = trx.GetSize(TransactionOptions.All,syncConnection.Network.Consensus.ConsensusFactory),
                });
 
             if (configuration.StoreRawTransactions)

@@ -7,5 +7,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.Types
       public string TransactionId { get; set; }
 
       public int TransactionIndex { get; set; }
+      public int TotalInputs { get; set; }
+      public int TotalOutputs { get; set; }
+      public int Size { get; set; }
    }
 }
