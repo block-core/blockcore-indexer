@@ -12,24 +12,43 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenContractTabl
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
 
-   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(
+      CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
       var log = contractTransaction.Logs.First().Log;
       var saleLog = contractTransaction.Logs.Last().Log;
 
       object tokenId = log.Data["tokenId"];
-      string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
+      string id = tokenId is string str ? str : Convert.ToString(tokenId);
 
-      string owner = (string)saleLog.Data["seller"];
+      if (contractTransaction.Logs.Any(_ => _.Log.Data.ContainsKey("seller") ))
+      {
+         string owner = (string)saleLog.Data["seller"];
 
-      var sale = SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log);
+         var sale = SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log);
 
-       return new [] { new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
-#pragma warning disable CS0253 // Possible unintended reference comparison; right hand side needs cast
-             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-#pragma warning restore CS0253 // Possible unintended reference comparison; right hand side needs cast
-          Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, owner)
-             .AddToSet(_ => _.SalesHistory, sale))};
+         return new[]
+         {
+            new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
+                  .Where(_ => _.Id.TokenId == id && _.Id.ContractAddress == computedTable.ContractAddress),
+               Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, owner)
+                  .AddToSet(_ => _.SalesHistory, sale))
+         };
+      }
+
+      return new[]
+      {
+         new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
+               .Where(_ => _.Id.TokenId == id && _.Id.ContractAddress == computedTable.ContractAddress),
+            Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, log.Data["to"].ToString())
+               .AddToSet(_ => _.SalesHistory,
+                  new OwnershipTransfer
+                  {
+                     From = log.Data["from"].ToString(),
+                     TransactionId = contractTransaction.TransactionId,
+                     To = log.Data["to"].ToString()
+                  }))
+      };
    }
 }
