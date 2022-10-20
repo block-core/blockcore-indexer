@@ -7,11 +7,13 @@ using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Crypto;
+using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Models;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.Indexer.Core.Sync;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -36,9 +38,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       readonly IBlockRewindOperation rewindOperation;
 
+      readonly IComputeHistoryQueue computeHistoryQueue;
+
       public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<ChainSettings> chainConfiguration,
          GlobalState globalState, IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,
-         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db, IBlockRewindOperation rewindOperation)
+         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db, IBlockRewindOperation rewindOperation, IComputeHistoryQueue computeHistoryQueue)
       {
          log = dbLogger;
          this.chainConfiguration = chainConfiguration.Value;
@@ -51,6 +55,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          this.mongoDatabase = mongoDatabase;
          mongoDb = db;
          this.rewindOperation = rewindOperation;
+         this.computeHistoryQueue = computeHistoryQueue;
       }
 
       /// <summary>
@@ -693,7 +698,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          await outputTask;
 
-         return outputTask.Result.Select(_ =>
+         var results = outputTask.Result.Select(_ =>
          {
             var balance = new QueryAddressBalance
             {
@@ -702,6 +707,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             };
             return balance;
          }).ToList();
+
+         results.ForEach(_ => computeHistoryQueue.AddAddressToComputeHistoryQueue(_.Address));
+
+         return results;
       }
 
       private List<MapMempoolAddressBag> MempoolBalance(string address)
