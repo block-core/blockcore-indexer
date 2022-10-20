@@ -680,6 +680,30 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
+      public async Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(IEnumerable<string> addresses)
+      {
+         var outputTask = mongoDb.OutputTable.Distinct(_ => _.Address, _ => addresses.Contains(_.Address))
+            .ToListAsync();
+
+         var utxoBalances = mongoDb.UnspentOutputTable.Aggregate()
+            .Match(_ => addresses.Contains(_.Address))
+            .Group(_ => _.Address,
+               _ => new { Address = _.Key, Balance = _.Sum(utxo => utxo.Value) })
+            .ToList();
+
+         await outputTask;
+
+         return outputTask.Result.Select(_ =>
+         {
+            var balance = new QueryAddressBalance
+            {
+               Address = _,
+               Balance = utxoBalances.FirstOrDefault(u => u.Address.Equals(_))?.Balance ?? 0
+            };
+            return balance;
+         }).ToList();
+      }
+
       private List<MapMempoolAddressBag> MempoolBalance(string address)
       {
          var mapMempoolAddressBag = new List<MapMempoolAddressBag>();

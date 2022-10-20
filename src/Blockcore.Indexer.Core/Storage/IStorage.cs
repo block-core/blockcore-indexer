@@ -14,6 +14,9 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryAddress AddressBalance(string address);
 
+      Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(
+         IEnumerable<string> addresses);
+
       QueryResult<QueryAddressItem> AddressHistory(string address, int? offset, int limit);
 
       QueryResult<QueryMempoolTransactionHashes> GetMemoryTransactionsSlim(int offset, int limit);
