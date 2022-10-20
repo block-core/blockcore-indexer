@@ -41,7 +41,7 @@ namespace Blockcore.Indexer.Core.Controllers
       }
 
       /// <summary>
-      /// Get the balance on address.
+      /// Only returns addresses with outputs or spent outputs (also when balance is 0)
       /// </summary>
       /// <param name="addresses"></param>
       /// <returns></returns>
