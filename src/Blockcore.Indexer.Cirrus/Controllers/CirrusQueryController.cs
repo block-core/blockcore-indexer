@@ -49,6 +49,16 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       }
 
       [HttpGet]
+      [Route("contracts/logs")]
+      public IActionResult GetContracts([Range(0, long.MaxValue)] long startBlock,[Range(0, long.MaxValue)] long endBlock, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 1000)] int limit = 1000)
+      {
+         if (endBlock < startBlock)
+            return BadRequest();
+
+         return OkPaging(cirrusMongoData.ListBLocksLogs(startBlock,endBlock, offset, limit));
+      }
+
+      [HttpGet]
       [Route("collectables/{ownerAddress}")]
       public IActionResult GetAddressAssets([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {

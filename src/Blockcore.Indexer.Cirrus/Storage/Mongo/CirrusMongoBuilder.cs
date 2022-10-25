@@ -2,16 +2,21 @@ using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {
    public class CirrusMongoBuilder : MongoBuilder
    {
-      public CirrusMongoBuilder(ILogger<MongoBuilder> logger, IMongoDb data, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainSettings)
+      ICirrusMongoDb cirrusMongoDb;
+
+      public CirrusMongoBuilder(ILogger<MongoBuilder> logger, ICirrusMongoDb data, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainSettings)
          : base(logger, data, nakoConfiguration,chainSettings)
       {
+         cirrusMongoDb = data;
       }
 
       public override Task OnExecute()
@@ -43,6 +48,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          SetDocumentMapAndIgnoreExtraElements<DaoContractTable>();
          SetDocumentMapAndIgnoreExtraElements<StandardTokenHolderTable>();
          SetDocumentMapAndIgnoreExtraElements<DaoContractProposalTable>();
+
+         cirrusMongoDb.CirrusContractTable.Indexes
+            .CreateOne(new CreateIndexModel<CirrusContractTable>(Builders<CirrusContractTable>
+               .IndexKeys.Ascending(_ => _.BlockIndex))); //TODO move this to the block indexer task runner, but we'll need to move the indexes in there to a different class for each project/blockchain
 
          return Task.CompletedTask;
       }

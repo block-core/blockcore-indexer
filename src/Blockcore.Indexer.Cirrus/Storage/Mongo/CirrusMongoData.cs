@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper.Internal;
 using Blockcore.Indexer.Cirrus.Models;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
@@ -53,10 +52,12 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
       protected override async Task OnDeleteBlockAsync(SyncBlockInfo block)
       {
          // delete the contracts
-         FilterDefinition<CirrusContractTable> contractFilter = Builders<CirrusContractTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
+         FilterDefinition<CirrusContractTable> contractFilter =
+            Builders<CirrusContractTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
          Task<DeleteResult> contracts = mongoDb.CirrusContractTable.DeleteManyAsync(contractFilter);
 
-         FilterDefinition<CirrusContractCodeTable> contractCodeFilter = Builders<CirrusContractCodeTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
+         FilterDefinition<CirrusContractCodeTable> contractCodeFilter =
+            Builders<CirrusContractCodeTable>.Filter.Eq(info => info.BlockIndex, block.BlockIndex);
          Task<DeleteResult> contractsCode = mongoDb.CirrusContractCodeTable.DeleteManyAsync(contractCodeFilter);
 
          await Task.WhenAll(contracts, contractsCode);
@@ -65,20 +66,16 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
       public QueryResult<QueryContractGroup> GroupedContracts()
       {
          var groupedContracts = mongoDb.CirrusContractCodeTable.Aggregate()
-            .Group(_ => _.CodeType, ac => new QueryContractGroup
-            {
-               ContractCodeType = ac.Key,
-               Count = ac.Count(),
-               ContractHash = ac.First().ContractHash
-            })
+            .Group(_ => _.CodeType,
+               ac => new QueryContractGroup
+               {
+                  ContractCodeType = ac.Key, Count = ac.Count(), ContractHash = ac.First().ContractHash
+               })
             .ToList();
 
          return new QueryResult<QueryContractGroup>
          {
-            Items = groupedContracts,
-            Offset = 0,
-            Limit = groupedContracts.Count,
-            Total = groupedContracts.Count
+            Items = groupedContracts, Offset = 0, Limit = groupedContracts.Count, Total = groupedContracts.Count
          };
       }
 
@@ -92,7 +89,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          int itemsToSkip = offset ?? (total < limit ? 0 : total - limit);
 
          IMongoQueryable<CirrusContractTable> cirrusContract = mongoDb.CirrusContractTable.AsQueryable()
-            .Where(q => q.ContractOpcode == "create" &&  q.ContractCodeType == contractType && q.Success == true)
+            .Where(q => q.ContractOpcode == "create" && q.ContractCodeType == contractType && q.Success == true)
             .OrderBy(b => b.BlockIndex)
             .Skip(itemsToSkip)
             .Take(limit);
@@ -110,14 +107,57 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          return new QueryResult<QueryContractList>
          {
-            Items = transactions,
-            Offset = itemsToSkip,
-            Limit = limit,
-            Total = total
+            Items = transactions, Offset = itemsToSkip, Limit = limit, Total = total
          };
       }
 
-      public async Task<QueryDAOContract> GetDaoContractByAddressAsync(string contractAddress)
+      public QueryResult<QueryBlockSmartContractsLogs> ListBLocksLogs(long startBlock, long endBlock, int? offset, int limit)
+      {
+         var total = mongoDb.CirrusContractTable
+            .AsQueryable()
+            .Count(_ => _.BlockIndex >= startBlock && _.BlockIndex < endBlock);
+
+         var contracts = mongoDb.CirrusContractTable.AsQueryable()
+            .Where(_ => _.BlockIndex >= startBlock && _.BlockIndex < endBlock)
+            .Skip(offset ?? 0 * limit)
+            .Take(limit)
+            .ToList();
+
+         var response = contracts.Select(receipt =>
+            new QueryBlockSmartContractsLogs
+            {
+               // ContractOpcode = contractOpcode,
+               // ContractCodeType = receipt.ContractCodeType,
+               // MethodName = receipt.MethodName,
+               NewContractAddress = receipt.NewContractAddress,
+               From = receipt.FromAddress,
+               To = receipt.ToAddress,
+               BlockNumber = receipt.BlockIndex,
+               TransactionHash = receipt.TransactionId,
+               Success = receipt.Success,
+               Error = receipt.Error,
+               PostState = receipt.PostState,
+               GasUsed = receipt.GasUsed,
+               // GasPrice = receipt.GasPrice,
+               // Amount = receipt.Amount,
+               // ContractBalance = receipt.ContractBalance,
+               Logs = receipt.Logs.Select(l => new Blockcore.Indexer.Cirrus.Models.QueryBlockSmartContractsLogs.LogResponse
+               {
+                  Address = l.Address,Data = l.Data,Log = new QueryBlockSmartContractsLogs.LogData
+                  {
+                     Data = l.Log.Data,Event = l.Log.Event
+                  },
+                  Topics = l.Topics
+               }).ToArray()
+            });
+
+         return new QueryResult<QueryBlockSmartContractsLogs>
+         {
+            Items = response, Limit = limit, Offset = offset ?? 0, Total = total
+         };
+      }
+
+   public async Task<QueryDAOContract> GetDaoContractByAddressAsync(string contractAddress)
       {
          var contract = await mongoDb.DaoContractTable.Find(_ => _.ContractAddress == contractAddress)
             .SingleOrDefaultAsync();
