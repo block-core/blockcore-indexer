@@ -14,6 +14,7 @@ public interface ICirrusStorage
    QueryContractCode ContractCode(string address);
    QueryResult<QueryContractGroup> GroupedContracts();
    QueryResult<QueryContractList> ListContracts(string contractType, int? offset, int limit);
+   QueryResult<QueryBlockSmartContractsLogs> ListBLocksLogs(long startBlock, long endBlock, int? offset, int limit);
 
    Task<QueryDAOContract> GetDaoContractByAddressAsync(string contractAddress);
    Task<QueryStandardTokenContract> GetStandardTokenContractByAddressAsync(string contractAddress);
