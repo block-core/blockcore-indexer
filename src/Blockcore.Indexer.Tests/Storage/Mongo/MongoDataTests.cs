@@ -79,7 +79,7 @@ public class MongoDataTests
       sut = new MongoData(null, syncConnection, chainSetting.Object, globalState,
             new MapMongoBlockToStorageBlock(),
             cryptoClientFactory.Object, scriptInterpeter.Object, mongodbMock.MongoDatabaseObject,
-            mongodbMock.MongoDbObject, new Mock<IBlockRewindOperation>().Object);
+            mongodbMock.MongoDbObject, new Mock<IBlockRewindOperation>().Object,null);
    }
 
    // TODO dan: fix this test

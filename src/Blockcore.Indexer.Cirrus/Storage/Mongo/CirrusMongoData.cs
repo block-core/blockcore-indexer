@@ -12,6 +12,7 @@ using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.Indexer.Core.Sync;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -34,7 +35,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          IScriptInterpeter scriptInterpeter,
          IMongoDatabase mongoDatabase,
          ICirrusMongoDb db,
-         IBlockRewindOperation rewindOperation)
+         IBlockRewindOperation rewindOperation,
+         IComputeHistoryQueue computeHistoryQueue)
          : base(
             dbLogger,
             connection,
@@ -45,7 +47,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             scriptInterpeter,
             mongoDatabase,
             db,
-            rewindOperation)
+            rewindOperation,
+            computeHistoryQueue)
       {
          mongoDb = db;
       }

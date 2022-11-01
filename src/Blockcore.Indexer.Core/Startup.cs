@@ -97,6 +97,9 @@ namespace Blockcore.Indexer.Core
 
          services.AddScoped<TaskRunner, RichListSync>();
 
+         services.AddScoped<TaskRunner, HistoryComputer>();
+         services.AddSingleton<IComputeHistoryQueue, ComputeHistoryQueue>();
+
          services.AddResponseCompression();
          services.AddMemoryCache();
          services.AddHostedService<SyncServer>();
