@@ -12,17 +12,22 @@ public class HistoryComputer : TaskRunner
    readonly ILogger<HistoryComputer> logger;
    readonly IStorage storage;
    readonly IComputeHistoryQueue computeHistoryQueue;
+   readonly IndexerSettings indexerSettings;
 
    public HistoryComputer(IOptions<IndexerSettings> configuration, ILogger<HistoryComputer> logger, IStorage storage,
-      IComputeHistoryQueue computeHistoryQueue) : base(configuration, logger)
+      IComputeHistoryQueue computeHistoryQueue, IOptions<IndexerSettings> indexerSettings) : base(configuration, logger)
    {
       this.logger = logger;
       this.storage = storage;
       this.computeHistoryQueue = computeHistoryQueue;
+      this.indexerSettings = indexerSettings.Value;
    }
 
    public override async Task<bool> OnExecute()
    {
+      if (indexerSettings.MaxItemsInHistoryQueue <= 0)
+         return true;
+
       if (StopRunnerExecution)
       {
          return false;
