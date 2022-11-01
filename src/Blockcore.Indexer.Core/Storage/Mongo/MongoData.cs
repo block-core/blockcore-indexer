@@ -370,6 +370,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return null;
       }
 
+      public IEnumerable<string> GetRawTransactions(IEnumerable<string> transactionId)
+      {
+         FilterDefinition<TransactionTable> filter = Builders<TransactionTable>.Filter.In(info => info.TransactionId, transactionId);
+
+         var transactions = mongoDb.TransactionTable.Find(filter)
+            .ToList();
+
+         return transactions.Any()
+            ? transactions.Select(t => Encoders.Hex.EncodeData(t.RawTransaction))
+            : null;
+      }
+
       public string GetRawBlock(string blockHash)
       {
          IBlockchainClient client = clientFactory.Create(syncConnection);

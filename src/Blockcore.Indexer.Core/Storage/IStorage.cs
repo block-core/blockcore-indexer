@@ -22,6 +22,8 @@ namespace Blockcore.Indexer.Core.Storage
 
       string GetRawTransaction(string transactionId);
 
+      IEnumerable<string> GetRawTransactions(IEnumerable<string> transactionId);
+
       QueryTransaction GetTransaction(string transactionId);
 
       QueryResult<SyncTransactionInfo> TransactionsByBlock(string hash, int offset, int limit);

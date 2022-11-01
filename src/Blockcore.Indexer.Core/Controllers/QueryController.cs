@@ -1,7 +1,11 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Paging;
+using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.AspNetCore.Mvc;
@@ -17,14 +21,16 @@ namespace Blockcore.Indexer.Core.Controllers
    {
       private readonly IPagingHelper paging;
       private readonly IStorage storage;
+      protected readonly IndexerSettings configuration;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="QueryController"/> class.
       /// </summary>
-      public QueryController(IPagingHelper paging, IStorage storage)
+      public QueryController(IPagingHelper paging, IStorage storage, IndexerSettings configuration)
       {
          this.paging = paging;
          this.storage = storage;
+         this.configuration = configuration;
       }
 
       /// <summary>
@@ -116,6 +122,24 @@ namespace Blockcore.Indexer.Core.Controllers
       public IActionResult GetTransactionHex(string transactionId)
       {
          return OkItem(storage.GetRawTransaction(transactionId));
+      }
+
+      /// <summary>
+      /// Get a list of transactions in hex format based on the transaction IDs (hash).
+      /// </summary>
+      /// <param name="transactionId"></param>
+      /// <returns></returns>
+      [HttpPost]
+      [Route("transactions/hex")]
+      public IActionResult GetTransactionsHex(IEnumerable<string> transactionIds)
+      {
+         if (!configuration.StoreRawTransactions)
+            return Forbid();
+
+         if (transactionIds.Count() > 20)
+            return BadRequest();
+
+         return OkItem(storage.GetRawTransactions(transactionIds));
       }
 
 
