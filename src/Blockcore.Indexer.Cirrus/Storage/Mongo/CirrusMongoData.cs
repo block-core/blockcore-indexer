@@ -119,7 +119,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          var contracts = mongoDb.CirrusContractTable.AsQueryable()
             .Where(_ => _.BlockIndex >= startBlock && _.BlockIndex < endBlock)
-            .Skip(offset ?? 0 * limit)
+            .Skip((offset ?? 0) * limit)
             .Take(limit)
             .ToList();
 
