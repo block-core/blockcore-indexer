@@ -133,6 +133,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                From = receipt.FromAddress,
                To = receipt.ToAddress,
                BlockNumber = receipt.BlockIndex,
+               BlockHash = receipt.BlockHash,
                TransactionHash = receipt.TransactionId,
                Success = receipt.Success,
                Error = receipt.Error,

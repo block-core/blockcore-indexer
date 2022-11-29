@@ -5,7 +5,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class ClaimOwnershipLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
+public class ClaimOwnershipLogReader : ILogReader<NonFungibleTokenContractTable, NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("ClaimOwnership");
 
