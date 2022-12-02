@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Blockcore.Indexer.Cirrus.Client;
@@ -22,6 +23,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using MongoDB.Bson.Serialization;
 
 namespace Blockcore.Indexer.Cirrus
 {
@@ -89,6 +91,9 @@ namespace Blockcore.Indexer.Cirrus
          services.AddScoped<TaskRunner,SmartContractSyncRunner>();
 
          services.AddTransient<IBlockRewindOperation, CirrusBlockRewindOperation>();
+
+
+         BsonSerializer.RegisterSerializer(typeof(IDictionary<string, object>), new ComplexTypeSerializer());
       }
 
       private static IServiceCollection RegisterSmartContractBuilder(IServiceCollection collection)
