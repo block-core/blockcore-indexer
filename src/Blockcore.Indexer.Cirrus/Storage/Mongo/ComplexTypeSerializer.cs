@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using MongoDB.Bson;
+using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using Newtonsoft.Json;
+using JsonConvert = Newtonsoft.Json.JsonConvert;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo;
 
@@ -15,7 +16,7 @@ public class ComplexTypeSerializer : SerializerBase<object>
 
       var bsonDocument = document.ToBsonDocument();
 
-      var result = BsonExtensionMethods.ToJson(bsonDocument);
+      var result = BsonExtensionMethods.ToJson(bsonDocument,new JsonWriterSettings { OutputMode = JsonOutputMode.Strict });
       return JsonConvert.DeserializeObject<IDictionary<string, object>>(result);
    }
 
