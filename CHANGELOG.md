@@ -1,3 +1,11 @@
+## <small>0.2.41 (2022-12-04)</small>
+
+* Added endpoint to calculate the balance for multiple addresses in one request (#169) ([f9224f5](https://github.com/block-core/blockcore-indexer/commit/f9224f5)), closes [#169](https://github.com/block-core/blockcore-indexer/issues/169)
+* Blockhash property added (#174) ([d20be72](https://github.com/block-core/blockcore-indexer/commit/d20be72)), closes [#174](https://github.com/block-core/blockcore-indexer/issues/174)
+* Update version and changelog ([e0728b2](https://github.com/block-core/blockcore-indexer/commit/e0728b2))
+
+
+
 ## <small>0.2.40 (2022-10-27)</small>
 
 * Add Molie network package to indexer ([3743489](https://github.com/block-core/blockcore-indexer/commit/3743489))
