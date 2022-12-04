@@ -21,7 +21,7 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenContractTabl
 
       string tokenId = log.Data["tokenId"].ToString();
 
-      if (contractTransaction.Logs.Any(_ => _.Log.Data.ContainsKey("seller") ))
+      if (contractTransaction.Logs.Any(_ => _.Log.Data.Contains("seller") ))
       {
          string owner = (string)saleLog.Data["seller"];
 
@@ -30,7 +30,7 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenContractTabl
          return new[]
          {
             new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
-                  .Where(_ => _.Id.TokenId == id && _.Id.ContractAddress == computedTable.ContractAddress),
+                  .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
                Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, owner)
                   .AddToSet(_ => _.SalesHistory, sale))
          };
@@ -39,7 +39,7 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenContractTabl
       return new[]
       {
          new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
-               .Where(_ => _.Id.TokenId == id && _.Id.ContractAddress == computedTable.ContractAddress),
+               .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
             Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, log.Data["to"].ToString())
                .AddToSet(_ => _.SalesHistory,
                   new OwnershipTransfer
