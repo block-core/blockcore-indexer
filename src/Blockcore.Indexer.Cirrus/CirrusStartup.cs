@@ -71,8 +71,6 @@ namespace Blockcore.Indexer.Cirrus
          services.AddTransient<ISmartContractTransactionsLookup<NonFungibleTokenContractTable>,NonFungibleTokenSmartContractTransactionsLookup>();
          services.AddTransient(typeof(ISmartContractTransactionsLookup<>), typeof(SmartContractTransactionsLookup<>));
 
-
-
          ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<DaoContractTable,DaoContractProposalTable>),
             typeof(ILogReader<DaoContractTable,DaoContractProposalTable>).Assembly);
          ScanAssemblyAndRegisterTypeByNameAsTransient(services, typeof(ILogReader<StandardTokenContractTable,StandardTokenHolderTable>),
@@ -117,34 +115,7 @@ namespace Blockcore.Indexer.Cirrus
 
       public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
       {
-         app.UseExceptionHandler("/error");
-
-         // Enable Cors
-         app.UseCors("IndexerPolicy");
-
-         app.UseResponseCompression();
-
-         app.UseDefaultFiles();
-
-         app.UseStaticFiles();
-
-         app.UseRouting();
-
-         app.UseSwagger(c =>
-         {
-            c.RouteTemplate = "docs/{documentName}/openapi.json";
-         });
-
-         app.UseSwaggerUI(c =>
-         {
-            c.RoutePrefix = "docs";
-            c.SwaggerEndpoint("/docs/indexer/openapi.json", "Blockcore Indexer API");
-         });
-
-         app.UseEndpoints(endpoints =>
-         {
-            endpoints.MapControllers();
-         });
+         Startup.Configure(app, env);
       }
    }
 }
