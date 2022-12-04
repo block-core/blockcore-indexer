@@ -1,3 +1,11 @@
+## <small>0.2.42 (2022-12-04)</small>
+
+* Add instructions on how to run the indexer ([06d3c8a](https://github.com/block-core/blockcore-indexer/commit/06d3c8a))
+* Migrate Startup and drop duplicate container registration code ([f503639](https://github.com/block-core/blockcore-indexer/commit/f503639))
+* Update version and changelog ([15f68d0](https://github.com/block-core/blockcore-indexer/commit/15f68d0))
+
+
+
 ## <small>0.2.41 (2022-12-04)</small>
 
 * Added endpoint to calculate the balance for multiple addresses in one request (#169) ([f9224f5](https://github.com/block-core/blockcore-indexer/commit/f9224f5)), closes [#169](https://github.com/block-core/blockcore-indexer/issues/169)
