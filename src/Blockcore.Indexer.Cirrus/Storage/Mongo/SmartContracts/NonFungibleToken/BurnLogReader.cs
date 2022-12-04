@@ -16,9 +16,9 @@ public class BurnLogReader: ILogReader<NonFungibleTokenContractTable,Types.NonFu
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      object tokenId = contractTransaction.Logs.SingleOrDefault().Log.Data["tokenId"];
+      string tokenId = contractTransaction.Logs.SingleOrDefault().Log.Data["tokenId"].ToString();
 
-      string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
+      //string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
 
       // computedTable.Tokens.Single(_ => _.Id == id)
       //    .IsBurned = true;

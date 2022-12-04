@@ -23,7 +23,7 @@ class VoteLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
          return null;
       }
 
-      int id = (int)(long)contractTransaction.Logs.First().Log.Data["proposalId"];
+      int id = contractTransaction.Logs.First().Log.Data["proposalId"].ToInt32();
       bool voteYesNo = (bool)contractTransaction.Logs.First().Log.Data["vote"];
       string voterAddress = (string)contractTransaction.Logs.First().Log.Data["voter"];
 

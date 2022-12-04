@@ -28,10 +28,10 @@ class StandardTokenSmartContractBuilder : ISmartContractBuilder<StandardTokenCon
          ContractAddress = createContractTransaction.NewContractAddress,
          ContractCreateTransactionId = createContractTransaction.TransactionId,
          LastProcessedBlockHeight = createContractTransaction.BlockIndex,
-         Decimals = (logs.Data["tokenDecimals"] == null ? 0 : (long)logs.Data["tokenDecimals"]),
+         Decimals = (logs.Data["tokenDecimals"].IsBsonNull ? 0 : logs.Data["tokenDecimals"].ToInt64()),
          Name = (string)logs.Data["tokenName"],
          Symbol = (string)logs.Data["tokenSymbole"],
-         TotalSupply = (long)logs.Data["tokenTotalSupply"],
+         TotalSupply = logs.Data["tokenTotalSupply"].ToInt64(),
          CreatedOnBlock = createContractTransaction.BlockIndex,
          CreatorAddress = createContractTransaction.FromAddress,
       };

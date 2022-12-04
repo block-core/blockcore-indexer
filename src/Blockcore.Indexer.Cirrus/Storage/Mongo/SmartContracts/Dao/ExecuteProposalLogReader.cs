@@ -17,9 +17,9 @@ class ExecuteProposalLogReader : ILogReader<DaoContractTable, DaoContractProposa
    {
       var log = contractTransaction.Logs.First().Log.Data;
 
-      computedTable.CurrentAmount -= (long)log["amount"];
+      computedTable.CurrentAmount -= log["amount"].ToInt64();
 
-      string proposalId = ((long)log["proposalId"]).ToString();
+      string proposalId = log["proposalId"].ToString();
 
       return new [] { new UpdateOneModel<DaoContractProposalTable>(Builders<DaoContractProposalTable>.Filter
             .Where(_ => _.Id.TokenId ==  proposalId && _.Id.ContractAddress == computedTable.ContractAddress),

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.StandardToken;
@@ -11,9 +13,9 @@ public class TransferToAndFromLogReader : ILogReader<StandardTokenContractTable,
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferTo") || methodType.Equals("TransferFrom");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => logs?.Any(_ => _.Log.Data.ContainsKey("from") &&
-                                                                             _.Log.Data.ContainsKey("to") &&
-                                                                             _.Log.Data.ContainsKey("amount")) ?? false;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => logs?.Any(_ => _.Log.Data.Contains("from") &&
+                                                                             _.Log.Data.Contains("to") &&
+                                                                             _.Log.Data.Contains("amount")) ?? false;
 
    public WriteModel<StandardTokenHolderTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       StandardTokenContractTable computedTable)
@@ -25,14 +27,12 @@ public class TransferToAndFromLogReader : ILogReader<StandardTokenContractTable,
 
       string fromAddress = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["from"];
       string toAddress = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["to"];
-      object objectAmount = contractTransaction.Logs.SingleOrDefault().Log.Data["amount"];
-
-
+      object objectAmount = BsonTypeMapper.MapToDotNetValue(contractTransaction.Logs.SingleOrDefault().Log.Data["amount"].AsBsonValue);
 
       long? amount = objectAmount switch
       {
          string => Convert.ToInt64(objectAmount),
-         long => (long?)objectAmount,
+         int or long => (long?)objectAmount,
          _ => throw new InvalidCastException(objectAmount.ToString())
       };
 

@@ -20,16 +20,15 @@ public class SafeMintLogReader : ILogReader<NonFungibleTokenContractTable, Types
       LogData saleLog = contractTransaction.Logs[1].Log;
       LogData uriLog = contractTransaction.Logs[2].Log;
 
-      object tokenId = log.Data["tokenId"];
-      string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
+      string tokenId = log.Data["tokenId"].ToString();
 
-      return new [] {new InsertOneModel<Types.NonFungibleTokenTable>(new()
+      return new[] {new InsertOneModel<Types.NonFungibleTokenTable>(new()
       {
          Creator = contractTransaction.FromAddress,
          Owner = contractTransaction.FromAddress,
          Id = new SmartContractTokenId
          {
-            TokenId = id,ContractAddress = computedTable.ContractAddress
+            TokenId = tokenId,ContractAddress = computedTable.ContractAddress
          },
          Uri = (string)uriLog.Data["tokenUri"],
          SalesHistory = new() { SalesEventReader.SaleDetails(contractTransaction.TransactionId, saleLog, log) }

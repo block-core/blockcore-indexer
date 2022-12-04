@@ -17,7 +17,7 @@ class UpdateMinVotingDurationLogReader : ILogReader<DaoContractTable, DaoContrac
    {
       if (!contractTransaction.Logs.Any())
          return null;
-      computedTable.MinVotingDuration = (long)contractTransaction.Logs.Single().Log.Data["minVotingDuration"];
+      computedTable.MinVotingDuration = contractTransaction.Logs.Single().Log.Data["minVotingDuration"].ToInt64();
 
       return Array.Empty<WriteModel<DaoContractProposalTable>>();
    }

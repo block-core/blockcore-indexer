@@ -23,7 +23,7 @@ class UpdateMaxVotingDurationLogReader : ILogReader<DaoContractTable,DaoContract
          // throw new ArgumentException(contractTransaction.TransactionId);
       }
 
-      computedTable.MaxVotingDuration = (long)log.Log.Data["maxVotingDuration"];
+      computedTable.MaxVotingDuration = log.Log.Data["maxVotingDuration"].ToInt64();
 
       return Array.Empty<WriteModel<DaoContractProposalTable>>();
    }

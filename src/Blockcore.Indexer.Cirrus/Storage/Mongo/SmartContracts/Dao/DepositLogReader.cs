@@ -16,7 +16,7 @@ class DepositLogReader : ILogReader<DaoContractTable,DaoContractProposalTable>
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)
    {
-      long amount = (long)contractTransaction.Logs[0].Log.Data["amount"];
+      long amount = contractTransaction.Logs[0].Log.Data["amount"].ToInt64();
 
       computedTable.Deposits ??= new List<DaoContractDeposit>();
 

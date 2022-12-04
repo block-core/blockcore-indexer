@@ -20,10 +20,10 @@ class CreateProposalLogReader : ILogReader<DaoContractTable,DaoContractProposalT
       var proposal = new DaoContractProposalTable
       {
          Recipient = (string)logData["recipent"],
-         Amount = (long)logData["amount"],
+         Amount = logData["amount"].ToInt64(),
          Id = new SmartContractTokenId
          {
-            TokenId = ((long)logData["proposalId"]).ToString(),
+            TokenId = logData["proposalId"].ToString(),
             ContractAddress = computedTable.ContractAddress
          } ,
          Description = (string)logData["description"],

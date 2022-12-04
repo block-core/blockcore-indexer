@@ -7,6 +7,7 @@ using Blockcore.Indexer.Cirrus.Storage.Types;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Operations.Types;
+using MongoDB.Bson.Serialization;
 
 namespace Blockcore.Indexer.Cirrus.Client
 {
@@ -43,14 +44,9 @@ namespace Blockcore.Indexer.Cirrus.Client
 
       public async Task<ContractReceiptResponse> GetContractInfoAsync(string trxHash)
       {
-         HttpResponseMessage httpResponse = await Client.GetAsync($"{ApiUrl}api/indexer/contract/info?txHash={trxHash}");
+         string json = await Client.GetStringAsync($"{ApiUrl}api/indexer/contract/info?txHash={trxHash}");
 
-         if(!httpResponse.IsSuccessStatusCode)
-         {
-            throw new ApplicationException(httpResponse.Content.ReadAsStringAsync().Result);
-         }
-
-         return await httpResponse.Content.ReadAsAsync<ContractReceiptResponse>();
+         return BsonSerializer.Deserialize<ContractReceiptResponse>(json);
       }
 
    }

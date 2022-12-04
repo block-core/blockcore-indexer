@@ -14,7 +14,7 @@ class WhitelistAddressesLogReader : ILogReader<DaoContractTable,DaoContractPropo
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)
    {
-      computedTable.WhitelistedCount =  (long)contractTransaction.Logs.Single().Log.Data["whitelistedCount"];
+      computedTable.WhitelistedCount =  contractTransaction.Logs.Single().Log.Data["whitelistedCount"].ToInt64();
       //TODO we don't have the address or a way to get it without reading the script in the transaction
 
       return new WriteModel<DaoContractProposalTable>[]{};

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using MongoDB.Bson;
 
 namespace Blockcore.Indexer.Cirrus.Client.Types
 {
@@ -33,7 +34,7 @@ namespace Blockcore.Indexer.Cirrus.Client.Types
    {
       public string Event { get; set; }
 
-      public IDictionary<string, object> Data { get; set; }
+      public BsonDocument Data { get; set; }
    }
 
    //public class LocalExecutionResponse

@@ -68,12 +68,13 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
       public QueryResult<QueryContractGroup> GroupedContracts()
       {
          var groupedContracts = mongoDb.CirrusContractCodeTable.Aggregate()
-            .Group(_ => _.CodeType, ac => new QueryContractGroup
-            {
-               ContractCodeType = ac.Key,
-               Count = ac.Count(),
-               ContractHash = ac.First().ContractHash
-            })
+            .Group(_ => _.CodeType,
+               ac => new QueryContractGroup
+               {
+                  ContractCodeType = ac.Key,
+                  Count = ac.Count(),
+                  ContractHash = ac.First().ContractHash
+               })
             .ToList();
 
          return new QueryResult<QueryContractGroup>
@@ -380,7 +381,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          return new QueryResult<QueryAddressAsset>
          {
-            Items = tokens, Limit = limit, Offset = offset ?? 0, Total = total
+            Items = tokens,
+            Limit = limit,
+            Offset = offset ?? 0,
+            Total = total
          };
       }
 
@@ -425,7 +429,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 
          return new QueryResult<QueryStandardToken>
          {
-            Items = tokens, Limit = limit, Offset = offset ?? 0, Total = total
+            Items = tokens,
+            Limit = limit,
+            Offset = offset ?? 0,
+            Total = total
          };
       }
 
@@ -443,8 +450,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             .As<SmartContractTable>()
             .ToListAsync();
 
-         var smartContractsNotUpdated = await mongoDb.CirrusContractTable.Aggregate(PipelineDefinition<CirrusContractTable,SmartContractTable>.Create(
-            new []
+         var smartContractsNotUpdated = await mongoDb.CirrusContractTable.Aggregate(PipelineDefinition<CirrusContractTable, SmartContractTable>.Create(
+            new[]
             {
                new BsonDocument("$match",
                   new BsonDocument { { "Success", true }, { "ToAddress", new BsonDocument("$ne", BsonNull.Value) } }),
@@ -493,8 +500,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             .Project(_ => new { address = _["ContractAddress"] })
             .ToListAsync();
 
-         var smartContractsNotUpdated = await mongoDb.CirrusContractTable.Aggregate(PipelineDefinition<CirrusContractTable,BsonDocument>.Create(
-               new []
+         var smartContractsNotUpdated = await mongoDb.CirrusContractTable.Aggregate(PipelineDefinition<CirrusContractTable, BsonDocument>.Create(
+               new[]
                {
                   new BsonDocument("$match",
                      new BsonDocument { { "Success", true }, { "ToAddress", new BsonDocument("$ne", BsonNull.Value) } }),

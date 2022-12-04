@@ -31,7 +31,7 @@ public class BidLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFu
       updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleTokenTable>.Update
-            .Set("SalesHistory.$[i].HighestBid", (long)auctionLog.Log.Data["bid"])
+            .Set("SalesHistory.$[i].HighestBid", auctionLog.Log.Data["bid"].ToInt64())
             .Set("SalesHistory.$[i].HighestBidder", (string)auctionLog.Log.Data["bidder"])
             .Set("SalesHistory.$[i].HighestBidTransactionId", contractTransaction.TransactionId));
 

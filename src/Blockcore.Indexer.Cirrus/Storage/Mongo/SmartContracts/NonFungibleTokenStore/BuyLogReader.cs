@@ -20,7 +20,7 @@ public class BuyLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonF
       var tokenPurchaseLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "TokenPurchasedLog");
       var royaltyPaidLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "RoyaltyPaidLog");
 
-      string seller = tokenPurchaseLog?.Log.Data.ContainsKey("seller") ?? false
+      string seller = tokenPurchaseLog?.Log.Data.Contains("seller") ?? false
          ? (string)tokenPurchaseLog.Log.Data["seller"]
          :  string.Empty;
 

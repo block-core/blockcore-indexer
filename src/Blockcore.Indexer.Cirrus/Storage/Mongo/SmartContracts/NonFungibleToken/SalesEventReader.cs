@@ -27,7 +27,7 @@ public class SalesEventReader
       new()
       {
          Seller = (string)saleLog.Data["seller"],
-         Price = (long)saleLog.Data["price"],
+         Price = saleLog.Data["price"].ToInt64(),
          TransactionId = transactionId
       };
 
@@ -35,8 +35,8 @@ public class SalesEventReader
       new()
       {
          Seller = (string)auctionLog.Data["seller"],
-         StartingPrice = (long)auctionLog.Data["startingPrice"],
-         EndBlock = (long)auctionLog.Data["endBlock"],
+         StartingPrice = auctionLog.Data["startingPrice"].ToInt64(),
+         EndBlock = auctionLog.Data["endBlock"].ToInt64(),
          TransactionId = transactionId
       };
 }

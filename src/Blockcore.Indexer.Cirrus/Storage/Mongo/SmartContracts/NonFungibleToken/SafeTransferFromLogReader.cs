@@ -19,8 +19,7 @@ public class SafeTransferFromLogReader : ILogReader<NonFungibleTokenContractTabl
       var log = contractTransaction.Logs.First().Log;
       var saleLog = contractTransaction.Logs.Last().Log;
 
-      object tokenId = log.Data["tokenId"];
-      string id = tokenId is string str ? str : Convert.ToString(tokenId);
+      string tokenId = log.Data["tokenId"].ToString();
 
       if (contractTransaction.Logs.Any(_ => _.Log.Data.ContainsKey("seller") ))
       {

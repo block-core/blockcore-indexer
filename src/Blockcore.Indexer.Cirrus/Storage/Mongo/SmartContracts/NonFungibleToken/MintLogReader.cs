@@ -6,7 +6,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class MintLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
+public class MintLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Mint");
 
@@ -21,15 +21,14 @@ public class MintLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonF
       if (log is null || uriLog is null)
          throw new ArgumentNullException(nameof(log));
 
-      object tokenId = log.Data["tokenId"];
-      string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
+      string tokenId = log.Data["tokenId"].ToString();
 
-      return new [] { new InsertOneModel<Types.NonFungibleTokenTable>(new Types.NonFungibleTokenTable
+      return new[] { new InsertOneModel<Types.NonFungibleTokenTable>(new Types.NonFungibleTokenTable
       {
          Owner = (string)log.Data["to"],
          Id = new SmartContractTokenId
          {
-            TokenId = id,ContractAddress = computedTable.ContractAddress
+            TokenId = tokenId,ContractAddress = computedTable.ContractAddress
          },
          Uri = (string)uriLog.Data["tokenUri"]
       })};
