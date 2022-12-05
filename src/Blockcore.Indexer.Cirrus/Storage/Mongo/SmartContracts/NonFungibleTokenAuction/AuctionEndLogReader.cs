@@ -42,8 +42,8 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Type
                .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
             Builders<Types.NonFungibleTokenTable>.Update
                .Set(_ => _.Owner, (string)auctionLog.Log.Data["highestBidder"])
-               .Set("SalesHistory.$[i].Success", true)
-               .Set("SalesHistory.$[i].AuctionEnded", true));
+               .Set("salesHistory.$[i].success", true)
+               .Set("salesHistory.$[i].auctionEnded", true));
 
          // updateInstruction.ArrayFilters = new[]
          // {
@@ -62,7 +62,7 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Type
          updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
                .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
             Builders<Types.NonFungibleTokenTable>.Update
-               .Set("SalesHistory.$[i].AuctionEnded", true));
+               .Set("salesHistory.$[i].auctionEnded", true));
       }
 
       updateInstruction.ArrayFilters = new[]
@@ -72,7 +72,7 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Type
                new[]
                {
                   new BsonDocument("i._t", nameof(Auction)),
-                  new BsonDocument("i.AuctionEnded",false)
+                  new BsonDocument("i.auctionEnded",false)
                })))
       };
 

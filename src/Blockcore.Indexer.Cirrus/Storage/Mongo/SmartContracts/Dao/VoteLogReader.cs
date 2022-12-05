@@ -34,13 +34,13 @@ class VoteLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
 
       var insertVoteForVoter = new UpdateOneModel<DaoContractProposalTable>(Builders<DaoContractProposalTable>.Filter
             .Where(_ => _.Id.ContractAddress == computedTable.ContractAddress && _.Id.TokenId == id.ToString()),
-         Builders<DaoContractProposalTable>.Update.AddToSet("Votes.$[j].PreviousVotes",
+         Builders<DaoContractProposalTable>.Update.AddToSet("votes.$[j].previousVotes",
             new DaoContractVote { IsApproved = voteYesNo, VotedOnBlock = contractTransaction.BlockIndex }));
 
       insertVoteForVoter.ArrayFilters = new[]
       {
          new BsonDocumentArrayFilterDefinition<DaoContractVoteDetails>(
-            new BsonDocument("j.VoterAddress", voterAddress))
+            new BsonDocument("j.voterAddress", voterAddress))
       };
 
       return new[] { upsertVoter, insertVoteForVoter };

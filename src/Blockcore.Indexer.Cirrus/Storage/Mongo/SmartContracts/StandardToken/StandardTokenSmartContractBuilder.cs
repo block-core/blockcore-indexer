@@ -28,7 +28,7 @@ class StandardTokenSmartContractBuilder : ISmartContractBuilder<StandardTokenCon
          ContractAddress = createContractTransaction.NewContractAddress,
          ContractCreateTransactionId = createContractTransaction.TransactionId,
          LastProcessedBlockHeight = createContractTransaction.BlockIndex,
-         Decimals = (logs.Data["tokenDecimals"].IsBsonNull ? 0 : logs.Data["tokenDecimals"].ToInt64()),
+         Decimals = logs.Data["tokenDecimals"].IsBsonNull ? 0 : logs.Data["tokenDecimals"].ToInt64(),
          Name = (string)logs.Data["tokenName"],
          Symbol = (string)logs.Data["tokenSymbole"],
          TotalSupply = logs.Data["tokenTotalSupply"].ToInt64(),

@@ -14,8 +14,8 @@ public class ClaimOwnershipLogReader : ILogReader<NonFungibleTokenContractTable,
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      computedTable.Owner = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["NewOwner"];
-      computedTable.PreviousOwners.Add((string)contractTransaction.Logs.SingleOrDefault().Log.Data["PreviousOwner"]);
+      computedTable.Owner = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["newOwner"];
+      computedTable.PreviousOwners.Add((string)contractTransaction.Logs.SingleOrDefault().Log.Data["previousOwner"]);
 
       return null;
    }

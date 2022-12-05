@@ -6,7 +6,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenAuction;
 
-public class BidLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
+public class BidLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
    ICirrusMongoDb db;
 
@@ -31,9 +31,9 @@ public class BidLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFu
       updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleTokenTable>.Update
-            .Set("SalesHistory.$[i].HighestBid", auctionLog.Log.Data["bid"].ToInt64())
-            .Set("SalesHistory.$[i].HighestBidder", (string)auctionLog.Log.Data["bidder"])
-            .Set("SalesHistory.$[i].HighestBidTransactionId", contractTransaction.TransactionId));
+            .Set("salesHistory.$[i].highestBid", auctionLog.Log.Data["bid"].ToInt64())
+            .Set("salesHistory.$[i].highestBidder", (string)auctionLog.Log.Data["bidder"])
+            .Set("salesHistory.$[i].highestBidTransactionId", contractTransaction.TransactionId));
 
       updateInstruction.ArrayFilters = new[]
       {
@@ -42,7 +42,7 @@ public class BidLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFu
                new[]
                {
                   new BsonDocument("i._t", nameof(Auction)),
-                  new BsonDocument("i.AuctionEnded",false)
+                  new BsonDocument("i.auctionEnded",false)
                })))
       };
 

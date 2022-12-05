@@ -8,7 +8,7 @@ namespace Blockcore.Indexer.Cirrus
    using System.Linq;
    using Microsoft.AspNetCore.Hosting;
    using Microsoft.Extensions.Hosting;
-
+   using MongoDB.Bson.Serialization.Conventions;
 
    public class Program //: Blockcore.Indexer.Program
    {
@@ -40,6 +40,10 @@ namespace Blockcore.Indexer.Cirrus
             })
             .ConfigureWebHostDefaults(webBuilder =>
             {
+               var convention = new ConventionPack { new CamelCaseElementNameConvention() };
+
+               ConventionRegistry.Register("Camel case convention", convention, t => true);
+
                webBuilder.ConfigureKestrel(serverOptions =>
                {
                   serverOptions.AddServerHeader = false;

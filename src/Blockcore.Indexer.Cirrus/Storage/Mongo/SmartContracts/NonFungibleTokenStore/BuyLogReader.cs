@@ -31,19 +31,19 @@ public class BuyLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonF
       var updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, buyer)
-            .Set("SalesHistory.$[i].Buyer", buyer)
-            .Set("SalesHistory.$[i].Sold", true)
-            .Set("SalesHistory.$[i].PurchaseTransactionId", contractTransaction.TransactionId));
+            .Set("salesHistory.$[i].buyer", buyer)
+            .Set("salesHistory.$[i].sold", true)
+            .Set("salesHistory.$[i].purchaseTransactionId", contractTransaction.TransactionId));
 
 
       var bsonFilterArray = new BsonArray(new[]
       {
-         new BsonDocument("i._t", "OnSale"),
-         new BsonDocument("i.Sold", false)
+         new BsonDocument("i._t", "onSale"),
+         new BsonDocument("i.sold", false)
       });
 
       if (seller != string.Empty)
-         bsonFilterArray.Add(new BsonDocument("i.Seller", seller));
+         bsonFilterArray.Add(new BsonDocument("i.seller", seller));
 
       updateInstruction.ArrayFilters = new[] { new BsonDocumentArrayFilterDefinition<OnSale>(
          new BsonDocument("$and",bsonFilterArray)) };

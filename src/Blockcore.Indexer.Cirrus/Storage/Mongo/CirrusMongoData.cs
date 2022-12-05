@@ -445,7 +445,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                new StringFieldDefinition<SmartContractTable[]>("output"))
             .Unwind("output")
             .Match(_ => _["output"].IsBsonNull ||
-                        _["output.BlockIndex"] < blockIndex)
+                        _["output.blockIndex"] < blockIndex)
             .ReplaceRoot(_ => _["output"])
             .As<SmartContractTable>()
             .ToListAsync();
@@ -454,18 +454,18 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             new[]
             {
                new BsonDocument("$match",
-                  new BsonDocument { { "Success", true }, { "ToAddress", new BsonDocument("$ne", BsonNull.Value) } }),
+                  new BsonDocument { { "success", true }, { "toAddress", new BsonDocument("$ne", BsonNull.Value) } }),
                new BsonDocument("$group",
                   new BsonDocument
                   {
-                     { "_id", "$ToAddress" },
-                     { "ContractCodeType", new BsonDocument("$first", "$ContractCodeType") },
-                     { "BlockIndex", new BsonDocument("$max", "$BlockIndex") }
+                     { "_id", "$toAddress" },
+                     { "contractCodeType", new BsonDocument("$first", "$contractCodeType") },
+                     { "blockIndex", new BsonDocument("$max", "$blockIndex") }
                   }),
                new BsonDocument("$lookup",
                   new BsonDocument
                   {
-                     { "from", "SmartContractTable" },
+                     { "from", "SmartContractTable" },//dude: i assume SmartContractTable should not be camelcase, right ?
                      { "localField", "_id" },
                      { "foreignField", "_id" },
                      { "as", "output" }
@@ -479,7 +479,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                new BsonDocument("$match",
                   new BsonDocument("$expr",
                      new BsonDocument("$gt",
-                        new BsonArray { "$BlockIndex", "$output.LastProcessedBlockHeight" }))),
+                        new BsonArray { "$blockIndex", "$output.lastProcessedBlockHeight" }))),
                new BsonDocument("$replaceRoot",
                   new BsonDocument("newRoot", "$output"))
             }))
@@ -493,24 +493,24 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          var smartContractsNotComputed = await mongoDb.CirrusContractCodeTable.Aggregate()
             .Match(Builders<CirrusContractCodeTable>.Filter.In(_ => _.CodeType, supportedTypes))
             .Lookup("SmartContractTable",
-               new StringFieldDefinition<CirrusContractCodeTable>("ContractAddress"),
+               new StringFieldDefinition<CirrusContractCodeTable>("contractAddress"),
                new StringFieldDefinition<BsonDocument>("_id"),
                new StringFieldDefinition<BsonDocument>("output"))
             .Match(_ => _["output"] == new BsonArray())
-            .Project(_ => new { address = _["ContractAddress"] })
+            .Project(_ => new { address = _["contractAddress"] })
             .ToListAsync();
 
          var smartContractsNotUpdated = await mongoDb.CirrusContractTable.Aggregate(PipelineDefinition<CirrusContractTable, BsonDocument>.Create(
                new[]
                {
                   new BsonDocument("$match",
-                     new BsonDocument { { "Success", true }, { "ToAddress", new BsonDocument("$ne", BsonNull.Value) } }),
+                     new BsonDocument { { "success", true }, { "toAddress", new BsonDocument("$ne", BsonNull.Value) } }),
                   new BsonDocument("$group",
                      new BsonDocument
                      {
-                        { "_id", "$ToAddress" },
-                        { "ContractCodeType", new BsonDocument("$first", "$ContractCodeType") },
-                        { "BlockIndex", new BsonDocument("$max", "$BlockIndex") }
+                        { "_id", "$toAddress" },
+                        { "contractCodeType", new BsonDocument("$first", "$contractCodeType") },
+                        { "blockIndex", new BsonDocument("$max", "$blockIndex") }
                      }),
                   new BsonDocument("$lookup",
                      new BsonDocument
@@ -521,7 +521,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                         { "as", "output" }
                      }),
                   new BsonDocument("$match",
-                     new BsonDocument("CodeType",
+                     new BsonDocument("codeType",
                         new BsonDocument("$nin",
                            new BsonArray(supportedTypes)))),
                   new BsonDocument("$match",
@@ -533,9 +533,9 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                   new BsonDocument("$match",
                      new BsonDocument("$expr",
                         new BsonDocument("$gt",
-                           new BsonArray { "$BlockIndex", "$output.LastProcessedBlockHeight" }))),
+                           new BsonArray { "$blockIndex", "$output.lastProcessedBlockHeight" }))),
                   new BsonDocument("$project",
-                     new BsonDocument("address", "$ContractAddress"))
+                     new BsonDocument("address", "$contractAddress"))
                }))
             .ToListAsync();
 

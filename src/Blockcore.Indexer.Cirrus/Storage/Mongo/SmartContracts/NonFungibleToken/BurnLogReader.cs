@@ -13,7 +13,7 @@ public class BurnLogReader: ILogReader<NonFungibleTokenContractTable,Types.NonFu
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
-   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
       string tokenId = contractTransaction.Logs.SingleOrDefault().Log.Data["tokenId"].ToString();

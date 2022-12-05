@@ -1,9 +1,11 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson.Serialization.Conventions;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo
 {

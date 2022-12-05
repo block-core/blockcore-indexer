@@ -33,16 +33,16 @@ public class CancelSaleLogReader : ILogReader<NonFungibleTokenContractTable,Type
 
       var updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleTokenTable>.Update.Unset("SalesHistory.$[i]"));
+         Builders<Types.NonFungibleTokenTable>.Update.Unset("salesHistory.$[i]"));
 
       updateInstruction.ArrayFilters = new[]
       {
          new BsonDocumentArrayFilterDefinition<OnSale>(new BsonDocument("$and",
             new BsonArray(new[]
             {
-               new BsonDocument("i.Seller", contractTransaction.FromAddress),
-               new BsonDocument("i._t", "OnSale"),
-               new BsonDocument("i.Sold", false)
+               new BsonDocument("i.seller", contractTransaction.FromAddress),
+               new BsonDocument("i._t", "onSale"),
+               new BsonDocument("i.sold", false)
             })))
       };
 

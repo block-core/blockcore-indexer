@@ -14,7 +14,7 @@ public class PendingOwnerLogReader : ILogReader<NonFungibleTokenContractTable,Ty
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      computedTable.PendingOwner = (string)contractTransaction.Logs.SingleOrDefault()?.Log.Data["PendingOwner"] ?? string.Empty;
+      computedTable.PendingOwner = (string)contractTransaction.Logs.SingleOrDefault()?.Log.Data["pendingOwner"] ?? string.Empty;
 
       return null;
    }
