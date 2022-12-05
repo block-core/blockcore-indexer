@@ -22,11 +22,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.Types
       public long BlockIndex { get; set; }
 
       /// <summary>
-      /// Hash of the block that this was confirmed in
-      /// </summary>
-      public string BlockHash { get; set; }
-
-      /// <summary>
       /// The type of contract (this is normally taken from the assembly metadata).
       /// </summary>
       public string ContractOpcode { get; set; }
