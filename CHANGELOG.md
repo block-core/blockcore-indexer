@@ -1,4 +1,30 @@
-## <small>0.2.39 (2022-09-21)</small>
+## <small>0.2.42 (2022-12-04)</small>
+
+* Add instructions on how to run the indexer ([06d3c8a](https://github.com/block-core/blockcore-indexer/commit/06d3c8a))
+* Migrate Startup and drop duplicate container registration code ([f503639](https://github.com/block-core/blockcore-indexer/commit/f503639))
+* Update version and changelog ([15f68d0](https://github.com/block-core/blockcore-indexer/commit/15f68d0))
+
+
+
+## <small>0.2.41 (2022-12-04)</small>
+
+* Added endpoint to calculate the balance for multiple addresses in one request (#169) ([f9224f5](https://github.com/block-core/blockcore-indexer/commit/f9224f5)), closes [#169](https://github.com/block-core/blockcore-indexer/issues/169)
+* Blockhash property added (#174) ([d20be72](https://github.com/block-core/blockcore-indexer/commit/d20be72)), closes [#174](https://github.com/block-core/blockcore-indexer/issues/174)
+* Update version and changelog ([e0728b2](https://github.com/block-core/blockcore-indexer/commit/e0728b2))
+
+
+
+## <small>0.2.40 (2022-10-27)</small>
+
+* Add Molie network package to indexer ([3743489](https://github.com/block-core/blockcore-indexer/commit/3743489))
+* Added code for a transfer only action on a safe transfer method call (#167) ([8723e8c](https://github.com/block-core/blockcore-indexer/commit/8723e8c)), closes [#167](https://github.com/block-core/blockcore-indexer/issues/167)
+* Find outputs in mempool and remove them from unspent outputs api call (#162) ([26e504b](https://github.com/block-core/blockcore-indexer/commit/26e504b)), closes [#162](https://github.com/block-core/blockcore-indexer/issues/162)
+* Fixed paging issue on nft endpoint (#168) ([32a44be](https://github.com/block-core/blockcore-indexer/commit/32a44be)), closes [#168](https://github.com/block-core/blockcore-indexer/issues/168)
+* Update version and changelog ([521cf05](https://github.com/block-core/blockcore-indexer/commit/521cf05))
+
+
+
+## <small>0.2.39 (2022-09-10)</small>
 
 * Added decimal places to the token response (#161) ([30d9412](https://github.com/block-core/blockcore-indexer/commit/30d9412)), closes [#161](https://github.com/block-core/blockcore-indexer/issues/161)
 * Fix bug where store tip is null for ibd check (#158) ([4e4b5a4](https://github.com/block-core/blockcore-indexer/commit/4e4b5a4)), closes [#158](https://github.com/block-core/blockcore-indexer/issues/158)

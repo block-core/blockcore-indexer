@@ -7,11 +7,13 @@ using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Crypto;
+using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Models;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.Indexer.Core.Sync;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -36,9 +38,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       readonly IBlockRewindOperation rewindOperation;
 
+      readonly IComputeHistoryQueue computeHistoryQueue;
+
       public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<ChainSettings> chainConfiguration,
          GlobalState globalState, IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,
-         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db, IBlockRewindOperation rewindOperation)
+         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db, IBlockRewindOperation rewindOperation, IComputeHistoryQueue computeHistoryQueue)
       {
          log = dbLogger;
          this.chainConfiguration = chainConfiguration.Value;
@@ -51,6 +55,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          this.mongoDatabase = mongoDatabase;
          mongoDb = db;
          this.rewindOperation = rewindOperation;
+         this.computeHistoryQueue = computeHistoryQueue;
       }
 
       /// <summary>
@@ -678,6 +683,34 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             PendingSent = mempoolAddressBag.Sum(s => s.AmountInInputs),
             PendingReceived = mempoolAddressBag.Sum(s => s.AmountInOutputs)
          };
+      }
+
+      public async Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(IEnumerable<string> addresses)
+      {
+         var outputTask = mongoDb.OutputTable.Distinct(_ => _.Address, _ => addresses.Contains(_.Address))
+            .ToListAsync();
+
+         var utxoBalances = mongoDb.UnspentOutputTable.Aggregate()
+            .Match(_ => addresses.Contains(_.Address))
+            .Group(_ => _.Address,
+               _ => new { Address = _.Key, Balance = _.Sum(utxo => utxo.Value) })
+            .ToList();
+
+         await outputTask;
+
+         var results = outputTask.Result.Select(_ =>
+         {
+            var balance = new QueryAddressBalance
+            {
+               Address = _,
+               Balance = utxoBalances.FirstOrDefault(u => u.Address.Equals(_))?.Balance ?? 0
+            };
+            return balance;
+         }).ToList();
+
+         results.ForEach(_ => computeHistoryQueue.AddAddressToComputeHistoryQueue(_.Address));
+
+         return results;
       }
 
       private List<MapMempoolAddressBag> MempoolBalance(string address)

@@ -96,7 +96,7 @@ public class MongoStorageOperationsTests
          new MongoData(null, syncConnection, chainSetting.Object, globalState,
             new MapMongoBlockToStorageBlock(),
             cryptoClientFactory.Object, scriptInterpeter.Object, mongodbMock.MongoDatabaseObject,
-            mongodbMock.MongoDbObject, new Mock<IBlockRewindOperation>().Object));
+            mongodbMock.MongoDbObject, new Mock<IBlockRewindOperation>().Object,null));
    }
 
    private static BlockInfo NewRandomBlockInfo => new()

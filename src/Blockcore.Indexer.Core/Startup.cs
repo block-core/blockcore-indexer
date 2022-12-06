@@ -32,18 +32,6 @@ namespace Blockcore.Indexer.Core
 {
    public class Startup
    {
-      public IConfiguration Configuration { get; }
-
-      public Startup(IConfiguration configuration)
-      {
-         Configuration = configuration;
-      }
-
-      public void ConfigureServices(IServiceCollection services)
-      {
-         AddIndexerServices(services, Configuration);
-      }
-
       public static void AddIndexerServices(IServiceCollection services, IConfiguration configuration)
       {
          services.Configure<ChainSettings>(configuration.GetSection("Chain"));
@@ -94,8 +82,11 @@ namespace Blockcore.Indexer.Core
          services.AddScoped<TaskStarter, BlockStartup>();
 
          services.AddScoped<TaskRunner, BlockIndexer>();
-
          services.AddScoped<TaskRunner, RichListSync>();
+
+         // TODO: Verify that it is OK we add this to shared Startup for Blockcore and Cirrus.
+         services.AddScoped<TaskRunner, HistoryComputer>();
+         services.AddSingleton<IComputeHistoryQueue, ComputeHistoryQueue>();
 
          services.AddResponseCompression();
          services.AddMemoryCache();
@@ -154,9 +145,12 @@ namespace Blockcore.Indexer.Core
          services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
          services.AddSingleton<ICryptoClientFactory, CryptoClientFactory>();
          services.AddSingleton<ISyncBlockTransactionOperationBuilder, SyncBlockTransactionOperationBuilder>();
+
+         // TODO: Verify that it is OK we add this to shared Startup for Blockcore and Cirrus.
+         services.AddTransient<IBlockRewindOperation, BlockRewindOperation>();
       }
 
-      public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+      public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
       {
          app.UseExceptionHandler("/error");
 

@@ -38,7 +38,7 @@ namespace Blockcore.Indexer
                   serverOptions.AddServerHeader = false;
                });
 
-               webBuilder.UseStartup<Startup>();
+               webBuilder.UseStartup<BlockcoreStartup>();
             });
    }
 }

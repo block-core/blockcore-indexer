@@ -11,6 +11,7 @@ using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.Indexer.Core.Sync;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -33,7 +34,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          IScriptInterpeter scriptInterpeter,
          IMongoDatabase mongoDatabase,
          ICirrusMongoDb db,
-         IBlockRewindOperation rewindOperation)
+         IBlockRewindOperation rewindOperation,
+         IComputeHistoryQueue computeHistoryQueue)
          : base(
             dbLogger,
             connection,
@@ -44,7 +46,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             scriptInterpeter,
             mongoDatabase,
             db,
-            rewindOperation)
+            rewindOperation,
+            computeHistoryQueue)
       {
          mongoDb = db;
       }
@@ -391,13 +394,12 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             .CountAsync(_ => _.Owner == address);
 
          int startPosition = offset ?? total - limit;
-         int endPosition = startPosition + limit;
 
          var dbTokens = await mongoDb.NonFungibleTokenTable.Aggregate()
             .Match(_ => _.Owner == address)
             //.SortBy(_ => _.) TODO David check if we need sorting for the FE
             .Skip(startPosition)
-            .Limit(endPosition)
+            .Limit(limit)
             .ToListAsync();
 
          var tokens = dbTokens.Select(_ => new QueryAddressAsset
@@ -432,13 +434,12 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             return new QueryResult<QueryStandardToken> { Limit = limit, Offset = offset ?? 0, Total = total };
 
          int startPosition = offset ?? total - limit;
-         int endPosition = startPosition + limit;
 
          var dbTokens = await mongoDb.StandardTokenHolderTable.Aggregate()
             .Match(_ => _.Id.TokenId == address)
             .SortBy(_ => _.Id.ContractAddress)
             .Skip(startPosition)
-            .Limit(endPosition)
+            .Limit(limit)
             .ToListAsync();
 
          var addresses = dbTokens.Select(_ => _.Id.ContractAddress);
