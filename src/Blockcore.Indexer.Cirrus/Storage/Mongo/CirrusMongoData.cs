@@ -129,9 +129,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          var response = contracts.Select(receipt =>
             new QueryBlockSmartContractsLogs
             {
-               // ContractOpcode = contractOpcode,
-               // ContractCodeType = receipt.ContractCodeType,
-               // MethodName = receipt.MethodName,
                NewContractAddress = receipt.NewContractAddress,
                From = receipt.FromAddress,
                To = receipt.ToAddress,
@@ -141,9 +138,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                Error = receipt.Error,
                PostState = receipt.PostState,
                GasUsed = receipt.GasUsed,
-               // GasPrice = receipt.GasPrice,
-               // Amount = receipt.Amount,
-               // ContractBalance = receipt.ContractBalance,
+               BlockHash = receipt.BlockHash,
                Logs = receipt.Logs.Select(l => new Blockcore.Indexer.Cirrus.Models.QueryBlockSmartContractsLogs.LogResponse
                {
                   Address = l.Address,Data = l.Data,Log = new QueryBlockSmartContractsLogs.LogData

@@ -1,9 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage;
-using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
-using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Paging;
 using Blockcore.Indexer.Core.Storage.Types;
