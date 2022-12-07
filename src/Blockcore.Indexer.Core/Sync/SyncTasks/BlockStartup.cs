@@ -1,14 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
+using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
@@ -24,8 +25,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       private readonly SyncConnection connection;
       private readonly IStorageOperations storageOperations;
       readonly ICryptoClientFactory clientFactory;
-      readonly IStorage data;
       private readonly MongoData mongoData;
+      readonly IOptions<IndexerSettings> indexerSettings;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockStartup"/> class.
@@ -36,13 +37,14 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          SyncConnection syncConnection,
          IStorageOperations storageOperations,
          ICryptoClientFactory clientFactory,
-         IStorage data)
+         IStorage data,
+         IOptions<IndexerSettings> indexerSettings)
           : base(logger)
       {
          connection = syncConnection;
          this.storageOperations = storageOperations;
          this.clientFactory = clientFactory;
-         this.data = data;
+         this.indexerSettings = indexerSettings;
          this.syncOperations = syncOperations;
          log = logger;
 
@@ -67,7 +69,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
          List<string> allIndexes = mongoData.GetBlockIndexIndexes();
 
-         if (allIndexes.Count == BlockIndexer.ExpectedNumberOfIndexes)
+         if (allIndexes.Count == indexerSettings.Value.IndexCountForBlockIndexProperty)
          {
             Runner.GlobalState.IndexModeCompleted = true;
          }

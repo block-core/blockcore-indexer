@@ -19,8 +19,6 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 {
    public class BlockIndexer : TaskRunner
    {
-      public const int ExpectedNumberOfIndexes = 7;
-
       private readonly IndexerSettings config;
       private readonly ILogger<BlockIndexer> log;
       readonly IStorage data;
@@ -269,9 +267,9 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             {
                List<string> allIndexes = data.GetBlockIndexIndexes();
 
-               if (allIndexes.Count != ExpectedNumberOfIndexes)
+               if (allIndexes.Count != config.IndexCountForBlockIndexProperty)
                {
-                  throw new ApplicationException($"Expected {ExpectedNumberOfIndexes} indexes but got {allIndexes.Count}");
+                  throw new ApplicationException($"Expected {config.IndexCountForBlockIndexProperty} indexes but got {allIndexes.Count}");
                }
 
                Runner.GlobalState.IndexMode = false;
