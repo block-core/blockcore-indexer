@@ -1,9 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Cirrus.Storage;
-using Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
-using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Paging;
 using Blockcore.Indexer.Core.Storage.Types;
@@ -20,18 +17,11 @@ namespace Blockcore.Indexer.Cirrus.Controllers
    {
       private readonly IPagingHelper paging;
       private readonly ICirrusStorage cirrusMongoData;
-      readonly IComputeSmartContractService<DaoContractTable> daoContractService;
-      readonly IComputeSmartContractService<StandardTokenContractTable> standardTokenService;
-      readonly IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService;
 
-      public CirrusQueryController(IPagingHelper paging,
-         IComputeSmartContractService<DaoContractTable> daoContractAggregator, ICirrusStorage cirrusMongoData, IComputeSmartContractService<StandardTokenContractTable> standardTokenService, IComputeSmartContractService<NonFungibleTokenContractTable> nonFungibleTokenService)
+      public CirrusQueryController(IPagingHelper paging, ICirrusStorage cirrusMongoData)
       {
          this.paging = paging;
-         daoContractService = daoContractAggregator;
          this.cirrusMongoData = cirrusMongoData;
-         this.standardTokenService = standardTokenService;
-         this.nonFungibleTokenService = nonFungibleTokenService;
       }
 
       [HttpGet]
@@ -46,6 +36,16 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       public IActionResult GetContracts([MinLength(2)][MaxLength(100)] string contractType, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.ListContracts(contractType, offset, limit));
+      }
+
+      [HttpGet]
+      [Route("contracts/logs")]
+      public IActionResult GetContracts([Range(0, long.MaxValue)] long startBlock,[Range(0, long.MaxValue)] long endBlock, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 1000)] int limit = 1000)
+      {
+         if (endBlock < startBlock)
+            return BadRequest();
+
+         return OkPaging(cirrusMongoData.ListBLocksLogs(startBlock,endBlock, offset, limit));
       }
 
       [HttpGet]

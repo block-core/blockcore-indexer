@@ -40,5 +40,7 @@ namespace Blockcore.Indexer.Core.Settings
       public int NumberOfPullerTasksForIBD { get; set; }
       public int MaxItemsInBlockingCollection { get; set; }
       public int MaxItemsInHistoryQueue { get; set; }
+
+      public int IndexCountForBlockIndexProperty { get;set; }
    }
 }
