@@ -1,3 +1,12 @@
+## <small>0.2.43 (2022-12-07)</small>
+
+* Added an endpoint to get the logs based on range of block ids (#181) ([59b9560](https://github.com/block-core/blockcore-indexer/commit/59b9560)), closes [#181](https://github.com/block-core/blockcore-indexer/issues/181) [#171](https://github.com/block-core/blockcore-indexer/issues/171)
+* Revert "Blockhash property added (#174)" (#177) ([0ac0541](https://github.com/block-core/blockcore-indexer/commit/0ac0541)), closes [#174](https://github.com/block-core/blockcore-indexer/issues/174) [#177](https://github.com/block-core/blockcore-indexer/issues/177)
+* Revert "Revert "Blockhash property added (#174)" (#177)" (#178) ([4835f90](https://github.com/block-core/blockcore-indexer/commit/4835f90)), closes [#174](https://github.com/block-core/blockcore-indexer/issues/174) [#177](https://github.com/block-core/blockcore-indexer/issues/177) [#178](https://github.com/block-core/blockcore-indexer/issues/178)
+* Update version and changelog ([131b220](https://github.com/block-core/blockcore-indexer/commit/131b220))
+
+
+
 ## <small>0.2.42 (2022-12-04)</small>
 
 * Add instructions on how to run the indexer ([06d3c8a](https://github.com/block-core/blockcore-indexer/commit/06d3c8a))
