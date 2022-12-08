@@ -114,17 +114,17 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          };
       }
 
-      public QueryResult<QueryBlockSmartContractsLogs> ListBLocksLogs(long startBlock, long endBlock, int? offset, int limit)
+      public async Task<QueryResult<QueryBlockSmartContractsLogs>> ListContractLogsAsync(long startBlock, long endBlock, int? offset, int limit)
       {
-         var total = mongoDb.CirrusContractTable
+         var query = mongoDb.CirrusContractTable
             .AsQueryable()
-            .Count(_ => _.BlockIndex >= startBlock && _.BlockIndex <= endBlock);
+            .Where(_ => _.BlockIndex >= startBlock && _.BlockIndex <= endBlock && _.Logs.Any());
 
-         var contracts = mongoDb.CirrusContractTable.AsQueryable()
-            .Where(_ => _.BlockIndex >= startBlock && _.BlockIndex <= endBlock)
-            .Skip((offset ?? 0) * limit)
-            .Take(limit)
-            .ToList();
+         var total = await query.CountAsync();
+
+         var contracts = await query.Skip(offset ?? 0)
+                                    .Take(limit)
+                                    .ToListAsync();
 
          var response = contracts.Select(receipt =>
             new QueryBlockSmartContractsLogs
@@ -133,17 +133,20 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                From = receipt.FromAddress,
                To = receipt.ToAddress,
                BlockNumber = receipt.BlockIndex,
+               BlockHash = receipt.BlockHash,
                TransactionHash = receipt.TransactionId,
                Success = receipt.Success,
                Error = receipt.Error,
                PostState = receipt.PostState,
                GasUsed = receipt.GasUsed,
-               BlockHash = receipt.BlockHash,
-               Logs = receipt.Logs.Select(l => new Blockcore.Indexer.Cirrus.Models.QueryBlockSmartContractsLogs.LogResponse
+               Logs = receipt.Logs.Select(l => new QueryBlockSmartContractsLogs.LogResponse
                {
-                  Address = l.Address,Data = l.Data,Log = new QueryBlockSmartContractsLogs.LogData
+                  Address = l.Address,
+                  Data = l.Data,
+                  Log = new QueryBlockSmartContractsLogs.LogData
                   {
-                     Data = l.Log.Data,Event = l.Log.Event
+                     Data = l.Log.Data,
+                     Event = l.Log.Event
                   },
                   Topics = l.Topics
                }).ToArray()
