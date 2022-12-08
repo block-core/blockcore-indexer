@@ -1,3 +1,28 @@
+## <small>0.2.43 (2022-12-07)</small>
+
+* Added an endpoint to get the logs based on range of block ids (#181) ([59b9560](https://github.com/block-core/blockcore-indexer/commit/59b9560)), closes [#181](https://github.com/block-core/blockcore-indexer/issues/181) [#171](https://github.com/block-core/blockcore-indexer/issues/171)
+* Revert "Blockhash property added (#174)" (#177) ([0ac0541](https://github.com/block-core/blockcore-indexer/commit/0ac0541)), closes [#174](https://github.com/block-core/blockcore-indexer/issues/174) [#177](https://github.com/block-core/blockcore-indexer/issues/177)
+* Revert "Revert "Blockhash property added (#174)" (#177)" (#178) ([4835f90](https://github.com/block-core/blockcore-indexer/commit/4835f90)), closes [#174](https://github.com/block-core/blockcore-indexer/issues/174) [#177](https://github.com/block-core/blockcore-indexer/issues/177) [#178](https://github.com/block-core/blockcore-indexer/issues/178)
+* Update version and changelog ([131b220](https://github.com/block-core/blockcore-indexer/commit/131b220))
+
+
+
+## <small>0.2.42 (2022-12-04)</small>
+
+* Add instructions on how to run the indexer ([06d3c8a](https://github.com/block-core/blockcore-indexer/commit/06d3c8a))
+* Migrate Startup and drop duplicate container registration code ([f503639](https://github.com/block-core/blockcore-indexer/commit/f503639))
+* Update version and changelog ([15f68d0](https://github.com/block-core/blockcore-indexer/commit/15f68d0))
+
+
+
+## <small>0.2.41 (2022-12-04)</small>
+
+* Added endpoint to calculate the balance for multiple addresses in one request (#169) ([f9224f5](https://github.com/block-core/blockcore-indexer/commit/f9224f5)), closes [#169](https://github.com/block-core/blockcore-indexer/issues/169)
+* Blockhash property added (#174) ([d20be72](https://github.com/block-core/blockcore-indexer/commit/d20be72)), closes [#174](https://github.com/block-core/blockcore-indexer/issues/174)
+* Update version and changelog ([e0728b2](https://github.com/block-core/blockcore-indexer/commit/e0728b2))
+
+
+
 ## <small>0.2.40 (2022-10-27)</small>
 
 * Add Molie network package to indexer ([3743489](https://github.com/block-core/blockcore-indexer/commit/3743489))

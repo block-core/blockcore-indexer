@@ -21,6 +21,95 @@ Blockcore Indexer scans the blockchain of Blockcore-derived chains and stores tr
 
 Blockcore Indexer API can be searched by segwit addresses and Cold-Staking (hot and cold key) script types.
 
+## How to run
+
+There are multiple ways you can run the indexer software, either from source code, from binaries or using docker.
+
+When you run the indexer, you can either run it with a global configuration hosted by Blockcore, or with a custom local configuration.
+
+
+
+### Docker (manual)
+
+```sh
+# Run interactively and read globla configuration for CITY
+docker run -it blockcore/indexer:latest --CHAIN=CITY
+```
+When this is run, the following configuration is downloaded and applied:
+
+[CITY.json](https://github.com/block-core/chaininfo/blob/master/chains/CITY.json)
+
+The configuration is used by multiple software, not just Indexer, and the Indexer part is the "Indexer". For most global configuration, it's only this configuration:
+
+```json
+  "Indexer": {
+    "StoreRawTransactions": true
+  },
+```
+
+The default configurations are read from [appsetting.json](src/Blockcore.Indexer/appsettings.json), which has these fields:
+
+```json
+   "Indexer": {
+      "ConnectionString": "mongodb://{Symbol}-mongo",
+      "DatabaseNameSubfix": true,
+
+      "RpcDomain": "{Symbol}-chain",
+      "RpcSecure": false,
+      "RpcUser": "rpcuser",
+      "RpcPassword": "rpcpassword",
+
+      // Notification parameters
+      "NotifyUrl": "https://apiurl",
+      "NotifyBatchCount": 0,
+
+      // Syncing parameters
+      "SyncBlockchain": true,
+      "SyncMemoryPool": true,
+      "MongoBatchSize": 10000000,
+      "MongoBatchCount" : 10000,
+      "ParallelRequestsToTransactionRpc": 50,
+      "DetailedTrace": 0,
+      "MaxItemsInQueue": 10,
+      "SyncInterval": 5,
+      "AverageInterval": 10,
+
+      // Store the trx hex in mongo storage or read it from RPC
+      "StoreRawTransactions": true,
+      "NumberOfPullerTasksForIBD" : 5,
+      "MaxItemsInBlockingCollection" : 1000
+   }
+```
+The most important setting if you're running a manual setup, is the `ConnectionString` which by default attempts to connect to another docker container with the name `city-mongo` in this instance. The other important setting is `RpcDomain`, which is the fullnode that has the blockchain data. Ensure you have configured the correct `RpcUser` and `RpcPassword`.
+
+To override these settings, you can provide them through environment variables or parameters like the following:
+
+```sh
+docker run -it blockcore/indexer:latest --chain=CITY -e "Indexer:ConnectionString=mongodb://127.0.0.1:27017" -e "Indexer:RpcDomain=127.0.0.1" -e "Indexer:RpcUser=rpcuser1" -e "Indexer:RpcPassword=rpcpassword1"
+```
+
+## Run from source
+
+```sh
+dotnet run --project src/Blockcore.Indexer/Blockcore.Indexer.csproj --chain=CITY --Indexer:ConnectionString=mongodb://127.0.0.1:27017 --Indexer:RpcDomain=127.0.0.1 --Indexer:RpcUser=rpcuser1 --Indexer:RpcPassword=rpcpassword1
+```
+
+You can also run the node from source like this, from the `blockcore` repository:
+
+```sh
+# It is important to set server=1 which is off by default, to enable RPC.
+dotnet run --project src/Node/Blockcore.Node/Blockcore.Node.csproj --CHAIN=CITY -server=1 -rpcuser=rpcuser1 -rpcpassword=rpcpassword1
+```
+
+When starting it the node, you should see something like:
+
+```
+info: Blockcore.Features.RPC.RPCFeature[0]
+      RPC listening on:
+      http://[::1]:4334/
+      http://127.0.0.1:4334/
+```
+
 ## Usage examples
 
 If you want to quickly learn how to use the indexer for a custom solution, such as an block explorer, please look at our [Blockcore Explorer](https://github.com/block-core/blockcore-explorer) source code on how to implement paging and other features.

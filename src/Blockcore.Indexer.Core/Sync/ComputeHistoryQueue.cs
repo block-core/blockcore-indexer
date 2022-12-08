@@ -20,12 +20,15 @@ public class ComputeHistoryQueue : IComputeHistoryQueue
 
    public void AddAddressToComputeHistoryQueue(string address)
    {
-      if (indexerSettings.MaxItemsInHistoryQueue <= 0 ||
-          collection.Count >= indexerSettings.MaxItemsInHistoryQueue)
+      if (indexerSettings.MaxItemsInHistoryQueue <= 0 || collection.Count >= indexerSettings.MaxItemsInHistoryQueue)
+      {
          return;
+      }
 
       if (!collection.Contains(address))
+      {
          collection.Enqueue(address);
+      }
    }
 
    public bool GetNextItemFromQueue(out string address)
