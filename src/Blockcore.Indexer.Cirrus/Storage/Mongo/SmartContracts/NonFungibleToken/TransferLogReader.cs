@@ -10,26 +10,29 @@ public class TransferLogReader : ILogReader<NonFungibleTokenContractTable, Types
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferLog") || methodType.Equals("TransferFrom");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
+   public bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event.Equals("TransferLog"));
 
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      var log = contractTransaction.Logs?.First();
+      var transferLog = contractTransaction.Logs?.First(_ => _.Log.Event.Equals("TransferLog"));
 
-      if (log is null)
-         throw new ArgumentNullException(nameof(log));
+      if (transferLog is null)
+         throw new ArgumentNullException(nameof(transferLog));
 
-      string tokenId = (string)log.Log.Data["tokenId"];
+      if (!transferLog.Log.Data.ContainsKey("tokenId"))
+         throw new Exception($"token id not found in transfer log for {contractTransaction.TransactionId}");
+
+      string tokenId = transferLog.Log.Data["tokenId"]?.ToString();
 
       //var token = computedTable.Tokens.First(_ => _.Id == tokenId);
 
-      string owner = (string)log.Log.Data["to"];
+      string owner = transferLog.Log.Data["to"].ToString();
 
       var sale = new OwnershipTransfer
       {
-         From = (string)log.Log.Data["from"],
-         To = (string)log.Log.Data["to"],
+         From = (string)transferLog.Log.Data["from"],
+         To = owner,
          TransactionId = contractTransaction.TransactionId,
       };
 

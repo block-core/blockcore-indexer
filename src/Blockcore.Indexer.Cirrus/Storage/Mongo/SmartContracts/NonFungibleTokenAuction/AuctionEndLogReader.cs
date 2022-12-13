@@ -17,15 +17,16 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Type
 
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("AuctionEnd");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
+   public bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event.Equals("TransferLog"))
+   && logs.Any(_ => _.Log.Event.StartsWith("AuctionEnd"));
 
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      var transferLog = contractTransaction.Logs[0];
-      var auctionLog = contractTransaction.Logs[1];
+      var transferLog = contractTransaction.Logs.First(_ => _.Log.Event.Equals("TransferLog"));
+      var auctionLog = contractTransaction.Logs.First(_ => _.Log.Event.StartsWith("AuctionEnd"));
 
-      string tokenId = (string)transferLog.Log.Data["tokenId"];
+      string tokenId = transferLog.Log.Data["tokenId"].ToString();
 
       bool success = auctionLog.Log.Event switch
       {
