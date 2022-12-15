@@ -35,7 +35,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}")]
-      public IActionResult GetAddress([MinLength(4)][MaxLength(100)] string address)
+      public IActionResult GetAddressBalance([MinLength(4)][MaxLength(100)] string address)
       {
          return Ok(storage.AddressBalance(address));
       }

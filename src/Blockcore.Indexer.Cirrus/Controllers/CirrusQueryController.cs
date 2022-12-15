@@ -33,14 +33,14 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/list/{contractType}")]
-      public IActionResult GetContracts([MinLength(2)][MaxLength(100)] string contractType, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetContractsOfType([MinLength(2)][MaxLength(100)] string contractType, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.ListContracts(contractType, offset, limit));
       }
 
       [HttpGet]
       [Route("contracts/logs")]
-      public IActionResult GetContracts([Range(0, long.MaxValue)] long startBlock,[Range(0, long.MaxValue)] long endBlock, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 1000)] int limit = 1000)
+      public IActionResult GetContractsLogs([Range(0, long.MaxValue)] long startBlock,[Range(0, long.MaxValue)] long endBlock, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 1000)] int limit = 1000)
       {
          if (endBlock < startBlock)
             return BadRequest();
@@ -50,49 +50,49 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("collectables/{ownerAddress}")]
-      public IActionResult GetAddressAssets([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetNonFungibleTokensOwnedByAddress([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.GetNonFungibleTokensForAddressAsync(ownerAddress,offset,limit).Result);
       }
 
       [HttpGet]
       [Route("tokens/{ownerAddress}")]
-      public IActionResult GettokensForAddress([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetStandardTokensOwnedByAddress([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.GetStandardTokensForAddressAsync(ownerAddress,offset,limit).Result);
       }
 
       [HttpGet]
       [Route("contract/{address}")]
-      public IActionResult GetAddressContract([MinLength(30)][MaxLength(100)] string address)
+      public IActionResult GetSmartContractCreateTransaction([MinLength(30)][MaxLength(100)] string address)
       {
          return Ok(cirrusMongoData.ContractCreate(address));
       }
 
       [HttpGet]
       [Route("contract/{address}/transactions")]
-      public IActionResult GetAddressCall([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetSmartContractCallTransactions([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.ContractCall(address, null, offset, limit));
       }
 
       [HttpGet]
       [Route("contract/{address}/transactions/{filterAddress}")]
-      public IActionResult GetAddressCallFilter([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetSmartContractCallTransactionsBySender([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.ContractCall(address, filterAddress, offset, limit));
       }
 
       [HttpGet]
       [Route("contract/transaction/{transactionid}")]
-      public IActionResult GetTransactionContract([MinLength(30)][MaxLength(100)] string transactionid)
+      public IActionResult GetSmartContractTransactionById([MinLength(30)][MaxLength(100)] string transactionid)
       {
          return Ok(cirrusMongoData.ContractTransaction(transactionid));
       }
 
       [HttpGet]
       [Route("contract/code/{address}")]
-      public IActionResult GetContractCode([MinLength(30)][MaxLength(100)] string address)
+      public IActionResult GetSmartContractCodeByAddress([MinLength(30)][MaxLength(100)] string address)
       {
          return Ok(cirrusMongoData.ContractCode(address));
       }
@@ -130,7 +130,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [HttpGet]
       [Route("contract/standardtoken/{address}/{filterAddress}")]
       [SlowRequestsFilteerAttribute]
-      public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress)
+      public async Task<IActionResult> GetStandardTokenContractByAddressFiltered([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress)
       {
          var contract = await cirrusMongoData.GetStandardTokenByIdAsync(address, filterAddress);
 

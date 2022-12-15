@@ -31,21 +31,21 @@ namespace Blockcore.Indexer.Core.Controllers
 
       [HttpGet]
       [Route("heartbeat")]
-      public IActionResult Heartbeat()
+      public IActionResult GetHeartbeat()
       {
          return Ok("Heartbeat");
       }
 
       [HttpGet]
       [Route("connections")]
-      public async Task<IActionResult> Connections()
+      public async Task<IActionResult> GetConnections()
       {
          StatsConnection ret = await statsHandler.StatsConnection();
          return Ok(ret);
       }
 
       [HttpGet()]
-      public async Task<IActionResult> Get()
+      public async Task<IActionResult> GetStats()
       {
          Statistics ret = await statsHandler.Statistics();
          return Ok(ret);
@@ -57,7 +57,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("info")]
-      public async Task<IActionResult> Info()
+      public async Task<IActionResult> GetInfo()
       {
          CoinInfo ret = await statsHandler.CoinInformation();
          return Ok(ret);
@@ -69,7 +69,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("peers")]
-      public async Task<IActionResult> Peers()
+      public async Task<IActionResult> GetCurrentPeers()
       {
          System.Collections.Generic.List<Client.Types.PeerInfo> ret = await statsHandler.Peers();
          return Ok(ret);
@@ -81,7 +81,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("peers/{date}")]
-      public IActionResult Peers(DateTime date)
+      public IActionResult GetPeersFromDate(DateTime date)
       {
          List<Client.Types.PeerInfo> list = storage.GetPeerFromDate(date);
          return Ok(list);

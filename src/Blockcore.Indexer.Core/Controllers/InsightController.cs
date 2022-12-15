@@ -107,7 +107,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// </summary>
       /// <returns></returns>
       [HttpGet("wallets")]
-      public IActionResult GetWallets()
+      public IActionResult GetKnownWallets()
       {
          if (!cache.TryGetValue(CacheKeys.Wallets, out List<Wallet> funds))
          {

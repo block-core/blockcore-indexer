@@ -15,8 +15,6 @@ using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Sync;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
-using Blockcore.Utilities;
-using ConcurrentCollections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -27,6 +25,7 @@ using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using Newtonsoft.Json;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Blockcore.Indexer.Core
 {
@@ -110,6 +109,17 @@ namespace Blockcore.Indexer.Core
             options =>
             {
                string assemblyVersion = typeof(Startup).Assembly.GetName().Version.ToString();
+
+               options.CustomOperationIds(e =>
+               {
+                  if (!e.TryGetMethodInfo(out MethodInfo methodInfo)) return null;
+                  // convert method name to camelCase
+                  return string.Create(methodInfo.Name.Length, methodInfo.Name, (chars, methodName) =>
+                  {
+                     methodName.AsSpan().CopyTo(chars);
+                     chars[0] = char.ToLower(methodName[0]);
+                  });
+               });
 
                options.SwaggerDoc("indexer",
                   new OpenApiInfo
