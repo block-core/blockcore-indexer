@@ -1,3 +1,10 @@
+## <small>0.2.44 (2022-12-16)</small>
+
+* bump version ([ce65206](https://github.com/block-core/blockcore-indexer/commit/ce65206))
+* Fixed pagination bug & improvements (#182) ([7f7d75a](https://github.com/block-core/blockcore-indexer/commit/7f7d75a)), closes [#182](https://github.com/block-core/blockcore-indexer/issues/182)
+
+
+
 ## <small>0.2.43 (2022-12-07)</small>
 
 * Added an endpoint to get the logs based on range of block ids (#181) ([59b9560](https://github.com/block-core/blockcore-indexer/commit/59b9560)), closes [#181](https://github.com/block-core/blockcore-indexer/issues/181) [#171](https://github.com/block-core/blockcore-indexer/issues/171)
