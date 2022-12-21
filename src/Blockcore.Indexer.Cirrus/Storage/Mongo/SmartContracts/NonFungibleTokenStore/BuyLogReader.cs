@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
+using FASTER.core;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -10,9 +11,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class BuyLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Buy");
-
-   public override List<LogType> RequiredLogs { get; set; } = new()
+   public override List<string> SupportedMethods { get; } = new() { "Buy" };
+   public override List<LogType> RequiredLogs { get; } = new()
    {
       LogType.TransferLog, LogType.TokenPurchasedLog
    };

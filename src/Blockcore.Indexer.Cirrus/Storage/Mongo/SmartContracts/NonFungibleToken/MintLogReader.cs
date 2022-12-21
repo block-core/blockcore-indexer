@@ -9,9 +9,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class MintLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable,NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Mint");
-
-   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.TransferLog, LogType.MintExtract };
+   public override List<string> SupportedMethods { get; } = new() { "Mint" };
+   public override List<LogType> RequiredLogs { get; } = new() { LogType.TransferLog, LogType.MintExtract };
 
    public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)

@@ -9,21 +9,13 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class AuctionEndLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
-   ICirrusMongoDb db;
-
-   public AuctionEndLogReader(ICirrusMongoDb db)
-   {
-      this.db = db;
-   }
-
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("AuctionEnd");
-
-   public override List<LogType> RequiredLogs { get; set; }
+   public override List<string> SupportedMethods { get; } = new (){"AuctionEnd"};
+   public override List<LogType> RequiredLogs { get; }
 
    public override bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event.Equals("TransferLog"))
                                                                         && logs.Any(_ => _.Log.Event.StartsWith("AuctionEnd"));
 
-   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
       var transferLog = GetLogByType(LogType.TransferLog,contractTransaction.Logs);
@@ -44,7 +36,7 @@ public class AuctionEndLogReader : LogReaderBase,ILogReader<NonFungibleTokenCont
       {
          updateInstruction = new UpdateOneModel<NonFungibleTokenTable>(Builders<NonFungibleTokenTable>.Filter
                .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-            Builders<Types.NonFungibleTokenTable>.Update
+            Builders<NonFungibleTokenTable>.Update
                .Set(_ => _.Owner, (string)auctionLog.Log.Data["highestBidder"])
                .Set("SalesHistory.$[i].Success", true)
                .Set("SalesHistory.$[i].AuctionEnded", true));

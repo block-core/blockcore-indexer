@@ -9,11 +9,10 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenStore;
 
-public class CancelSaleLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
+public class CancelSaleLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable,NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("CancelSale");
-
-   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.TransferLog };
+   public override List<string> SupportedMethods { get; } = new() { "CancelSale" };
+   public override List<LogType> RequiredLogs { get; } = new() { LogType.TransferLog };
 
    public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)

@@ -7,7 +7,10 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts;
 
 public abstract class LogReaderBase
 {
-   public abstract List<LogType> RequiredLogs { get; set; }
+   public abstract List<LogType> RequiredLogs { get; }
+   public abstract List<string> SupportedMethods { get; }
+
+   public virtual bool CanReadLogForMethodType(string methodType) => SupportedMethods is null || SupportedMethods.Contains(methodType);
 
    public virtual bool IsTransactionLogComplete(LogResponse[] logs)
    {

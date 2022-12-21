@@ -8,9 +8,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class PendingOwnerLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("SetPendingOwner");
-
-   public override List<LogType> RequiredLogs { get; set; }
+   public override List<string> SupportedMethods { get; } = new() { "SetPendingOwner" };
+   public override List<LogType> RequiredLogs { get; }
    public bool IsTransactionLogComplete(LogResponse[] logs) => true;
 
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,

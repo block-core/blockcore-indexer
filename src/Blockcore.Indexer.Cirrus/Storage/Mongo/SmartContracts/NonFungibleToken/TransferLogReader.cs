@@ -9,9 +9,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class TransferLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferLog") || methodType.Equals("TransferFrom");
-
-   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.TransferLog };
+   public override List<string> SupportedMethods { get; } = new() { "TransferLog", "TransferFrom" };
+   public override List<LogType> RequiredLogs { get; } = new() { LogType.TransferLog };
 
    public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
@@ -32,9 +31,9 @@ public class TransferLogReader : LogReaderBase,ILogReader<NonFungibleTokenContra
          TransactionId = contractTransaction.TransactionId,
       };
 
-      return new [] {new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
+      return new [] {new UpdateOneModel<NonFungibleTokenTable>(Builders<NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, owner)
+         Builders<NonFungibleTokenTable>.Update.Set(_ => _.Owner, owner)
             .AddToSet(_ => _.SalesHistory, sale)) };
    }
 }

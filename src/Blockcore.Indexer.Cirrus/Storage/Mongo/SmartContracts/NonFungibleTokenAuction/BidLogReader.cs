@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
-using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -9,18 +7,11 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class BidLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
-   ICirrusMongoDb db;
+   public override List<string> SupportedMethods { get; } = new() { "Bid" };
 
-   public BidLogReader(ICirrusMongoDb db)
-   {
-      this.db = db;
-   }
+   public override List<LogType> RequiredLogs { get; } = new() { LogType.HighestBidUpdatedLog };
 
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Bid");
-
-   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.HighestBidUpdatedLog };
-
-   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
       var auctionLog = GetLogByType(LogType.HighestBidUpdatedLog,contractTransaction.Logs);

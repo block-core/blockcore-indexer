@@ -7,9 +7,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class ClaimOwnershipLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable, NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("ClaimOwnership");
-
-   public override List<LogType> RequiredLogs { get; set; }
+   public override List<string> SupportedMethods { get; } = new() { "ClaimOwnership" };
+   public override List<LogType> RequiredLogs { get; }
 
    public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)

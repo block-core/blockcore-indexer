@@ -6,9 +6,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class BurnLogReader: LogReaderBase,ILogReader<NonFungibleTokenContractTable,NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Burn");
-
-   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.TransferLog };
+   public override List<string> SupportedMethods { get; } = new() { "Burn" };
+   public override List<LogType> RequiredLogs { get; } = new() { LogType.TransferLog };
 
    public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)

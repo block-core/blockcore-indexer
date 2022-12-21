@@ -9,9 +9,9 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
 class ExecuteProposalLogReader : LogReaderBase,ILogReader<DaoContractTable, DaoContractProposalTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType == "ExecuteProposal";
+   public override List<string> SupportedMethods { get; } = new() { "ExecuteProposal" };
 
-   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.ProposalExecutedLog };
+   public override List<LogType> RequiredLogs { get; } = new() { LogType.ProposalExecutedLog };
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)

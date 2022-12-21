@@ -9,9 +9,9 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
 class DepositLogReader : LogReaderBase,ILogReader<DaoContractTable,DaoContractProposalTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType == "Deposit";
+   public override List<string> SupportedMethods { get; } = new() { "Deposit" };
 
-   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.FundRaisedLog };
+   public override List<LogType> RequiredLogs { get; } = new() { LogType.FundRaisedLog };
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)

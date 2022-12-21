@@ -7,9 +7,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
 class WhitelistAddressesLogReader : LogReaderBase,ILogReader<DaoContractTable,DaoContractProposalTable>
 {
-   public override List<LogType> RequiredLogs { get; set; }
-
-   public bool CanReadLogForMethodType(string methodType) => methodType is "WhitelistAddresses" or "WhitelistAddress";
+   public override List<LogType> RequiredLogs { get; }
+   public override List<string> SupportedMethods { get; } = new() { "WhitelistAddresses", "WhitelistAddress" };
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)

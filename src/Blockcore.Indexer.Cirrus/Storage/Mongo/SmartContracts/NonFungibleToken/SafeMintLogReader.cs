@@ -9,9 +9,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class SafeMintLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable, NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("SafeMint");
-
-   public override List<LogType> RequiredLogs { get; set; }
+   public override List<string> SupportedMethods { get; } = new() { "SafeMint" };
+   public override List<LogType> RequiredLogs { get; }
    public override bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event.Equals("TransferLog")) &&
                                                                         logs.Any(_ => _.Log.Event.Equals("MintExtract")) &&
                                                                         logs.Any(_ =>

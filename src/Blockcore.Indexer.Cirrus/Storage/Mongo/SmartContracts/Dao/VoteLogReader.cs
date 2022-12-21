@@ -10,9 +10,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
 class VoteLogReader : LogReaderBase, ILogReader<DaoContractTable, DaoContractProposalTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType == "Vote";
-
-   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.ProposalVotedLog };
+   public override List<string> SupportedMethods { get; } = new() { "Vote" };
+   public override List<LogType> RequiredLogs { get; } = new() { LogType.ProposalVotedLog };
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(
       CirrusContractTable contractTransaction,

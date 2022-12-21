@@ -9,9 +9,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.StandardToken;
 
 public class TransferToAndFromLogReader : LogReaderBase,ILogReader<StandardTokenContractTable, StandardTokenHolderTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferTo") || methodType.Equals("TransferFrom");
-
-   public override List<LogType> RequiredLogs { get; set; } = new (){ LogType.TransferLog };
+   public override List<string> SupportedMethods { get; } = new() { "TransferTo", "TransferFrom" };
+   public override List<LogType> RequiredLogs { get; } = new (){ LogType.TransferLog };
 
    public WriteModel<StandardTokenHolderTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       StandardTokenContractTable computedTable)

@@ -9,9 +9,8 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
 class UpdateMaxVotingDurationLogReader : LogReaderBase,ILogReader<DaoContractTable,DaoContractProposalTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType == "UpdateMaxVotingDuration";
-
-   public override List<LogType> RequiredLogs { get; set; }
+   public override List<string> SupportedMethods { get; } = new() { "UpdateMaxVotingDuration" };
+   public override List<LogType> RequiredLogs { get; }
    public bool IsTransactionLogComplete(LogResponse[] logs) => false;
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
