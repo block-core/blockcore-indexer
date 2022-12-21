@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using MongoDB.Driver;
 
