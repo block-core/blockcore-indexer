@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -7,28 +8,30 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenStore;
 
-public class BuyLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
+public class BuyLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Buy");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
-
-   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public override List<LogType> RequiredLogs { get; set; } = new()
+   {
+      LogType.TransferLog, LogType.TokenPurchasedLog
+   };
+   public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      var transferLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "TransferLog");
-      var tokenPurchaseLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "TokenPurchasedLog");
-      var royaltyPaidLog = contractTransaction.Logs.SingleOrDefault(_ => _.Log.Event == "RoyaltyPaidLog");
+      var transferLog = GetLogByType(LogType.TransferLog, contractTransaction.Logs);
+      var tokenPurchaseLog = GetLogByType(LogType.TokenPurchasedLog, contractTransaction.Logs);
+      var royaltyPaidLog = GetLogByType(LogType.RoyaltyPaidLog, contractTransaction.Logs);
 
       string seller = tokenPurchaseLog?.Log.Data.ContainsKey("seller") ?? false
-         ? (string)tokenPurchaseLog.Log.Data["seller"]
+         ? tokenPurchaseLog.Log.Data["seller"].ToString()
          :  string.Empty;
 
-      string tokenId = (string)transferLog.Log.Data["tokenId"];
+      string tokenId = transferLog.Log.Data["tokenId"].ToString();
 
-      string buyer =(string)tokenPurchaseLog.Log.Data["buyer"];
+      string buyer = tokenPurchaseLog.Log.Data["buyer"].ToString();
 
-      var updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
+      var updateInstruction = new UpdateOneModel<NonFungibleTokenTable>(Builders<NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
          Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.Owner, buyer)
             .Set("SalesHistory.$[i].Buyer", buyer)

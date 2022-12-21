@@ -8,25 +8,18 @@ public class SalesEventReader
 {
    public static TokenSaleEvent SaleDetails(string transactionId, LogData detailsLog, LogData log)
    {
-      try
+      return detailsLog.Event switch
       {
-         return detailsLog.Event switch
-         {
-            "TokenOnSaleLog" => GetSaleDetails(transactionId, detailsLog, log),
-            "AuctionStartedLog" => GetAuctionDetails(transactionId, detailsLog, log),
-            _ => null
-         };
-      }
-      catch (Exception)
-      {
-         throw;
-      }
+         "TokenOnSaleLog" => GetSaleDetails(transactionId, detailsLog, log),
+         "AuctionStartedLog" => GetAuctionDetails(transactionId, detailsLog, log),
+         _ => null
+      };
    }
 
    private static OnSale GetSaleDetails(string transactionId, LogData saleLog, LogData log) =>
       new()
       {
-         Seller = (string)saleLog.Data["seller"],
+         Seller = saleLog.Data["seller"].ToString(),
          Price = (long)saleLog.Data["price"],
          TransactionId = transactionId
       };
@@ -34,7 +27,7 @@ public class SalesEventReader
    private static Auction GetAuctionDetails(string transactionId, LogData auctionLog, LogData log) =>
       new()
       {
-         Seller = (string)auctionLog.Data["seller"],
+         Seller = auctionLog.Data["seller"].ToString(),
          StartingPrice = (long)auctionLog.Data["startingPrice"],
          EndBlock = (long)auctionLog.Data["endBlock"],
          TransactionId = transactionId

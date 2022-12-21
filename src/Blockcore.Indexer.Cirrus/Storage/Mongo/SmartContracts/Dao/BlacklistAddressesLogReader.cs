@@ -1,15 +1,16 @@
 using System;
+using System.Collections.Generic;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class BlacklistAddressesLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
+class BlacklistAddressesLogReader : LogReaderBase,ILogReader<DaoContractTable, DaoContractProposalTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType is "BlacklistAddresses" or "BlacklistAddress";
+   public override List<LogType> RequiredLogs { get; set; }
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => false;
+   public bool CanReadLogForMethodType(string methodType) => methodType is "BlacklistAddresses" or "BlacklistAddress";
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)

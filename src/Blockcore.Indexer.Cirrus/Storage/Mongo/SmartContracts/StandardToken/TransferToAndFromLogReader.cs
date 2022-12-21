@@ -7,13 +7,11 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.StandardToken;
 
-public class TransferToAndFromLogReader : ILogReader<StandardTokenContractTable, StandardTokenHolderTable>
+public class TransferToAndFromLogReader : LogReaderBase,ILogReader<StandardTokenContractTable, StandardTokenHolderTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferTo") || methodType.Equals("TransferFrom");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => logs?.Any(_ => _.Log.Data.ContainsKey("from") &&
-                                                                             _.Log.Data.ContainsKey("to") &&
-                                                                             _.Log.Data.ContainsKey("amount")) ?? false;
+   public override List<LogType> RequiredLogs { get; set; } = new (){ LogType.TransferLog };
 
    public WriteModel<StandardTokenHolderTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       StandardTokenContractTable computedTable)
@@ -23,16 +21,16 @@ public class TransferToAndFromLogReader : ILogReader<StandardTokenContractTable,
          return Array.Empty<WriteModel<StandardTokenHolderTable>>(); //Need to understand why this happens (example transaction id - a03a7c0122668c9c6d5a7bb47494f903a89519d8fbec2df135eb6687047c58d5)
       }
 
-      string fromAddress = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["from"];
-      string toAddress = (string)contractTransaction.Logs.SingleOrDefault().Log.Data["to"];
-      object objectAmount = contractTransaction.Logs.SingleOrDefault().Log.Data["amount"];
+      var transferLog = GetLogByType(LogType.TransferLog, contractTransaction.Logs);
 
-
+      string fromAddress = (string)transferLog.Log.Data["from"];
+      string toAddress = (string)transferLog.Log.Data["to"];
+      object objectAmount = transferLog.Log.Data["amount"];
 
       long? amount = objectAmount switch
       {
          string => Convert.ToInt64(objectAmount),
-         long => (long?)objectAmount,
+         long l => l,
          _ => throw new InvalidCastException(objectAmount.ToString())
       };
 

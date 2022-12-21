@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -6,16 +7,16 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class ExecuteProposalLogReader : ILogReader<DaoContractTable, DaoContractProposalTable>
+class ExecuteProposalLogReader : LogReaderBase,ILogReader<DaoContractTable, DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "ExecuteProposal";
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
+   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.ProposalExecutedLog };
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)
    {
-      var log = contractTransaction.Logs.First().Log.Data;
+      var log = GetLogByType(LogType.ProposalExecutedLog,contractTransaction.Logs).Log.Data;
 
       computedTable.CurrentAmount -= (long)log["amount"];
 

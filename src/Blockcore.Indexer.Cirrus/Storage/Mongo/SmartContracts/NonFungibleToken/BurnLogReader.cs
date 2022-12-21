@@ -1,31 +1,24 @@
-using System;
-using System.Linq;
-using Blockcore.Indexer.Cirrus.Client.Types;
+using System.Collections.Generic;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
-#pragma warning disable CS0253 // Possible unintended reference comparison; right hand side needs cast
 
-public class BurnLogReader: ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
+public class BurnLogReader: LogReaderBase,ILogReader<NonFungibleTokenContractTable,NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Burn");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
+   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.TransferLog };
 
-   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      object tokenId = contractTransaction.Logs.SingleOrDefault().Log.Data["tokenId"];
+      var transgerLog = GetLogByType(LogType.TransferLog, contractTransaction.Logs);
+      string tokenId = transgerLog.Log.Data["tokenId"].ToString();
 
-      string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
-
-      // computedTable.Tokens.Single(_ => _.Id == id)
-      //    .IsBurned = true;
-
-      return new [] { new UpdateOneModel<Types.NonFungibleTokenTable>(
-         Builders<Types.NonFungibleTokenTable>.Filter
+      return new [] { new UpdateOneModel<NonFungibleTokenTable>(
+         Builders<NonFungibleTokenTable>.Filter
             .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-         Builders<Types.NonFungibleTokenTable>.Update.Set(_ => _.IsBurned, true))};
+         Builders<NonFungibleTokenTable>.Update.Set(_ => _.IsBurned, true))};
    }
 }

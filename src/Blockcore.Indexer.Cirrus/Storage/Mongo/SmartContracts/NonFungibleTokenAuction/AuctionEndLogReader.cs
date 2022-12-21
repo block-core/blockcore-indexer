@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -6,7 +7,7 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleTokenAuction;
 
-public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
+public class AuctionEndLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable,Types.NonFungibleTokenTable>
 {
    ICirrusMongoDb db;
 
@@ -17,13 +18,15 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Type
 
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("AuctionEnd");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event.Equals("TransferLog"))
-   && logs.Any(_ => _.Log.Event.StartsWith("AuctionEnd"));
+   public override List<LogType> RequiredLogs { get; set; }
+
+   public override bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event.Equals("TransferLog"))
+                                                                        && logs.Any(_ => _.Log.Event.StartsWith("AuctionEnd"));
 
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      var transferLog = contractTransaction.Logs.First(_ => _.Log.Event.Equals("TransferLog"));
+      var transferLog = GetLogByType(LogType.TransferLog,contractTransaction.Logs);
       var auctionLog = contractTransaction.Logs.First(_ => _.Log.Event.StartsWith("AuctionEnd"));
 
       string tokenId = transferLog.Log.Data["tokenId"].ToString();
@@ -35,11 +38,11 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Type
          _ => false
       };
 
-      UpdateOneModel<Types.NonFungibleTokenTable> updateInstruction;
+      UpdateOneModel<NonFungibleTokenTable> updateInstruction;
 
       if (success)
       {
-         updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
+         updateInstruction = new UpdateOneModel<NonFungibleTokenTable>(Builders<NonFungibleTokenTable>.Filter
                .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
             Builders<Types.NonFungibleTokenTable>.Update
                .Set(_ => _.Owner, (string)auctionLog.Log.Data["highestBidder"])
@@ -60,9 +63,9 @@ public class AuctionEndLogReader : ILogReader<NonFungibleTokenContractTable,Type
       }
       else
       {
-         updateInstruction = new UpdateOneModel<Types.NonFungibleTokenTable>(Builders<Types.NonFungibleTokenTable>.Filter
+         updateInstruction = new UpdateOneModel<NonFungibleTokenTable>(Builders<NonFungibleTokenTable>.Filter
                .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
-            Builders<Types.NonFungibleTokenTable>.Update
+            Builders<NonFungibleTokenTable>.Update
                .Set("SalesHistory.$[i].AuctionEnded", true));
       }
 

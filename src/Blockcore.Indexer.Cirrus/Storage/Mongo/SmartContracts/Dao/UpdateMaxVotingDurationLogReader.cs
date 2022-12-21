@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -6,10 +7,11 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class UpdateMaxVotingDurationLogReader : ILogReader<DaoContractTable,DaoContractProposalTable>
+class UpdateMaxVotingDurationLogReader : LogReaderBase,ILogReader<DaoContractTable,DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "UpdateMaxVotingDuration";
 
+   public override List<LogType> RequiredLogs { get; set; }
    public bool IsTransactionLogComplete(LogResponse[] logs) => false;
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
@@ -19,11 +21,10 @@ class UpdateMaxVotingDurationLogReader : ILogReader<DaoContractTable,DaoContract
 
       if (log == null) //TODO check if this issue persists
       {
-         return Array.Empty<WriteModel<DaoContractProposalTable>>();;
-         // throw new ArgumentException(contractTransaction.TransactionId);
+         return Array.Empty<WriteModel<DaoContractProposalTable>>();
       }
 
-      computedTable.MaxVotingDuration = (long)log.Log.Data["maxVotingDuration"];
+      computedTable.MaxVotingDuration = (long)log.Log.Data["maxVotingDuration"]; //TODO add logic to update the smart contract table
 
       return Array.Empty<WriteModel<DaoContractProposalTable>>();
    }

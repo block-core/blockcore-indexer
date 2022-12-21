@@ -7,23 +7,25 @@ using MongoDB.Driver.Core.WireProtocol.Messages;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class DepositLogReader : ILogReader<DaoContractTable,DaoContractProposalTable>
+class DepositLogReader : LogReaderBase,ILogReader<DaoContractTable,DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "Deposit";
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
+   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.FundRaisedLog };
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)
    {
-      long amount = (long)contractTransaction.Logs[0].Log.Data["amount"];
+      var fundRaisedLog = GetLogByType(LogType.FundRaisedLog, contractTransaction.Logs);
+
+      long amount = (long)fundRaisedLog.Log.Data["amount"];
 
       computedTable.Deposits ??= new List<DaoContractDeposit>();
 
       var deposit = new DaoContractDeposit
       {
          Amount = amount,
-         SenderAddress = (string)contractTransaction.Logs[0].Log.Data["sender"],
+         SenderAddress = fundRaisedLog.Log.Data["sender"].ToString(),
          TransactionId = contractTransaction.TransactionId,
          BlockIndex = contractTransaction.BlockIndex
       };

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -6,26 +7,21 @@ using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken;
 
-public class TransferLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
+public class TransferLogReader : LogReaderBase,ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferLog") || methodType.Equals("TransferFrom");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event.Equals("TransferLog"));
+   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.TransferLog };
 
-   public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
+   public WriteModel<NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      var transferLog = contractTransaction.Logs?.First(_ => _.Log.Event.Equals("TransferLog"));
-
-      if (transferLog is null)
-         throw new ArgumentNullException(nameof(transferLog));
+      var transferLog = GetLogByType(LogType.TransferLog, contractTransaction.Logs);
 
       if (!transferLog.Log.Data.ContainsKey("tokenId"))
          throw new Exception($"token id not found in transfer log for {contractTransaction.TransactionId}");
 
-      string tokenId = transferLog.Log.Data["tokenId"]?.ToString();
-
-      //var token = computedTable.Tokens.First(_ => _.Id == tokenId);
+      string tokenId = transferLog.Log.Data["tokenId"].ToString();
 
       string owner = transferLog.Log.Data["to"].ToString();
 

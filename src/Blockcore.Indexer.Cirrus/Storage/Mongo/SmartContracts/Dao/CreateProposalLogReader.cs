@@ -1,32 +1,30 @@
 using System.Collections.Generic;
-using System.Linq;
-using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.Dao;
 
-class CreateProposalLogReader : ILogReader<DaoContractTable,DaoContractProposalTable>
+class CreateProposalLogReader : LogReaderBase,ILogReader<DaoContractTable,DaoContractProposalTable>
 {
    public bool CanReadLogForMethodType(string methodType) => methodType == "CreateProposal";
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => true;
+   public override List<LogType> RequiredLogs { get; set; } = new() { LogType.ProposalAddedLog };
 
    public WriteModel<DaoContractProposalTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       DaoContractTable computedTable)
    {
-      var logData = contractTransaction.Logs.First().Log.Data;
+      var logData = GetLogByType(LogType.ProposalAddedLog,contractTransaction.Logs).Log.Data;
 
       var proposal = new DaoContractProposalTable
       {
-         Recipient = (string)logData["recipent"],
+         Recipient = logData["recipent"].ToString(),
          Amount = (long)logData["amount"],
          Id = new SmartContractTokenId
          {
             TokenId = ((long)logData["proposalId"]).ToString(),
             ContractAddress = computedTable.ContractAddress
          } ,
-         Description = (string)logData["description"],
+         Description = logData["description"].ToString(),
          ProposalStartedAtBlock = contractTransaction.BlockIndex,
          Votes = new List<DaoContractVoteDetails>()
       };
