@@ -98,8 +98,9 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
 
       if (bulkWriteResult.ProcessedRequests.Count != writeModels.Count)
       {
-         logger.LogError($"The bulk write operation on table {typeof(TDocument).Name}Table has failed");
+         logger.LogError($"The bulk write operation on table {typeof(TDocument).Name} Table has failed");
          throw new Exception("The bulk write operation has failed");
+         //TODO delete the smart contract tables so they get re-synced automatically
       }
    }
 
