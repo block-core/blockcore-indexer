@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Binding;
 using Blockcore.Indexer.Core.Handlers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Blockcore.Indexer.Core.Controllers
@@ -24,6 +25,8 @@ namespace Blockcore.Indexer.Core.Controllers
       }
 
       [HttpPost("send")]
+      [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
       public async Task<IActionResult> SendTransaction([FromBody][ModelBinder(BinderType = typeof(RawStringModelBinder))] string data)
       {
          if (string.IsNullOrEmpty(data))

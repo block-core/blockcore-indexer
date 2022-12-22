@@ -5,6 +5,7 @@ using Blockcore.Indexer.Core.Handlers;
 using Blockcore.Indexer.Core.Models;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Blockcore.Indexer.Core.Controllers
@@ -31,6 +32,7 @@ namespace Blockcore.Indexer.Core.Controllers
 
       [HttpGet]
       [Route("heartbeat")]
+      [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
       public IActionResult GetHeartbeat()
       {
          return Ok("Heartbeat");
@@ -38,6 +40,7 @@ namespace Blockcore.Indexer.Core.Controllers
 
       [HttpGet]
       [Route("connections")]
+      [ProducesResponseType(typeof(StatsConnection), StatusCodes.Status200OK)]
       public async Task<IActionResult> GetConnections()
       {
          StatsConnection ret = await statsHandler.StatsConnection();
@@ -45,6 +48,7 @@ namespace Blockcore.Indexer.Core.Controllers
       }
 
       [HttpGet()]
+      [ProducesResponseType(typeof(Statistics), StatusCodes.Status200OK)]
       public async Task<IActionResult> GetStats()
       {
          Statistics ret = await statsHandler.Statistics();
@@ -57,6 +61,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("info")]
+      [ProducesResponseType(typeof(CoinInfo), StatusCodes.Status200OK)]
       public async Task<IActionResult> GetInfo()
       {
          CoinInfo ret = await statsHandler.CoinInformation();
@@ -69,6 +74,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("peers")]
+      [ProducesResponseType(typeof(List<Client.Types.PeerInfo>), StatusCodes.Status200OK)]
       public async Task<IActionResult> GetCurrentPeers()
       {
          System.Collections.Generic.List<Client.Types.PeerInfo> ret = await statsHandler.Peers();
@@ -81,6 +87,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("peers/{date}")]
+      [ProducesResponseType(typeof(List<Client.Types.PeerInfo>), StatusCodes.Status200OK)]
       public IActionResult GetPeersFromDate(DateTime date)
       {
          List<Client.Types.PeerInfo> list = storage.GetPeerFromDate(date);

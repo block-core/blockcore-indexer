@@ -1,9 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Blockcore.Indexer.Cirrus.Models;
 using Blockcore.Indexer.Cirrus.Storage;
+using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Paging;
 using Blockcore.Indexer.Core.Storage.Types;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Blockcore.Indexer.Cirrus.Controllers
@@ -26,6 +29,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/list")]
+      [ProducesResponseType(typeof(QueryResult<QueryContractGroup>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetGroupedContracts()
       {
          return OkPaging(cirrusMongoData.GroupedContracts());
@@ -33,6 +38,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/list/{contractType}")]
+      [ProducesResponseType(typeof(QueryResult<QueryContractList>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetContractsOfType([MinLength(2)][MaxLength(100)] string contractType, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.ListContracts(contractType, offset, limit));
@@ -40,6 +47,9 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contracts/logs")]
+      [ProducesResponseType(typeof(QueryResult<QueryBlockSmartContractsLogs>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status400BadRequest)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public async Task<IActionResult> GetContractLogs([Range(0, long.MaxValue)] long startBlock,[Range(0, long.MaxValue)] long endBlock, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 1000)] int limit = 1000)
       {
          if (endBlock < startBlock)
@@ -50,6 +60,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("collectables/{ownerAddress}")]
+      [ProducesResponseType(typeof(QueryResult<QueryAddressAsset>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetNonFungibleTokensOwnedByAddress([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.GetNonFungibleTokensForAddressAsync(ownerAddress,offset,limit).Result);
@@ -57,6 +69,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("tokens/{ownerAddress}")]
+      [ProducesResponseType(typeof(QueryResult<QueryStandardToken>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetStandardTokensOwnedByAddress([MinLength(30)][MaxLength(100)] string ownerAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.GetStandardTokensForAddressAsync(ownerAddress,offset,limit).Result);
@@ -64,6 +78,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/{address}")]
+      [ProducesResponseType(typeof(QueryContractCreate), StatusCodes.Status200OK)]
       public IActionResult GetSmartContractCreateTransaction([MinLength(30)][MaxLength(100)] string address)
       {
          return Ok(cirrusMongoData.ContractCreate(address));
@@ -71,6 +86,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/{address}/transactions")]
+      [ProducesResponseType(typeof(QueryResult<QueryContractCall>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetSmartContractCallTransactions([MinLength(30)][MaxLength(100)] string address, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.ContractCall(address, null, offset, limit));
@@ -78,6 +95,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/{address}/transactions/{filterAddress}")]
+      [ProducesResponseType(typeof(QueryResult<QueryContractCall>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetSmartContractCallTransactionsBySender([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress, [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(cirrusMongoData.ContractCall(address, filterAddress, offset, limit));
@@ -85,6 +104,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/transaction/{transactionid}")]
+      [ProducesResponseType(typeof(QueryContractTransaction), StatusCodes.Status200OK)]
       public IActionResult GetSmartContractTransactionById([MinLength(30)][MaxLength(100)] string transactionid)
       {
          return Ok(cirrusMongoData.ContractTransaction(transactionid));
@@ -92,6 +112,7 @@ namespace Blockcore.Indexer.Cirrus.Controllers
 
       [HttpGet]
       [Route("contract/code/{address}")]
+      [ProducesResponseType(typeof(QueryContractCode), StatusCodes.Status200OK)]
       public IActionResult GetSmartContractCodeByAddress([MinLength(30)][MaxLength(100)] string address)
       {
          return Ok(cirrusMongoData.ContractCode(address));
@@ -100,6 +121,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [HttpGet]
       [Route("contract/dao/{address}")]
       [SlowRequestsFilteerAttribute]
+      [ProducesResponseType(typeof(QueryDAOContract), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public async Task<IActionResult> GetDaoContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
          var contract = await cirrusMongoData.GetDaoContractByAddressAsync(address);
@@ -115,6 +138,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [HttpGet]
       [Route("contract/standardtoken/{address}")]
       [SlowRequestsFilteerAttribute]
+      [ProducesResponseType(typeof(QueryStandardTokenContract), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public async Task<IActionResult> GetStandardTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
          var contract = await cirrusMongoData.GetStandardTokenContractByAddressAsync(address);
@@ -130,6 +155,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [HttpGet]
       [Route("contract/standardtoken/{address}/{filterAddress}")]
       [SlowRequestsFilteerAttribute]
+      [ProducesResponseType(typeof(QueryStandardToken), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public async Task<IActionResult> GetStandardTokenContractByAddressFiltered([MinLength(30)][MaxLength(100)] string address, [MinLength(30)][MaxLength(100)] string filterAddress)
       {
          var contract = await cirrusMongoData.GetStandardTokenByIdAsync(address, filterAddress);
@@ -145,6 +172,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [HttpGet]
       [Route("contract/nonfungibletoken/{address}")]
       [SlowRequestsFilteerAttribute]
+      [ProducesResponseType(typeof(QueryNonFungibleTokenContract), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public async Task<IActionResult> GetNonFungibleTokenContractByAddress([MinLength(30)][MaxLength(100)] string address)
       {
          var contract = await cirrusMongoData.GetNonFungibleTokenContractByAddressAsync(address);
@@ -160,6 +189,8 @@ namespace Blockcore.Indexer.Cirrus.Controllers
       [HttpGet]
       [Route("contract/nonfungibletoken/{address}/tokens/{id}")]
       [SlowRequestsFilteerAttribute]
+      [ProducesResponseType(typeof(NonFungibleTokenTable), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public async Task<IActionResult> GetNonFungibleTokenById([MinLength(30)][MaxLength(100)] string address,
          [MinLength(1)][MaxLength(100)] string id)
       {
