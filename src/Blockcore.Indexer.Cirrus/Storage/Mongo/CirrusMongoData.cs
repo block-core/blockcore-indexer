@@ -407,6 +407,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
             Id = _.Id.TokenId,
             Uri = _.Uri,
             IsBurned = _.IsBurned,
+            IsUsed = _.IsUsed,
             TransactionId = _.SalesHistory.LastOrDefault()?.TransactionId,
             PricePaid = _.SalesHistory.LastOrDefault() switch
             {

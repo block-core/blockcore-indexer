@@ -8,6 +8,6 @@ public class NonFungibleTokenTable : SmartContractData
    public string Owner { get; set; }
    public string Uri { get; set; }
    public bool IsBurned { get; set; }
-
+   public bool IsUsed { get; set; }
    public List<TokenSaleEvent> SalesHistory { get; set; } = new();
 }

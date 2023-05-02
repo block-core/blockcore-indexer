@@ -8,6 +8,8 @@ public class QueryAddressAsset
    public string Creator { get; set; }
    public string Uri { get; set; }
    public bool IsBurned { get; set; }
+
+   public bool IsUsed { get; set; }
    public long? PricePaid { get; set; }
    public string TransactionId { get; set; }
 
