@@ -16,9 +16,9 @@ public class SafeMintLogReader : ILogReader<NonFungibleTokenContractTable, Types
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      LogData log = contractTransaction.Logs[0].Log;
-      LogData saleLog = contractTransaction.Logs[1].Log;
-      LogData uriLog = contractTransaction.Logs[2].Log;
+      LogData log = contractTransaction.Logs.First(_ => _.Log.Event == "TransferLog").Log;
+      LogData saleLog = contractTransaction.Logs[1].Log; //TODO change this to get a list from sales event reader
+      LogData uriLog = contractTransaction.Logs.First(_ => _.Log.Event == "MintExtract").Log;
 
       object tokenId = log.Data["tokenId"];
       string id = tokenId is string ? (string)tokenId : Convert.ToString(tokenId);
