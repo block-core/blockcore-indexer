@@ -1,3 +1,18 @@
+## <small>0.2.47 (2023-05-15)</small>
+
+* Added handling of new Smart contracts (#189) ([f8a0ad7](https://github.com/block-core/blockcore-indexer/commit/f8a0ad7)), closes [#189](https://github.com/block-core/blockcore-indexer/issues/189)
+* bump versions ([39cfbae](https://github.com/block-core/blockcore-indexer/commit/39cfbae))
+
+
+
+## <small>0.2.46 (2023-02-02)</small>
+
+* Bug fix, change of log lookup to be by name not by hard coded position in array. (#184) ([da8b2e0](https://github.com/block-core/blockcore-indexer/commit/da8b2e0)), closes [#184](https://github.com/block-core/blockcore-indexer/issues/184)
+* bump version ([3199765](https://github.com/block-core/blockcore-indexer/commit/3199765))
+* bump version to upgrade blockcore release ([3e3a2c5](https://github.com/block-core/blockcore-indexer/commit/3e3a2c5))
+
+
+
 ## <small>0.2.44 (2022-12-16)</small>
 
 * bump version ([ce65206](https://github.com/block-core/blockcore-indexer/commit/ce65206))
