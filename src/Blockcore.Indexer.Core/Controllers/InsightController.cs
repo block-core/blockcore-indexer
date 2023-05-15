@@ -7,7 +7,9 @@ using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Paging;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -46,6 +48,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// </summary>
       /// <returns></returns>
       [HttpGet("supply")]
+      [ProducesResponseType(typeof(Supply), StatusCodes.Status200OK)]
       public ActionResult<Supply> GetSupply()
       {
          if (!cache.TryGetValue(CacheKeys.Supply, out Supply supply))
@@ -67,6 +70,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// </summary>
       /// <returns></returns>
       [HttpGet("supply/circulating")]
+      [ProducesResponseType(typeof(decimal), StatusCodes.Status200OK)]
       public ActionResult<decimal> GetCirculatingSupply()
       {
          return Ok(CalculateCirculatingSupply() / unit);
@@ -77,6 +81,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// </summary>
       /// <returns></returns>
       [HttpGet("supply/total")]
+      [ProducesResponseType(typeof(decimal), StatusCodes.Status200OK)]
       public ActionResult<decimal> GetTotalSupply()
       {
          return Ok(storage.TotalBalance());
@@ -87,6 +92,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// </summary>
       /// <returns></returns>
       [HttpGet("rewards")]
+      [ProducesResponseType(typeof(decimal), StatusCodes.Status200OK)]
       public ActionResult<decimal> GetRewards()
       {
          long tip = storage.GetLatestBlock().BlockIndex;
@@ -107,7 +113,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// </summary>
       /// <returns></returns>
       [HttpGet("wallets")]
-      public IActionResult GetWallets()
+      [ProducesResponseType(typeof(List<Wallet>), StatusCodes.Status200OK)]
+      public IActionResult GetKnownWallets()
       {
          if (!cache.TryGetValue(CacheKeys.Wallets, out List<Wallet> funds))
          {
@@ -126,6 +133,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// Returns richlist entries based on the offset and limit. The entries are sorted from from lowest to highest balance.
       /// </summary>
       [HttpGet("richlist")]
+      [ProducesResponseType(typeof(QueryResult<RichlistTable>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetRichlist([Range(0, int.MaxValue)] int offset = 0, [Range(1, 100)] int limit = 100)
       {
          return OkPaging(storage.Richlist(offset, limit));

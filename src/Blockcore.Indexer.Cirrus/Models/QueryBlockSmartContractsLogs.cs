@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using Blockcore.Indexer.Cirrus.Client.Types;
 
 namespace Blockcore.Indexer.Cirrus.Models;
 
@@ -27,20 +27,4 @@ public class QueryBlockSmartContractsLogs
    // public ulong ContractBalance { get; set; }
 
    public LogResponse[] Logs { get; set; }
-
-   public class LogResponse
-   {
-      public string Address { get; set; }
-      public string[] Topics { get; set; }
-      public string Data { get; set; }
-
-      public LogData Log { get; set; }
-   }
-
-   public class LogData
-   {
-      public string Event { get; set; }
-
-      public IDictionary<string, object> Data { get; set; }
-   }
 }

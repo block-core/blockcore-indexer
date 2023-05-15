@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Models;
 using Blockcore.Indexer.Core.Paging;
 using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Blockcore.Indexer.Core.Controllers
@@ -35,7 +38,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}")]
-      public IActionResult GetAddress([MinLength(4)][MaxLength(100)] string address)
+      [ProducesResponseType(typeof(QueryAddress), StatusCodes.Status200OK)]
+      public IActionResult GetAddressBalance([MinLength(4)][MaxLength(100)] string address)
       {
          return Ok(storage.AddressBalance(address));
       }
@@ -47,6 +51,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpPost]
       [Route("addresses/balance")]
+      [ProducesResponseType(typeof(List<QueryAddressBalance>), StatusCodes.Status200OK)]
       public IActionResult GetAddressesBalance(IList<string> addresses)
       {
          return Ok(storage.QuickBalancesLookupForAddressesWithHistoryCheckAsync(addresses).Result);
@@ -61,6 +66,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions")]
+      [ProducesResponseType(typeof(QueryResult<QueryAddressItem>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetAddressTransactions([MinLength(4)][MaxLength(100)] string address, [Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressHistory(address, offset, limit));
@@ -76,6 +83,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions/unspent")]
+      [ProducesResponseType(typeof(QueryResult<Storage.Mongo.Types.OutputTable>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public async Task<IActionResult> GetAddressTransactionsUnspent([MinLength(30)][MaxLength(100)] string address, long confirmations = 0, [Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          QueryResult<Storage.Mongo.Types.OutputTable> result = await storage.GetUnspentTransactionsByAddressAsync(address, confirmations, offset, limit);
@@ -91,6 +100,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("mempool/transactions")]
+      [ProducesResponseType(typeof(QueryResult<QueryMempoolTransactionHashes>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetMempoolTransactions([Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.GetMemoryTransactionsSlim(offset, limit));
@@ -102,6 +113,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("mempool/transactions/count")]
+      [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetMempoolTransactionsCount()
       {
          return OkItem(storage.GetMemoryTransactionsCount());
@@ -114,6 +127,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("transaction/{transactionId}")]
+      [ProducesResponseType(typeof(QueryTransaction), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetTransaction(string transactionId)
       {
          return OkItem(storage.GetTransaction(transactionId));
@@ -126,6 +141,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("transaction/{transactionId}/hex")]
+      [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetTransactionHex(string transactionId)
       {
          return OkItem(storage.GetRawTransaction(transactionId));
@@ -139,6 +156,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <param name="limit">Number of blocks to return. Maximum 50.</param>
       [HttpGet]
       [Route("block")]
+      [ProducesResponseType(typeof(QueryResult<SyncBlockInfo>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetBlocks([Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.Blocks(offset, limit));
@@ -152,6 +171,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("block/{hash}/transactions")]
+      [ProducesResponseType(typeof(QueryResult<SyncTransactionInfo>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetBlockByHashTransactions(string hash, [Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.TransactionsByBlock(hash, offset, limit));
@@ -164,6 +185,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("block/{hash}")]
+      [ProducesResponseType(typeof(SyncBlockInfo), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetBlockByHash(string hash)
       {
          return OkItem(storage.BlockByHash(hash));
@@ -176,6 +199,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("block/{hash}/hex")]
+      [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetBlockHex(string hash)
       {
          return OkItem(storage.GetRawBlock(hash));
@@ -188,6 +213,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <param name="limit">Number of blocks to return. Maximum 50.</param>
       [HttpGet]
       [Route("block/orphan")]
+      [ProducesResponseType(typeof(QueryResult<QueryOrphanBlock>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetOrphanBlocks([Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.OrphanBlocks(offset, limit));
@@ -200,6 +227,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("block/orphan/{hash}")]
+      [ProducesResponseType(typeof(ReorgBlockTable), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetOrphanBlockByHash(string hash)
       {
          return OkItem(storage.OrphanBlockByHash(hash));
@@ -212,6 +241,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("block/index/{index}")]
+      [ProducesResponseType(typeof(SyncBlockInfo), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetBlockByIndex([Range(0, long.MaxValue)] long index)
       {
          return OkItem(storage.BlockByIndex(index));
@@ -225,6 +256,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("block/index/{index}/transactions")]
+      [ProducesResponseType(typeof(QueryResult<SyncTransactionInfo>), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetBlockByIndexTransactions([Range(0, long.MaxValue)] long index, [Range(0, int.MaxValue)] int offset = 0, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.TransactionsByBlock(index, offset, limit));
@@ -236,6 +269,8 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("block/latest")]
+      [ProducesResponseType(typeof(SyncBlockInfo), StatusCodes.Status200OK)]
+      [ProducesResponseType(StatusCodes.Status404NotFound)]
       public IActionResult GetLatestBlock()
       {
          return OkItem(storage.GetLatestBlock());

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Models;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Client;
@@ -139,11 +140,11 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                Error = receipt.Error,
                PostState = receipt.PostState,
                GasUsed = receipt.GasUsed,
-               Logs = receipt.Logs.Select(l => new QueryBlockSmartContractsLogs.LogResponse
+               Logs = receipt.Logs.Select(l => new LogResponse
                {
                   Address = l.Address,
                   Data = l.Data,
-                  Log = new QueryBlockSmartContractsLogs.LogData
+                  Log = new LogData
                   {
                      Data = l.Log.Data,
                      Event = l.Log.Event

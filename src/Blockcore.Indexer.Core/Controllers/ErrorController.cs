@@ -1,3 +1,4 @@
+
 using Blockcore.Indexer.Core.Client;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
@@ -10,7 +11,7 @@ namespace Blockcore.Indexer.Core.Controllers
    public class ErrorController : ControllerBase
    {
       [Route("/error")]
-      public IActionResult Error([FromServices] IWebHostEnvironment webHostEnvironment)
+      public IActionResult GetError([FromServices] IWebHostEnvironment webHostEnvironment)
       {
          IExceptionHandlerFeature context = HttpContext.Features.Get<IExceptionHandlerFeature>();
          bool devMode = webHostEnvironment.EnvironmentName == "Development";
