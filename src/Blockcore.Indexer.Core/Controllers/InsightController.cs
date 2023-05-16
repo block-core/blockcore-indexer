@@ -8,10 +8,10 @@ using Blockcore.Indexer.Core.Paging;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.NBitcoin;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using NBitcoin;
 
 namespace Blockcore.Indexer.Core.Controllers
 {

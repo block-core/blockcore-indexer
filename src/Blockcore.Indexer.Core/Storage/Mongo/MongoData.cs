@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using NBitcoin.DataEncoders;
+using Blockcore.NBitcoin.DataEncoders;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
