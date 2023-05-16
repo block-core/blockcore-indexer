@@ -25,7 +25,7 @@ public class BlockRewindOperation : IBlockRewindOperation
       // this is an edge case, we delete from the utxo table in case a batch push failed half way and left
       // item in the utxo table that where suppose to get deleted, to avoid duplicates in recovery processes
       // we delete just in case (the utxo table has a unique key on outputs), there is no harm in deleting twice.
-      Task unspentOutputBeforeInputTableRewind = DeleteFromCollectionByExpression(storage.UnspentOutputTable, _ => _.BlockIndex, blockIndex);
+      Task<DeleteResult> unspentOutputBeforeInputTableRewind = DeleteFromCollectionByExpression(storage.UnspentOutputTable, _ => _.BlockIndex, blockIndex);
 
       Task<DeleteResult> output = DeleteFromCollectionByExpression(storage.OutputTable, _ => _.BlockIndex, blockIndex);
 
@@ -40,6 +40,10 @@ public class BlockRewindOperation : IBlockRewindOperation
 
       await Task.WhenAll( output, transactions, addressComputed, addressHistoryComputed, unspentOutputBeforeInputTableRewind);
 
+      if (!ValidateDeleteIsAcknowledged(output, transactions, addressComputed, addressHistoryComputed,
+             unspentOutputBeforeInputTableRewind))
+         throw new InvalidOperationException("Not all delete operations completed successfully"); //Throw to start over and delete the block again
+
       await MergeRewindInputsToUnspentTransactionsAsync(storage, blockIndex);
 
       Task<DeleteResult> inputs = DeleteFromCollectionByExpression(storage.InputTable, _ => _.BlockIndex, blockIndex);
@@ -49,6 +53,9 @@ public class BlockRewindOperation : IBlockRewindOperation
       var unspentOutput = DeleteFromCollectionByExpression(storage.UnspentOutputTable, _ => _.BlockIndex, blockIndex);
 
       await Task.WhenAll( inputs, unspentOutput);
+
+      if (!ValidateDeleteIsAcknowledged(inputs, unspentOutput))
+         throw new InvalidOperationException("Not all delete operations completed successfully"); //Throw to start over and delete the block again
    }
 
    private Task<DeleteResult> DeleteFromCollectionByExpression<TCollection,TField>(IMongoCollection<TCollection> collection,
@@ -57,6 +64,11 @@ public class BlockRewindOperation : IBlockRewindOperation
       FilterDefinition<TCollection> filter = Builders<TCollection>.Filter.Eq(expression,value);
 
       return collection.DeleteManyAsync(filter);//TODO handle failed delete result
+   }
+
+   private bool ValidateDeleteIsAcknowledged(params Task<DeleteResult>[] tasks)
+   {
+      return tasks.All(_ => _.Result.IsAcknowledged);
    }
 
    private static Task StoreRewindBlockAsync(IMongoDb storage, uint blockIndex)
@@ -137,7 +149,8 @@ public class BlockRewindOperation : IBlockRewindOperation
          // this can happen for outputs that are created and spent in the same block.
          // if they get pushed now such outputs willjust get deleted in the next step.
 
-         await storage.UnspentOutputTable.InsertManyAsync(filteredUnspentOutputs);
+         if (filteredUnspentOutputs.Any())
+            await storage.UnspentOutputTable.InsertManyAsync(filteredUnspentOutputs);
       }
    }
 }
