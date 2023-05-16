@@ -1,5 +1,5 @@
 using Blockcore.Indexer.Core.Storage.Types;
-using NBitcoin;
+using Blockcore.NBitcoin;
 
 namespace Blockcore.Indexer.Cirrus.Storage.Types
 {

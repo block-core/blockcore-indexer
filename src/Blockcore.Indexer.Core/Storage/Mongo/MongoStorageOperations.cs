@@ -9,9 +9,9 @@ using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.NBitcoin;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using NBitcoin;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using NBitcoin;
+using Blockcore.NBitcoin;
 
 namespace Blockcore.Indexer.Cirrus
 {

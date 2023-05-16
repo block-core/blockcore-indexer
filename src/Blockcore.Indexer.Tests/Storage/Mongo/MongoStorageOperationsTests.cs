@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Net;
 using System.Threading;
 using Blockcore.Consensus;
@@ -15,16 +14,15 @@ using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.NBitcoin;
 using Blockcore.Networks;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using MongoDB.Driver.Core.Connections;
-using MongoDB.Driver.Core.Operations;
 using MongoDB.Driver.Core.Servers;
 using Moq;
-using NBitcoin;
 using Xunit;
 
 namespace Blockcore.Indexer.Tests.Storage.Mongo;
