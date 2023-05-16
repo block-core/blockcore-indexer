@@ -136,6 +136,11 @@ namespace Blockcore.Indexer.Core.Handlers
 
       public async Task<Statistics> Statistics()
       {
+         if (globalState.StoreTip?.BlockHash == null)
+         {
+            return new Statistics { Symbol = syncConnection.Symbol, Error = "node is not ready"};
+         }
+
          var cachedStats = cache.Get<Statistics>(Key);
 
          if (cachedStats != null &&

@@ -97,7 +97,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             Runner.GlobalState.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
          }
 
-         BlockInfo fetchedBlock = await client.GetBlockAsync(Runner.GlobalState.StoreTip.BlockHash);
+         BlockInfo fetchedBlock = await GetBlockOrNullAsync(client, Runner.GlobalState.StoreTip.BlockHash);
          if (fetchedBlock == null)
          {
             // check if the fullnode is ahead of the indexer height
@@ -116,6 +116,25 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
          // update the chains tip
          Runner.GlobalState.ChainTipHeight = syncOperations.GetBlockCount(client);
+      }
+
+      private static async Task<BlockInfo> GetBlockOrNullAsync(IBlockchainClient client, string blockHash)
+      {
+         try
+         {
+            BlockInfo blockInfo = await client.GetBlockAsync(blockHash);
+
+            return blockInfo;
+         }
+         catch (Exception e)
+         {
+            if (e.Message.Contains("Block not found"))
+            {
+               return null;
+            }
+
+            throw;
+         }
       }
    }
 }
