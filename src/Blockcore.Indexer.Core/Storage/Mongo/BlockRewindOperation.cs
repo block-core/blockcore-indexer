@@ -22,6 +22,11 @@ public class BlockRewindOperation : IBlockRewindOperation
    {
       await StoreRewindBlockAsync(storage, blockIndex);
 
+      // this is an edge case, we delete from the utxo table in case a batch push failed half way and left
+      // item in the utxo table that where suppose to get deleted, to avoid duplicates in recovery processes
+      // we delete just in case (the utxo table has a unique key on outputs), there is no harm in deleting twice.
+      Task unspentOutputBeforeInputTableRewind = DeleteFromCollectionByExpression(storage.UnspentOutputTable, _ => _.BlockIndex, blockIndex);
+
       Task<DeleteResult> output = DeleteFromCollectionByExpression(storage.OutputTable, _ => _.BlockIndex, blockIndex);
 
       // delete the transaction
@@ -32,11 +37,6 @@ public class BlockRewindOperation : IBlockRewindOperation
 
       // delete computed history
       Task<DeleteResult> addressHistoryComputed = DeleteFromCollectionByExpression(storage.AddressHistoryComputedTable, _ => _.BlockIndex, blockIndex);
-
-      // this is an edge case, we delete from the utxo table in case a batch push failed half way and left
-      // item in the utxo table that where suppose to get deleted, to avoid duplicates in recovery processes
-      // we delete just in case (the utxo table has a unique key on outputs), there is no harm in deleting twice.
-      Task unspentOutputBeforeInputTableRewind = DeleteFromCollectionByExpressionWithCountVerification(storage.UnspentOutputTable, _ => _.BlockIndex, blockIndex);
 
       await Task.WhenAll( output, transactions, addressComputed, addressHistoryComputed, unspentOutputBeforeInputTableRewind);
 
@@ -49,24 +49,6 @@ public class BlockRewindOperation : IBlockRewindOperation
       var unspentOutput = DeleteFromCollectionByExpression(storage.UnspentOutputTable, _ => _.BlockIndex, blockIndex);
 
       await Task.WhenAll( inputs, unspentOutput);
-   }
-
-   private Task DeleteFromCollectionByExpressionWithCountVerification<TCollection,TField>(IMongoCollection<TCollection> collection,
-      Expression<Func<TCollection,TField>> expression, TField value)
-   {
-      FilterDefinition<TCollection> filter = Builders<TCollection>.Filter.Eq(expression,value);
-
-      var countTask = collection.CountDocumentsAsync(filter);
-
-      var deletedTask = collection.DeleteManyAsync(filter);//TODO handle failed delete result
-
-      Task.WhenAll(countTask, deletedTask);
-
-      if (!deletedTask.Result.IsAcknowledged && countTask.Result == deletedTask.Result.DeletedCount)
-         throw new Exception(
-            $"Collection - {collection.CollectionNamespace.CollectionName}, document count - {countTask.Result}, is acknowledged - {deletedTask.Result.IsAcknowledged}, deleted count - {deletedTask.Result.DeletedCount}");
-
-      return Task.CompletedTask;
    }
 
    private Task<DeleteResult> DeleteFromCollectionByExpression<TCollection,TField>(IMongoCollection<TCollection> collection,
