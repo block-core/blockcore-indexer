@@ -7,7 +7,7 @@ using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
-using NBitcoin;
+using Blockcore.NBitcoin;
 
 namespace Blockcore.Indexer.Cirrus.Storage
 {
@@ -15,9 +15,7 @@ namespace Blockcore.Indexer.Cirrus.Storage
    {
       public SyncBlockInfo Map(BlockTable block)
       {
-         var derived = block as CirrusBlock;
-
-         if (derived is null)
+         if (block is not CirrusBlock derived)
             throw new ArgumentException("Not a Cirrus block");
 
          return new CirrusSyncBlockInfo
@@ -51,9 +49,7 @@ namespace Blockcore.Indexer.Cirrus.Storage
 
       public BlockTable Map(BlockInfo blockInfo)
       {
-         var block = blockInfo as CirrusBlockInfo;
-
-         if (block is null)
+         if (blockInfo is not CirrusBlockInfo block)
             throw new ArgumentException("Not a Cirrus block");
 
          return new CirrusBlock
@@ -79,9 +75,9 @@ namespace Blockcore.Indexer.Cirrus.Storage
             PosModifierv2 = block.PosModifierv2,
             Version = block.Version,
             SyncComplete = false,
-            Bloom = block.Bloom == null ? null : block.Bloom,
-            ReceiptRoot = block.ReceiptRoot == null ? null : block.ReceiptRoot,
-            HashStateRoot = block.HashStateRoot == null ? null :  block.HashStateRoot
+            Bloom = block.Bloom ?? null,
+            ReceiptRoot = block.ReceiptRoot ?? null,
+            HashStateRoot = block.HashStateRoot ?? null
          };
       }
    }

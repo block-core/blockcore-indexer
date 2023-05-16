@@ -2,8 +2,8 @@ using System;
 using System.Linq;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
+using Blockcore.NBitcoin;
 using Blockcore.Networks;
-using NBitcoin;
 
 namespace Blockcore.Indexer.Core.Crypto
 {

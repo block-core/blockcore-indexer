@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using Blockcore.Consensus;
 using Blockcore.Consensus.BlockInfo;
 using Blockcore.Indexer.Core.Settings;
+using Blockcore.NBitcoin;
+using Blockcore.NBitcoin.DataEncoders;
 using Blockcore.Networks;
 using Microsoft.Extensions.Options;
-using NBitcoin;
-using NBitcoin.DataEncoders;
 
 namespace Blockcore.Indexer.Core.Operations.Types
 {
