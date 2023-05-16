@@ -1,4 +1,12 @@
-## <small>0.2.47 (2023-05-15)</small>
+## <small>0.2.48 (2023-05-16)</small>
+
+* bump version ([13b2955](https://github.com/block-core/blockcore-indexer/commit/13b2955))
+* Fixed issue with failed sync setting the db in a broken state for rewind (#191) ([bfffdea](https://github.com/block-core/blockcore-indexer/commit/bfffdea)), closes [#191](https://github.com/block-core/blockcore-indexer/issues/191)
+* small bug fixes ([ee95fab](https://github.com/block-core/blockcore-indexer/commit/ee95fab))
+
+
+
+## <small>0.2.47 (2023-05-12)</small>
 
 * Added handling of new Smart contracts (#189) ([f8a0ad7](https://github.com/block-core/blockcore-indexer/commit/f8a0ad7)), closes [#189](https://github.com/block-core/blockcore-indexer/issues/189)
 * bump versions ([39cfbae](https://github.com/block-core/blockcore-indexer/commit/39cfbae))
