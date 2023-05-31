@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Client.Types;
 using Newtonsoft.Json;
 
@@ -281,6 +282,14 @@ namespace Blockcore.Indexer.Core.Client
          DecodedRawTransaction res = Call<DecodedRawTransaction>("getrawtransaction", txid, verbose);
 
          return res;
+      }
+
+      /// <inheritdoc />
+      public async Task<EstimateSmartFeeResponse> EstimateSmartFeeAsync(int confirmationTarget, EstimateSmartFeeMode estimateMode = EstimateSmartFeeMode.Conservative)
+      {
+         var estimateSmart = await CallAsync<EstimateSmartFeeResponse>("estimatesmartfee", confirmationTarget, estimateMode.ToString().ToUpperInvariant());
+
+         return estimateSmart;
       }
 
       /// <inheritdoc />
