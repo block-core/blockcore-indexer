@@ -92,6 +92,17 @@ namespace Blockcore.Indexer.Core.Models
       public TimeSpan TargetSpacing { get; set; }
    }
 
+   public class FeeEstimation
+   {
+      public int Confirmations { get; set; }
+      public long FeeRateet { get; set; }
+   }
+
+   public class FeeEstimations
+   {
+      public List<FeeEstimation>  Fees { get; set; }
+   }
+
    public class Statistics
    {
       /// <summary>

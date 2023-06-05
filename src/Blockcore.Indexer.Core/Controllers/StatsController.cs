@@ -86,5 +86,18 @@ namespace Blockcore.Indexer.Core.Controllers
          List<Client.Types.PeerInfo> list = storage.GetPeerFromDate(date);
          return Ok(list);
       }
+
+      /// <summary>
+      /// Returns fee rate estimations for each of the confirmations in the array.
+      /// </summary>
+      /// <returns></returns>
+      [HttpGet]
+      [Route("fee")]
+      public async Task<IActionResult> FeeEstimation([FromQuery] int[] confirmations)
+      {
+         var res = await statsHandler.GetFeeEstimation(confirmations);
+
+         return Ok(res);
+      }
    }
 }
