@@ -19,6 +19,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
    {
       private readonly IMongoDb db;
       private readonly ILogger<RichListSync> log;
+      private readonly IndexerSettings indexerSettings;
 
       private readonly Stopwatch watch;
 
@@ -31,6 +32,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          db = data;
          log = logger;
          watch = new Stopwatch();
+         indexerSettings = configuration.Value;
       }
 
       public override async Task<bool> OnExecute()
@@ -74,6 +76,12 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private bool CanRunRichListSync()
       {
+         if (indexerSettings.SyncRichlist == false)
+         {
+            Abort = true;
+            return false;
+         }
+
          return !(//sync with other runners
             !Runner.GlobalState.IndexModeCompleted ||
                   Runner.GlobalState.Blocked ||

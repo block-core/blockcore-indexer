@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Blockcore.Consensus;
 using Blockcore.Indexer.Core.Client;
@@ -13,9 +14,12 @@ using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Blockcore.Networks;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NLog.Fluent;
 
 namespace Blockcore.Indexer.Core.Handlers
 {
@@ -37,8 +41,12 @@ namespace Blockcore.Indexer.Core.Handlers
       readonly ICryptoClientFactory clientFactory;
       readonly GlobalState globalState;
 
+      private readonly ILogger<StatsHandler> log;
+
+
       readonly IMemoryCache cache;
-      const string Key = "Statistics";
+      const string StatisticsKey = "Statistics";
+      const string FeeEstimationKey = "FeeEstimation";
 
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsHandler"/> class.
@@ -51,7 +59,8 @@ namespace Blockcore.Indexer.Core.Handlers
          IOptions<ChainSettings> chainConfiguration,
          ICryptoClientFactory clientFactory,
          GlobalState globalState,
-         IMemoryCache cache)
+         IMemoryCache cache,
+         ILogger<StatsHandler> logger)
       {
          this.storage = storage;
          this.clientFactory = clientFactory;
@@ -61,6 +70,7 @@ namespace Blockcore.Indexer.Core.Handlers
          this.configuration = configuration.Value;
          this.chainConfiguration = chainConfiguration.Value;
          this.networkConfig = networkConfig.Value;
+         log = logger;
       }
 
       public async Task<StatsConnection> StatsConnection()
@@ -141,7 +151,7 @@ namespace Blockcore.Indexer.Core.Handlers
             return new Statistics { Symbol = syncConnection.Symbol, Error = "node is not ready"};
          }
 
-         var cachedStats = cache.Get<Statistics>(Key);
+         var cachedStats = cache.Get<Statistics>(StatisticsKey);
 
          if (cachedStats != null &&
              cachedStats.Blockchain.BestBlockHash == globalState.StoreTip.BlockHash)
@@ -198,7 +208,7 @@ namespace Blockcore.Indexer.Core.Handlers
 
          stats.IsInIBDMode = globalState.IbdMode();
 
-         cache.Set(Key,stats);
+         cache.Set(StatisticsKey,stats);
 
          return stats;
       }
@@ -224,6 +234,51 @@ namespace Blockcore.Indexer.Core.Handlers
          });
 
          return res;
+      }
+
+      public async Task<FeeEstimations> GetFeeEstimation(params int[] confirmations)
+      {
+         IBlockchainClient client = null;
+
+         var feeEstimations = new FeeEstimations { Fees = new List<FeeEstimation>() };
+
+         foreach (int confirmation in confirmations)
+         {
+            var key = $"{FeeEstimationKey}-{confirmation}";
+            var cachedFees = cache.Get<FeeEstimation>($"{FeeEstimationKey}-{confirmation}");
+
+            if (cachedFees != null)
+            {
+               feeEstimations.Fees.Add(cachedFees);
+            }
+            else
+            {
+               client ??= clientFactory.Create(syncConnection);
+
+               EstimateSmartFeeResponse estimateSmartFee = null;
+
+               try
+               {
+                  estimateSmartFee = await client.EstimateSmartFeeAsync(confirmation);
+               }
+               catch (Exception e)
+               {
+                  log.LogError(e, "fee call failed");
+                  throw;
+               }
+
+               var feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRateet = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
+
+               feeEstimations.Fees.Add(feeEstimation);
+
+               log.LogInformation($"Requested fee estimation for {confirmation} confirmations is {estimateSmartFee.FeeRate.FeePerK}");
+
+               cache.Set(key, feeEstimation, TimeSpan.FromMinutes(1));
+            }
+
+         }
+
+         return feeEstimations;
       }
 
 

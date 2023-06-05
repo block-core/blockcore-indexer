@@ -20,6 +20,8 @@ namespace Blockcore.Indexer.Core.Settings
 
       public bool SyncMemoryPool { get; set; }
 
+      public bool SyncRichlist { get; set; }
+
       public string RpcUser { get; set; }
 
       public string NotifyUrl { get; set; }
