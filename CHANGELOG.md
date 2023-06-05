@@ -1,5 +1,7 @@
-## <small>0.2.49 (2023-05-16)</small>
+## <small>0.2.49 (2023-06-05)</small>
 
+* Adding a backend task to call rpc and for fees estimation (#192) ([9462618](https://github.com/block-core/blockcore-indexer/commit/9462618)), closes [#192](https://github.com/block-core/blockcore-indexer/issues/192)
+* bump version ([a2af06f](https://github.com/block-core/blockcore-indexer/commit/a2af06f))
 
 
 
