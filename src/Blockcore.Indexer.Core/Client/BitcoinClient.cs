@@ -287,7 +287,7 @@ namespace Blockcore.Indexer.Core.Client
       /// <inheritdoc />
       public async Task<EstimateSmartFeeResponse> EstimateSmartFeeAsync(int confirmationTarget, EstimateSmartFeeMode estimateMode = EstimateSmartFeeMode.Conservative)
       {
-         var estimateSmart = await CallAsync<EstimateSmartFeeResponse>("estimatesmartfee1", confirmationTarget, estimateMode.ToString().ToUpperInvariant());
+         var estimateSmart = await CallAsync<EstimateSmartFeeResponse>("estimatesmartfee", confirmationTarget, estimateMode.ToString().ToUpperInvariant());
 
          return estimateSmart;
       }
