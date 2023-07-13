@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Blockcore.NBitcoin;
 using Newtonsoft.Json;
 
@@ -11,6 +12,9 @@ namespace Blockcore.Indexer.Core.Client.Types
 		{
 			get; set;
 		}
+
+      [JsonProperty("errors")]
+      public List<string> Errors { get; set; }
 
       [JsonProperty("blocks")]
       public int Blocks

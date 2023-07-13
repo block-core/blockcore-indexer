@@ -260,6 +260,14 @@ namespace Blockcore.Indexer.Core.Handlers
                try
                {
                   estimateSmartFee = await client.EstimateSmartFeeAsync(confirmation);
+
+                  if (estimateSmartFee.Errors.Any())
+                  {
+                     string result = estimateSmartFee.Errors.Aggregate("Failed to get the fee with errors: ",
+                        (current, error) => current + "," + error);
+                     log.LogDebug(result);
+                     return null;
+                  }
                }
                catch (Exception e)
                {
@@ -267,7 +275,7 @@ namespace Blockcore.Indexer.Core.Handlers
                   throw;
                }
 
-               var feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRateet = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
+               var feeEstimation = new FeeEstimation { Confirmations = confirmation, FeeRateet = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
 
                feeEstimations.Fees.Add(feeEstimation);
 
