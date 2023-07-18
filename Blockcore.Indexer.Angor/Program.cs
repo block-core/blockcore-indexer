@@ -1,5 +1,4 @@
 using Blockcore.Indexer;
-using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Extensions;
 
 var builder = Host.CreateDefaultBuilder()
