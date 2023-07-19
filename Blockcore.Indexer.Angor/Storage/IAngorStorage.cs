@@ -1,8 +1,11 @@
+using Blockcore.Indexer.Angor.Operations.Types;
+using Blockcore.Indexer.Core.Storage.Types;
+
 namespace Blockcore.Indexer.Angor.Storage;
 
 public interface IAngorStorage
 {
-   // Task<Project> GetProjectAsync(string projectId);
-   //
-   // Task<IEnumerable<Project>> GetProjectsAsync();
+   Task<ProjectIndexerData?> GetProjectAsync(string projectId);
+
+   Task<QueryResult<ProjectIndexerData>> GetProjectsAsync(int? offset, int limit);
 }
