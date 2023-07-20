@@ -22,8 +22,4 @@
       <ProjectReference Include="..\src\Blockcore.Indexer\Blockcore.Indexer.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Sync\SyncTasks\" />
-    </ItemGroup>
-
 </Project>

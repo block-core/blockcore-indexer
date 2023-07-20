@@ -10,9 +10,12 @@ public class AngorMongoBuilder : MongoBuilder
 {
    public IAngorMongoDb AngorMongoDb { get; set; }
 
-   public AngorMongoBuilder(ILogger<AngorMongoBuilder> logger, IMongoDb data, IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainSettings)
+   public AngorMongoBuilder(ILogger<AngorMongoBuilder> logger, IAngorMongoDb data,
+      IOptions<IndexerSettings> nakoConfiguration, IOptions<ChainSettings> chainSettings)
       : base(logger, data, nakoConfiguration, chainSettings)
-   { }
+   {
+      AngorMongoDb = data;
+   }
 
    public override Task OnExecute()
    {

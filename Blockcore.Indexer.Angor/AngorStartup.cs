@@ -1,5 +1,6 @@
 using Blockcore.Indexer.Angor.Storage;
 using Blockcore.Indexer.Angor.Storage.Mongo;
+using Blockcore.Indexer.Angor.Sync.SyncTasks;
 using Blockcore.Indexer.Core;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
@@ -25,11 +26,12 @@ public class AngorStartup
       services.Remove(descriptor);
       services.AddSingleton<TaskStarter, AngorMongoBuilder>();
 
-      services.Replace(new ServiceDescriptor(typeof(IStorage), typeof(AngorMongoData), ServiceLifetime.Scoped));
+      services.Replace(new ServiceDescriptor(typeof(IStorage), typeof(AngorMongoData), ServiceLifetime.Singleton));
 
       services.AddSingleton<IAngorStorage, AngorMongoData>();
       services.AddSingleton<IAngorMongoDb, AngorMongoDb>();
 
+      services.AddScoped<TaskRunner,ProjectsSyncRunner>();
    }
 
    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

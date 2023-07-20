@@ -30,8 +30,9 @@ public class AngorMongoData : MongoData, IAngorStorage
 
    public async Task<ProjectIndexerData?> GetProjectAsync(string projectId)
    {
-      var project = await mongoDb.ProjectTable.Find(Builders<Project>.Filter.Eq(_ => _.AngorKey, projectId))
-         .FirstOrDefaultAsync();
+      var project = mongoDb.ProjectTable
+         .AsQueryable()
+         .FirstOrDefault(_ => _.AngorKey == projectId);
 
       if (project != null)
       {

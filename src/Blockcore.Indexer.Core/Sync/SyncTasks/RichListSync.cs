@@ -50,7 +50,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
             watch.Restart();
 
-            await db.UnspentOutputTable.Aggregate()
+            await db.UnspentOutputTable.Aggregate(new AggregateOptions { AllowDiskUse = true })
                .Group(table => table.Address,
                   tables => new { Address = tables.Key, Balance = tables.Sum(table => table.Value) })
                .SortByDescending(arg => arg.Balance)

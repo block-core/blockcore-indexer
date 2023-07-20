@@ -21,9 +21,11 @@ public class ProjectQueryController : Controller
 
    [HttpGet]
    [Route("projects/{projectId}")]
-   public IActionResult GetContracts([MinLength(2)][MaxLength(100)] string projectId)
+   public async Task<IActionResult> GetContracts([MinLength(2)][MaxLength(100)] string projectId)
    {
-      return Ok(angorStorage.GetProjectAsync(projectId));
+      var project = await angorStorage.GetProjectAsync(projectId);
+
+      return project == null ? NotFound() : Ok(project);
    }
 
    [HttpGet]

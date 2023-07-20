@@ -1,4 +1,4 @@
-using Blockcore.Indexer;
+using Blockcore.Indexer.Angor;
 using Blockcore.Indexer.Core.Extensions;
 
 var builder = Host.CreateDefaultBuilder()
@@ -22,7 +22,7 @@ var builder = Host.CreateDefaultBuilder()
          serverOptions.AddServerHeader = false;
       });
 
-      webBuilder.UseStartup<BlockcoreStartup>();
+      webBuilder.UseStartup<AngorStartup>();
    });
 
 builder.Build().Run();
