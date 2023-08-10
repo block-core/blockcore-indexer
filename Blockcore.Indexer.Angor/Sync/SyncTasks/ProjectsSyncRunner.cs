@@ -5,6 +5,7 @@ using Blockcore.Indexer.Angor.Storage.Mongo;
 using Blockcore.Indexer.Angor.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Blockcore.NBitcoin;
 using Blockcore.NBitcoin.BIP32;
@@ -43,52 +44,55 @@ public class ProjectsSyncRunner : TaskRunner
                      _.CoinBase == false)
          .ToList();
 
-      foreach (var output in test)
-      {
-         var script = Script.FromHex(output.ScriptHex);
+      var tasks = test.Select(CheckAndAddProjectAsync);
 
-         if (script.Length != 35 || script.ToOps().Count != 2)
-            continue;
-
-         var extKey = new BitcoinExtPubKey(AngorTestKey, new BitcoinSignet()).ExtPubKey;
-
-         var founderKey = new PubKey(script.ToOps().Last().PushData);
-
-         var projectid = GetProjectIdDerivation(founderKey.ToHex());
-
-         if (projectid == 0)
-            continue;
-
-         var angorKey = extKey.Derive(projectid).PubKey;
-
-         var checkForExistingProject = await AngorMongoDb.ProjectTable.AsQueryable()
-            .AnyAsync(_ => _.AngorKey == angorKey.ToHex());
-
-         if (checkForExistingProject) continue;
-
-         var verifyAngorKeyOutputExists = await AngorMongoDb.OutputTable
-            .AsQueryable()
-            .Where(_ =>
-               //Outpoint with both parameters is the id of the table
-               _.Outpoint.TransactionId == output.Outpoint.TransactionId &&
-               _.Outpoint.OutputIndex == 0 &&
-               //direct lookup for the exiting key
-               _.ScriptHex == angorKey.WitHash.ScriptPubKey.ToHex())
-            .AnyAsync();
-
-         if (!verifyAngorKeyOutputExists) continue;
-
-         await AngorMongoDb.ProjectTable.InsertOneAsync(new Project
-         {
-            TransactionId = output.Outpoint.TransactionId,
-            AngorKey = angorKey.ToHex(),
-            BlockIndex = output.BlockIndex,
-            FounderKey = founderKey.ToHex()
-         });
-
-      }
+      await Task.WhenAll(tasks);
 
       return false;
+   }
+
+   async Task CheckAndAddProjectAsync(OutputTable output)
+   {
+      var script = Script.FromHex(output.ScriptHex);
+
+      if (script.Length != 35 || script.ToOps().Count != 2)
+         return;
+
+      var extKey = new BitcoinExtPubKey(AngorTestKey, new BitcoinSignet()).ExtPubKey;
+
+      var founderKey = new PubKey(script.ToOps().Last().PushData);
+
+      var projectid = GetProjectIdDerivation(founderKey.ToHex());
+
+      if (projectid == 0)
+         return;
+
+      var angorKey = extKey.Derive(projectid).PubKey;
+
+      var checkForExistingProject = await AngorMongoDb.ProjectTable.AsQueryable()
+         .AnyAsync(_ => _.AngorKey == angorKey.ToHex());
+
+      if (checkForExistingProject) return;
+
+      var verifyAngorKeyOutputExists = await AngorMongoDb.OutputTable
+         .AsQueryable()
+         .Where(_ =>
+            //Outpoint with both parameters is the id of the table
+            _.Outpoint.TransactionId == output.Outpoint.TransactionId &&
+            _.Outpoint.OutputIndex == 0 &&
+            //direct lookup for the exiting key
+            _.ScriptHex == angorKey.WitHash.ScriptPubKey.ToHex())
+         .AnyAsync();
+
+      if (!verifyAngorKeyOutputExists) return;
+
+      await AngorMongoDb.ProjectTable.InsertOneAsync(new Project
+      {
+         TransactionId = output.Outpoint.TransactionId,
+         AngorKey = angorKey.ToHex(),
+         BlockIndex = output.BlockIndex,
+         FounderKey = founderKey.ToHex()
+      });
    }
 
    private uint GetProjectIdDerivation(string founderKey)
