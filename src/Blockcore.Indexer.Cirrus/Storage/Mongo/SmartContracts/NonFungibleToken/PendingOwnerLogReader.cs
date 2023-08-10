@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
@@ -14,7 +15,16 @@ public class PendingOwnerLogReader : ILogReader<NonFungibleTokenContractTable,Ty
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)
    {
-      computedTable.PendingOwner = (string)contractTransaction.Logs.SingleOrDefault()?.Log.Data["PendingOwner"] ?? string.Empty;
+      var key = contractTransaction.Logs.SingleOrDefault()?.Log.Data.ContainsKey("PendingOwner") ?? false
+         ? "PendingOwner"
+         : contractTransaction.Logs.SingleOrDefault()?.Log.Data.ContainsKey("pendingOwner") ?? false
+            ? "pendingOwner"
+            : string.Empty;
+
+      if (key != string.Empty)
+      {
+         computedTable.PendingOwner = (string)contractTransaction.Logs.SingleOrDefault()?.Log.Data[key] ?? string.Empty;
+      }
 
       return null;
    }

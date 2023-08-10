@@ -143,6 +143,13 @@ public class ComputeSmartContractServiceWithSplitDocuments<T,TDocument> : ICompu
 
       var builder = logReaderFactory.GetSmartContractBuilder(contractCreationTransaction.ContractCodeType);
 
+      if (!contractCreationTransaction.Logs?.Any() ?? false) //Call for existing contracts
+      {
+         var result = await cirrusClient.GetContractInfoAsync(contractCreationTransaction.TransactionId);
+
+         contractCreationTransaction.Logs = result.Logs;
+      }
+
       var contract = builder.BuildSmartContract(contractCreationTransaction);
 
       await SaveTheContractAsync(address, contract);

@@ -40,6 +40,7 @@ public class SmartContractSyncRunner : TaskRunner
          { "DAOContract", daoContractService.ComputeSmartContractForAddressAsync },
          { "StandardToken", standardTokenService.ComputeSmartContractForAddressAsync },
          { "NonFungibleToken", nonFungibleTokenService.ComputeSmartContractForAddressAsync },
+         { "InterFluxNonFungibleToken", nonFungibleTokenService.ComputeSmartContractForAddressAsync },
       };
 
       Delay = TimeSpan.FromMinutes(1);

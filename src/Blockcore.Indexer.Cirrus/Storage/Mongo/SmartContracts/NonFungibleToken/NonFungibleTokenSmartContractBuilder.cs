@@ -7,7 +7,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class NonFungibleTokenSmartContractBuilder : ISmartContractBuilder<NonFungibleTokenContractTable>
 {
-   public bool CanBuildSmartContract(string contractCodeType) => contractCodeType.Equals("NonFungibleToken");
+   public bool CanBuildSmartContract(string contractCodeType) => contractCodeType.Contains("NonFungibleToken");
 
    public NonFungibleTokenContractTable BuildSmartContract(CirrusContractTable createContractTransaction)
    {
