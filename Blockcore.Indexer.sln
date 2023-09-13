@@ -25,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Blockcore.Indexer.Core", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blockcore.Indexer.Cirrus.Tests", "src\Blockcore.Indexer.Cirrus.Tests\Blockcore.Indexer.Cirrus.Tests.csproj", "{9D5F8BBA-9805-486F-97E0-F6E4F229FE07}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blockcore.Indexer.Angor", "Blockcore.Indexer.Angor\Blockcore.Indexer.Angor.csproj", "{2C08CF7C-50D8-4DA1-A431-A72795B8F382}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blockcore.Indexer.Angor", "src\Blockcore.Indexer.Angor\Blockcore.Indexer.Angor.csproj", "{2C08CF7C-50D8-4DA1-A431-A72795B8F382}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
