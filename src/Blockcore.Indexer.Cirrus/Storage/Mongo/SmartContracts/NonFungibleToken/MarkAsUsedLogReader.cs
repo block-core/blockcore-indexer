@@ -24,7 +24,7 @@ public class MarkAsUsedLogReader : ILogReader<NonFungibleTokenContractTable,NonF
       return new[]
       {
          new UpdateOneModel<NonFungibleTokenTable>(Builders<NonFungibleTokenTable>.Filter
-               .Where(_ => _.Id.TokenId == tokenId && _.Id.ContractAddress == computedTable.ContractAddress),
+               .Where(_ => _.Id.TokenId == id && _.Id.ContractAddress == computedTable.ContractAddress),
             Builders<NonFungibleTokenTable>.Update.Set(_ => _.IsUsed, true))
       };
    }
