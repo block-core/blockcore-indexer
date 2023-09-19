@@ -31,7 +31,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       private readonly GlobalState globalState;
       private readonly ChainSettings chainConfiguration;
 
-      private readonly IScriptInterpeter scriptInterpeter;
+      private readonly IScriptInterpreter scriptInterpeter;
 
       private readonly IMapMongoBlockToStorageBlock mongoBlockToStorageBlock;
       readonly ICryptoClientFactory clientFactory;
@@ -42,7 +42,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public MongoData(ILogger<MongoDb> dbLogger, SyncConnection connection, IOptions<ChainSettings> chainConfiguration,
          GlobalState globalState, IMapMongoBlockToStorageBlock mongoBlockToStorageBlock, ICryptoClientFactory clientFactory,
-         IScriptInterpeter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db, IBlockRewindOperation rewindOperation, IComputeHistoryQueue computeHistoryQueue)
+         IScriptInterpreter scriptInterpeter, IMongoDatabase mongoDatabase, IMongoDb db, IBlockRewindOperation rewindOperation, IComputeHistoryQueue computeHistoryQueue)
       {
          log = dbLogger;
          this.chainConfiguration = chainConfiguration.Value;

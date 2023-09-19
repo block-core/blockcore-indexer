@@ -70,7 +70,7 @@ namespace Blockcore.Indexer.Core
          services.AddScoped<Runner>();
 
          services.AddSingleton<GlobalState>();
-         services.AddSingleton<IScriptInterpeter, ScriptToAddressParser>();
+         services.AddSingleton<IScriptInterpreter, ScriptToAddressParser>();
 
 
          services.AddScoped<TaskRunner, MempoolPuller>();

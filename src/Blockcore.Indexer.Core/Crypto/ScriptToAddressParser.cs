@@ -11,13 +11,13 @@ namespace Blockcore.Indexer.Core.Crypto
       public string ScriptType { get; set; }
    }
 
-   public interface IScriptInterpeter
+   public interface IScriptInterpreter
    {
       string GetSignerAddress(Network network, Script script);
       ScriptOutputInfo InterpretScript(Network network, Script script);
    }
 
-   public class ScriptToAddressParser : IScriptInterpeter
+   public class ScriptToAddressParser : IScriptInterpreter
    {
       public virtual ScriptOutputInfo InterpretScript(Network network, Script script) => GetAddressInternal(network, script);
 
