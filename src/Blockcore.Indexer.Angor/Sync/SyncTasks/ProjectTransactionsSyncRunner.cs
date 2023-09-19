@@ -72,6 +72,13 @@ public class ProjectTransactionsSyncRunner : TaskRunner
             continue;
          }
 
+         var project = await angorMongoDb.ProjectTable.Aggregate()
+            .Match(_ => _.AngorKeyScriptHex == feeOutput.ScriptHex)
+            .SingleOrDefaultAsync();
+
+         if (project == null)
+            continue;
+
          var hashOfSecret = projectInfoScript.ToOps().Count == 3
             ? Encoders.Hex.EncodeData(projectInfoScript.ToOps()[2].PushData)
             : string.Empty;
@@ -79,7 +86,7 @@ public class ProjectTransactionsSyncRunner : TaskRunner
          var investment = new Investment
          {
             InvestorPubKey = investorPubKey,
-            AngorKey = feeOutput.ScriptHex,
+            AngorKey = project.AngorKey,
             AmountSats = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none").Sum(_ => _.Value),
             BlockIndex = feeOutput.BlockIndex,
             SecretHash = hashOfSecret,
