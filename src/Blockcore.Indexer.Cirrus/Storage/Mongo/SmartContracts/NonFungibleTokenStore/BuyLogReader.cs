@@ -11,7 +11,8 @@ public class BuyLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonF
 {
    public bool CanReadLogForMethodType(string methodType) => methodType.Equals("Buy");
 
-   public bool IsTransactionLogComplete(LogResponse[] logs) => logs is { Length: 2 };
+   public bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event == "TransferLog") &&
+                                                               logs.Any(_ => _.Log.Event == "TokenPurchasedLog");
 
    public WriteModel<Types.NonFungibleTokenTable>[] UpdateContractFromTransactionLog(CirrusContractTable contractTransaction,
       NonFungibleTokenContractTable computedTable)

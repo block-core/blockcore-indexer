@@ -8,7 +8,9 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo.SmartContracts.NonFungibleToken
 
 public class TransferLogReader : ILogReader<NonFungibleTokenContractTable, Types.NonFungibleTokenTable>
 {
-   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferLog") || methodType.Equals("TransferFrom");
+   public bool CanReadLogForMethodType(string methodType) => methodType.Equals("TransferLog") ||
+                                                             methodType.Equals("TransferFrom") ||
+                                                             methodType.Equals("DelegatedTransfer");
 
    public bool IsTransactionLogComplete(LogResponse[] logs) => logs.Any(_ => _.Log.Event.Equals("TransferLog"));
 
