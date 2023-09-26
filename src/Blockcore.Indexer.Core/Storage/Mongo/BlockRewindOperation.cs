@@ -44,6 +44,8 @@ public class BlockRewindOperation : IBlockRewindOperation
              unspentOutputBeforeInputTableRewind))
          throw new InvalidOperationException("Not all delete operations completed successfully"); //Throw to start over and delete the block again
 
+      ConfirmDataDeletion(blockIndex);
+
       await MergeRewindInputsToUnspentTransactionsAsync(storage, blockIndex);
 
       Task<DeleteResult> inputs = DeleteFromCollectionByExpression(storage.InputTable, _ => _.BlockIndex, blockIndex);
@@ -56,6 +58,12 @@ public class BlockRewindOperation : IBlockRewindOperation
 
       if (!ValidateDeleteIsAcknowledged(inputs, unspentOutput))
          throw new InvalidOperationException("Not all delete operations completed successfully"); //Throw to start over and delete the block again
+   }
+
+   private void ConfirmDataDeletion(uint blockIndex)
+   {
+      // todo: make sure all data was deleted for a given block
+      // we saw instances where data was not completely deleted from the Output table, possibly due to mongo sync times.
    }
 
    private Task<DeleteResult> DeleteFromCollectionByExpression<TCollection,TField>(IMongoCollection<TCollection> collection,
