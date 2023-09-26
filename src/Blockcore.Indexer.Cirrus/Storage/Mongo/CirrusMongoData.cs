@@ -571,7 +571,48 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
                }))
             .ToListAsync();
 
-         return smartContractsNotUpdated.Select(_ => _["_id"].AsString).ToList().Concat(smartContractsNotComputed.Select(s => s.address.AsString)).ToList();
+         var smartContractsNotUpdatedFromExternalContractCalls = await mongoDb.CirrusContractTable.Aggregate(PipelineDefinition<CirrusContractTable,BsonDocument>.Create(
+               new []
+               {
+                  new BsonDocument("$match",
+                     new BsonDocument { { "Success", true }, { "NewContractAddress",  BsonNull.Value },
+                     {"ContractCodeType", new BsonDocument("$nin",new BsonArray(supportedTypes))}}),
+                  new BsonDocument("$unwind",
+                     new BsonDocument { { "path", "$Logs" }, { "preserveNullAndEmptyArrays", false } }),
+                  new BsonDocument("$group",
+                     new BsonDocument
+                     {
+                        { "_id", "$Logs.Address" },
+                        { "ContractCodeType", new BsonDocument("$first", "$ContractCodeType") },
+                        { "BlockIndex", new BsonDocument("$max", "$BlockIndex") }
+                     }),
+                  new BsonDocument("$lookup",
+                     new BsonDocument
+                     {
+                        { "from", "SmartContractTable" },
+                        { "localField", "_id" },
+                        { "foreignField", "_id" },
+                        { "as", "output" }
+                     }),
+                  new BsonDocument("$match",
+                     new BsonDocument("output",
+                        new BsonDocument("$ne",
+                           new BsonArray()))),
+                  new BsonDocument("$unwind",
+                     new BsonDocument { { "path", "$output" }, { "preserveNullAndEmptyArrays", false } }),
+                  new BsonDocument("$match",
+                     new BsonDocument("$expr",
+                        new BsonDocument("$gt",
+                           new BsonArray { "$BlockIndex", "$output.LastProcessedBlockHeight" }))),
+               }))
+            .ToListAsync();
+
+
+         return smartContractsNotUpdated.Select(_ => _["_id"].AsString).ToList()
+            .Concat(smartContractsNotComputed.Select(s => s.address.AsString))
+            .Concat(smartContractsNotUpdatedFromExternalContractCalls.Select(_ => _["_id"].AsString))
+            .Distinct()
+            .ToList();
       }
    }
 }
