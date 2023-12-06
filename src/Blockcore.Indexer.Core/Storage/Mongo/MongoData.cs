@@ -19,7 +19,6 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Blockcore.NBitcoin.DataEncoders;
-using System.Net;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
