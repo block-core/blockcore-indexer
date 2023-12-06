@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Blockcore.NBitcoin.DataEncoders;
+using System.Net;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -707,6 +708,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             };
             return balance;
          }).ToList();
+
+         results.ForEach(_ =>
+         {
+            List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(_.Address);
+
+            _.PendingSent = mempoolAddressBag.Sum(s => s.AmountInInputs);
+            _.PendingReceived = mempoolAddressBag.Sum(s => s.AmountInOutputs);
+         });
 
          results.ForEach(_ => computeHistoryQueue.AddAddressToComputeHistoryQueue(_.Address));
 
