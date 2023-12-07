@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Blockcore.NBitcoin.DataEncoders;
+using Blockcore.Utilities;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -685,7 +686,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public async Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(IEnumerable<string> addresses)
+      public async Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(IEnumerable<string> addresses, bool includePending = false)
       {
          var outputTask = mongoDb.OutputTable.Distinct(_ => _.Address, _ => addresses.Contains(_.Address))
             .ToListAsync();
@@ -708,13 +709,33 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             return balance;
          }).ToList();
 
-         results.ForEach(_ =>
+         if (includePending)
          {
-            List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(_.Address);
+            var pending = addresses.Select(_ =>
+            {
+               List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(_);
 
-            _.PendingSent = mempoolAddressBag.Sum(s => s.AmountInInputs);
-            _.PendingReceived = mempoolAddressBag.Sum(s => s.AmountInOutputs);
-         });
+               return new QueryAddressBalance { Address = _, PendingSent = mempoolAddressBag.Sum(s => s.AmountInInputs), PendingReceived = mempoolAddressBag.Sum(s => s.AmountInOutputs) };
+            });
+
+            foreach (var items in pending)
+            {
+               if (items.PendingReceived > 0 || items.PendingSent > 0)
+               {
+                  var item = results.FirstOrDefault(_ => _.Address == items.Address);
+
+                  if (item == null)
+                  {
+                     results.Add(items);
+                  }
+                  else
+                  {
+                     item.PendingReceived = items.PendingReceived;
+                     item.PendingSent = items.PendingSent;
+                  }
+               }
+            }
+         }
 
          results.ForEach(_ => computeHistoryQueue.AddAddressToComputeHistoryQueue(_.Address));
 
