@@ -1176,7 +1176,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var outpointsToFetchTask = Task.Run(() => mongoDb.UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= storeTip.BlockIndex - confirmations)
-            .Sort(Builders<UnspentOutputTable>.Sort.Descending(x => x.BlockIndex).Ascending(x => x.Outpoint.OutputIndex))
+            .Sort(Builders<UnspentOutputTable>.Sort.Ascending(x => x.BlockIndex).Ascending(x => x.Outpoint.OutputIndex))
             .Skip(offset)
             .Limit(limit)
             .ToList()
