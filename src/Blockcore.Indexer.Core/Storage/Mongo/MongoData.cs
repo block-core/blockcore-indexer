@@ -19,6 +19,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Blockcore.NBitcoin.DataEncoders;
+using Blockcore.Utilities;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -685,7 +686,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public async Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(IEnumerable<string> addresses)
+      public async Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(IEnumerable<string> addresses, bool includePending = false)
       {
          var outputTask = mongoDb.OutputTable.Distinct(_ => _.Address, _ => addresses.Contains(_.Address))
             .ToListAsync();
@@ -707,6 +708,34 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             };
             return balance;
          }).ToList();
+
+         if (includePending)
+         {
+            var pending = addresses.Select(_ =>
+            {
+               List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(_);
+
+               return new QueryAddressBalance { Address = _, PendingSent = mempoolAddressBag.Sum(s => s.AmountInInputs), PendingReceived = mempoolAddressBag.Sum(s => s.AmountInOutputs) };
+            });
+
+            foreach (var items in pending)
+            {
+               if (items.PendingReceived > 0 || items.PendingSent > 0)
+               {
+                  var item = results.FirstOrDefault(_ => _.Address == items.Address);
+
+                  if (item == null)
+                  {
+                     results.Add(items);
+                  }
+                  else
+                  {
+                     item.PendingReceived = items.PendingReceived;
+                     item.PendingSent = items.PendingSent;
+                  }
+               }
+            }
+         }
 
          results.ForEach(_ => computeHistoryQueue.AddAddressToComputeHistoryQueue(_.Address));
 
@@ -1147,7 +1176,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var outpointsToFetchTask = Task.Run(() => mongoDb.UnspentOutputTable.Aggregate()
             .Match(_ => _.Address.Equals(address))
             .Match(_ => _.BlockIndex <= storeTip.BlockIndex - confirmations)
-            .Sort(Builders<UnspentOutputTable>.Sort.Descending(x => x.BlockIndex).Ascending(x => x.Outpoint.OutputIndex))
+            .Sort(Builders<UnspentOutputTable>.Sort.Ascending(x => x.BlockIndex).Ascending(x => x.Outpoint.OutputIndex))
             .Skip(offset)
             .Limit(limit)
             .ToList()
@@ -1201,7 +1230,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          return new QueryResult<OutputTable>
          {
-            Items = results,
+            Items = results.OrderBy(o => o.BlockIndex),
             Total = totalTask.Result?.Count ?? 0,
             Offset = offset,
             Limit = limit

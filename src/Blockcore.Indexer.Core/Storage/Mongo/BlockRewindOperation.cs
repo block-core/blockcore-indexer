@@ -40,9 +40,10 @@ public class BlockRewindOperation : IBlockRewindOperation
 
       await Task.WhenAll( output, transactions, addressComputed, addressHistoryComputed, unspentOutputBeforeInputTableRewind);
 
-      if (!ValidateDeleteIsAcknowledged(output, transactions, addressComputed, addressHistoryComputed,
-             unspentOutputBeforeInputTableRewind))
+      if (!ValidateDeleteIsAcknowledged(output, transactions, addressComputed, addressHistoryComputed, unspentOutputBeforeInputTableRewind))
+      {
          throw new InvalidOperationException("Not all delete operations completed successfully"); //Throw to start over and delete the block again
+      }
 
       ConfirmDataDeletion(blockIndex);
 
