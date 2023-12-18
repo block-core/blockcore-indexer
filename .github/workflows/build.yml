@@ -94,7 +94,7 @@ jobs:
         echo RELEASE_CIRRUS_NAME=${{ env.CIRRUS_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
         echo RELEASE_CIRRUS_PATH=${{ env.CIRRUS_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
         echo RELEASE_ANGOR_NAME=${{ env.ANGOR_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
-        echo RELEASE_ANGOR_PATH=${{ envANGOR_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
+        echo RELEASE_ANGOR_PATH=${{ env.ANGOR_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
       shell: bash
 
     - name: Package (Linux)
