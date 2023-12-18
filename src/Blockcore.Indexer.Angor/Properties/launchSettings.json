@@ -1,0 +1,14 @@
+﻿{
+  "profiles": {
+    "Blockcore.Indexer.Angor": {
+      "commandName": "Project",
+       "commandLineArgs": "--chain=TBTC",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+       "applicationUrl": "http://localhost:9910/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

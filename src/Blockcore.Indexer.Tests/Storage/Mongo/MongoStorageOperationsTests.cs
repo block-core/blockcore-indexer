@@ -77,7 +77,7 @@ public class MongoStorageOperationsTests
       var cryptoClientFactory = new Mock<ICryptoClientFactory>();
 
 
-      var scriptInterpeter = new Mock<IScriptInterpeter>();
+      var scriptInterpeter = new Mock<IScriptInterpreter>();
 
       scriptInterpeter.Setup(_ => _.InterpretScript(It.IsAny<Network>(), It.IsAny<Script>()))
          .Returns(() => scriptOutputInfo);

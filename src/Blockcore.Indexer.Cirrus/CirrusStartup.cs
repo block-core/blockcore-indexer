@@ -53,7 +53,7 @@ namespace Blockcore.Indexer.Cirrus
          services.Replace(new ServiceDescriptor(typeof(ISyncBlockTransactionOperationBuilder), typeof(CirrusSyncBlockTransactionOperationBuilder),
             ServiceLifetime.Singleton));
 
-         services.Replace(new ServiceDescriptor(typeof(IScriptInterpeter), typeof(CirrusScriptToAddressParser), ServiceLifetime.Singleton));
+         services.Replace(new ServiceDescriptor(typeof(IScriptInterpreter), typeof(CirrusScriptToAddressParser), ServiceLifetime.Singleton));
 
          services.Replace(new ServiceDescriptor(typeof(IStorageOperations), typeof(CirrusMongoStorageOperations), ServiceLifetime.Singleton));
 

@@ -42,7 +42,7 @@ namespace Blockcore.Indexer.Core.Extensions
 
       /// <summary>
       /// Use to enable dynamic loading of blockchain configurations from the official Blockcore Chains website.
-      /// </summary>
+      /// </summary>i
       /// <param name="builder"></param>
       /// <param name="title"></param>
       /// <param name="args"></param>

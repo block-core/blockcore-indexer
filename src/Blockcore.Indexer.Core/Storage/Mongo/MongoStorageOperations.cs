@@ -21,7 +21,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       protected readonly SyncConnection syncConnection;
       protected readonly GlobalState globalState;
-      protected readonly IScriptInterpeter scriptInterpeter;
+      protected readonly IScriptInterpreter scriptInterpeter;
       protected readonly IndexerSettings configuration;
       protected readonly IMongoDb db;
       protected readonly IStorage storage;
@@ -34,7 +34,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          IOptions<IndexerSettings> configuration,
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
-         IScriptInterpeter scriptInterpeter,
+         IScriptInterpreter scriptInterpeter,
          IStorage storage1)
       {
          this.syncConnection = syncConnection;

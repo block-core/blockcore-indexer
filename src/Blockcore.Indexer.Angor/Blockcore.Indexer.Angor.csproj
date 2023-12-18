@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <UserSecretsId>7d021720-12f6-4e8b-9a18-08ff1c67fde0</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Blockcore.Core" Version="1.1.40" />
+      <PackageReference Remove="Microsoft.SourceLink.GitHub" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Blockcore.Indexer.Core\Blockcore.Indexer.Core.csproj" />
+    </ItemGroup>
+
+</Project>

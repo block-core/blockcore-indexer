@@ -32,7 +32,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          IOptions<IndexerSettings> configuration,
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
-         IScriptInterpeter scriptInterpeter,
+         IScriptInterpreter scriptInterpeter,
          ICryptoClientFactory clientFactory,
          ICirrusMongoDb db) :
          base(

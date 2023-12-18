@@ -31,7 +31,7 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
          ICryptoClientFactory clientFactory,
-         IScriptInterpeter scriptInterpeter,
+         IScriptInterpreter scriptInterpeter,
          IMongoDatabase mongoDatabase,
          ICirrusMongoDb db,
          IBlockRewindOperation rewindOperation,
