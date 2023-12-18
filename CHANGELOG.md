@@ -1,3 +1,22 @@
+## <small>0.2.51 (2023-12-18)</small>
+
+* Add a todo in the rewind code path ([75a9bb6](https://github.com/block-core/blockcore-indexer/commit/75a9bb6))
+* add mempool pending balance (#196) ([43d5f31](https://github.com/block-core/blockcore-indexer/commit/43d5f31)), closes [#196](https://github.com/block-core/blockcore-indexer/issues/196)
+* Angor Indexer (#198) ([32a2f54](https://github.com/block-core/blockcore-indexer/commit/32a2f54)), closes [#198](https://github.com/block-core/blockcore-indexer/issues/198)
+* fix build ([88748a3](https://github.com/block-core/blockcore-indexer/commit/88748a3))
+* Fixed bug with NFT store contracts calling into NFT not getting picke… (#195) ([bb7572b](https://github.com/block-core/blockcore-indexer/commit/bb7572b)), closes [#195](https://github.com/block-core/blockcore-indexer/issues/195)
+
+
+
+## <small>0.2.50 (2023-06-09)</small>
+
+* Add TBTC signet ([a77afa8](https://github.com/block-core/blockcore-indexer/commit/a77afa8))
+* bump version ([67d0021](https://github.com/block-core/blockcore-indexer/commit/67d0021))
+* Bump version ([8e815a1](https://github.com/block-core/blockcore-indexer/commit/8e815a1))
+* Removed typo in method call (#193) ([fd03a23](https://github.com/block-core/blockcore-indexer/commit/fd03a23)), closes [#193](https://github.com/block-core/blockcore-indexer/issues/193)
+
+
+
 ## <small>0.2.49 (2023-06-05)</small>
 
 * Adding a backend task to call rpc and for fees estimation (#192) ([9462618](https://github.com/block-core/blockcore-indexer/commit/9462618)), closes [#192](https://github.com/block-core/blockcore-indexer/issues/192)
