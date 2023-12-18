@@ -44,12 +44,13 @@ namespace Blockcore.Indexer.Core.Controllers
       /// Only returns addresses with outputs or spent outputs (also when balance is 0)
       /// </summary>
       /// <param name="addresses"></param>
+      /// <param name="includeUnconfirmed"></param>
       /// <returns></returns>
       [HttpPost]
       [Route("addresses/balance")]
-      public IActionResult GetAddressesBalance(IList<string> addresses)
+      public IActionResult GetAddressesBalance(IList<string> addresses, bool? includeUnconfirmed)
       {
-         return Ok(storage.QuickBalancesLookupForAddressesWithHistoryCheckAsync(addresses).Result);
+         return Ok(storage.QuickBalancesLookupForAddressesWithHistoryCheckAsync(addresses, includeUnconfirmed ?? false).Result);
       }
 
       /// <summary>

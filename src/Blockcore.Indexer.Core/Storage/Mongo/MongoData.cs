@@ -1230,7 +1230,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          return new QueryResult<OutputTable>
          {
-            Items = results,
+            Items = results.OrderBy(o => o.BlockIndex),
             Total = totalTask.Result?.Count ?? 0,
             Offset = offset,
             Limit = limit
