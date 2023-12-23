@@ -44,7 +44,8 @@ public class AngorMongoData : MongoData, IAngorStorage
             NostrPubKey = project.NPubKey,
             ProjectIdentifier = project.AngorKey,
             TrxId = project.TransactionId,
-            TotalInvestmentsCount = total
+            TotalInvestmentsCount = total,
+            CreatedOnBlock = project.BlockIndex
          };
       }
 
