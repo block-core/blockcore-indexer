@@ -69,7 +69,8 @@ public class AngorMongoData : MongoData, IAngorStorage
             FounderKey = _.FounderKey,
             NostrPubKey =_.NPubKey,
             ProjectIdentifier = _.AngorKey,
-            TrxId = _.TransactionId
+            TrxId = _.TransactionId,
+            CreatedOnBlock = _.BlockIndex
          }),
          Offset = itemsToSkip,
          Limit = limit,
