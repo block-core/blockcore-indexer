@@ -1,8 +1,10 @@
-## <small>0.2.52 (2023-12-23)</small>
+## <small>0.2.53 (2023-12-23)</small>
 
 * Add a todo in the rewind code path ([75a9bb6](https://github.com/block-core/blockcore-indexer/commit/75a9bb6))
+* Add CreatedOnBlock also to fetch by project id ([cf567b4](https://github.com/block-core/blockcore-indexer/commit/cf567b4))
 * add mempool pending balance (#196) ([43d5f31](https://github.com/block-core/blockcore-indexer/commit/43d5f31)), closes [#196](https://github.com/block-core/blockcore-indexer/issues/196)
 * Angor Indexer (#198) ([32a2f54](https://github.com/block-core/blockcore-indexer/commit/32a2f54)), closes [#198](https://github.com/block-core/blockcore-indexer/issues/198)
+* bump version ([3e354bd](https://github.com/block-core/blockcore-indexer/commit/3e354bd))
 * bump version ([a0cbf3c](https://github.com/block-core/blockcore-indexer/commit/a0cbf3c))
 * bump version ([4e43844](https://github.com/block-core/blockcore-indexer/commit/4e43844))
 * fix build ([88748a3](https://github.com/block-core/blockcore-indexer/commit/88748a3))
