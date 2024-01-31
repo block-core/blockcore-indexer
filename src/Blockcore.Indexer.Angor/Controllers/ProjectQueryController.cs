@@ -38,6 +38,15 @@ public class ProjectQueryController : Controller
    }
 
    [HttpGet]
+   [Route("projects/{projectId}/stats")]
+   public async Task<IActionResult> GetProjectStats([MinLength(2)][MaxLength(100)] string projectId)
+   {
+      var project = await angorStorage.GetProjectStatsAsync(projectId);
+
+      return project == null ? NotFound() : Ok(project);
+   }
+
+   [HttpGet]
    [Route("projects/{projectId}/investments")]
    public async Task<IActionResult> GetInvestments([MinLength(2)][MaxLength(100)] string projectId,[Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
    {

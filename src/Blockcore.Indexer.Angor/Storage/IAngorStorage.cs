@@ -6,10 +6,8 @@ namespace Blockcore.Indexer.Angor.Storage;
 public interface IAngorStorage
 {
    Task<ProjectIndexerData?> GetProjectAsync(string projectId);
-
+   Task<ProjectStats?> GetProjectStatsAsync(string projectId);
    Task<QueryResult<ProjectIndexerData>> GetProjectsAsync(int? offset, int limit);
-
    Task<QueryResult<ProjectInvestment>> GetProjectInvestmentsAsync(string projectId, int? offset, int limit);
-
    Task<ProjectInvestment> GetInvestmentsByInvestorPubKeyAsync(string projectId);
 }

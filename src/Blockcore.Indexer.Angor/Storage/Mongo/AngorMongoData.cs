@@ -52,6 +52,30 @@ public class AngorMongoData : MongoData, IAngorStorage
       return null;
    }
 
+   public async Task<ProjectStats?> GetProjectStatsAsync(string projectId)
+   {
+      var project = mongoDb.ProjectTable
+         .AsQueryable()
+         .FirstOrDefault(_ => _.AngorKey == projectId);
+
+      if (project != null)
+      {
+         var total = await mongoDb.InvestmentTable.CountDocumentsAsync(Builders<Investment>.Filter.Eq(_ => _.AngorKey, project.AngorKey));
+
+         var sum = mongoDb.InvestmentTable.AsQueryable()
+            .Where(_ => _.AngorKey == projectId)
+            .Sum(s => s.AmountSats);
+
+         return new ProjectStats
+         {
+            InvestorCount = total,
+            AmountInvested = sum,
+         };
+      }
+
+      return null;
+   }
+
    public async Task<QueryResult<ProjectIndexerData>> GetProjectsAsync(int? offset, int limit)
    {
       long total = await mongoDb.ProjectTable.CountDocumentsAsync(FilterDefinition<Project>.Empty);
@@ -101,8 +125,8 @@ public class AngorMongoData : MongoData, IAngorStorage
       return new QueryResult<ProjectInvestment>
       {
          Items = investments,
-         Offset = 0,
-         Limit = 0,
+         Offset = itemsToSkip,
+         Limit = limit,
          Total = total
       };
    }
