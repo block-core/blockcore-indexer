@@ -66,10 +66,25 @@ public class AngorMongoData : MongoData, IAngorStorage
             .Where(_ => _.AngorKey == projectId)
             .Sum(s => s.AmountSats);
 
+         var test = mongoDb.InvestmentTable.AsQueryable()
+            .Where(x => x.AngorKey == project.AngorKey)
+            .GroupJoin(mongoDb.OutputTable.AsQueryable(),
+               x => x.TransactionId,
+               x => x.Outpoint.TransactionId,
+               ((investment, outputs) => new { investment.AngorKey, investment.AmountSats, outputs }))
+            .SelectMany(x => x.outputs, (firstLookup, table) =>
+               new { firstLookup.AngorKey, firstLookup.AmountSats, table.Outpoint, })
+            .GroupJoin(mongoDb.InputTable.AsQueryable(),
+               output => output.Outpoint,
+               input => input.Outpoint,
+               (projection, inputs) => new { projection.AngorKey, projection.AmountSats, inputs })
+            .Sum(x => x.inputs.Sum(i => i.Value));
+
          return new ProjectStats
          {
             InvestorCount = total,
             AmountInvested = sum,
+            TotalAmountSpent = test
          };
       }
 
@@ -115,7 +130,7 @@ public class AngorMongoData : MongoData, IAngorStorage
          .Take(limit)
          .Select(_ => new ProjectInvestment
          {
-            TransactionId = _.TransactionIndex,
+            TransactionId = _.TransactionId,
             TotalAmount = _.AmountSats,
             InvestorPublicKey = _.InvestorPubKey,
             HashOfSecret = _.SecretHash
@@ -138,7 +153,7 @@ public class AngorMongoData : MongoData, IAngorStorage
          .Project(_ => new ProjectInvestment
          {
             TotalAmount = _.AmountSats,
-            TransactionId = _.TransactionIndex,
+            TransactionId = _.TransactionId,
             InvestorPublicKey = _.InvestorPubKey,
             HashOfSecret = _.SecretHash
          })

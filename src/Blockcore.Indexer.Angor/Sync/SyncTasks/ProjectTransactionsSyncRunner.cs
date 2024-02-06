@@ -42,7 +42,7 @@ public class ProjectTransactionsSyncRunner : TaskRunner
          .Where(t => t.isCreateProject == false)
          .GroupJoin(angorMongoDb.InvestmentTable.AsQueryable(),
             x => x.outputTransactionId,
-            i => i.TransactionIndex,
+            i => i.TransactionId,
             (data,investments) => new {data.outputTransactionId,data.isCreateProject,investments})
          .Where(data => !data.investments.Any())
          .ToListAsync();
@@ -90,7 +90,7 @@ public class ProjectTransactionsSyncRunner : TaskRunner
             AmountSats = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none").Sum(_ => _.Value),
             BlockIndex = feeOutput.BlockIndex,
             SecretHash = hashOfSecret,
-            TransactionIndex = feeOutput.Outpoint.TransactionId,
+            TransactionId = feeOutput.Outpoint.TransactionId,
          };
 
          investments.Add(investment);

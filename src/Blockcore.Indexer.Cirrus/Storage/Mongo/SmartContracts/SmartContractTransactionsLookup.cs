@@ -21,6 +21,5 @@ public class SmartContractTransactionsLookup<T> : ISmartContractTransactionsLook
          .AsQueryable()
          .Where(_ => _.ToAddress == address && _.Success && _.BlockIndex > lastProcessedBlockHeight)
          .ToListAsync();
-      ;
    }
 }

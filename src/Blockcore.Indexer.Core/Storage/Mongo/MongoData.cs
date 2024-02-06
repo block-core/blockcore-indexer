@@ -603,7 +603,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                Limit = limit,
                Total = 0
             };
-         };
+         }
 
          // This will first perform one db query.
          long total = addressComputedTable.CountSent + addressComputedTable.CountReceived + addressComputedTable.CountStaked + addressComputedTable.CountMined;

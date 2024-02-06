@@ -19,7 +19,7 @@ class UpdateMaxVotingDurationLogReader : ILogReader<DaoContractTable,DaoContract
 
       if (log == null) //TODO check if this issue persists
       {
-         return Array.Empty<WriteModel<DaoContractProposalTable>>();;
+         return Array.Empty<WriteModel<DaoContractProposalTable>>();
          // throw new ArgumentException(contractTransaction.TransactionId);
       }
 
