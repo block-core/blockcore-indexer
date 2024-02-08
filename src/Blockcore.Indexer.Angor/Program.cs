@@ -1,7 +1,7 @@
 using Blockcore.Indexer.Angor;
 using Blockcore.Indexer.Core.Extensions;
 
-var builder = Host.CreateDefaultBuilder()
+var builder = Host.CreateDefaultBuilder(args)
    .ConfigureServices((hostContext, services) =>
    {
       services.Configure<HostOptions>(option =>
