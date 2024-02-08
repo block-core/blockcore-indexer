@@ -115,7 +115,7 @@ public class AngorMongoData : MongoData, IAngorStorage
          .Take(limit)
          .Select(_ => new ProjectInvestment
          {
-            TransactionId = _.TransactionIndex,
+            TransactionId = _.TransactionId,
             TotalAmount = _.AmountSats,
             InvestorPublicKey = _.InvestorPubKey,
             HashOfSecret = _.SecretHash
@@ -138,7 +138,7 @@ public class AngorMongoData : MongoData, IAngorStorage
          .Project(_ => new ProjectInvestment
          {
             TotalAmount = _.AmountSats,
-            TransactionId = _.TransactionIndex,
+            TransactionId = _.TransactionId,
             InvestorPublicKey = _.InvestorPubKey,
             HashOfSecret = _.SecretHash
          })

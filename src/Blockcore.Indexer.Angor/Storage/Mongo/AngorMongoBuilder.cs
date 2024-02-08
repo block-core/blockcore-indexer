@@ -52,7 +52,7 @@ public class AngorMongoBuilder : MongoBuilder
       //TODO move this to the block indexer task runner, but we'll need to move the indexes in there to a different class for each project/blockchain
       AngorMongoDb.InvestmentTable.Indexes
          .CreateOne(new CreateIndexModel<Investment>(Builders<Investment>
-            .IndexKeys.Hashed(_ => _.TransactionIndex)));
+            .IndexKeys.Hashed(_ => _.TransactionId)));
 
       return Task.CompletedTask;
    }

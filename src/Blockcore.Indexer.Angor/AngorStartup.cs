@@ -32,7 +32,7 @@ public class AngorStartup
       services.AddSingleton<IAngorMongoDb, AngorMongoDb>();
 
       services.AddScoped<TaskRunner,ProjectsSyncRunner>();
-      services.AddScoped<TaskRunner,ProjectTransactionsSyncRunner>();
+      services.AddScoped<TaskRunner,ProjectInvestmentsSyncRunner>();
    }
 
    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

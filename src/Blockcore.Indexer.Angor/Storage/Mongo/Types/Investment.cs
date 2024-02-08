@@ -10,7 +10,7 @@ public class Investment
 
    public long BlockIndex { get; set; }
 
-   public string TransactionIndex { get; set; }
+   public string TransactionId { get; set; }
 
    public long AmountSats { get; set; }
 

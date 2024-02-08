@@ -10,12 +10,12 @@ using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Angor.Sync.SyncTasks;
 
-public class ProjectTransactionsSyncRunner : TaskRunner
+public class ProjectInvestmentsSyncRunner : TaskRunner
 {
    readonly IAngorMongoDb angorMongoDb;
-   ILogger<ProjectTransactionsSyncRunner> logger;
+   ILogger<ProjectInvestmentsSyncRunner> logger;
 
-   public ProjectTransactionsSyncRunner(IOptions<IndexerSettings> configuration,  ILogger<ProjectTransactionsSyncRunner> logger,
+   public ProjectInvestmentsSyncRunner(IOptions<IndexerSettings> configuration,  ILogger<ProjectInvestmentsSyncRunner> logger,
       IAngorMongoDb angorMongoDb)
       : base(configuration, logger)
    {
@@ -28,22 +28,19 @@ public class ProjectTransactionsSyncRunner : TaskRunner
    {
       var investmentsInProjectOutputs = await angorMongoDb.ProjectTable.AsQueryable()
          .GroupJoin(
-            angorMongoDb.OutputTable.AsQueryable()
-               .AsQueryable(),
+            angorMongoDb.OutputTable.AsQueryable(),
             p => p.AddressOnFeeOutput,
             o => o.Address,
-            (project, outputs) => new { project.TransactionId, outputs })
-         .SelectMany(project => project.outputs,(p, o) => new
-         {
-            outputTransactionId = o.Outpoint.TransactionId,
-            isCreateProject = p.TransactionId == o.Outpoint.TransactionId,
-
-         })
-         .Where(t => t.isCreateProject == false)
-         .GroupJoin(angorMongoDb.InvestmentTable.AsQueryable(),
+            (project, outputs) => new { project.TransactionId, project.BlockIndex, outputs })
+         .SelectMany(
+            p => p.outputs.Where(
+               o => o.BlockIndex > p.BlockIndex && p.TransactionId != o.Outpoint.TransactionId),
+            (p, o) => new { outputTransactionId = o.Outpoint.TransactionId, outoutBlockIndex = o.BlockIndex })
+         .GroupJoin(
+            angorMongoDb.InvestmentTable.AsQueryable(),
             x => x.outputTransactionId,
-            i => i.TransactionIndex,
-            (data,investments) => new {data.outputTransactionId,data.isCreateProject,investments})
+            i => i.TransactionId,
+            (data, investments) => new { data.outputTransactionId, data.outoutBlockIndex, investments })
          .Where(data => !data.investments.Any())
          .ToListAsync();
 
@@ -52,14 +49,15 @@ public class ProjectTransactionsSyncRunner : TaskRunner
       foreach (var investmentOutput in investmentsInProjectOutputs)
       {
          var allOutputsOnInvestmentTransaction = await angorMongoDb.OutputTable.AsQueryable()
-            .Where(output => output.Outpoint.TransactionId == investmentOutput.outputTransactionId)
+            .Where(output => output.BlockIndex == investmentOutput.outoutBlockIndex &&
+                             output.Outpoint.TransactionId == investmentOutput.outputTransactionId)
             .ToListAsync();
 
-         if (allOutputsOnInvestmentTransaction.All(_ => _.Address != "none")) //TODO replace with a better indicator of stage investments
+         if (allOutputsOnInvestmentTransaction.All(x => x.Address != "none")) //TODO replace with a better indicator of stage investments
             continue;
 
-         var feeOutput = allOutputsOnInvestmentTransaction.Single(_ => _.Outpoint.OutputIndex == 0);
-         var projectDataOutput = allOutputsOnInvestmentTransaction.Single(_ => _.Outpoint.OutputIndex == 1);
+         var feeOutput = allOutputsOnInvestmentTransaction.Single(x => x.Outpoint.OutputIndex == 0);
+         var projectDataOutput = allOutputsOnInvestmentTransaction.Single(x => x.Outpoint.OutputIndex == 1);
 
          var projectInfoScript = Script.FromHex(projectDataOutput.ScriptHex);
 
@@ -72,7 +70,7 @@ public class ProjectTransactionsSyncRunner : TaskRunner
             continue;
          }
 
-         var project = await angorMongoDb.ProjectTable.Aggregate()
+         var project = await angorMongoDb.ProjectTable.Aggregate() //TODO not sure we need this as we get the lookup from the project table to begine with
             .Match(_ => _.AngorKeyScriptHex == feeOutput.ScriptHex)
             .SingleOrDefaultAsync();
 
@@ -90,7 +88,7 @@ public class ProjectTransactionsSyncRunner : TaskRunner
             AmountSats = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none").Sum(_ => _.Value),
             BlockIndex = feeOutput.BlockIndex,
             SecretHash = hashOfSecret,
-            TransactionIndex = feeOutput.Outpoint.TransactionId,
+            TransactionId = feeOutput.Outpoint.TransactionId,
          };
 
          investments.Add(investment);
