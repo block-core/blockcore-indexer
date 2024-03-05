@@ -1,10 +1,13 @@
+using System.Linq.Expressions;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Indexer.Angor.Storage.Mongo;
 using Blockcore.Indexer.Angor.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Blockcore.NBitcoin.DataEncoders;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
@@ -26,31 +29,127 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
 
    public override async Task<bool> OnExecute()
    {
-      var investmentsInProjectOutputs = await angorMongoDb.ProjectTable.AsQueryable()
-         .GroupJoin(
-            angorMongoDb.OutputTable.AsQueryable(),
-            p => p.AddressOnFeeOutput,
-            o => o.Address,
-            (project, outputs) => new { project.TransactionId, project.BlockIndex, outputs })
-         .SelectMany(
-            p => p.outputs.Where(
-               o => o.BlockIndex > p.BlockIndex && p.TransactionId != o.Outpoint.TransactionId),
-            (p, o) => new { outputTransactionId = o.Outpoint.TransactionId, outoutBlockIndex = o.BlockIndex })
-         .GroupJoin(
-            angorMongoDb.InvestmentTable.AsQueryable(),
-            x => x.outputTransactionId,
-            i => i.TransactionId,
-            (data, investments) => new { data.outputTransactionId, data.outoutBlockIndex, investments })
-         .Where(data => !data.investments.Any())
+      var pipeline = PipelineDefinition<Investment, BsonDocument>.Create(new[]
+      {
+         new BsonDocument("$match",
+            new BsonDocument("$expr",
+               new BsonDocument("$eq", new BsonArray
+               {
+                  "$AngorKey", // Replace 'foreignField' with the actual field name
+                  "$$angorProjectId"
+               })))
+      ,
+      new BsonDocument($"$group",new BsonDocument
+      {
+         { "_id", "$AngorKey" },
+         { "projectMaxBlockScanned", new BsonDocument("$max", "$BlockIndex") }
+      }),
+      new BsonDocument("$project",new BsonDocument("projectMaxBlockScanned", 1))
+      });
+
+
+      var matchPipeline = new BsonDocument("$match",
+         new BsonDocument("$expr",
+            new BsonDocument("$eq", new BsonArray
+            {
+               "$TransactionId", // Replace 'foreignField' with the actual field name
+               "$outputs.Outpoint.TransactionId"
+            })));
+
+      var investmentsInProjectOutputs = await angorMongoDb.ProjectTable.Aggregate(PipelineDefinition<Project, BsonDocument>.Create(
+            new[]
+            {
+               new BsonDocument("$lookup",
+                  new BsonDocument
+                  {
+                     { "from", "Investment" },
+                     { "let", new BsonDocument("angorProjectId", "_id") },
+                     {
+                        "pipeline", new BsonArray
+                        {
+                           new BsonDocument("$match",
+                              new BsonDocument("$expr",
+                                 new BsonDocument("$eq",
+                                    new BsonArray { "$AngorKey", "$$angorProjectId" }))),
+                           new BsonDocument("$group",
+                              new BsonDocument
+                              {
+                                 { "_id", "$AngorKey" },
+                                 { "projectMaxBlockScanned", new BsonDocument("$max", "$BlockIndex") }
+                              }),
+                           new BsonDocument("$project",
+                              new BsonDocument("projectMaxBlockScanned", 1))
+                        }
+                     },
+                     { "as", "joinedData" }
+                  }),
+               new BsonDocument("$unwind",
+                  new BsonDocument { { "path", "$joinedData" }, { "preserveNullAndEmptyArrays", true } }),
+               new BsonDocument("$project",
+                  new BsonDocument
+                  {
+                     { "AddressOnFeeOutput", 1 }, { "TransactionId", 1 }, { "joinedData.projectMaxBlockScanned", 1 }
+                  }),
+               new BsonDocument("$lookup",
+                  new BsonDocument
+                  {
+                     { "from", "Output" },
+                     { "localField", "AddressOnFeeOutput" },
+                     { "foreignField", "Address" },
+                     { "as", "o" }
+                  }),
+               new BsonDocument("$unwind", "$o"),
+               new BsonDocument("$match",
+                  new BsonDocument("$expr",
+                     new BsonDocument("$and", new BsonArray
+                     {
+                        new BsonDocument("$ne",
+                           new BsonArray { "$TransactionId", "$o.Outpoint.TransactionId" }),
+                        new BsonDocument("$gt",
+                           new BsonArray { "$o.BlockIndex", "$joinedData.projectMaxBlockScanned" })
+                     }))),
+               new BsonDocument("$project",
+                  new BsonDocument
+                  {
+                     { "OutputTransactionId", "$o.Outpoint.TransactionId" },
+                     { "OutputBlockIndex", "$o.BlockIndex" }
+                  })
+            }))
+
+
          .ToListAsync();
+
+      // var investmentsInProjectOutputs = await angorMongoDb.ProjectTable.Aggregate()
+      //    .Lookup(angorMongoDb.InvestmentTable,
+      //       new BsonDocument("angorProjectId", "_id"),
+      //       pipeline,
+      //       new StringFieldDefinition<BsonDocument, List<BsonDocument>>("joinedData"))
+      //    .Unwind("joinedData",new AggregateUnwindOptions<BsonDocument>{PreserveNullAndEmptyArrays = true})
+      //    .Project(Builders<BsonDocument>.Projection
+      //       .Include("AddressOnFeeOutput")
+      //       .Include("TransactionId")
+      //       .Include("joinedData.projectMaxBlockScanned")
+      //    )
+      //    .Lookup(angorMongoDb.OutputTable.CollectionNamespace.CollectionName,
+      //       new StringFieldDefinition<BsonDocument>("AddressOnFeeOutput"),
+      //       new StringFieldDefinition<OutputTable>("Address"),
+      //       new StringFieldDefinition<OutputTable>("outputs"))
+      //    .Unwind("outputs")
+      //    .Match(Builders<BsonDocument>.Filter.Ne("TransactionId", "$outputs.Outpoint.TransactionId"))
+      // .Project(new BsonDocument
+      // {
+      //    { "OutputTransactionId", "$outputs.Outpoint.TransactionId" },
+      //    { "OutputBlockIndex", "$outputs.BlockIndex" }
+      // })
+      //    .ToListAsync();
 
       var investments = new List<Investment>();
 
       foreach (var investmentOutput in investmentsInProjectOutputs)
       {
          var allOutputsOnInvestmentTransaction = await angorMongoDb.OutputTable.AsQueryable()
-            .Where(output => output.BlockIndex == investmentOutput.outoutBlockIndex &&
-                             output.Outpoint.TransactionId == investmentOutput.outputTransactionId)
+            .Where(output => output.BlockIndex == investmentOutput["OutputBlockIndex"] &&
+                             output.Outpoint.TransactionId == investmentOutput["OutputTransactionId"])
             .ToListAsync();
 
          if (allOutputsOnInvestmentTransaction.All(x => x.Address != "none")) //TODO replace with a better indicator of stage investments

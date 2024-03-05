@@ -82,8 +82,6 @@ public class ProjectsSyncRunner : TaskRunner
 
       if (checkForExistingProject) return;
 
-      var nPubKey = Encoders.Hex.EncodeData(script.ToOps()[2].PushData); //Schnorr signature not supported
-
       var projectId = GetProjectIdDerivation(founderKey.ToHex());
 
       if (projectId == 0)
@@ -94,6 +92,8 @@ public class ProjectsSyncRunner : TaskRunner
       var encoder = new Bech32Encoder("angor");
 
       var projectIdentifier = encoder.Encode(0, angorKey.WitHash.ToBytes());
+
+      var nPubKey = Encoders.Hex.EncodeData(script.ToOps()[2].PushData); //Schnorr signature not supported
 
       var angorFeeOutput = await AngorMongoDb.OutputTable
          .AsQueryable()
