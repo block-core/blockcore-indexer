@@ -67,23 +67,15 @@ public class AngorMongoData : MongoData, IAngorStorage
             .Where(_ => _.AngorKey == projectId)
             .Sum(s => s.AmountSats);
 
-         // var totalInvestmentWithdrawnByInvestors = await GetTotalInvestmentWithdrawn(projectId);
-         //
-         // var totalOutputsUsed = await GetSumOfOutputsSpentOnProject(projectId);
-
-         var outputsSpentSummery = await GetSpentProjectFundsSplitToFounderAndPenalty(projectId);
-
-         var founder = outputsSpentSummery.SingleOrDefault(x => x["_id"] == "founder");
-
-         var investor = outputsSpentSummery.SingleOrDefault(x => x["_id"] == "investor");
+         var spendingSummery = await GetSpentProjectFundsSplitToFounderAndPenalty(projectId);
 
          return new ProjectStats
          {
             InvestorCount = total,
             AmountInvested = sum,
-            AmountSpentSoFarByFounder = founder?["total"].AsInt64 ?? 0,
-            AmountInPenalties = investor?["total"].AsInt64 ?? 0,
-            CountInPenalties = investor?["trxCount"].AsInt32 ?? 0
+            AmountSpentSoFarByFounder = spendingSummery.founderSpent,
+            AmountInPenalties = spendingSummery.investorWithdrawn,
+            CountInPenalties = spendingSummery.invetorTrxCount
          };
       }
 
@@ -91,9 +83,11 @@ public class AngorMongoData : MongoData, IAngorStorage
    }
 
 
-   private Task<List<BsonDocument>> GetSpentProjectFundsSplitToFounderAndPenalty(string projectId)
+   private async Task<(long founderSpent, long investorWithdrawn, int invetorTrxCount)> GetSpentProjectFundsSplitToFounderAndPenalty(string projectId)
    {
-      return mongoDb.InvestmentTable.Aggregate(PipelineDefinition<Investment, BsonDocument>.Create(
+      var founderSummery = "founder"; var investorSummery = "investor"; var total = "total"; var trxCount = "trxCount";
+
+      var outputsSpentSummery = await mongoDb.InvestmentTable.Aggregate(PipelineDefinition<Investment, BsonDocument>.Create(
             new BsonDocument("$match",
                new BsonDocument("AngorKey", projectId)),
             new BsonDocument("$lookup",
@@ -135,15 +129,21 @@ public class AngorMongoData : MongoData, IAngorStorage
                                     "$numTrx",
                                     1
                                  }) },
-                           { "then", "founder" },
-                           { "else", "investor" }
+                           { "then", founderSummery },
+                           { "else", investorSummery }
                         }) },
-                  { "total",
+                  { total,
                      new BsonDocument("$sum", "$spent") },
-                  { "trxCount",
+                  { trxCount,
                      new BsonDocument("$sum", 1) }
                })))
          .ToListAsync();
+
+      var founder = outputsSpentSummery.SingleOrDefault(x => x["_id"] == founderSummery);
+
+      var investor = outputsSpentSummery.SingleOrDefault(x => x["_id"] == investorSummery);
+
+      return (founder?[total].AsInt64 ?? 0, investor?[total].AsInt64 ?? 0, investor?[trxCount].AsInt32 ?? 0);
    }
 
    private Task<BsonDocument> GetTotalInvestmentWithdrawn(string projectId)
