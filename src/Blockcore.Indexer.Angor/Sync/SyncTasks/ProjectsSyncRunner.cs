@@ -46,24 +46,33 @@ public class ProjectsSyncRunner : TaskRunner
          ? AngorMongoDb.ProjectTable.AsQueryable().Max(p => p.BlockIndex)
          : 0;
 
-      var test = AngorMongoDb.OutputTable.AsQueryable()
+      var investmentslookup = AngorMongoDb.OutputTable.AsQueryable()
          .Where(_ => _.BlockIndex > blockIndexed &&
-                     _.Outpoint.OutputIndex == 1 &&
                      _.Address == "TX_NULL_DATA" &&
+                     _.Outpoint.OutputIndex == 1 &&
                      _.CoinBase == false) // &&
                      //_.ScriptHex.Length == 136)
          .OrderBy(_ => _.BlockIndex)
          .ToList();
 
-      foreach (OutputTable outputTable in test)
+      var projectTasks = investmentslookup.Select(CheckAndAddProjectAsync).ToList();
+
+      await Task.WhenAll(projectTasks);
+
+      var projects = projectTasks
+         .Where(x => x.Result != null)
+         .Select(x => x.Result!)
+         .ToList();
+
+      if (projects.Any())
       {
-         await CheckAndAddProjectAsync(outputTable);
+         await AngorMongoDb.ProjectTable.InsertManyAsync(projects);
       }
 
       return false;
    }
 
-   async Task CheckAndAddProjectAsync(OutputTable output)
+   async Task<Project?> CheckAndAddProjectAsync(OutputTable output)
    {
       var script = Script.FromHex(output.ScriptHex);
 
@@ -73,27 +82,27 @@ public class ProjectsSyncRunner : TaskRunner
           ops.First().Name != Op.GetOpName(OpcodeType.OP_RETURN) ||
           ops[1].PushData.Length != 33 ||
           ops[2].PushData.Length != 32)
-         return;
+         return null;
 
       var founderKey = new PubKey(script.ToOps()[1].PushData);
 
       var checkForExistingProject = await AngorMongoDb.ProjectTable.AsQueryable()
          .AnyAsync(_ => _.FounderKey == founderKey.ToHex());
 
-      if (checkForExistingProject) return;
-
-      var nPubKey = Encoders.Hex.EncodeData(script.ToOps()[2].PushData); //Schnorr signature not supported
+      if (checkForExistingProject) return null;
 
       var projectId = GetProjectIdDerivation(founderKey.ToHex());
 
       if (projectId == 0)
-         return;
+         return null;
 
       var angorKey = extendedPublicKey.Derive(projectId).PubKey;
 
       var encoder = new Bech32Encoder("angor");
 
       var projectIdentifier = encoder.Encode(0, angorKey.WitHash.ToBytes());
+
+      var nPubKey = Encoders.Hex.EncodeData(script.ToOps()[2].PushData); //Schnorr signature not supported
 
       var angorFeeOutput = await AngorMongoDb.OutputTable
          .AsQueryable()
@@ -105,9 +114,9 @@ public class ProjectsSyncRunner : TaskRunner
             _.ScriptHex == angorKey.WitHash.ScriptPubKey.ToHex())
          .FirstOrDefaultAsync();
 
-      if (angorFeeOutput == null) return;
+      if (angorFeeOutput == null) return null;
 
-      await AngorMongoDb.ProjectTable.InsertOneAsync(new Project
+      return new Project
       {
          AngorKey = projectIdentifier,
          TransactionId = output.Outpoint.TransactionId,
@@ -116,7 +125,7 @@ public class ProjectsSyncRunner : TaskRunner
          FounderKey = founderKey.ToHex(),
          NPubKey = nPubKey,
          AddressOnFeeOutput = angorFeeOutput.Address
-      });
+      };
    }
 
    private uint GetProjectIdDerivation(string founderKey)

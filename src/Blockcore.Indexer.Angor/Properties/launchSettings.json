@@ -1,6 +1,6 @@
 {
    "profiles": {
-      "TBTC-signet": {
+      "Angor TBTC-signet": {
          "commandName": "Project",
          "commandLineArgs": "--chain=TBTC --Network:RPCPort=38332",
          "dotnetRunMessages": true,

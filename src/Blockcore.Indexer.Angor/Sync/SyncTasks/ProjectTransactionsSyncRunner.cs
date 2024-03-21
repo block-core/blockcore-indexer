@@ -5,96 +5,106 @@ using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Blockcore.NBitcoin.DataEncoders;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
 namespace Blockcore.Indexer.Angor.Sync.SyncTasks;
 
-public class ProjectTransactionsSyncRunner : TaskRunner
+public class ProjectInvestmentsSyncRunner : TaskRunner
 {
    readonly IAngorMongoDb angorMongoDb;
-   ILogger<ProjectTransactionsSyncRunner> logger;
+   ILogger<ProjectInvestmentsSyncRunner> logger;
 
-   public ProjectTransactionsSyncRunner(IOptions<IndexerSettings> configuration,  ILogger<ProjectTransactionsSyncRunner> logger,
+   public ProjectInvestmentsSyncRunner(IOptions<IndexerSettings> configuration,  ILogger<ProjectInvestmentsSyncRunner> logger,
       IAngorMongoDb angorMongoDb)
       : base(configuration, logger)
    {
       this.angorMongoDb = angorMongoDb;
       this.logger = logger;
+      Delay = TimeSpan.FromMinutes(1);
    }
 
 
    public override async Task<bool> OnExecute()
    {
-      var investmentsInProjectOutputs = await angorMongoDb.ProjectTable.AsQueryable()
-         .GroupJoin(
-            angorMongoDb.OutputTable.AsQueryable()
-               .AsQueryable(),
-            p => p.AddressOnFeeOutput,
-            o => o.Address,
-            (project, outputs) => new { project.TransactionId, outputs })
-         .SelectMany(project => project.outputs,(p, o) => new
-         {
-            outputTransactionId = o.Outpoint.TransactionId,
-            isCreateProject = p.TransactionId == o.Outpoint.TransactionId,
-
-         })
-         .Where(t => t.isCreateProject == false)
-         .GroupJoin(angorMongoDb.InvestmentTable.AsQueryable(),
-            x => x.outputTransactionId,
-            i => i.TransactionIndex,
-            (data,investments) => new {data.outputTransactionId,data.isCreateProject,investments})
-         .Where(data => !data.investments.Any())
+      var investmentsInProjectOutputs = await angorMongoDb.ProjectTable.Aggregate(PipelineDefinition<Project, BsonDocument>.Create(
+            new[]
+            {
+               new BsonDocument("$lookup",
+                  new BsonDocument
+                  {
+                     { "from", "Investment" },
+                     { "let", new BsonDocument("angorProjectId", "_id") },
+                     {
+                        "pipeline", new BsonArray
+                        {
+                           new BsonDocument("$match",
+                              new BsonDocument("$expr",
+                                 new BsonDocument("$eq",
+                                    new BsonArray { "$AngorKey", "$$angorProjectId" }))),
+                           new BsonDocument("$group",
+                              new BsonDocument
+                              {
+                                 { "_id", "$AngorKey" },
+                                 { "projectMaxBlockScanned", new BsonDocument("$max", "$BlockIndex") }
+                              }),
+                           new BsonDocument("$project",
+                              new BsonDocument("projectMaxBlockScanned", 1))
+                        }
+                     },
+                     { "as", "joinedData" }
+                  }),
+               new BsonDocument("$unwind",
+                  new BsonDocument { { "path", "$joinedData" }, { "preserveNullAndEmptyArrays", true } }),
+               new BsonDocument("$project",
+                  new BsonDocument
+                  {
+                     { "AddressOnFeeOutput", 1 }, { "TransactionId", 1 }, { "projectMaxBlockScanned", new BsonDocument("$ifNull", new BsonArray { "$joinedData.projectMaxBlockScanned", 0 }) }
+                  }),
+               new BsonDocument("$lookup",
+                  new BsonDocument
+                  {
+                     { "from", "Output" },
+                     { "let", new BsonDocument{{"address" , "$AddressOnFeeOutput" },{"trx", "$TransactionId"},{"projectMaxBlockScanned", "$projectMaxBlockScanned"}}},
+                     { "pipeline", new BsonArray
+                     {
+                        new BsonDocument("$match",
+                           new BsonDocument("$expr",
+                              new BsonDocument("$eq",
+                                 new BsonArray { "$Address", "$$address" }))),
+                        new BsonDocument("$match",
+                           new BsonDocument("$expr",
+                              new BsonDocument("$and", new BsonArray
+                              {
+                                 new BsonDocument("$gt",
+                                    new BsonArray { "$BlockIndex","$$projectMaxBlockScanned"}),
+                                 new BsonDocument("$ne",
+                                    new BsonArray { "$$trx","$Outpoint.TransactionId"})
+                              })))
+                     } },
+                     { "as", "o" }
+                  }),
+               new BsonDocument("$unwind", "$o"),
+               new BsonDocument("$project",
+                  new BsonDocument
+                  {
+                     { "OutputTransactionId", "$o.Outpoint.TransactionId" },
+                     { "OutputBlockIndex", "$o.BlockIndex" }
+                  })
+            }))
          .ToListAsync();
 
-      var investments = new List<Investment>();
+      var investmentTasks = investmentsInProjectOutputs.Select(ValidateAndCreateInvestmentAsync).ToList();
 
-      foreach (var investmentOutput in investmentsInProjectOutputs)
-      {
-         var allOutputsOnInvestmentTransaction = await angorMongoDb.OutputTable.AsQueryable()
-            .Where(output => output.Outpoint.TransactionId == investmentOutput.outputTransactionId)
-            .ToListAsync();
+      await Task.WhenAll(investmentTasks);
 
-         if (allOutputsOnInvestmentTransaction.All(_ => _.Address != "none")) //TODO replace with a better indicator of stage investments
-            continue;
-
-         var feeOutput = allOutputsOnInvestmentTransaction.Single(_ => _.Outpoint.OutputIndex == 0);
-         var projectDataOutput = allOutputsOnInvestmentTransaction.Single(_ => _.Outpoint.OutputIndex == 1);
-
-         var projectInfoScript = Script.FromHex(projectDataOutput.ScriptHex);
-
-         var investorPubKey = Encoders.Hex.EncodeData(projectInfoScript.ToOps()[1].PushData);
-
-         if (investments.Any(_ => _.InvestorPubKey == investorPubKey) ||
-             angorMongoDb.InvestmentTable.AsQueryable().Any(_ => _.InvestorPubKey == investorPubKey)) //Investor key is the _id of that document
-         {
-            logger.LogInformation($"Multiple transactions with the same investor public key {investorPubKey} for the same project {feeOutput.ScriptHex}");
-            continue;
-         }
-
-         var project = await angorMongoDb.ProjectTable.Aggregate()
-            .Match(_ => _.AngorKeyScriptHex == feeOutput.ScriptHex)
-            .SingleOrDefaultAsync();
-
-         if (project == null)
-            continue;
-
-         var hashOfSecret = projectInfoScript.ToOps().Count == 3
-            ? Encoders.Hex.EncodeData(projectInfoScript.ToOps()[2].PushData)
-            : string.Empty;
-
-         var investment = new Investment
-         {
-            InvestorPubKey = investorPubKey,
-            AngorKey = project.AngorKey,
-            AmountSats = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none").Sum(_ => _.Value),
-            BlockIndex = feeOutput.BlockIndex,
-            SecretHash = hashOfSecret,
-            TransactionIndex = feeOutput.Outpoint.TransactionId,
-         };
-
-         investments.Add(investment);
-      }
+      var investments = investmentTasks.AsEnumerable()
+         .Select(x => x.Result)
+         .Where(x => x != null)
+         .OrderBy(x => x!.BlockIndex)
+         .Distinct()
+         .ToList();
 
       if (!investments.Any())
          return false;
@@ -103,5 +113,57 @@ public class ProjectTransactionsSyncRunner : TaskRunner
 
       return true;
 
+   }
+
+   async Task<Investment?> ValidateAndCreateInvestmentAsync(BsonDocument investmentOutput)
+   {
+      var allOutputsOnInvestmentTransaction = await angorMongoDb.OutputTable.AsQueryable()
+         .Where(output => output.BlockIndex == investmentOutput["OutputBlockIndex"] &&
+                          output.Outpoint.TransactionId == investmentOutput["OutputTransactionId"])
+         .ToListAsync();
+
+      if (allOutputsOnInvestmentTransaction.All(x =>
+             x.Address != "none")) //TODO replace with a better indicator of stage investments
+         return null;
+
+      var feeOutput = allOutputsOnInvestmentTransaction.Single(x => x.Outpoint.OutputIndex == 0);
+      var projectDataOutput = allOutputsOnInvestmentTransaction.Single(x => x.Outpoint.OutputIndex == 1);
+
+      var projectInfoScript = Script.FromHex(projectDataOutput.ScriptHex);
+
+      var investorPubKey = Encoders.Hex.EncodeData(projectInfoScript.ToOps()[1].PushData);
+
+      if (angorMongoDb.InvestmentTable.AsQueryable()
+             .Any(_ => _.InvestorPubKey == investorPubKey)) //Investor key is the _id of that document
+      {
+         logger.LogInformation(
+            $"Multiple transactions with the same investor public key {investorPubKey} for the same project {feeOutput.ScriptHex}");
+         return null;
+      }
+
+      var project = await angorMongoDb.ProjectTable
+         .Aggregate() //TODO not sure we need this as we get the lookup from the project table to begin with
+         .Match(_ => _.AngorKeyScriptHex == feeOutput.ScriptHex)
+         .SingleOrDefaultAsync();
+
+      if (project == null)
+         return null;
+
+      var hashOfSecret = projectInfoScript.ToOps().Count == 3
+         ? Encoders.Hex.EncodeData(projectInfoScript.ToOps()[2].PushData)
+         : string.Empty;
+
+      var stages = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none");
+
+      return new Investment
+      {
+         InvestorPubKey = investorPubKey,
+         AngorKey = project.AngorKey,
+         AmountSats = stages.Sum(_ => _.Value),
+         BlockIndex = feeOutput.BlockIndex,
+         SecretHash = hashOfSecret,
+         TransactionId = feeOutput.Outpoint.TransactionId,
+         StageOutpoint = stages.Select(x => x.Outpoint).ToList()
+      };
    }
 }
