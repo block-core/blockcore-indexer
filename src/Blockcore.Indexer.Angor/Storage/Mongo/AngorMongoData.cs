@@ -88,8 +88,10 @@ public class AngorMongoData : MongoData, IAngorStorage
       var founderSummery = "founder"; var investorSummery = "investor"; var total = "total"; var trxCount = "trxCount";
 
       var outputsSpentSummery = await mongoDb.InvestmentTable.Aggregate(PipelineDefinition<Investment, BsonDocument>.Create(
+            //Filter by project id
             new BsonDocument("$match",
                new BsonDocument("AngorKey", projectId)),
+            // Left join to input table on transaction id - not indexed and will need to be changed !!!
             new BsonDocument("$lookup",
                new BsonDocument
                {
@@ -99,8 +101,10 @@ public class AngorMongoData : MongoData, IAngorStorage
                   { "as", "inputs" }
                }),
             new BsonDocument("$unwind", "$inputs"),
+            //Filter by none address for the stages
             new BsonDocument("$match",
                new BsonDocument("inputs.Address", "none")), //Remove change address
+           //Aggregate the value by investment transaction and spending transaction and counting the number of trx in both
             new BsonDocument("$group",
                new BsonDocument
                {
@@ -115,6 +119,7 @@ public class AngorMongoData : MongoData, IAngorStorage
                   { "numTrx",
                      new BsonDocument("$sum", 1) }
                }),
+            //Aggregate the value on 1 trx in both transactions or more than 1 in both transactions to identify founder and investor patterns
             new BsonDocument("$group",
                new BsonDocument
                {
@@ -146,6 +151,7 @@ public class AngorMongoData : MongoData, IAngorStorage
       return (founder?[total].AsInt64 ?? 0, investor?[total].AsInt64 ?? 0, investor?[trxCount].AsInt32 ?? 0);
    }
 
+   //Not used but kept for now for reference
    private Task<BsonDocument> GetTotalInvestmentWithdrawn(string projectId)
    {
       return mongoDb.InvestmentTable.Aggregate(PipelineDefinition<Investment, BsonDocument>.Create(new[]
@@ -184,6 +190,9 @@ public class AngorMongoData : MongoData, IAngorStorage
          .FirstOrDefaultAsync();
    }
 
+   /// <summary>
+   /// Sum of all inputs spending outputs from the investment transaction
+   /// </summary>
    private Task<BsonDocument> GetSumOfOutputsSpentOnProject(string projectId)
    {
       return mongoDb.InvestmentTable.Aggregate(PipelineDefinition<Investment, BsonDocument>.Create(new[]
