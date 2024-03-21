@@ -1,3 +1,10 @@
+## <small>0.2.56 (2024-03-21)</small>
+
+* bump version ([a8278fd](https://github.com/block-core/blockcore-indexer/commit/a8278fd))
+* Updated the stats endpoint (#200) ([134ed27](https://github.com/block-core/blockcore-indexer/commit/134ed27)), closes [#200](https://github.com/block-core/blockcore-indexer/issues/200)
+
+
+
 ## <small>0.2.55 (2024-02-08)</small>
 
 * bump version ([5f3a0b5](https://github.com/block-core/blockcore-indexer/commit/5f3a0b5))
