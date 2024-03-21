@@ -6,6 +6,7 @@ using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.Indexer.Core.Sync;
 using Microsoft.Extensions.Options;
@@ -55,13 +56,13 @@ public class AngorMongoData : MongoData, IAngorStorage
 
    public async Task<ProjectStats?> GetProjectStatsAsync(string projectId)
    {
-      var project = mongoDb.ProjectTable
+      var projectExists = mongoDb.ProjectTable
          .AsQueryable()
-         .FirstOrDefault(_ => _.AngorKey == projectId);
+         .Any(_ => _.AngorKey == projectId);
 
-      if (project != null)
+      if (projectExists)
       {
-         var total = await mongoDb.InvestmentTable.CountDocumentsAsync(Builders<Investment>.Filter.Eq(_ => _.AngorKey, project.AngorKey));
+         var total = await mongoDb.InvestmentTable.CountDocumentsAsync(Builders<Investment>.Filter.Eq(_ => _.AngorKey, projectId));
 
          var sum = mongoDb.InvestmentTable.AsQueryable()
             .Where(_ => _.AngorKey == projectId)
@@ -90,32 +91,32 @@ public class AngorMongoData : MongoData, IAngorStorage
       var outputsSpentSummery = await mongoDb.InvestmentTable.Aggregate(PipelineDefinition<Investment, BsonDocument>.Create(
             //Filter by project id
             new BsonDocument("$match",
-               new BsonDocument("AngorKey", projectId)),
-            // Left join to input table on transaction id - not indexed and will need to be changed !!!
+               new BsonDocument(nameof(Investment.AngorKey), projectId)),
+            //Break down to object per stage outpoint for the inner join
+            new BsonDocument("$unwind",
+               new BsonDocument("path", "$" + nameof(Investment.StageOutpoint))),
+            // Inner join to input table on outpoint for each stage
             new BsonDocument("$lookup",
                new BsonDocument
                {
                   { "from", "Input" },
-                  { "localField", "TransactionId" },
-                  { "foreignField", "Outpoint.TransactionId" },
+                  { "localField", nameof(Investment.StageOutpoint) },
+                  { "foreignField", nameof(InputTable.Outpoint) },
                   { "as", "inputs" }
                }),
             new BsonDocument("$unwind", "$inputs"),
-            //Filter by none address for the stages
-            new BsonDocument("$match",
-               new BsonDocument("inputs.Address", "none")), //Remove change address
-           //Aggregate the value by investment transaction and spending transaction and counting the number of trx in both
+            //Aggregate the value by investment transaction and spending transaction and counting the number of trx in both
             new BsonDocument("$group",
                new BsonDocument
                {
                   { "_id",
                      new BsonDocument
                      {
-                        { "TransactionId", "$TransactionId" },
-                        { "TrxHash", "$inputs.TrxHash" }
+                        { "TransactionId", "$" + nameof(Investment.TransactionId) },
+                        { "TrxHash", "$inputs." + nameof(InputTable.TrxHash)}
                      } },
                   { "spent",
-                     new BsonDocument("$sum", "$inputs.Value") },
+                     new BsonDocument("$sum", "$inputs." + nameof(InputTable.Value)) },
                   { "numTrx",
                      new BsonDocument("$sum", 1) }
                }),

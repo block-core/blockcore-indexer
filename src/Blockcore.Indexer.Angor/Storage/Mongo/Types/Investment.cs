@@ -1,3 +1,5 @@
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
+
 namespace Blockcore.Indexer.Angor.Storage.Mongo.Types;
 
 public class Investment
@@ -14,5 +16,5 @@ public class Investment
 
    public long AmountSats { get; set; }
 
-
+   public List<Outpoint> StageOutpoint { get; set; }
 }

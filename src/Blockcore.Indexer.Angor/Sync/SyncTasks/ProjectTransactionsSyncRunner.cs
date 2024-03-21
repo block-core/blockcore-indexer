@@ -22,6 +22,7 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
    {
       this.angorMongoDb = angorMongoDb;
       this.logger = logger;
+      Delay = TimeSpan.FromMinutes(1);
    }
 
 
@@ -152,14 +153,17 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
          ? Encoders.Hex.EncodeData(projectInfoScript.ToOps()[2].PushData)
          : string.Empty;
 
+      var stages = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none");
+
       return new Investment
       {
          InvestorPubKey = investorPubKey,
          AngorKey = project.AngorKey,
-         AmountSats = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none").Sum(_ => _.Value),
+         AmountSats = stages.Sum(_ => _.Value),
          BlockIndex = feeOutput.BlockIndex,
          SecretHash = hashOfSecret,
          TransactionId = feeOutput.Outpoint.TransactionId,
+         StageOutpoint = stages.Select(x => x.Outpoint).ToList()
       };
    }
 }
