@@ -37,6 +37,8 @@ public class ProjectsSyncRunner : TaskRunner
       AngorMongoDb = angorMongoDb;
       this.syncConnection = syncConnection;
 
+      Delay = TimeSpan.FromMinutes(1);
+
       extendedPublicKey = new BitcoinExtPubKey(AngorTestKey, new BitcoinSignet()).ExtPubKey;
    }
 
