@@ -42,8 +42,21 @@ public class ProjectsSyncRunner : TaskRunner
       extendedPublicKey = new BitcoinExtPubKey(AngorTestKey, new BitcoinSignet()).ExtPubKey;
    }
 
+   private bool CanRunProjectSync()
+   {
+      return !( //sync with other runners
+         !Runner.GlobalState.IndexModeCompleted ||
+         Runner.GlobalState.Blocked ||
+         Runner.GlobalState.ReorgMode ||
+         Runner.GlobalState.StoreTip == null ||
+         Runner.GlobalState.IndexMode);
+   }
+
    public override async Task<bool> OnExecute()
    {
+      if (!CanRunProjectSync())
+         return false;
+
       var blockIndexed = await AngorMongoDb.ProjectTable.EstimatedDocumentCountAsync() > 0
          ? AngorMongoDb.ProjectTable.AsQueryable().Max(p => p.BlockIndex)
          : 0;
