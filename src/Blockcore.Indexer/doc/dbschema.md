@@ -1,10 +1,10 @@
 ### Blockcore Indexer uses mongodb to store the blockchain data
 
 The tables can be found here  
-https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexer/Storage/Mongo/Types
+[https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexer/Storage/Mongo/Types](https://github.com/block-core/blockcore-indexer/tree/master/src/Blockcore.Indexer.Core/Storage/Mongo/Types)
 
 And the indexer builder here  
-https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexer/Storage/Mongo/MongoBuilder.cs
+[https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexer/Storage/Mongo/MongoBuilder.cs](https://github.com/block-core/blockcore-indexer/blob/master/src/Blockcore.Indexer.Core/Storage/Mongo/MongoBuilder.cs)
 
 **List of tables the indexer uses:**
 
