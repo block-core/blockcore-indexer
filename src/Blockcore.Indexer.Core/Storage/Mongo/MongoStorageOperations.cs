@@ -62,6 +62,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                   BlockIndex = item.BlockInfo.HeightAsUint32,
                   TransactionId = trxHash,
                   TransactionIndex = transactionIndex++,
+                  NumberOfOutputs = (short) trx.Outputs.Count
                });
 
             if (configuration.StoreRawTransactions)

@@ -2,6 +2,7 @@ using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Indexer.Angor.Storage.Mongo;
 using Blockcore.Indexer.Angor.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Blockcore.NBitcoin.DataEncoders;
 using Microsoft.Extensions.Options;
@@ -67,17 +68,10 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
 
    async Task<Investment?> ValidateAndCreateInvestmentAsync(BsonDocument investmentOutput)
    {
-      var allOutputsOnInvestmentTransaction = await angorMongoDb.OutputTable.AsQueryable()
-         .Where(output => output.BlockIndex == investmentOutput["OutputBlockIndex"] &&
-                          output.Outpoint.TransactionId == investmentOutput["OutputTransactionId"])
-         .ToListAsync();
-
-      if (allOutputsOnInvestmentTransaction.All(x =>
-             x.Address != "none")) //TODO replace with a better indicator of stage investments
-         return null;
-
-      var feeOutput = allOutputsOnInvestmentTransaction.Single(x => x.Outpoint.OutputIndex == 0);
-      var projectDataOutput = allOutputsOnInvestmentTransaction.Single(x => x.Outpoint.OutputIndex == 1);
+      var feeOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x => x.Outpoint.TransactionId == investmentOutput["OutputTransactionId"] &&
+         x.Outpoint.OutputIndex == 0);
+      var projectDataOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x => x.Outpoint.TransactionId == investmentOutput["OutputTransactionId"] &&
+         x.Outpoint.OutputIndex == 1);
 
       var projectInfoScript = Script.FromHex(projectDataOutput.ScriptHex);
 
@@ -103,7 +97,19 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
          ? Encoders.Hex.EncodeData(projectInfoScript.ToOps()[2].PushData)
          : string.Empty;
 
-      var stages = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none");
+      int outpointIndex = 2;
+      OutputTable? stage;
+      List<OutputTable> stages = new();
+      do
+      {
+         stage = await angorMongoDb.OutputTable.AsQueryable()
+            .Where(output => output.Outpoint.TransactionId == investmentOutput["OutputTransactionId"] &&
+                             output.Outpoint.OutputIndex == outpointIndex)
+            .SingleOrDefaultAsync();
+         outpointIndex += 1;
+         if (stage != null)
+            stages.Add(stage);
+      } while (stage != null);
 
       return new Investment
       {
