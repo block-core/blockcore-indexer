@@ -1,6 +1,29 @@
-## <small>0.2.58 (2024-04-19)</small>
+## <small>0.2.60 (2024-04-19)</small>
+
+* bump version ([088d29b](https://github.com/block-core/blockcore-indexer/commit/088d29b))
+* Updated the base image to dotnet 8 bookworm-slim (#206) ([23db7e0](https://github.com/block-core/blockcore-indexer/commit/23db7e0)), closes [#206](https://github.com/block-core/blockcore-indexer/issues/206)
+
+
+
+## <small>0.2.59 (2024-04-18)</small>
+
+* Fixed the reference in Angor nuget (#205) ([b9b4fff](https://github.com/block-core/blockcore-indexer/commit/b9b4fff)), closes [#205](https://github.com/block-core/blockcore-indexer/issues/205)
+* Update version ([0e17481](https://github.com/block-core/blockcore-indexer/commit/0e17481))
+
+
+
+## <small>0.2.58 (2024-04-09)</small>
 
 * bump version ([0554f20](https://github.com/block-core/blockcore-indexer/commit/0554f20))
+* changed project to net8.0 (#204) ([354e19d](https://github.com/block-core/blockcore-indexer/commit/354e19d)), closes [#204](https://github.com/block-core/blockcore-indexer/issues/204)
+* Remove specific framework from project files ([830484a](https://github.com/block-core/blockcore-indexer/commit/830484a))
+* Update build workflows to use .NET 8 ([f3dc800](https://github.com/block-core/blockcore-indexer/commit/f3dc800))
+* Update dbschema.md (#203) ([4ebf0e1](https://github.com/block-core/blockcore-indexer/commit/4ebf0e1)), closes [#203](https://github.com/block-core/blockcore-indexer/issues/203)
+
+
+
+## <small>0.2.57 (2024-03-22)</small>
+
 * bump version ([ffd0900](https://github.com/block-core/blockcore-indexer/commit/ffd0900))
 * Changed project sync delay time (#202) ([fe8c246](https://github.com/block-core/blockcore-indexer/commit/fe8c246)), closes [#202](https://github.com/block-core/blockcore-indexer/issues/202)
 
