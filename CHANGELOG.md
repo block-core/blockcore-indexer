@@ -1,5 +1,6 @@
-## <small>0.2.57 (2024-03-22)</small>
+## <small>0.2.58 (2024-04-19)</small>
 
+* bump version ([0554f20](https://github.com/block-core/blockcore-indexer/commit/0554f20))
 * bump version ([ffd0900](https://github.com/block-core/blockcore-indexer/commit/ffd0900))
 * Changed project sync delay time (#202) ([fe8c246](https://github.com/block-core/blockcore-indexer/commit/fe8c246)), closes [#202](https://github.com/block-core/blockcore-indexer/issues/202)
 
