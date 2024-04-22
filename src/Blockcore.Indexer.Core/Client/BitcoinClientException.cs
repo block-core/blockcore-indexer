@@ -81,6 +81,10 @@ namespace Blockcore.Indexer.Core.Client
                return true;
             }
 
+            if (ErrorMessage.Contains("No such mempool transaction"))
+            {
+               return true;
+            }
          }
 
          return false;
