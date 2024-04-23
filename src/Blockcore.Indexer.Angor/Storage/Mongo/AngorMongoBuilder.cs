@@ -44,10 +44,14 @@ public class AngorMongoBuilder : MongoBuilder
          .CreateOne(new CreateIndexModel<Project>(Builders<Project>
             .IndexKeys.Hashed(_ => _.FounderKey)));
 
+      AngorMongoDb.ProjectTable.Indexes
+         .CreateOne(new CreateIndexModel<Project>(Builders<Project>
+            .IndexKeys.Descending(x => x.BlockIndex)));
+
       //TODO move this to the block indexer task runner, but we'll need to move the indexes in there to a different class for each project/blockchain
       AngorMongoDb.InvestmentTable.Indexes
          .CreateOne(new CreateIndexModel<Investment>(Builders<Investment>
-            .IndexKeys.Hashed(_ => _.AngorKey)));
+            .IndexKeys.Ascending(x => x.AngorKey)));
 
       //TODO move this to the block indexer task runner, but we'll need to move the indexes in there to a different class for each project/blockchain
       AngorMongoDb.InvestmentTable.Indexes

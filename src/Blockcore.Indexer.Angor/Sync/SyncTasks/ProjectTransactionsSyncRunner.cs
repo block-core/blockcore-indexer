@@ -60,7 +60,8 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
       if (investments.Count == 0)
          return false;
 
-      await angorMongoDb.InvestmentTable.InsertManyAsync(investments).ConfigureAwait(false);
+      await angorMongoDb.InvestmentTable.InsertManyAsync(investments, new InsertManyOptions { IsOrdered = true })
+         .ConfigureAwait(false);
 
       return true;
 
@@ -73,7 +74,7 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
          x.Outpoint == new Outpoint{ TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = 0});
 
       var projectDataOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x =>
-         x.Outpoint == new Outpoint{ TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = 0});
+         x.Outpoint == new Outpoint{ TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = 1});
 
       var projectInfoScript = Script.FromHex(projectDataOutput.ScriptHex);
 
@@ -166,7 +167,7 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
                { "TransactionId", 1 },
                {
                   "projectMaxBlockScanned",
-                  new BsonDocument("$ifNull", new BsonArray { "$joinedData.projectMaxBlockScanned", 0 })
+                  new BsonDocument("$ifNull", new BsonArray { "$joinedData.projectMaxBlockScanned", $"$BlockIndex" })
                }
             }),
          //Inner join with output on the indexed address and greater than block index and filter by trensaction id
