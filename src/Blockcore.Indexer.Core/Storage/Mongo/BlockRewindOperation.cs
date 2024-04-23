@@ -149,8 +149,8 @@ public class BlockRewindOperation : IBlockRewindOperation
 
          var filteredUnspentOutputs = duplicates.Any()
             ? unspentOutputs.Where(_ => !duplicates
-                  .Exists(d => d.Outpoint.TransactionId == _.Outpoint.TransactionId &&
-                               d.Outpoint.OutputIndex == _.Outpoint.OutputIndex))
+                  .Exists(d => d.Outpoint == new Outpoint
+                  {TransactionId = _.Outpoint.TransactionId, OutputIndex = _.Outpoint.OutputIndex}))
                .ToList()
             : unspentOutputs;
 

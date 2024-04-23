@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using static System.String;
 
 namespace Blockcore.Indexer.Angor.Sync.SyncTasks;
 
@@ -51,27 +52,28 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
       await Task.WhenAll(investmentTasks);
 
       var investments = investmentTasks.AsEnumerable()
+         .Where(x => x is { Result: not null, IsCompletedSuccessfully: true })
          .Select(x => x.Result)
-         .Where(x => x != null)
          .OrderBy(x => x!.BlockIndex)
-         .Distinct()
          .ToList();
 
-      if (!investments.Any())
+      if (investments.Count == 0)
          return false;
 
-      await angorMongoDb.InvestmentTable.InsertManyAsync(investments);
+      await angorMongoDb.InvestmentTable.InsertManyAsync(investments).ConfigureAwait(false);
 
       return true;
 
    }
 
+   const string ErrorMssage = "Multiple transactions with the same investor public key {0} for the same project {1}";
    async Task<Investment?> ValidateAndCreateInvestmentAsync(BsonDocument investmentOutput)
    {
-      var feeOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x => x.Outpoint.TransactionId == investmentOutput["OutputTransactionId"] &&
-         x.Outpoint.OutputIndex == 0);
-      var projectDataOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x => x.Outpoint.TransactionId == investmentOutput["OutputTransactionId"] &&
-         x.Outpoint.OutputIndex == 1);
+      var feeOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x =>
+         x.Outpoint == new Outpoint{ TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = 0});
+
+      var projectDataOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x =>
+         x.Outpoint == new Outpoint{ TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = 0});
 
       var projectInfoScript = Script.FromHex(projectDataOutput.ScriptHex);
 
@@ -80,8 +82,7 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
       if (angorMongoDb.InvestmentTable.AsQueryable()
              .Any(_ => _.InvestorPubKey == investorPubKey)) //Investor key is the _id of that document
       {
-         logger.LogInformation(
-            $"Multiple transactions with the same investor public key {investorPubKey} for the same project {feeOutput.ScriptHex}");
+         logger.LogDebug(ErrorMssage,investorPubKey,feeOutput.ScriptHex);
          return null;
       }
 
@@ -95,7 +96,7 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
 
       var hashOfSecret = projectInfoScript.ToOps().Count == 3
          ? Encoders.Hex.EncodeData(projectInfoScript.ToOps()[2].PushData)
-         : string.Empty;
+         : Empty;
 
       int outpointIndex = 2;
       OutputTable? stage;
@@ -103,12 +104,15 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
       do
       {
          stage = await angorMongoDb.OutputTable.AsQueryable()
-            .Where(output => output.Outpoint.TransactionId == investmentOutput["OutputTransactionId"] &&
-                             output.Outpoint.OutputIndex == outpointIndex)
+            .Where(output => output.Outpoint == new Outpoint{
+               TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = outpointIndex})
             .SingleOrDefaultAsync();
+
          outpointIndex += 1;
+
          if (stage != null)
             stages.Add(stage);
+
       } while (stage != null);
 
       return new Investment
