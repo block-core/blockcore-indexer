@@ -62,7 +62,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       [HttpGet]
       [Route("address/{address}/transactions")]
-      public IActionResult GetAddressTransactions([MinLength(4)][MaxLength(100)] string address, [Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetAddressTransactions([MinLength(4)][MaxLength(100)] string address, [Range(0, int.MaxValue)] int? offset = null, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.AddressHistory(address, offset, limit));
       }
@@ -140,7 +140,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <param name="limit">Number of blocks to return. Maximum 50.</param>
       [HttpGet]
       [Route("block")]
-      public IActionResult GetBlocks([Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetBlocks([Range(0, int.MaxValue)] int? offset = null, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.Blocks(offset, limit));
       }
@@ -189,7 +189,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <param name="limit">Number of blocks to return. Maximum 50.</param>
       [HttpGet]
       [Route("block/orphan")]
-      public IActionResult GetOrphanBlocks([Range(0, int.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+      public IActionResult GetOrphanBlocks([Range(0, int.MaxValue)] int? offset = null, [Range(1, 50)] int limit = 10)
       {
          return OkPaging(storage.OrphanBlocks(offset, limit));
       }
