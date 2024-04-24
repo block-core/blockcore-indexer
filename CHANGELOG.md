@@ -1,7 +1,9 @@
-## <small>0.2.61 (2024-04-22)</small>
+## <small>0.2.62 (2024-04-24)</small>
 
 * Add an error code type for no trx in mempool ([18cfaa7](https://github.com/block-core/blockcore-indexer/commit/18cfaa7))
+* bump version ([c98ac8b](https://github.com/block-core/blockcore-indexer/commit/c98ac8b))
 * bump version ([e3efde7](https://github.com/block-core/blockcore-indexer/commit/e3efde7))
+* default to null instead of zero for nullable andpoints ([ae150c9](https://github.com/block-core/blockcore-indexer/commit/ae150c9))
 
 
 
