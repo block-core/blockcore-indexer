@@ -62,13 +62,13 @@ public class AngorMongoData : MongoData, IAngorStorage
 
       if (projectExists)
       {
-         var total = await mongoDb.InvestmentTable.CountDocumentsAsync(Builders<Investment>.Filter.Eq(_ => _.AngorKey, projectId));
+         var total = await mongoDb.InvestmentTable.CountDocumentsAsync(Builders<Investment>.Filter.Eq(_ => _.AngorKey, projectId)).ConfigureAwait(false);
 
          var sum = mongoDb.InvestmentTable.AsQueryable()
             .Where(_ => _.AngorKey == projectId)
             .Sum(s => s.AmountSats);
 
-         var spendingSummery = await GetSpentProjectFundsSplitToFounderAndPenalty(projectId);
+         var spendingSummery = await GetSpentProjectFundsSplitToFounderAndPenalty(projectId).ConfigureAwait(false);
 
          return new ProjectStats
          {

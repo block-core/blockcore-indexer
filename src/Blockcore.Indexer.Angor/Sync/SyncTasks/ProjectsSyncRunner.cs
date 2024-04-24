@@ -57,7 +57,7 @@ public class ProjectsSyncRunner : TaskRunner
       if (!CanRunProjectSync())
          return false;
 
-      var blockIndexed = await AngorMongoDb.ProjectTable.EstimatedDocumentCountAsync() > 0
+      var blockIndexed = await AngorMongoDb.ProjectTable.AsQueryable().AnyAsync()
          ? AngorMongoDb.ProjectTable.AsQueryable().Max(p => p.BlockIndex)
          : 0;
 
@@ -123,10 +123,9 @@ public class ProjectsSyncRunner : TaskRunner
          .AsQueryable()
          .Where(_ =>
             //Outpoint with both parameters is the id of the table
-            _.Outpoint.TransactionId == output.Outpoint.TransactionId &&
-            _.Outpoint.OutputIndex == 0 &&
-            //direct lookup for the exiting key
-            _.ScriptHex == angorKey.WitHash.ScriptPubKey.ToHex())
+            _.Outpoint == new Outpoint{TransactionId = output.Outpoint.TransactionId , OutputIndex = 0} &&
+                                         //direct lookup for the exiting key
+                                         _.ScriptHex == angorKey.WitHash.ScriptPubKey.ToHex())
          .FirstOrDefaultAsync();
 
       if (angorFeeOutput == null) return null;

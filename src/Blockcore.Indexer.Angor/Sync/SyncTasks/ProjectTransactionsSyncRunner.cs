@@ -2,12 +2,14 @@ using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Indexer.Angor.Storage.Mongo;
 using Blockcore.Indexer.Angor.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Blockcore.NBitcoin.DataEncoders;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
+using static System.String;
 
 namespace Blockcore.Indexer.Angor.Sync.SyncTasks;
 
@@ -50,34 +52,29 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
       await Task.WhenAll(investmentTasks);
 
       var investments = investmentTasks.AsEnumerable()
+         .Where(x => x is { Result: not null, IsCompletedSuccessfully: true })
          .Select(x => x.Result)
-         .Where(x => x != null)
          .OrderBy(x => x!.BlockIndex)
-         .Distinct()
          .ToList();
 
-      if (!investments.Any())
+      if (investments.Count == 0)
          return false;
 
-      await angorMongoDb.InvestmentTable.InsertManyAsync(investments);
+      await angorMongoDb.InvestmentTable.InsertManyAsync(investments, new InsertManyOptions { IsOrdered = true })
+         .ConfigureAwait(false);
 
       return true;
 
    }
 
+   const string ErrorMssage = "Multiple transactions with the same investor public key {0} for the same project {1}";
    async Task<Investment?> ValidateAndCreateInvestmentAsync(BsonDocument investmentOutput)
    {
-      var allOutputsOnInvestmentTransaction = await angorMongoDb.OutputTable.AsQueryable()
-         .Where(output => output.BlockIndex == investmentOutput["OutputBlockIndex"] &&
-                          output.Outpoint.TransactionId == investmentOutput["OutputTransactionId"])
-         .ToListAsync();
+      var feeOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x =>
+         x.Outpoint == new Outpoint{ TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = 0});
 
-      if (allOutputsOnInvestmentTransaction.All(x =>
-             x.Address != "none")) //TODO replace with a better indicator of stage investments
-         return null;
-
-      var feeOutput = allOutputsOnInvestmentTransaction.Single(x => x.Outpoint.OutputIndex == 0);
-      var projectDataOutput = allOutputsOnInvestmentTransaction.Single(x => x.Outpoint.OutputIndex == 1);
+      var projectDataOutput = await angorMongoDb.OutputTable.AsQueryable().SingleAsync(x =>
+         x.Outpoint == new Outpoint{ TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = 1});
 
       var projectInfoScript = Script.FromHex(projectDataOutput.ScriptHex);
 
@@ -86,8 +83,7 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
       if (angorMongoDb.InvestmentTable.AsQueryable()
              .Any(_ => _.InvestorPubKey == investorPubKey)) //Investor key is the _id of that document
       {
-         logger.LogInformation(
-            $"Multiple transactions with the same investor public key {investorPubKey} for the same project {feeOutput.ScriptHex}");
+         logger.LogDebug(ErrorMssage,investorPubKey,feeOutput.ScriptHex);
          return null;
       }
 
@@ -101,9 +97,28 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
 
       var hashOfSecret = projectInfoScript.ToOps().Count == 3
          ? Encoders.Hex.EncodeData(projectInfoScript.ToOps()[2].PushData)
-         : string.Empty;
+         : Empty;
 
-      var stages = allOutputsOnInvestmentTransaction.Where(_ => _.Address == "none");
+      int outpointIndex = 2;
+      OutputTable? stage;
+      List<OutputTable> stages = new();
+      do
+      {
+         stage = await angorMongoDb.OutputTable.AsQueryable()
+            .Where(output => output.Outpoint == new Outpoint{
+               TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = outpointIndex} &&
+                             output.Address == "none")
+            .SingleOrDefaultAsync();
+
+         outpointIndex += 1;
+
+         if (stage != null)
+            stages.Add(stage);
+
+      } while (stage != null);
+
+      if (stages.Count == 0)
+         return null;
 
       return new Investment
       {
@@ -156,7 +171,7 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
                { "TransactionId", 1 },
                {
                   "projectMaxBlockScanned",
-                  new BsonDocument("$ifNull", new BsonArray { "$joinedData.projectMaxBlockScanned", 0 })
+                  new BsonDocument("$ifNull", new BsonArray { "$joinedData.projectMaxBlockScanned", $"$BlockIndex" })
                }
             }),
          //Inner join with output on the indexed address and greater than block index and filter by trensaction id
