@@ -106,7 +106,8 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
       {
          stage = await angorMongoDb.OutputTable.AsQueryable()
             .Where(output => output.Outpoint == new Outpoint{
-               TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = outpointIndex})
+               TransactionId = investmentOutput["OutputTransactionId"].ToString(), OutputIndex = outpointIndex} &&
+                             output.Address == "none")
             .SingleOrDefaultAsync();
 
          outpointIndex += 1;
@@ -115,6 +116,9 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
             stages.Add(stage);
 
       } while (stage != null);
+
+      if (stages.Count == 0)
+         return null;
 
       return new Investment
       {
