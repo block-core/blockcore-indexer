@@ -184,7 +184,6 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
                   new BsonDocument
                   {
                      { "address", "$AddressOnFeeOutput" },
-                     { "trx", "$TransactionId" },
                      { "projectMaxBlockScanned", "$projectMaxBlockScanned" }
                   }
                },
@@ -197,13 +196,12 @@ public class ProjectInvestmentsSyncRunner : TaskRunner
                               new BsonArray { "$Address", "$$address" }))),
                      new BsonDocument("$match",
                         new BsonDocument("$expr",
-                           new BsonDocument("$and", new BsonArray
-                           {
-                              new BsonDocument("$gt",
-                                 new BsonArray { "$BlockIndex", "$$projectMaxBlockScanned" }),
-                              new BsonDocument("$ne",
-                                 new BsonArray { "$$trx", "$Outpoint.TransactionId" })
-                           })))
+                           new BsonDocument("$gt",
+                              new BsonArray { "$BlockIndex", "$$projectMaxBlockScanned" }))),
+                     new BsonDocument("$match",
+                        new BsonDocument("$expr",
+                           new BsonDocument("$eq",
+                              new BsonArray { "$Outpoint.OutputIndex", 0 }))),
                   }
                },
                { "as", "o" }

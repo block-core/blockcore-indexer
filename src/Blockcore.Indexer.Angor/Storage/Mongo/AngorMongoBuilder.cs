@@ -48,6 +48,10 @@ public class AngorMongoBuilder : MongoBuilder
          .CreateOne(new CreateIndexModel<Project>(Builders<Project>
             .IndexKeys.Descending(x => x.BlockIndex)));
 
+      AngorMongoDb.ProjectTable.Indexes
+         .CreateOne(new CreateIndexModel<Project>(Builders<Project>
+            .IndexKeys.Ascending(x => x.AddressOnFeeOutput)));
+
       //TODO move this to the block indexer task runner, but we'll need to move the indexes in there to a different class for each project/blockchain
       AngorMongoDb.InvestmentTable.Indexes
          .CreateOne(new CreateIndexModel<Investment>(Builders<Investment>
