@@ -1,9 +1,22 @@
+## <small>0.2.63 (2024-04-25)</small>
+
+* bump version ([69f420e](https://github.com/block-core/blockcore-indexer/commit/69f420e))
+* Fixed issue with timing out queries on mongo db (#210) ([b4e8b49](https://github.com/block-core/blockcore-indexer/commit/b4e8b49)), closes [#210](https://github.com/block-core/blockcore-indexer/issues/210)
+
+
+
 ## <small>0.2.62 (2024-04-24)</small>
 
-* Add an error code type for no trx in mempool ([18cfaa7](https://github.com/block-core/blockcore-indexer/commit/18cfaa7))
 * bump version ([c98ac8b](https://github.com/block-core/blockcore-indexer/commit/c98ac8b))
+* default to null instead of zero for nullable andpoints (#207) ([5988661](https://github.com/block-core/blockcore-indexer/commit/5988661)), closes [#207](https://github.com/block-core/blockcore-indexer/issues/207)
+* Fixed performance issue with investmnet scanning (#208) ([1bd6ea1](https://github.com/block-core/blockcore-indexer/commit/1bd6ea1)), closes [#208](https://github.com/block-core/blockcore-indexer/issues/208)
+
+
+
+## <small>0.2.61 (2024-04-22)</small>
+
+* Add an error code type for no trx in mempool ([18cfaa7](https://github.com/block-core/blockcore-indexer/commit/18cfaa7))
 * bump version ([e3efde7](https://github.com/block-core/blockcore-indexer/commit/e3efde7))
-* default to null instead of zero for nullable andpoints ([ae150c9](https://github.com/block-core/blockcore-indexer/commit/ae150c9))
 
 
 
