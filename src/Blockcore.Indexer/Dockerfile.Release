@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim
+FROM mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim
 WORKDIR /usr/local/app/
 
 RUN apt-get update \
