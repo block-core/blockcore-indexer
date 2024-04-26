@@ -1,3 +1,11 @@
+## <small>0.2.64 (2024-04-26)</small>
+
+* bump version ([04665ca](https://github.com/block-core/blockcore-indexer/commit/04665ca))
+* Changed base image to dotnet 8 (#211) ([37d0fb4](https://github.com/block-core/blockcore-indexer/commit/37d0fb4)), closes [#211](https://github.com/block-core/blockcore-indexer/issues/211)
+* fix the default null ([2df38ab](https://github.com/block-core/blockcore-indexer/commit/2df38ab))
+
+
+
 ## <small>0.2.63 (2024-04-25)</small>
 
 * bump version ([69f420e](https://github.com/block-core/blockcore-indexer/commit/69f420e))
