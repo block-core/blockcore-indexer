@@ -21,7 +21,7 @@ public class ProjectQueryController : Controller
 
    [HttpGet]
    [Route("projects")]
-   public async Task<IActionResult> GetProjects( [Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+   public async Task<IActionResult> GetProjects( [Range(0, long.MaxValue)] int? offset = null, [Range(1, 50)] int limit = 10)
    {
       var projects = await angorStorage.GetProjectsAsync(offset, limit);
 
@@ -48,7 +48,7 @@ public class ProjectQueryController : Controller
 
    [HttpGet]
    [Route("projects/{projectId}/investments")]
-   public async Task<IActionResult> GetInvestments([MinLength(2)][MaxLength(100)] string projectId,[Range(0, long.MaxValue)] int? offset = 0, [Range(1, 50)] int limit = 10)
+   public async Task<IActionResult> GetInvestments([MinLength(2)][MaxLength(100)] string projectId,[Range(0, long.MaxValue)] int? offset = null, [Range(1, 50)] int limit = 10)
    {
       var projects = await angorStorage.GetProjectInvestmentsAsync(projectId, offset, limit);
 
