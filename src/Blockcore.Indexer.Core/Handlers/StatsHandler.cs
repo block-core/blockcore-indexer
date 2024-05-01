@@ -267,7 +267,7 @@ namespace Blockcore.Indexer.Core.Handlers
                   throw;
                }
 
-               var feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRateet = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
+               var feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRate = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
 
                feeEstimations.Fees.Add(feeEstimation);
 
