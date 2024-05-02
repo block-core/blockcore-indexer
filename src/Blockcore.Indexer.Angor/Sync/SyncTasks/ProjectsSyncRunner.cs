@@ -26,6 +26,7 @@ public class ProjectsSyncRunner : TaskRunner
    readonly SyncConnection syncConnection;
 
    public static string AngorTestKey = "tpubD8JfN1evVWPoJmLgVg6Usq2HEW9tLqm6CyECAADnH5tyQosrL6NuhpL9X1cQCbSmndVrgLSGGdbRqLfUbE6cRqUbrHtDJgSyQEY2Uu7WwTL";
+   public static string AngorMainKey = "xpub661MyMwAqRbcEo7z4zshCkEF57GHJ55DP5Ty6suMxPmDbhktLt8Ddbg53SbaGWUafsVtd6DcVT38t7A7kEUrRwDrJxHNBvr1WX45nwE6ocj";
 
    ExtPubKey extendedPublicKey;
 
@@ -39,7 +40,15 @@ public class ProjectsSyncRunner : TaskRunner
 
       Delay = TimeSpan.FromMinutes(1);
 
-      extendedPublicKey = new BitcoinExtPubKey(AngorTestKey, new BitcoinSignet()).ExtPubKey;
+      // use the rpc port but this is not a reliable way to determine mainnet
+      if (syncConnection.RpcAccessPort == 8333) // mainnet
+      {
+         extendedPublicKey = new BitcoinExtPubKey(AngorMainKey, new BitcoinMain()).ExtPubKey;
+      }
+      else
+      {
+         extendedPublicKey = new BitcoinExtPubKey(AngorTestKey, new BitcoinSignet()).ExtPubKey;
+      }
    }
 
    private bool CanRunProjectSync()
