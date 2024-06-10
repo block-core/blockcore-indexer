@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
-using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -144,9 +144,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             });
          }
 
-         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(PeerInfo)))
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(PeerDetails)))
          {
-            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<PeerInfo>(cm =>
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<PeerDetails>(cm =>
             {
                cm.AutoMap();
                cm.SetIgnoreExtraElements(true);

@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Handlers;
 using Blockcore.Indexer.Core.Models;
 using Blockcore.Indexer.Core.Storage;
-using Blockcore.Indexer.Core.Storage.Mongo;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Blockcore.Indexer.Core.Controllers
@@ -18,7 +19,7 @@ namespace Blockcore.Indexer.Core.Controllers
    {
       private readonly StatsHandler statsHandler;
 
-      private readonly MongoData storage;
+      private readonly IStorage storage;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="StatsController"/> class.
@@ -26,7 +27,7 @@ namespace Blockcore.Indexer.Core.Controllers
       public StatsController(StatsHandler statsHandler, IStorage storage)
       {
          this.statsHandler = statsHandler;
-         this.storage = storage as MongoData;
+         this.storage = storage;
       }
 
       [HttpGet]
@@ -83,7 +84,9 @@ namespace Blockcore.Indexer.Core.Controllers
       [Route("peers/{date}")]
       public IActionResult Peers(DateTime date)
       {
-         List<Client.Types.PeerInfo> list = storage.GetPeerFromDate(date);
+         List<PeerInfo> list = storage.GetPeerFromDate(date)
+            .Select(x => x as PeerInfo)
+            .ToList();
          return Ok(list);
       }
 

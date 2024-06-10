@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Models;
@@ -60,5 +61,8 @@ namespace Blockcore.Indexer.Core.Storage
       public List<string> GetMempoolTransactionIds();
 
       public bool DeleteTransactionsFromMempool(List<string> transactionIds);
+
+      List<PeerDetails> GetPeerFromDate(DateTime date);
+      Task<long> InsertPeer(PeerDetails info);
    }
 }

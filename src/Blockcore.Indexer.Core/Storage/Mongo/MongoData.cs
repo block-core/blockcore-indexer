@@ -5,9 +5,7 @@ using System.Threading.Tasks;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Client;
-using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Crypto;
-using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Models;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
@@ -19,7 +17,6 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Blockcore.NBitcoin.DataEncoders;
-using Blockcore.Utilities;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -304,7 +301,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// </summary>
       /// <param name="info"></param>
       /// <returns></returns>
-      public async Task<long> InsertPeer(PeerInfo info)
+      public async Task<long> InsertPeer(PeerDetails info)
       {
          // Always update the LastSeen.
          info.LastSeen = DateTime.UtcNow;
@@ -314,9 +311,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return replaceOneResult.ModifiedCount;
       }
 
-      public List<PeerInfo> GetPeerFromDate(DateTime date)
+      public List<PeerDetails> GetPeerFromDate(DateTime date)
       {
-         FilterDefinition<PeerInfo> filter = Builders<PeerInfo>.Filter.Gt(addr => addr.LastSeen, date);
+         FilterDefinition<PeerDetails> filter = Builders<PeerDetails>.Filter.Gt(addr => addr.LastSeen, date);
          return mongoDb.Peer.Find(filter).ToList();
       }
 
