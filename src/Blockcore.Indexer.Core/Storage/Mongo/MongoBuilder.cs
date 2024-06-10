@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
@@ -137,6 +138,15 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(ReorgBlockTable)))
          {
             MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<ReorgBlockTable>(cm =>
+            {
+               cm.AutoMap();
+               cm.SetIgnoreExtraElements(true);
+            });
+         }
+
+         if (!MongoDB.Bson.Serialization.BsonClassMap.IsClassMapRegistered(typeof(PeerInfo)))
+         {
+            MongoDB.Bson.Serialization.BsonClassMap.RegisterClassMap<PeerInfo>(cm =>
             {
                cm.AutoMap();
                cm.SetIgnoreExtraElements(true);
