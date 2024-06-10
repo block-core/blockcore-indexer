@@ -44,5 +44,7 @@ namespace Blockcore.Indexer.Core.Settings
       public int MaxItemsInHistoryQueue { get; set; }
 
       public int IndexCountForBlockIndexProperty { get;set; }
+
+      public string DbType { get; set; }
    }
 }
