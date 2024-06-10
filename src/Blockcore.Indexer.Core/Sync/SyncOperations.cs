@@ -26,7 +26,6 @@ namespace Blockcore.Indexer.Core.Sync
    public class SyncOperations : ISyncOperations
    {
       private readonly IStorage storage;
-      private readonly IMongoDb db;
 
       private readonly ILogger<SyncOperations> log;
 
@@ -50,7 +49,7 @@ namespace Blockcore.Indexer.Core.Sync
          IOptions<IndexerSettings> configuration,
          IMemoryCache cache,
          GlobalState globalState, ICryptoClientFactory clientFactory,
-         ISyncBlockTransactionOperationBuilder blockInfoEnrichment, IMongoDb db)
+         ISyncBlockTransactionOperationBuilder blockInfoEnrichment)
       {
          this.configuration = configuration.Value;
          log = logger;
@@ -59,7 +58,6 @@ namespace Blockcore.Indexer.Core.Sync
          this.globalState = globalState;
          this.clientFactory = clientFactory;
          transactionOperationBuilder = blockInfoEnrichment;
-         this.db = db;
 
          // Register the cold staking template.
          StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
@@ -69,11 +67,11 @@ namespace Blockcore.Indexer.Core.Sync
 
       public void InitializeMmpool()
       {
-         var allitems = db.Mempool.AsQueryable().ToList();
+         var mempoolTransactionIds = storage.GetMempoolTransactionIds();
 
-         foreach (MempoolTable allitem in allitems)
+         foreach (var transactionId in mempoolTransactionIds)
          {
-            globalState.LocalMempoolView.TryAdd(allitem.TransactionId, string.Empty);
+            globalState.LocalMempoolView.TryAdd(transactionId, string.Empty);
          }
       }
 
@@ -169,10 +167,7 @@ namespace Blockcore.Indexer.Core.Sync
          {
             List<string> toRemoveFromMempool = deleteTransaction;
 
-            FilterDefinitionBuilder<MempoolTable> builder = Builders<MempoolTable>.Filter;
-            FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId, toRemoveFromMempool);
-
-            db.Mempool.DeleteMany(filter);
+            storage.DeleteTransactionsFromMempool(toRemoveFromMempool);
 
             foreach (string mempooltrx in toRemoveFromMempool)
                globalState.LocalMempoolView.Remove(mempooltrx, out _);

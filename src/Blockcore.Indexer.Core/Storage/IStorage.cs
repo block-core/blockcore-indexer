@@ -43,9 +43,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       ReorgBlockTable OrphanBlockByHash(string blockHash);
 
-      QueryResult<RichlistTable> Richlist(int offset, int limit);
-
-      RichlistTable RichlistBalance(string address);
+      QueryResult<BalanceForAddress> Richlist(int offset, int limit);
 
       List<RichlistTable> AddressBalances(IEnumerable<string> addresses);
 
@@ -58,5 +56,9 @@ namespace Blockcore.Indexer.Core.Storage
       public List<IndexView> GetIndexesBuildProgress();
 
       public List<string> GetBlockIndexIndexes();
+
+      public List<string> GetMempoolTransactionIds();
+
+      public bool DeleteTransactionsFromMempool(List<string> transactionIds);
    }
 }

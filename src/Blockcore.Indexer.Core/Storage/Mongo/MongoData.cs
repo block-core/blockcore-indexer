@@ -83,6 +83,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return indexNames.Where(w => w.Contains("BlockIndex")).ToList();
       }
 
+      public List<string> GetMempoolTransactionIds() => mongoDb.Mempool.AsQueryable().Select(x => x.TransactionId).ToList();
+
+      public bool DeleteTransactionsFromMempool(List<string> transactionIds)
+      {
+         FilterDefinitionBuilder<MempoolTable> builder = Builders<MempoolTable>.Filter;
+         FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId, transactionIds);
+
+         var result = mongoDb.Mempool.DeleteMany(filter);
+
+         return result.IsAcknowledged; //TODO should we change this to count == count of transaction ids?
+      }
+
       public List<IndexView> GetIndexesBuildProgress()
       {
             IMongoDatabase db = mongoDatabase.Client.GetDatabase("admin");
@@ -474,7 +486,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return ret;
       }
 
-      public QueryResult<RichlistTable> Richlist(int offset, int limit)
+      public QueryResult<BalanceForAddress> Richlist(int offset, int limit)
       {
          FilterDefinitionBuilder<RichlistTable> filterBuilder = Builders<RichlistTable>.Filter;
          FilterDefinition<RichlistTable> filter = filterBuilder.Empty;
@@ -502,17 +514,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                    .Limit(limit)
                    .ToList();
 
-         return new QueryResult<RichlistTable> { Items = list, Total = total, Offset = offset, Limit = limit };
-      }
-
-      public RichlistTable RichlistBalance(string address)
-      {
-         FilterDefinitionBuilder<RichlistTable> filterBuilder = Builders<RichlistTable>.Filter;
-         FilterDefinition<RichlistTable> filter = filterBuilder.Eq(m => m.Address, address);
-
-         RichlistTable table = mongoDb.RichlistTable.Find(filter).SingleOrDefault();
-
-         return table;
+         return new QueryResult<BalanceForAddress> { Items = list.Select(x => new BalanceForAddress
+         { Address = x.Address,Balance = x.Balance }), Total = total, Offset = offset, Limit = limit };
       }
 
       public List<RichlistTable> AddressBalances(IEnumerable<string> addresses)
