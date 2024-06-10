@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace Blockcore.Indexer.Core.Storage.Mongo
+namespace Blockcore.Indexer.Core.Storage.Mongo.SyncTasks
 {
    public class RichListScanning : TaskRunner
    {

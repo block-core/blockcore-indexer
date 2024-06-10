@@ -1,6 +1,7 @@
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo;
+using Blockcore.Indexer.Core.Storage.Mongo.SyncTasks;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -17,6 +18,7 @@ public static class DatabaseRegistration
       services.AddSingleton<IStorage, MongoData>();
       services.AddSingleton<IStorageOperations, MongoStorageOperations>();
       services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
+      services.AddScoped<TaskRunner, MongoDbBlockIndexer>();
       //TODO add this for address driven blockchains
       //services.AddScoped<TaskRunner, RichListScanning>();
 
