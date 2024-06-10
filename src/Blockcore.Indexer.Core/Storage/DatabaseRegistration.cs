@@ -17,6 +17,8 @@ public static class DatabaseRegistration
       services.AddSingleton<IStorage, MongoData>();
       services.AddSingleton<IStorageOperations, MongoStorageOperations>();
       services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
+      //TODO add this for address driven blockchains
+      //services.AddScoped<TaskRunner, RichListScanning>();
 
       services.AddSingleton(_ =>
       {

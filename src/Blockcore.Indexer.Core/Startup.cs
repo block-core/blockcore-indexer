@@ -72,7 +72,6 @@ namespace Blockcore.Indexer.Core
          services.AddScoped<TaskStarter, BlockStartup>();
 
          services.AddScoped<TaskRunner, BlockIndexer>();
-         services.AddScoped<TaskRunner, RichListSync>();
 
          // TODO: Verify that it is OK we add this to shared Startup for Blockcore and Cirrus.
          services.AddScoped<TaskRunner, HistoryComputer>();
