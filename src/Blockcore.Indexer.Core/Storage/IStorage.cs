@@ -46,7 +46,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryResult<BalanceForAddress> Richlist(int offset, int limit);
 
-      List<RichlistTable> AddressBalances(IEnumerable<string> addresses);
+      List<BalanceForAddress> AddressBalances(IEnumerable<string> addresses);
 
       long TotalBalance();
 

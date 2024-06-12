@@ -515,14 +515,15 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          { Address = x.Address,Balance = x.Balance }), Total = total, Offset = offset, Limit = limit };
       }
 
-      public List<RichlistTable> AddressBalances(IEnumerable<string> addresses)
+      public List<BalanceForAddress> AddressBalances(IEnumerable<string> addresses)
       {
          FilterDefinitionBuilder<RichlistTable> filterBuilder = Builders<RichlistTable>.Filter;
          FilterDefinition<RichlistTable> filter = filterBuilder.Where(s => addresses.Contains(s.Address));
 
-         List<RichlistTable> document = mongoDb.RichlistTable.Find(filter).ToList();
-
-         return document;
+         return  mongoDb.RichlistTable.Find(filter)
+            .ToList()
+            .Select(x => new BalanceForAddress { Balance = x.Balance, Address = x.Address })
+            .ToList();
       }
 
       public long TotalBalance()
