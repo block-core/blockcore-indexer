@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Blockcore.Consensus.BlockInfo;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Client;
@@ -10,13 +9,10 @@ using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
-using Blockcore.Indexer.Core.Storage.Mongo;
-using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Core.Sync
 {
@@ -231,7 +227,7 @@ namespace Blockcore.Indexer.Core.Sync
 
          string hex = client.GetBlockHex(block.Hash);
 
-         var blockItem = Block.Parse(hex, connection.Network.Consensus.ConsensusFactory);
+         var blockItem = Consensus.BlockInfo.Block.Parse(hex, connection.Network.Consensus.ConsensusFactory);
 
          foreach (Transaction blockItemTransaction in blockItem.Transactions)
          {

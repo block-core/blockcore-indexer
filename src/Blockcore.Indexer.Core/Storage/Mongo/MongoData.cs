@@ -281,11 +281,39 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                BlockHash = s.BlockHash,
                BlockIndex = s.BlockIndex,
                Created = s.Created,
-               Block = s.Block
+               Block = MapQueryBlock(s.Block)
             }),
             Total = total,
             Offset = itemsToSkip,
             Limit = limit
+         };
+      }
+
+      private static QueryBlock MapQueryBlock(BlockTable blockTable)
+      {
+         return new QueryBlock()
+         {
+            BlockHash = blockTable.BlockHash,
+            BlockIndex = blockTable.BlockIndex,
+            BlockSize = blockTable.BlockSize,
+            BlockTime = blockTable.BlockTime,
+            NextBlockHash = blockTable.NextBlockHash,
+            PreviousBlockHash = blockTable.PreviousBlockHash,
+            Confirmations = blockTable.Confirmations,
+            Bits = blockTable.Bits,
+            Difficulty = blockTable.Difficulty,
+            ChainWork = blockTable.ChainWork,
+            Merkleroot = blockTable.Merkleroot,
+            Nonce = blockTable.Nonce,
+            Version = blockTable.Version,
+            Synced = blockTable.SyncComplete,
+            TransactionCount = blockTable.TransactionCount,
+            PosBlockSignature = blockTable.PosBlockSignature,
+            PosModifierv2 = blockTable.PosModifierv2,
+            PosFlags = blockTable.PosFlags,
+            PosHashProof = blockTable.PosHashProof,
+            PosBlockTrust = blockTable.PosBlockTrust,
+            PosChainTrust = blockTable.PosChainTrust,
          };
       }
 
