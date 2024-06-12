@@ -1,6 +1,6 @@
-using System.Collections.Generic;
-using Blockcore.Indexer.Core.Operations.Types;
-using Blockcore.Indexer.Core.Storage.Mongo.Types;
+// using System.Collections.Generic;
+// using Blockcore.Indexer.Core.Operations.Types;
+// using Blockcore.Indexer.Core.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Core.Operations
 {
@@ -9,11 +9,11 @@ namespace Blockcore.Indexer.Core.Operations
    /// </summary>
    public interface IUtxoCache
    {
-      int CacheSize { get; }
-
-      UtxoCacheItem GetOne(string outpoint);
-      void AddToCache(IEnumerable<OutputTable> outputs);
-
-      void RemoveFromCache(IEnumerable<InputTable> inputs);
+      // int CacheSize { get; }
+      //
+      // UtxoCacheItem GetOne(string outpoint);
+      // void AddToCache(IEnumerable<OutputTable> outputs);
+      //
+      // void RemoveFromCache(IEnumerable<InputTable> inputs);
    }
 }
