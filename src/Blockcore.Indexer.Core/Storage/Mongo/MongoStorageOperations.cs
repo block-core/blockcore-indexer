@@ -271,7 +271,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return block;
       }
 
-      public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
+      public void InsertMempoolTransactions(SyncBlockTransactionsOperation item)
       {
          var mempool = new List<MempoolTable>();
          var inputs = new Dictionary<string, (MempoolInput mempoolInput, MempoolTable mempool)>();
@@ -349,8 +349,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          foreach (MempoolTable mempooltrx in mempool)
             globalState.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
-
-         return new InsertStats { Items = mempool };
       }
 
       protected virtual void OnAddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)

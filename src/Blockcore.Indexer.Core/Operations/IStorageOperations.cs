@@ -13,6 +13,6 @@ namespace Blockcore.Indexer.Core.Operations
 
       SyncBlockInfo PushStorageBatch(StorageBatch storageBatch);
 
-      InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item);
+      void InsertMempoolTransactions(SyncBlockTransactionsOperation item);
    }
 }
