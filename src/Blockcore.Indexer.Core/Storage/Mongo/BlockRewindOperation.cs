@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using MongoDB.Bson;
 using MongoDB.Driver;
 

@@ -14,6 +14,7 @@ using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.NBitcoin;
 using Blockcore.Networks;
 using FluentAssertions;
