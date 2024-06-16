@@ -18,6 +18,7 @@ using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -46,6 +47,8 @@ namespace Blockcore.Indexer.Core
                break;
             default: throw new InvalidOperationException();
          }
+
+         services.AddDbContext<PostgresDbContext>();
 
          // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
@@ -135,7 +138,7 @@ namespace Blockcore.Indexer.Core
          services.AddTransient<IBlockRewindOperation, BlockRewindOperation>();
       }
 
-      public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+      public static void Configure(IApplicationBuilder app, IWebHostEnvironment env, PostgresDbContext db)
       {
          app.UseExceptionHandler("/error");
 
@@ -145,6 +148,11 @@ namespace Blockcore.Indexer.Core
          app.UseResponseCompression();
 
          //app.UseMvc();
+         db.Database.Migrate();
+
+         using (var client = new PostgresDbContext()){
+            client.Database.EnsureCreated();
+         }
 
          app.UseDefaultFiles();
 
