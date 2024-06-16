@@ -1,10 +1,23 @@
+## <small>0.2.66 (2024-05-24)</small>
+
+* Add mainnet key ([1ed7da0](https://github.com/block-core/blockcore-indexer/commit/1ed7da0))
+* bump version ([c2ed435](https://github.com/block-core/blockcore-indexer/commit/c2ed435))
+* update mainnet key ([c6a1054](https://github.com/block-core/blockcore-indexer/commit/c6a1054))
+
+
+
 ## <small>0.2.65 (2024-05-01)</small>
 
 * bump version ([c2e047e](https://github.com/block-core/blockcore-indexer/commit/c2e047e))
+* Fix typo ([d6a73b9](https://github.com/block-core/blockcore-indexer/commit/d6a73b9))
+
+
+
+## <small>0.2.64 (2024-04-26)</small>
+
 * bump version ([04665ca](https://github.com/block-core/blockcore-indexer/commit/04665ca))
 * Changed base image to dotnet 8 (#211) ([37d0fb4](https://github.com/block-core/blockcore-indexer/commit/37d0fb4)), closes [#211](https://github.com/block-core/blockcore-indexer/issues/211)
 * fix the default null ([2df38ab](https://github.com/block-core/blockcore-indexer/commit/2df38ab))
-* Fix typo ([d6a73b9](https://github.com/block-core/blockcore-indexer/commit/d6a73b9))
 
 
 
