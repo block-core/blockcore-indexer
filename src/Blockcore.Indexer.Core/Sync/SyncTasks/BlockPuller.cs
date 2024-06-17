@@ -211,8 +211,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             bool bip30Issue = bip30Blocks.Contains(block.BlockInfo.Height + 1);
 
             if (ibd && !bip30Issue &&
-                currentStorageBatch.BlockTable.Count < config.MongoBatchCount &&
-                currentStorageBatch.TotalSize <= config.MongoBatchSize)
+                currentStorageBatch.BlockTable.Count < config.DbBatchCount &&
+                currentStorageBatch.TotalSize <= config.DbBatchSize)
             {
                continue;
             }
