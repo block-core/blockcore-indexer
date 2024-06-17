@@ -172,7 +172,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       private List<Wallet> RetrieveWallets()
       {
-         // TODO: Funds should be stored in MongoDB, and be editable by individual chains and not hard-coded.
+         // TODO: Funds should be stored in the DB, and be editable by individual chains and not hard-coded.
          var funds = new List<Wallet>();
 
          List<Wallet> wallets = insightConfiguration.Wallets;
