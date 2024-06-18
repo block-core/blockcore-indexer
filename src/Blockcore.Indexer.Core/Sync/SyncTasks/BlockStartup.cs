@@ -26,6 +26,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       readonly ICryptoClientFactory clientFactory;
       private readonly IStorage storageData;
       readonly IOptions<IndexerSettings> indexerSettings;
+      readonly IStorageBatchFactory StorageBatchFactory;
 
       /// <summary>
       /// Initializes a new instance of the <see cref="BlockStartup"/> class.
@@ -37,13 +38,15 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          IStorageOperations storageOperations,
          ICryptoClientFactory clientFactory,
          IStorage data,
-         IOptions<IndexerSettings> indexerSettings)
+         IOptions<IndexerSettings> indexerSettings,
+         IStorageBatchFactory storageBatchFactory)
           : base(logger)
       {
          connection = syncConnection;
          this.storageOperations = storageOperations;
          this.clientFactory = clientFactory;
          this.indexerSettings = indexerSettings;
+         StorageBatchFactory = storageBatchFactory;
          this.syncOperations = syncOperations;
          log = logger;
 
@@ -91,7 +94,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
             BlockInfo genesisBlock = await client.GetBlockAsync(genesisHash);
             SyncBlockTransactionsOperation block = syncOperations.FetchFullBlock(connection, genesisBlock);
 
-            StorageBatch genesisBatch = new StorageBatch();
+            StorageBatch genesisBatch = StorageBatchFactory.GetStorageBatch();
             storageOperations.AddToStorageBatch(genesisBatch, block);
             Runner.GlobalState.StoreTip = storageOperations.PushStorageBatch(genesisBatch);
          }

@@ -155,9 +155,9 @@ public class MongoStorageOperationsTests
       return item;
    }
 
-   StorageBatch WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully()
+   MongoStorageBatch WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
 
       var block = NewRandomBlockTable;
       batch.BlockTable.Add(block.BlockIndex, block);
@@ -168,7 +168,7 @@ public class MongoStorageOperationsTests
       return batch;
    }
 
-   void WithASuccessfulDeleteManyOnUnspentOutputTable(StorageBatch batch)
+   void WithASuccessfulDeleteManyOnUnspentOutputTable(MongoStorageBatch batch)
    {
       var utxo = batch.InputTable.Select(_ => _.Outpoint).ToList();
 
@@ -182,7 +182,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void AddToStorageBatchSetsTheTotalSizeFromBlockInfo()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
 
       var item = WithRandomSyncBlockTransactionsOperation();
 
@@ -194,7 +194,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void AddToStorageBatchSetsTheBlockTableFromBlockInfo()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
 
       var item = WithRandomSyncBlockTransactionsOperation();
 
@@ -216,7 +216,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void AddToStorageBatchSetsTheTransactionBlockTableFromTransactions()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
 
       var item = WithRandomSyncBlockTransactionsOperation();
 
@@ -233,7 +233,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void AddToStorageBatchWithStoreRawTransactionsTrueSetsTransactionTable()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
 
       var item = WithRandomSyncBlockTransactionsOperation();
 
@@ -254,7 +254,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void AddToStorageBatchSetsTheOutputsInTheTransactionToTheOutputTable()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
       var valueMoney = new Money(NewRandomInt32);
       var script = new Script(NewRandomString.Replace('-','1'));
       var item = WithRandomSyncBlockTransactionsOperation();
@@ -300,7 +300,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void AddToStorageBatchSetsTheInputsInInputTableWithoutAddress()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
       var hash = new uint256($"{NewRandomInt64}{NewRandomInt64}{NewRandomInt64}{NewRandomInt64}".Substring(0,64));
       int n = NewRandomInt32;
       var expectedOutpoint = new OutPoint
@@ -340,7 +340,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void AddToStorageBatchSetsTheInputsInInputTableWithAddressAndValue()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
       var valueMoney = new Money(NewRandomInt32);
       var script = new Script(NewRandomString.Replace('-','1'));
       var transaction = new Transaction { Outputs = { { new TxOut { Value = valueMoney, ScriptPubKey = script } } } };
@@ -371,7 +371,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsBlockTableFromBatchToMongoDb()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
 
       var block = NewRandomBlockTable;
       batch.BlockTable.Add(block.BlockIndex, block);
@@ -388,7 +388,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsTransactionBlockTableFromBatchToMongoDb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
+      MongoStorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var blockTable = new TransactionBlockTable
       {
@@ -407,7 +407,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsOutputTableFromBatchToMongoDb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
+      MongoStorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var outputTable = new OutputTable()
       {
@@ -431,7 +431,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsInputTableAddsToMongodb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
+      MongoStorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       //We must have an unspent output for an input that is being processed
       var outpoint = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
@@ -467,7 +467,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsTransactionTableDataToMongodb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
+      MongoStorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var transactionTable = new TransactionTable()
          {
@@ -487,7 +487,7 @@ public class MongoStorageOperationsTests
    public void PushStorageBatchIgnoresDuplicatsOnInputTableForDuplicateKeyException()
 #pragma warning restore xUnit1013 // Public method should be marked as test
    {
-      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
+      MongoStorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var transactionTable = new TransactionTable()
       {
@@ -514,7 +514,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsUnspendOutputToMongodbForEachOutputTableItem()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
+      MongoStorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       var outputTable = new OutputTable
       {
@@ -542,7 +542,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchAddsDeletsFromUnspentOutputTableOnMongoDbForAllInputTableItems()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
+      MongoStorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       //We must have an unspent output for an input that is being processed
       var outpoint = new Outpoint { OutputIndex = NewRandomInt32, TransactionId = NewRandomString };
@@ -579,7 +579,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchUpdatesBlockTableItemsWithSyncCompleteTrueInMongodb()
    {
-      StorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
+      MongoStorageBatch batch = WithBatchThatHasABlockToPushAndUpdatesToSyncCompleteSuccessfully();
 
       sut.PushStorageBatch(batch);
 
@@ -603,7 +603,7 @@ public class MongoStorageOperationsTests
    [Fact]
    public void PushStorageBatchThrowsWhenTheBlockInertedIsNotTheSameHashAsTopBlockInMongodb()
    {
-      var batch = new StorageBatch();
+      var batch = new MongoStorageBatch();
 
       var dbBlock = NewRandomBlockTable;
       var storageBlock = NewRandomBlockTable;

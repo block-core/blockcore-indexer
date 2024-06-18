@@ -67,7 +67,8 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          if (!TryDequeue(out StorageBatch batch))
             return await Task.FromResult(false);
 
-         ValidateBatch(batch);
+         if (batch.ValidateBatch(Runner.GlobalState.StoreTip.BlockHash) == false)
+            throw new ApplicationException("None consecutive block received");
 
          watch.Restart();
 
@@ -78,36 +79,21 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          if (Runner.GlobalState.StoreTip == null)
             throw new ApplicationException("Store tip was not persisted");
 
-         long totalBlocks = batch.BlockTable.Count;// insertStats.Sum((tuple => tuple.count));
+         long totalBlocks = batch.GetBlockCount();// insertStats.Sum((tuple => tuple.count));
          double totalSeconds = watch.Elapsed.TotalSeconds;// insertStats.Sum((tuple => tuple.seconds));
          double blocksPerSecond = totalBlocks / totalSeconds;
          double secondsPerBlock = totalSeconds / totalBlocks;
 
-         log.LogInformation($"Store - blocks={batch.BlockTable.Count}, outputs={batch.OutputTable.Count}, inputs={batch.InputTable.Count}, trx={batch.TransactionBlockTable.Count}, total Size = {((decimal)batch.TotalSize / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
+         log.LogInformation($"Store - blocks={batch.GetBlockCount()}, outputs={batch.GetOutputCount()}, inputs={batch.GetInputCount()}, trx={batch.GetTransactionCount()}, total Size = {((decimal)batch.GetBatchSize() / 1000000):0.00}mb, tip={Runner.GlobalState.StoreTip.BlockIndex}, Seconds = {watch.Elapsed.TotalSeconds}, inserts = {blocksPerSecond:0.00}b/s ({secondsPerBlock:0.00}s/b)");
 
-         foreach (var mapBlocksValue in batch.BlockTable.Values)
-            syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(blocksPerSecond), mapBlocksValue.BlockSize));
+         foreach (var blockSiz in batch.GetBlockSizes())
+            syncConnection.RecentItems.Add((DateTime.UtcNow, TimeSpan.FromSeconds(blocksPerSecond), blockSiz));
 
          var notifications = new AddressNotifications { Addresses = new List<string>() };// count.Items.Where(ad => ad.Addresses != null).SelectMany(s => s.Addresses).Distinct().ToList() };
          Runner.Get<Notifier>().Enqueue(notifications);
 
          return await Task.FromResult(true);
 
-      }
-
-      void ValidateBatch(StorageBatch item)
-      {
-         // check all blocks are consecutive and start from the last block in store.
-         string prevHash = Runner.GlobalState.StoreTip.BlockHash;
-         foreach (var mapBlock in item.BlockTable.Values.OrderBy(b => b.BlockIndex))
-         {
-            if (mapBlock.PreviousBlockHash != prevHash)
-            {
-               throw new ApplicationException("None consecutive block received");
-            }
-
-            prevHash = mapBlock.BlockHash;
-         }
       }
    }
 }
