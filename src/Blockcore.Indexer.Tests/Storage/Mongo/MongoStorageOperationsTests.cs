@@ -87,7 +87,6 @@ public class MongoStorageOperationsTests
 
       sut = new MongoStorageOperations(syncConnection,
          mongodbMock.MongoDbObject,
-         new UtxoCache(),
          indexSettingsMock.Object,
          globalState,
          new MapMongoBlockToStorageBlock(),

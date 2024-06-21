@@ -28,7 +28,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
       public CirrusMongoStorageOperations(
          SyncConnection syncConnection,
          IStorage storage,
-         IUtxoCache utxoCache,
          IOptions<IndexerSettings> configuration,
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
@@ -38,7 +37,6 @@ namespace Blockcore.Indexer.Cirrus.Storage.Mongo
          base(
              syncConnection,
              db,
-             utxoCache,
              configuration,
              globalState,
              mongoBlockToStorageBlock,

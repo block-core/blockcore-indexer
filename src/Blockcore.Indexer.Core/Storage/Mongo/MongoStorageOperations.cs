@@ -30,7 +30,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       public MongoStorageOperations(
          SyncConnection syncConnection,
          IMongoDb storage,
-         IUtxoCache utxoCache,
          IOptions<IndexerSettings> configuration,
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,

@@ -51,8 +51,6 @@ namespace Blockcore.Indexer.Core
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
 
-         services.AddSingleton<IUtxoCache, UtxoCache>();
-
          services.AddTransient<SyncServer>();
          services.AddSingleton<SyncConnection>();
          services.AddSingleton<ISyncOperations, SyncOperations>();
