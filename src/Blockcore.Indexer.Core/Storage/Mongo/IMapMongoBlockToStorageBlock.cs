@@ -2,7 +2,7 @@ using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
 
-namespace Blockcore.Indexer.Core.Storage
+namespace Blockcore.Indexer.Core.Storage.Mongo
 {
    public interface IMapMongoBlockToStorageBlock
    {

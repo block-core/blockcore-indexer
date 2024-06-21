@@ -8,7 +8,7 @@ using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage;
-using Blockcore.Indexer.Core.Storage.Mongo;
+using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -25,7 +25,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
 
       private readonly IStorageOperations storageOperations;
 
-      private readonly MongoData data;
+      private readonly IStorage data;
 
       private readonly System.Diagnostics.Stopwatch watch;
 
@@ -43,7 +43,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       {
          log = logger;
 
-         data = (MongoData)storage;
+         data = storage;
          this.statsHandler = statsHandler;
          this.storageOperations = storageOperations;
 
@@ -67,7 +67,28 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
          // TODO: Look into potential optimization on updates, not replacing the whole document for all connected nodes all the time.
          foreach (PeerInfo peer in peers)
          {
-            await data.InsertPeer(peer);
+            await data.InsertPeer(new PeerDetails
+            {
+               Addr = peer.Addr,
+               AddrLocal = peer.AddrLocal,
+               Version = peer.Version,
+               Inbound = peer.Inbound,
+               Services = peer.Services,
+               BanScore = peer.BanScore,
+               BytesRecv = peer.BytesRecv,
+               BytesSent = peer.BytesSent,
+               ConnTime = peer.ConnTime,
+               PingTime = peer.PingTime,
+               InFlight = peer.InFlight,
+               LastRecv = peer.LastRecv,
+               LastSeen = peer.LastSeen,
+               LastSend = peer.LastSend,
+               StartingHeight = peer.StartingHeight,
+               SubVer = peer.SubVer,
+               SyncedBlocks = peer.SyncedBlocks,
+               SyncedHeaders = peer.SyncedHeaders,
+               WhiteListed = peer.WhiteListed
+            });
          }
 
          log.LogInformation($"Time taken to update peers in database: {watch.Elapsed.TotalSeconds}.");

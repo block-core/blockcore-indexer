@@ -4,21 +4,19 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Settings;
-using Blockcore.Indexer.Core.Storage;
-using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using MongoDB.Driver.Core.Operations;
 
-namespace Blockcore.Indexer.Core.Sync.SyncTasks
+namespace Blockcore.Indexer.Core.Storage.Mongo.SyncTasks
 {
-   public class RichListSync : TaskRunner
+   public class RichListScanning : TaskRunner
    {
       private readonly IMongoDb db;
-      private readonly ILogger<RichListSync> log;
+      private readonly ILogger<RichListScanning> log;
       private readonly IndexerSettings indexerSettings;
 
       private readonly Stopwatch watch;
@@ -26,7 +24,7 @@ namespace Blockcore.Indexer.Core.Sync.SyncTasks
       private bool syncInProgress;
       DateTime lastSync;
 
-      public RichListSync(IOptions<IndexerSettings> configuration, ILogger<RichListSync> logger,IMongoDb data)
+      public RichListScanning(IOptions<IndexerSettings> configuration, ILogger<RichListScanning> logger,IMongoDb data)
          : base(configuration, logger)
       {
          db = data;

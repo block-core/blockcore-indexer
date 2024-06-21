@@ -32,8 +32,8 @@ namespace Blockcore.Indexer.Core.Settings
 
       public int NotifyBatchCount { get; set; }
 
-      public int MongoBatchSize { get; set; }
-      public int MongoBatchCount { get; set; }
+      public int DbBatchSize { get; set; }
+      public int DbBatchCount { get; set; }
 
       public int AverageInterval { get; set; }
 
@@ -44,5 +44,7 @@ namespace Blockcore.Indexer.Core.Settings
       public int MaxItemsInHistoryQueue { get; set; }
 
       public int IndexCountForBlockIndexProperty { get;set; }
+
+      public string DbType { get; set; }
    }
 }

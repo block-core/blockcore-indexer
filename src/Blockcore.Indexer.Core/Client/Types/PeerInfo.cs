@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
-using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
 
 namespace Blockcore.Indexer.Core.Client.Types
 {
-   [BsonIgnoreExtraElements]
    public class PeerInfo
    {
       public string Addr { get; set; }

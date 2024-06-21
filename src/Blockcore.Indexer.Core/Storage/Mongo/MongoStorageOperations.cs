@@ -30,7 +30,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       public MongoStorageOperations(
          SyncConnection syncConnection,
          IMongoDb storage,
-         IUtxoCache utxoCache,
          IOptions<IndexerSettings> configuration,
          GlobalState globalState,
          IMapMongoBlockToStorageBlock mongoBlockToStorageBlock,
@@ -48,15 +47,17 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public void AddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
       {
-         storageBatch.TotalSize += item.BlockInfo.Size;
-         storageBatch.BlockTable.Add(item.BlockInfo.Height, mongoBlockToStorageBlock.Map(item.BlockInfo));
+         var mongoStorageBatch = storageBatch as MongoStorageBatch;
+
+         mongoStorageBatch.TotalSize += item.BlockInfo.Size;
+         mongoStorageBatch.BlockTable.Add(item.BlockInfo.Height, mongoBlockToStorageBlock.Map(item.BlockInfo));
 
          int transactionIndex = 0;
          foreach (Transaction trx in item.Transactions)
          {
             string trxHash = trx.GetHash().ToString();
 
-            storageBatch.TransactionBlockTable.Add(
+            mongoStorageBatch.TransactionBlockTable.Add(
                new TransactionBlockTable
                {
                   BlockIndex = item.BlockInfo.HeightAsUint32,
@@ -67,7 +68,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
             if (configuration.StoreRawTransactions)
             {
-               storageBatch.TransactionTable.Add(new TransactionTable
+               mongoStorageBatch.TransactionTable.Add(new TransactionTable
                {
                   TransactionId = trxHash,
                   RawTransaction = trx.ToBytes(syncConnection.Network.Consensus.ConsensusFactory)
@@ -84,7 +85,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
                var outpoint = new Outpoint { TransactionId = trxHash, OutputIndex = outputIndex++ };
 
-               storageBatch.OutputTable.Add(outpoint.ToString(), new OutputTable
+               mongoStorageBatch.OutputTable.Add(outpoint.ToString(), new OutputTable
                {
                   Address = addr,
                   Outpoint = outpoint,
@@ -106,9 +107,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                   TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N
                };
 
-               storageBatch.OutputTable.TryGetValue(outpoint.ToString(), out OutputTable output);
+               mongoStorageBatch.OutputTable.TryGetValue(outpoint.ToString(), out OutputTable output);
 
-               storageBatch.InputTable.Add(new InputTable()
+               mongoStorageBatch.InputTable.Add(new InputTable()
                {
                   Outpoint = outpoint,
                   TrxHash = trxHash,
@@ -126,13 +127,15 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
       {
+         var mongoStorageBatch = storageBatch as MongoStorageBatch;
+
          if (globalState.IndexModeCompleted)
          {
             if (globalState.IbdMode() == false)
             {
                if (globalState.LocalMempoolView.Any())
                {
-                  var toRemoveFromMempool = storageBatch.TransactionBlockTable.Select(s => s.TransactionId).ToList();
+                  var toRemoveFromMempool = mongoStorageBatch.TransactionBlockTable.Select(s => s.TransactionId).ToList();
 
                   FilterDefinitionBuilder<MempoolTable> builder = Builders<MempoolTable>.Filter;
                   FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId,
@@ -146,24 +149,24 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          }
 
-         var blockTableTask = storageBatch.BlockTable.Values.Any()
-            ? db.BlockTable.InsertManyAsync(storageBatch.BlockTable.Values, new InsertManyOptions { IsOrdered = false })
+         var blockTableTask = mongoStorageBatch.BlockTable.Values.Any()
+            ? db.BlockTable.InsertManyAsync(mongoStorageBatch.BlockTable.Values, new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
-         var transactionBlockTableTask = storageBatch.TransactionBlockTable.Any()
-            ? db.TransactionBlockTable.InsertManyAsync(storageBatch.TransactionBlockTable, new InsertManyOptions { IsOrdered = false })
+         var transactionBlockTableTask = mongoStorageBatch.TransactionBlockTable.Any()
+            ? db.TransactionBlockTable.InsertManyAsync(mongoStorageBatch.TransactionBlockTable, new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
-         var outputTableTask = storageBatch.OutputTable.Any()
-            ? db.OutputTable.InsertManyAsync(storageBatch.OutputTable.Values, new InsertManyOptions { IsOrdered = false })
+         var outputTableTask = mongoStorageBatch.OutputTable.Any()
+            ? db.OutputTable.InsertManyAsync(mongoStorageBatch.OutputTable.Values, new InsertManyOptions { IsOrdered = false })
             : Task.CompletedTask;
 
          Task transactionTableTask = Task.Run(() =>
          {
             try
             {
-               if (storageBatch.TransactionTable.Any())
-                  db.TransactionTable.InsertMany(storageBatch.TransactionTable, new InsertManyOptions {IsOrdered = false});
+               if (mongoStorageBatch.TransactionTable.Any())
+                  db.TransactionTable.InsertMany(mongoStorageBatch.TransactionTable, new InsertManyOptions {IsOrdered = false});
             }
             catch (MongoBulkWriteException mbwex)
             {
@@ -176,9 +179,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          });
 
-         var utxos = new List<UnspentOutputTable>(storageBatch.OutputTable.Values.Count);
+         var utxos = new List<UnspentOutputTable>(mongoStorageBatch.OutputTable.Values.Count);
 
-         foreach (OutputTable outputTable in storageBatch.OutputTable.Values)
+         foreach (OutputTable outputTable in mongoStorageBatch.OutputTable.Values)
          {
             if (outputTable.Address.Equals(OpReturnAddress))
                continue;
@@ -201,14 +204,14 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             : Task.CompletedTask;
 
          var inputTableTask = Task.CompletedTask;
-         if (storageBatch.InputTable.Any())
+         if (mongoStorageBatch.InputTable.Any())
          {
             var utxosLookups = FetchUtxos(
-               storageBatch.InputTable
+               mongoStorageBatch.InputTable
                   .Where(_ => _.Address == null)
                   .Select(_ => _.Outpoint));
 
-            foreach (InputTable input in storageBatch.InputTable)
+            foreach (InputTable input in mongoStorageBatch.InputTable)
             {
                if (input.Address != null) continue;
 
@@ -217,17 +220,17 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                input.Value = utxosLookups[key].Value;
             }
 
-            inputTableTask = db.InputTable.InsertManyAsync(storageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
+            inputTableTask = db.InputTable.InsertManyAsync(mongoStorageBatch.InputTable, new InsertManyOptions { IsOrdered = false });
          }
 
          Task.WaitAll(blockTableTask, transactionBlockTableTask, outputTableTask, inputTableTask, transactionTableTask, unspentOutputTableTask);
 
-         if (storageBatch.InputTable.Any())
+         if (mongoStorageBatch.InputTable.Any())
          {
             // TODO: if earlier we filtered out outputs that are already spent and not pushed to the utxo table
             // now we do not need to try and delete such outputs becuase they where never pushed to the store.
 
-            var outpointsFromNewInput = storageBatch.InputTable
+            var outpointsFromNewInput = mongoStorageBatch.InputTable
             .Select(_ => _.Outpoint)
             .ToList();
 
@@ -246,7 +249,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          string lastBlockHash = null;
          long blockIndex = 0;
          var markBlocksAsComplete = new List<UpdateOneModel<BlockTable>>();
-         foreach (BlockTable mapBlock in storageBatch.BlockTable.Values.OrderBy(b => b.BlockIndex))
+         foreach (BlockTable mapBlock in mongoStorageBatch.BlockTable.Values.OrderBy(b => b.BlockIndex))
          {
             FilterDefinition<BlockTable> filter =
                Builders<BlockTable>.Filter.Eq(block => block.BlockIndex, mapBlock.BlockIndex);
@@ -271,7 +274,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return block;
       }
 
-      public InsertStats InsertMempoolTransactions(SyncBlockTransactionsOperation item)
+      public void InsertMempoolTransactions(SyncBlockTransactionsOperation item)
       {
          var mempool = new List<MempoolTable>();
          var inputs = new Dictionary<string, (MempoolInput mempoolInput, MempoolTable mempool)>();
@@ -349,8 +352,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          foreach (MempoolTable mempooltrx in mempool)
             globalState.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
-
-         return new InsertStats { Items = mempool };
       }
 
       protected virtual void OnAddToStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
