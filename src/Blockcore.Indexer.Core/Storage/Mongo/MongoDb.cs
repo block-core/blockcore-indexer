@@ -1,9 +1,7 @@
 using Blockcore.Indexer.Core.Client.Types;
-using Blockcore.Indexer.Core.Operations.Types;
-using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
@@ -93,11 +91,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
       }
 
-      public IMongoCollection<PeerInfo> Peer
+      public IMongoCollection<PeerDetails> Peer
       {
          get
          {
-            return mongoDatabase.GetCollection<PeerInfo>("Peer");
+            return mongoDatabase.GetCollection<PeerDetails>("Peer");
          }
       }
 

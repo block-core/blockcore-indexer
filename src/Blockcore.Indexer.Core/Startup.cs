@@ -15,17 +15,13 @@ using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Sync;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
-using Blockcore.Utilities;
-using ConcurrentCollections;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
-using MongoDB.Driver;
 using Newtonsoft.Json;
 
 namespace Blockcore.Indexer.Core
@@ -39,30 +35,22 @@ namespace Blockcore.Indexer.Core
          services.Configure<IndexerSettings>(configuration.GetSection("Indexer"));
          services.Configure<InsightSettings>(configuration.GetSection("Insight"));
 
+         IndexerSettings indexer = new IndexerSettings();
 
-         services.AddSingleton(_ =>
+         configuration.GetSection("Indexer").Bind(indexer);
+
+         switch (indexer.DbType)
          {
-            var indexerConfiguration = _.GetService(typeof(IOptions<IndexerSettings>))as IOptions<IndexerSettings> ;// configuration.GetSection("Indexer") as IndexerSettings;
-            var chainConfiguration  = _.GetService(typeof(IOptions<ChainSettings>)) as IOptions<ChainSettings>;//  configuration.GetSection("Chain") as ChainSettings;
-
-            var mongoClient = new MongoClient(indexerConfiguration.Value.ConnectionString.Replace("{Symbol}",
-               chainConfiguration.Value.Symbol.ToLower()));
-
-            string dbName = indexerConfiguration.Value.DatabaseNameSubfix
-               ? $"Blockchain{chainConfiguration.Value.Symbol}"
-               : "Blockchain";
-
-            return mongoClient.GetDatabase(dbName);
-         });
+            case "MongoDb":
+               services.AddMongoDatabase();
+               break;
+            default: throw new InvalidOperationException();
+         }
 
          // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
          services.AddSingleton<CommandHandler>();
-         services.AddSingleton<IStorage, MongoData>();
-         services.AddSingleton<IMongoDb, MongoDb>();
-         services.AddSingleton<IUtxoCache, UtxoCache>();
-         services.AddSingleton<IStorageOperations, MongoStorageOperations>();
-         services.AddSingleton<TaskStarter, MongoBuilder>();
+
          services.AddTransient<SyncServer>();
          services.AddSingleton<SyncConnection>();
          services.AddSingleton<ISyncOperations, SyncOperations>();
@@ -80,9 +68,6 @@ namespace Blockcore.Indexer.Core
          services.AddScoped<TaskRunner, BlockPuller>();
          services.AddScoped<TaskRunner, BlockStore>();
          services.AddScoped<TaskStarter, BlockStartup>();
-
-         services.AddScoped<TaskRunner, BlockIndexer>();
-         services.AddScoped<TaskRunner, RichListSync>();
 
          // TODO: Verify that it is OK we add this to shared Startup for Blockcore and Cirrus.
          services.AddScoped<TaskRunner, HistoryComputer>();
@@ -142,7 +127,7 @@ namespace Blockcore.Indexer.Core
                .AllowAnyHeader();
          }));
 
-         services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
+
          services.AddSingleton<ICryptoClientFactory, CryptoClientFactory>();
          services.AddSingleton<ISyncBlockTransactionOperationBuilder, SyncBlockTransactionOperationBuilder>();
 

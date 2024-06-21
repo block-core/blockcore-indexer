@@ -5,9 +5,7 @@ using System.Threading.Tasks;
 using Blockcore.Consensus.ScriptInfo;
 using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Client;
-using Blockcore.Indexer.Core.Client.Types;
 using Blockcore.Indexer.Core.Crypto;
-using Blockcore.Indexer.Core.Extensions;
 using Blockcore.Indexer.Core.Models;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
@@ -19,7 +17,6 @@ using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Blockcore.NBitcoin.DataEncoders;
-using Blockcore.Utilities;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -81,6 +78,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
 
          return indexNames.Where(w => w.Contains("BlockIndex")).ToList();
+      }
+
+      public List<string> GetMempoolTransactionIds() => mongoDb.Mempool.AsQueryable().Select(x => x.TransactionId).ToList();
+
+      public bool DeleteTransactionsFromMempool(List<string> transactionIds)
+      {
+         FilterDefinitionBuilder<MempoolTable> builder = Builders<MempoolTable>.Filter;
+         FilterDefinition<MempoolTable> filter = builder.In(mempoolItem => mempoolItem.TransactionId, transactionIds);
+
+         var result = mongoDb.Mempool.DeleteMany(filter);
+
+         return result.IsAcknowledged; //TODO should we change this to count == count of transaction ids?
       }
 
       public List<IndexView> GetIndexesBuildProgress()
@@ -272,11 +281,39 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                BlockHash = s.BlockHash,
                BlockIndex = s.BlockIndex,
                Created = s.Created,
-               Block = s.Block
+               Block = MapQueryBlock(s.Block)
             }),
             Total = total,
             Offset = itemsToSkip,
             Limit = limit
+         };
+      }
+
+      private static QueryBlock MapQueryBlock(BlockTable blockTable)
+      {
+         return new QueryBlock()
+         {
+            BlockHash = blockTable.BlockHash,
+            BlockIndex = blockTable.BlockIndex,
+            BlockSize = blockTable.BlockSize,
+            BlockTime = blockTable.BlockTime,
+            NextBlockHash = blockTable.NextBlockHash,
+            PreviousBlockHash = blockTable.PreviousBlockHash,
+            Confirmations = blockTable.Confirmations,
+            Bits = blockTable.Bits,
+            Difficulty = blockTable.Difficulty,
+            ChainWork = blockTable.ChainWork,
+            Merkleroot = blockTable.Merkleroot,
+            Nonce = blockTable.Nonce,
+            Version = blockTable.Version,
+            Synced = blockTable.SyncComplete,
+            TransactionCount = blockTable.TransactionCount,
+            PosBlockSignature = blockTable.PosBlockSignature,
+            PosModifierv2 = blockTable.PosModifierv2,
+            PosFlags = blockTable.PosFlags,
+            PosHashProof = blockTable.PosHashProof,
+            PosBlockTrust = blockTable.PosBlockTrust,
+            PosChainTrust = blockTable.PosChainTrust,
          };
       }
 
@@ -292,7 +329,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// </summary>
       /// <param name="info"></param>
       /// <returns></returns>
-      public async Task<long> InsertPeer(PeerInfo info)
+      public async Task<long> InsertPeer(PeerDetails info)
       {
          // Always update the LastSeen.
          info.LastSeen = DateTime.UtcNow;
@@ -302,9 +339,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return replaceOneResult.ModifiedCount;
       }
 
-      public List<PeerInfo> GetPeerFromDate(DateTime date)
+      public List<PeerDetails> GetPeerFromDate(DateTime date)
       {
-         FilterDefinition<PeerInfo> filter = Builders<PeerInfo>.Filter.Gt(addr => addr.LastSeen, date);
+         FilterDefinition<PeerDetails> filter = Builders<PeerDetails>.Filter.Gt(addr => addr.LastSeen, date);
          return mongoDb.Peer.Find(filter).ToList();
       }
 
@@ -474,7 +511,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return ret;
       }
 
-      public QueryResult<RichlistTable> Richlist(int offset, int limit)
+      public QueryResult<BalanceForAddress> Richlist(int offset, int limit)
       {
          FilterDefinitionBuilder<RichlistTable> filterBuilder = Builders<RichlistTable>.Filter;
          FilterDefinition<RichlistTable> filter = filterBuilder.Empty;
@@ -502,27 +539,19 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                    .Limit(limit)
                    .ToList();
 
-         return new QueryResult<RichlistTable> { Items = list, Total = total, Offset = offset, Limit = limit };
+         return new QueryResult<BalanceForAddress> { Items = list.Select(x => new BalanceForAddress
+         { Address = x.Address,Balance = x.Balance }), Total = total, Offset = offset, Limit = limit };
       }
 
-      public RichlistTable RichlistBalance(string address)
-      {
-         FilterDefinitionBuilder<RichlistTable> filterBuilder = Builders<RichlistTable>.Filter;
-         FilterDefinition<RichlistTable> filter = filterBuilder.Eq(m => m.Address, address);
-
-         RichlistTable table = mongoDb.RichlistTable.Find(filter).SingleOrDefault();
-
-         return table;
-      }
-
-      public List<RichlistTable> AddressBalances(IEnumerable<string> addresses)
+      public List<BalanceForAddress> AddressBalances(IEnumerable<string> addresses)
       {
          FilterDefinitionBuilder<RichlistTable> filterBuilder = Builders<RichlistTable>.Filter;
          FilterDefinition<RichlistTable> filter = filterBuilder.Where(s => addresses.Contains(s.Address));
 
-         List<RichlistTable> document = mongoDb.RichlistTable.Find(filter).ToList();
-
-         return document;
+         return  mongoDb.RichlistTable.Find(filter)
+            .ToList()
+            .Select(x => new BalanceForAddress { Balance = x.Balance, Address = x.Address })
+            .ToList();
       }
 
       public long TotalBalance()

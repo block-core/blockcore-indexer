@@ -4,7 +4,7 @@ using Blockcore.Indexer.Cirrus.Client.Types;
 using Blockcore.Indexer.Cirrus.Storage.Mongo.Types;
 using Blockcore.Indexer.Cirrus.Storage.Types;
 using Blockcore.Indexer.Core.Client.Types;
-using Blockcore.Indexer.Core.Storage;
+using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.NBitcoin;

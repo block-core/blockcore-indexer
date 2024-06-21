@@ -66,8 +66,8 @@ The default configurations are read from [appsetting.json](src/Blockcore.Indexer
       // Syncing parameters
       "SyncBlockchain": true,
       "SyncMemoryPool": true,
-      "MongoBatchSize": 10000000,
-      "MongoBatchCount" : 10000,
+      "DbBatchSize": 10000000,
+      "DbBatchCount" : 10000,
       "ParallelRequestsToTransactionRpc": 50,
       "DetailedTrace": 0,
       "MaxItemsInQueue": 10,

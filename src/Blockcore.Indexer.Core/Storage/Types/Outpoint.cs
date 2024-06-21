@@ -1,4 +1,4 @@
-namespace Blockcore.Indexer.Core.Storage.Mongo.Types
+namespace Blockcore.Indexer.Core.Storage.Types
 {
    public class Outpoint
    {

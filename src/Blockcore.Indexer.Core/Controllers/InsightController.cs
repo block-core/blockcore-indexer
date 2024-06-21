@@ -172,7 +172,7 @@ namespace Blockcore.Indexer.Core.Controllers
       /// <returns></returns>
       private List<Wallet> RetrieveWallets()
       {
-         // TODO: Funds should be stored in MongoDB, and be editable by individual chains and not hard-coded.
+         // TODO: Funds should be stored in the DB, and be editable by individual chains and not hard-coded.
          var funds = new List<Wallet>();
 
          List<Wallet> wallets = insightConfiguration.Wallets;
@@ -181,7 +181,7 @@ namespace Blockcore.Indexer.Core.Controllers
          {
             if (wallet.Address != null && wallet.Address.Length > 0)
             {
-               List<Storage.Mongo.Types.RichlistTable> balances = storage.AddressBalances(wallet.Address);
+               var balances = storage.AddressBalances(wallet.Address);
                long balance = balances.Sum(b => b.Balance);
                wallet.Balance = balance;
             }
@@ -207,7 +207,7 @@ namespace Blockcore.Indexer.Core.Controllers
             }
          }
 
-         List<Storage.Mongo.Types.RichlistTable> balances = storage.AddressBalances(listOfAddress);
+         var balances = storage.AddressBalances(listOfAddress);
          long walletBalances = balances.Sum(b => b.Balance);
 
          long circulatingSupply = totalBalance - walletBalances;

@@ -3,6 +3,7 @@ using Blockcore.Indexer.Angor.Storage.Mongo;
 using Blockcore.Indexer.Angor.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Settings;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
+using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Blockcore.NBitcoin.DataEncoders;
 using Microsoft.Extensions.Options;

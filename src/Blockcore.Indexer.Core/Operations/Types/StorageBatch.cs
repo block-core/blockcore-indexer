@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Blockcore.Indexer.Core.Storage.Mongo.Types;
 
 namespace Blockcore.Indexer.Core.Operations.Types
 {
@@ -7,15 +6,15 @@ namespace Blockcore.Indexer.Core.Operations.Types
 
    #endregion Using Directives
 
-   public class StorageBatch
+   public abstract class StorageBatch
    {
-      public long TotalSize { get; set; }
-      public List<TransactionBlockTable> TransactionBlockTable { get; set; } = new();
-      public Dictionary<long, BlockTable> BlockTable { get; set; } = new();
-      public List<TransactionTable> TransactionTable { get; set; } = new();
-      public Dictionary<string,OutputTable> OutputTable { get; set; } = new();
-      public List<InputTable> InputTable { get; set; } = new();
+      public abstract int GetBlockCount();
+      public abstract int GetOutputCount();
+      public abstract int GetInputCount();
+      public abstract int GetTransactionCount();
+      public abstract long GetBatchSize();
 
-      public object ExtraData { get; set; }
+      public abstract IEnumerable<long> GetBlockSizes();
+      public abstract bool ValidateBatch(string prevBlockHash);
    }
 }
