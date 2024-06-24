@@ -45,10 +45,15 @@ namespace Blockcore.Indexer.Core
             case "MongoDb":
                services.AddMongoDatabase();
                break;
+            case "Postgres":
+               using (var client = new PostgresDbContext())
+               {
+                  client.Database.EnsureCreated();
+               }
+               services.AddDbContext<PostgresDbContext>();
+               break;
             default: throw new InvalidOperationException();
          }
-
-         services.AddDbContext<PostgresDbContext>();
 
          // services.AddSingleton<QueryHandler>();
          services.AddSingleton<StatsHandler>();
@@ -138,7 +143,7 @@ namespace Blockcore.Indexer.Core
          services.AddTransient<IBlockRewindOperation, BlockRewindOperation>();
       }
 
-      public static void Configure(IApplicationBuilder app, IWebHostEnvironment env, PostgresDbContext db)
+      public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
       {
          app.UseExceptionHandler("/error");
 
@@ -148,11 +153,6 @@ namespace Blockcore.Indexer.Core
          app.UseResponseCompression();
 
          //app.UseMvc();
-         db.Database.Migrate();
-
-         using (var client = new PostgresDbContext()){
-            client.Database.EnsureCreated();
-         }
 
          app.UseDefaultFiles();
 

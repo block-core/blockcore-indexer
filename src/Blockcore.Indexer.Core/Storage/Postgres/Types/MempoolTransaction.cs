@@ -28,5 +28,8 @@ namespace Blockcore.Indexer.Core.Storage.Postgres.Types
       public string Txid { get; set; }
       public ICollection<MempoolInput> Inputs { get; set; }
       public ICollection<MempoolOutput> Outputs { get; set; }
+      public List<string> AddressOutputs { get; set; }
+      public List<string> AddressInputs { get; set;}
+
    }
 }
