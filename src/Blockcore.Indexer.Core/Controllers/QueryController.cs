@@ -203,7 +203,7 @@ namespace Blockcore.Indexer.Core.Controllers
       [Route("block/orphan/{hash}")]
       public IActionResult GetOrphanBlockByHash(string hash)
       {
-         return OkItem(storage.OrphanBlockByHash(hash));
+         return OkItem(storage.OrphanBlockByHash<object>(hash));
       }
 
       /// <summary>

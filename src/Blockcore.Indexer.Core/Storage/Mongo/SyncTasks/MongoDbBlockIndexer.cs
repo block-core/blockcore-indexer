@@ -17,6 +17,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.SyncTasks
    {
       private readonly IndexerSettings config;
       private readonly ILogger<MongoDbBlockIndexer> log;
+      readonly IMondoDbInfo mongoData;
       readonly IStorage data;
 
       private readonly System.Diagnostics.Stopwatch watch;
@@ -30,12 +31,13 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.SyncTasks
       public MongoDbBlockIndexer(
          IOptions<IndexerSettings> configuration,
          ILogger<MongoDbBlockIndexer> logger,
-         IStorage data, IMongoDb db)
+         IStorage data, IMongoDb db, IMondoDbInfo mongoData)
           : base(configuration, logger)
       {
          log = logger;
          this.data = data;
          this.db = db;
+         this.mongoData = mongoData;
          config = configuration.Value;
          watch = Stopwatch.Start();
 
@@ -69,7 +71,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.SyncTasks
          {
             initialized = true;
 
-            List<IndexView> indexes = data.GetIndexesBuildProgress();
+            List<IndexView> indexes = mongoData.GetIndexesBuildProgress();
             if (indexes.Any())
             {
                // if indexes are currently running go directly in to index mode
@@ -88,7 +90,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo.SyncTasks
             Runner.GlobalState.IndexMode = true;
          }
 
-         List<IndexView> ops = data.GetIndexesBuildProgress();
+         List<IndexView> ops = mongoData.GetIndexesBuildProgress();
 
          if (ops.Any())
          {
