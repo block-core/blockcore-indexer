@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Models;
-using Blockcore.Indexer.Core.Storage.Mongo.Types;
+
 using Blockcore.Indexer.Core.Storage.Types;
 
 namespace Blockcore.Indexer.Core.Storage
@@ -42,7 +42,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryResult<QueryOrphanBlock> OrphanBlocks(int? offset, int limit);
 
-      ReorgBlockTable OrphanBlockByHash(string blockHash);
+      T OrphanBlockByHash<T>(string blockHash) where T : class;
 
       QueryResult<BalanceForAddress> Richlist(int offset, int limit);
 
@@ -50,11 +50,9 @@ namespace Blockcore.Indexer.Core.Storage
 
       long TotalBalance();
 
-      Task<QueryResult<OutputTable>> GetUnspentTransactionsByAddressAsync(string address,long confirmations, int offset, int limit);
+      Task<QueryResult<Output>> GetUnspentTransactionsByAddressAsync(string address,long confirmations, int offset, int limit);
 
       Task DeleteBlockAsync(string blockHash);
-
-      public List<IndexView> GetIndexesBuildProgress();
 
       public List<string> GetBlockIndexIndexes();
 

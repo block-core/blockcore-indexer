@@ -14,9 +14,9 @@ using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.Indexer.Core.Sync;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using Blockcore.NBitcoin.DataEncoders;
+using MongoDB.Bson;
 
 namespace Blockcore.Indexer.Core.Storage.Mongo
 {
@@ -92,51 +92,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return result.IsAcknowledged; //TODO should we change this to count == count of transaction ids?
       }
 
-      public List<IndexView> GetIndexesBuildProgress()
-      {
-            IMongoDatabase db = mongoDatabase.Client.GetDatabase("admin");
-            var command = new BsonDocument {
-               { "currentOp", "1"},
-            };
-            BsonDocument currentOp = db.RunCommand<BsonDocument>(command);
 
-            BsonElement inproc = currentOp.GetElement(0);
-            var arr = inproc.Value as BsonArray;
-
-            var ret = new List<IndexView>();
-
-            foreach (BsonValue bsonValue in arr)
-            {
-               BsonElement? desc = bsonValue.AsBsonDocument?.GetElement("desc");
-               if (desc != null)
-               {
-                  bool track = desc?.Value.AsString.Contains("IndexBuildsCoordinatorMongod") ?? false;
-
-                  if (track)
-                  {
-                     var indexed = new IndexView {Msg = bsonValue.AsBsonDocument?.GetElement("msg").Value.ToString()};
-
-                     BsonElement? commandElement = bsonValue.AsBsonDocument?.GetElement("command");
-
-                     string dbName = string.Empty;
-                     if (commandElement.HasValue)
-                     {
-                        BsonDocument bsn = commandElement.Value.Value.AsBsonDocument;
-                        dbName = bsn.GetElement("$db").Value.ToString();
-                        indexed.Command = $"{bsn.GetElement(0).Value}-{bsn.GetElement(1).Value}";
-                     }
-
-                     if (dbName == mongoDatabase.DatabaseNamespace.DatabaseName)
-                     {
-                        ret.Add(indexed);
-                     }
-
-                  }
-               }
-            }
-
-            return ret;
-      }
 
       public QueryTransaction GetTransaction(string transactionId)
       {
@@ -317,7 +273,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public ReorgBlockTable OrphanBlockByHash(string blockHash)
+      public T OrphanBlockByHash<T>(string blockHash) where T : class => OrphanBlockByHash(blockHash) as T;
+
+      private ReorgBlockTable OrphanBlockByHash(string blockHash)
       {
          FilterDefinition<ReorgBlockTable> filter = Builders<ReorgBlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
 
@@ -1186,7 +1144,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return globalState.LocalMempoolView.Count;
       }
 
-      public async Task<QueryResult<OutputTable>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
+      public async Task<QueryResult<Output>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
       {
          SyncBlockInfo storeTip = globalState.StoreTip;
 
@@ -1257,7 +1215,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             }
          });
 
-         return new QueryResult<OutputTable>
+         return new QueryResult<Output>
          {
             Items = results.OrderBy(o => o.BlockIndex),
             Total = totalTask.Result?.Count ?? 0,

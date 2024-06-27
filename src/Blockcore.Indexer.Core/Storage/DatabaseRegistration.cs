@@ -20,6 +20,7 @@ public static class DatabaseRegistration
       services.AddTransient<IMapMongoBlockToStorageBlock, MapMongoBlockToStorageBlock>();
       services.AddScoped<TaskRunner, MongoDbBlockIndexer>();
       services.AddSingleton<IStorageBatchFactory, MongoStorageBatchFactory>();
+      services.AddTransient<IMondoDbInfo, MondoDbInfo>();
       //TODO add this for address driven blockchains
       //services.AddScoped<TaskRunner, RichListScanning>();
 
