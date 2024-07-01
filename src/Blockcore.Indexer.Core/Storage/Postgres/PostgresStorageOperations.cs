@@ -13,6 +13,9 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Storage.Types;
+using Output = Blockcore.Indexer.Core.Storage.Postgres.Types.Output;
+using Input = Blockcore.Indexer.Core.Storage.Postgres.Types.Input;
 
 namespace Blockcore.Indexer.Core.Storage.Postgres
 {
@@ -74,10 +77,10 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                        ? (res?.Addresses != null && res.Addresses.Any()) ? res.Addresses.First() : res.ScriptType
                        : "none";
 
-                    var outpoint = new Outpoint { Txid = txid, Vout = outputIndex++ };
+                    var outpoint = new Outpoint { TransactionId = txid, OutputIndex = outputIndex++ };
                     var storageOutput = new Output
                     {
-                        outpoint = outpoint,
+                        Outpoint = outpoint,
                         Address = addr,
                         BlockIndex = item.BlockInfo.HeightAsUint32,
                         Value = output.Value,
@@ -96,13 +99,13 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                 int inputIndex = 0;
                 foreach (TxIn input in trx.Inputs)
                 {
-                    var outpoint = new Types.Outpoint { Txid = input.PrevOut.Hash.ToString(), Vout = (int)input.PrevOut.N };
+                    var outpoint = new Outpoint { TransactionId = input.PrevOut.Hash.ToString(), OutputIndex = (int)input.PrevOut.N };
                     postgresStorageBatch.Outputs.TryGetValue(outpoint.ToString(), out Types.Output output);
 
                     Input storageInput = new Input
                     {
-                        outpoint = outpoint,
-                        Txid = txid,
+                        Outpoint = outpoint,
+                        TrxHash = txid,
                         BlockIndex = item.BlockInfo.HeightAsUint32,
                         Value = output?.Value ?? 0,
                     };
@@ -117,7 +120,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
             postgresStorageBatch.Blocks.Add(item.BlockInfo.Height, pgBlockToStorageBlock.Map(item.BlockInfo));
         }
 
-        public Storage.Types.SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
+        public SyncBlockInfo PushStorageBatch(StorageBatch storageBatch)
         {
             var postgresStorageBatch = storageBatch as PostgresStorageBatch;
             if (globalState.IndexModeCompleted)
@@ -129,7 +132,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                         var toRemoveFromMempool = postgresStorageBatch.Blocks.Values.SelectMany(b => b.Transactions.Select(t => t.Txid));
                         Task deleteFromMempoolTask = Task.Run(async () =>
                         {
-                            await db.mempoolTransactions.Where(mt => toRemoveFromMempool.Contains(mt.Txid)).ExecuteDeleteAsync();
+                            await db.mempoolTransactions.Where(mt => toRemoveFromMempool.Contains(mt.TransactionId)).ExecuteDeleteAsync();
                         });
                         deleteFromMempoolTask.Wait();
 
@@ -156,7 +159,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                 utxos.Add(new UnspentOutput
                 {
                     Address = output.Address,
-                    Outpoint = output.outpoint,
+                    Outpoint = output.Outpoint,
                     Value = output.Value,
                     BlockIndex = output.BlockIndex,
                 });
@@ -169,7 +172,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
             {
                 var utxoLookups = FetchUtxos(postgresStorageBatch.Inputs
                     .Where(_ => _.Address == null)
-                    .Select(_ => _.outpoint));
+                    .Select(_ => _.Outpoint));
 
                 foreach (Input input in postgresStorageBatch.Inputs)
                 {
@@ -178,7 +181,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                         continue;
                     }
 
-                    string key = input.outpoint.ToString();
+                    string key = input.Outpoint.ToString();
                     input.Address = utxoLookups[key].Address;
                     input.Value = utxoLookups[key].Value;
                 }
@@ -195,7 +198,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
             {
                 // TODO: if earlier we filtered out outputs that are already spent and not pushed to the utxo table
                 // now we do not need to try and delete such outputs becuase they where never pushed to the store.
-                var outpointsFromNewInput = postgresStorageBatch.Inputs.Select(_ => _.outpoint).ToList();
+                var outpointsFromNewInput = postgresStorageBatch.Inputs.Select(_ => _.Outpoint).ToList();
 
                 int rowsDeleted = db.unspentOutputs.Where(uo => outpointsFromNewInput.Contains(uo.Outpoint)).ExecuteDelete();
 
@@ -220,7 +223,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
 
             db.BulkUpdate(markBlocksAsComplete);
 
-            Storage.Types.SyncBlockInfo block = storage.BlockByIndex(blockIndex);
+            SyncBlockInfo block = storage.BlockByIndex(blockIndex);
 
             if (block.BlockHash != lastBlockHash)
             {
@@ -237,7 +240,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
 
             foreach (var itemTransaction in item.Transactions)
             {
-                var mempoolEntry = new MempoolTransaction() { Txid = itemTransaction.GetHash().ToString(), FirstSeen = DateTime.UtcNow.Ticks };
+                var mempoolEntry = new MempoolTransaction() { TransactionId = itemTransaction.GetHash().ToString(), FirstSeen = DateTime.UtcNow.Ticks };
                 mempool.Add(mempoolEntry);
 
                 foreach (TxOut transactionOutput in itemTransaction.Outputs)
@@ -265,22 +268,22 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                 {
                     var input = new MempoolInput
                     {
-                        outpoint = new Outpoint
+                        Outpoint = new Outpoint
                         {
-                            Vout = (int)transactionInput.PrevOut.N,
-                            Txid = transactionInput.PrevOut.Hash.ToString()
+                            OutputIndex = (int)transactionInput.PrevOut.N,
+                            TransactionId = transactionInput.PrevOut.Hash.ToString()
                         }
                     };
                     mempoolEntry.Inputs.Add(input);
-                    inputs.Add($"{input.outpoint.Txid}-{input.outpoint.Vout}", (input, mempoolEntry));
+                    inputs.Add($"{input.Outpoint.TransactionId}-{input.Outpoint.OutputIndex}", (input, mempoolEntry));
                 }
             }
 
-            List<Output> outputsFromStore = FetchOutputs(inputs.Values.Select(s => s.mempoolInput.outpoint).ToList());
+            List<Output> outputsFromStore = FetchOutputs(inputs.Values.Select(s => s.mempoolInput.Outpoint).ToList());
 
             foreach (Output outputFromStore in outputsFromStore)
             {
-                if (inputs.TryGetValue($"{outputFromStore.outpoint.Txid}-{outputFromStore.outpoint.Vout}",
+                if (inputs.TryGetValue($"{outputFromStore.Outpoint.TransactionId}-{outputFromStore.Outpoint.OutputIndex}",
                        out (MempoolInput mempoolInput, MempoolTransaction mempool) input))
                 {
                     input.mempoolInput.Address = outputFromStore.Address;
@@ -303,14 +306,16 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
             }
 
             foreach (MempoolTransaction mempooltrx in mempool)
-                globalState.LocalMempoolView.TryAdd(mempooltrx.Txid, string.Empty);
+                globalState.LocalMempoolView.TryAdd(mempooltrx.TransactionId, string.Empty);
         }
-        protected virtual void OnAddtoStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item){
+        protected virtual void OnAddtoStorageBatch(StorageBatch storageBatch, SyncBlockTransactionsOperation item)
+        {
 
         }
         private void OnPushStorageBatch(StorageBatch storageBatch) { }
-        private List<Output> FetchOutputs(List<Outpoint> outpoints){
-            var res = db.Outputs.Where(output => outpoints.Contains(output.outpoint)).ToList();
+        private List<Output> FetchOutputs(List<Outpoint> outpoints)
+        {
+            var res = db.Outputs.Where(output => outpoints.Contains(output.Outpoint)).ToList();
             return res;
         }
 

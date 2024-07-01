@@ -1,16 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Blockcore.Indexer.Core.Storage.Types;
 
 namespace Blockcore.Indexer.Core.Storage.Postgres.Types
 {
-   public class Input
+   public class Input : Storage.Types.Input
    {
-
-      public Outpoint outpoint { get; set; } 
-      public string Address { get; set; }
-      public long Value { get; set; }
-      public string Txid { get; set; }
-      public uint Vout { get; set; }
-      public long BlockIndex { get; set; }
       public virtual Transaction Transaction { get; set; }
    }
 }

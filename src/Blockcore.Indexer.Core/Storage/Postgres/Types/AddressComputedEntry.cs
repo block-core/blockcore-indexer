@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Blockcore.Indexer.Core.Storage.Postgres.Types
 {
-   public class AddressComputedTable
+   public class AddressComputedEntry
    {
       [Key]
       public string Id { get; set; }

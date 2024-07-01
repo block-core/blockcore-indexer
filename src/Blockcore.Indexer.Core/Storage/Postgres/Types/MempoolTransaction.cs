@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using Blockcore.Indexer.Core.Storage.Types;
 
 namespace Blockcore.Indexer.Core.Storage.Postgres.Types
 {
    public class MempoolInput
    {
-      public Outpoint outpoint { get; set; }
+      public Outpoint Outpoint { get; set; }
       public string Address { get; set; }
       public long Value { get; set; }
       public string Txid { get; set; }
@@ -25,11 +26,11 @@ namespace Blockcore.Indexer.Core.Storage.Postgres.Types
    public class MempoolTransaction
    {
       public long FirstSeen { get; set; }
-      public string Txid { get; set; }
+      public string TransactionId { get; set; }
       public ICollection<MempoolInput> Inputs { get; set; }
       public ICollection<MempoolOutput> Outputs { get; set; }
       public List<string> AddressOutputs { get; set; }
-      public List<string> AddressInputs { get; set;}
+      public List<string> AddressInputs { get; set; }
 
    }
 }

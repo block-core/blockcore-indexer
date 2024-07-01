@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Blockcore.Indexer.Core.Storage.Postgres.Types
 {
-   public class RichlistTable
+   public class RichListEntry
    {
       [Key]
       public string Address { get; set; }
