@@ -1,3 +1,6 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+
 namespace Blockcore.Indexer.Core.Storage.Types;
 
 public class Input

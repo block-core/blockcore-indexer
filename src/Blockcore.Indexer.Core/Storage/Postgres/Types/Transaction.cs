@@ -1,13 +1,18 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using NLog;
+using System.Data.Common;
 
 namespace Blockcore.Indexer.Core.Storage.Postgres.Types
 {
     public class Transaction
     {
-        public byte[] RawTransaction { get; set; }
         [Key]
+        public Guid _Id { get; set; }
+        public Transaction(){
+            _Id = Guid.NewGuid();
+        }
+        public byte[] RawTransaction { get; set; }
         public string Txid { get; set; }
         public long BlockIndex { get; set; }
         public int TransactionIndex { get; set; }

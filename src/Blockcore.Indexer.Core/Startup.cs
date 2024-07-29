@@ -45,12 +45,8 @@ namespace Blockcore.Indexer.Core
             case "MongoDb":
                services.AddMongoDatabase();
                break;
-            case "Postgres":
-               using (var client = new PostgresDbContext())
-               {
-                  client.Database.EnsureCreated();
-               }
-               services.AddDbContext<PostgresDbContext>();
+            case "PostgresSQL":
+               services.AddPostgresDatabase();
                break;
             default: throw new InvalidOperationException();
          }
@@ -139,8 +135,7 @@ namespace Blockcore.Indexer.Core
          services.AddSingleton<ICryptoClientFactory, CryptoClientFactory>();
          services.AddSingleton<ISyncBlockTransactionOperationBuilder, SyncBlockTransactionOperationBuilder>();
 
-         // TODO: Verify that it is OK we add this to shared Startup for Blockcore and Cirrus.
-         services.AddTransient<IBlockRewindOperation, BlockRewindOperation>();
+
       }
 
       public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -151,6 +146,7 @@ namespace Blockcore.Indexer.Core
          app.UseCors("IndexerPolicy");
 
          app.UseResponseCompression();
+
 
          //app.UseMvc();
 
@@ -175,6 +171,14 @@ namespace Blockcore.Indexer.Core
          {
             endpoints.MapControllers();
          });
+
+         using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+         {
+            var factory = serviceScope.ServiceProvider.GetRequiredService<IDbContextFactory<PostgresDbContext>>();
+            var db = factory.CreateDbContext();
+            db.Database.EnsureCreated();
+            Console.WriteLine("Database created");
+         }
       }
 
       private static string XmlCommentsFilePath

@@ -1,15 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Xml;
 
 namespace Blockcore.Indexer.Core.Storage.Postgres.Types
 {
    public class Block
    {
       public string BlockHash { get; set; }
-      [Key]
       public long BlockIndex { get; set; }
-
       public long BlockSize { get; set; }
 
       public long BlockTime { get; set; }

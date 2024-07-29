@@ -9,7 +9,7 @@ namespace Blockcore.Indexer.Core.Storage
 {
     public class MapPgBlockToStorageBlock : IMapPgBlockToStorageBlock
     {
-        public SyncBlockInfo Map(Block block) => new SyncBlockInfo
+        public SyncBlockInfo Map(Block block) => new SyncBlockInfo()
         {
             BlockIndex = block.BlockIndex,
             BlockSize = block.BlockSize,
@@ -37,7 +37,7 @@ namespace Blockcore.Indexer.Core.Storage
 
         public Block Map(BlockInfo block, List<Transaction> transactions) =>
 
-            new Block
+            new Block()
             {
                 BlockIndex = block.Height,
                 BlockHash = block.Hash,
@@ -64,7 +64,7 @@ namespace Blockcore.Indexer.Core.Storage
             };
         public Block Map(BlockInfo block)
         {
-            Block output = new Block
+            Block output = new Block()
             {
                 BlockIndex = block.Height,
                 BlockHash = block.Hash,

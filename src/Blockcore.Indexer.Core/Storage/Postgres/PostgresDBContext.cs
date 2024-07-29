@@ -2,18 +2,20 @@ using System;
 using Blockcore.Indexer.Core.Storage.Postgres.Types;
 using Blockcore.Indexer.Core.Storage.Types;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Input = Blockcore.Indexer.Core.Storage.Postgres.Types.Input;
 using Output = Blockcore.Indexer.Core.Storage.Postgres.Types.Output;
 using ReorgBlock = Blockcore.Indexer.Core.Storage.Postgres.Types.ReorgBlock;
 public class PostgresDbContext : DbContext
 {
-    public PostgresDbContext() : base()
+    public PostgresDbContext(DbContextOptions<PostgresDbContext> options) : base(options)
     {
 
     }
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        options.UseNpgsql("Host=127.0.0.1;Port=5432;Database=IndexerBenchmark;Username=postgres;Password=drb;");
+        // options.UseNpgsql(options => options.UseAdminDatabase("postgres"));   
+        // options.UseNpgsql("Host=127.0.0.1;Port=5432;Database=BLKCHAIN;Username=postgres;Password=drb;");
     }
 
     public DbSet<Block> Blocks { get; set; }
@@ -50,21 +52,17 @@ public class PostgresDbContext : DbContext
     private void ConfigureBlockEntity(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Block>()
-            .HasKey(b => b.BlockHash);
+            .HasKey(b => b.BlockIndex);
 
         modelBuilder.Entity<Block>()
             .HasIndex(b => b.BlockHash)
             .HasMethod("hash");
-
-        modelBuilder.Entity<Block>()
-            .HasIndex(b => b.BlockIndex)
-            .IsDescending();
     }
 
     private void ConfigureTransactionEntity(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Transaction>()
-            .HasKey(t => t.Txid);
+            .HasKey(t => t._Id);
 
         modelBuilder.Entity<Transaction>()
             .HasOne(t => t.Block)
@@ -73,63 +71,85 @@ public class PostgresDbContext : DbContext
 
         modelBuilder.Entity<Transaction>()
             .HasIndex(t => t.Txid)
-            .HasMethod("hash");
+            .IsUnique();
     }
 
     private void ConfigureInputEntity(ModelBuilder modelBuilder)
     {
+        // modelBuilder.Entity<Input>()
+        //     .HasKey(i => new { i.TrxHash, i.BlockIndex });
         modelBuilder.Entity<Input>()
-            .HasKey(i => new { i.TrxHash, i.BlockIndex });
+        .HasKey(i => i._Id);
 
         modelBuilder.Entity<Input>()
             .HasOne<Transaction>(i => i.Transaction)
             .WithMany(t => t.Inputs)
-            .HasForeignKey(i => i.TrxHash);
+            .HasForeignKey(i => i.TrxHash)
+            .HasPrincipalKey(t => t.Txid);
+            // .OnDelete(DeleteBehavior.Cascade);
+
+        // modelBuilder.Entity<Input>()
+        //     .HasOne<Output>()
+        //     .WithOne()
+        //     .HasForeignKey("")
+        //     .HasForeignKey()
+            
     }
 
     private void ConfigureOutputEntity(ModelBuilder modelBuilder)
     {
+        // modelBuilder.Entity<Output>()
+        //     .HasKey(o => new { o.Outpoint.TransactionId, o.Outpoint.OutputIndex });
         modelBuilder.Entity<Output>()
-            .HasKey(o => new { o.Outpoint.TransactionId, o.Outpoint.OutputIndex });
+            .HasKey(o => o._Id);
 
-        modelBuilder.Entity<Output>()
-            .HasOne<Transaction>(o => o.Transaction)
-            .WithMany(t => t.Outputs)
-            .HasForeignKey(o => o.Outpoint.TransactionId);
+        // modelBuilder.Entity<Output>()
+        //     .HasOne<Transaction>(o => o.Transaction)
+        //     .WithMany(t => t.Outputs)
+        //     .HasForeignKey(o => o.Outpoint.TransactionId)
+        //     .HasPrincipalKey(t => t.Txid);
     }
 
     private void ConfigureMempoolTransactionEntity(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<MempoolTransaction>()
-            .HasKey(t => t.TransactionId);
+            .HasKey(t => t._Id);
     }
 
     private void ConfigureMempoolInputEntity(ModelBuilder modelBuilder)
     {
+        // modelBuilder.Entity<MempoolInput>()
+        //     .HasKey(i => new { i.Txid, i.Vout });
         modelBuilder.Entity<MempoolInput>()
-            .HasKey(i => new { i.Txid, i.Vout });
+            .HasKey(i => i._Id);
 
         modelBuilder.Entity<MempoolInput>()
             .HasOne<MempoolTransaction>(i => i.Transaction)
             .WithMany(t => t.Inputs)
-            .HasForeignKey(i => i.Txid);
+            .HasForeignKey(i => i.Txid)
+            .HasPrincipalKey(t => t.TransactionId);
     }
 
     private void ConfigureMempoolOutputEntity(ModelBuilder modelBuilder)
     {
+        // modelBuilder.Entity<MempoolOutput>()
+        //     .HasKey(o => new { o.outpoint.TransactionId, o.outpoint.OutputIndex });
         modelBuilder.Entity<MempoolOutput>()
-            .HasKey(o => new { o.outpoint.TransactionId, o.outpoint.OutputIndex });
+            .HasKey(o => o._Id);
 
-        modelBuilder.Entity<MempoolOutput>()
-            .HasOne<MempoolTransaction>(o => o.Transaction)
-            .WithMany(t => t.Outputs)
-            .HasForeignKey(o => o.outpoint.TransactionId);
+        // modelBuilder.Entity<MempoolOutput>()
+        //     .HasOne<MempoolTransaction>(o => o.Transaction)
+        //     .WithMany(t => t.Outputs)
+        //     .HasForeignKey(o => o.outpoint.TransactionId)
+        //     .HasPrincipalKey(t => t.TransactionId);
     }
 
     private void ConfigureUnspentOutputEntity(ModelBuilder modelBuilder)
     {
+        // modelBuilder.Entity<UnspentOutput>()
+        //     .HasKey(uo => new { uo.Outpoint.TransactionId, uo.Outpoint.OutputIndex });
         modelBuilder.Entity<UnspentOutput>()
-            .HasKey(uo => new { uo.Outpoint.TransactionId, uo.Outpoint.OutputIndex });
+            .HasKey(uo => uo._Id);
     }
 
     private void ConfigureReorgBlockEntity(ModelBuilder modelBuilder)

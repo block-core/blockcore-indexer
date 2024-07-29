@@ -1,10 +1,17 @@
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Blockcore.Indexer.Core.Storage.Types;
 
 namespace Blockcore.Indexer.Core.Storage.Postgres.Types
 {
    public class MempoolInput
    {
+      public Guid _Id { get; set; }
+      public MempoolInput()
+      {
+         _Id = Guid.NewGuid();
+      }
       public Outpoint Outpoint { get; set; }
       public string Address { get; set; }
       public long Value { get; set; }
@@ -14,6 +21,11 @@ namespace Blockcore.Indexer.Core.Storage.Postgres.Types
    }
    public class MempoolOutput
    {
+      public Guid _Id { get; set; }
+      public MempoolOutput()
+      {
+         _Id = Guid.NewGuid();
+      }
       public Outpoint outpoint { get; set; }
       public string Address { get; set; }
       public string ScriptHex { get; set; }
@@ -25,6 +37,11 @@ namespace Blockcore.Indexer.Core.Storage.Postgres.Types
    }
    public class MempoolTransaction
    {
+      public Guid _Id { get; set; }
+      public MempoolTransaction()
+      {
+         _Id = Guid.NewGuid();
+      }
       public long FirstSeen { get; set; }
       public string TransactionId { get; set; }
       public ICollection<MempoolInput> Inputs { get; set; }

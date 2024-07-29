@@ -3,7 +3,7 @@ using Blockcore.Indexer.Core.Storage.Types;
 namespace Blockcore.Indexer.Core.Storage.Postgres.Types
 {
    /// <summary>
-   /// This table is not used anymore to store utxo data in mongodb,
+   /// This table is not used anymore to store utxo data in database,
    /// however its used in the computation table calculate the utxo count. 
    /// </summary>
    public class AddressUtxoComputedEntry

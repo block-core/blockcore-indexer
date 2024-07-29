@@ -5,7 +5,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres.Types
    public class AddressHistoryComputedEntry
    {
       [Key]
-      public string Id { get; set; }
+      public string _Id { get; set; }
       public string Address { get; set; }
 
       public string EntryType { get; set; }

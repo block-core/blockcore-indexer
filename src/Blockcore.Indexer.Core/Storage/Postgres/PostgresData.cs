@@ -14,7 +14,10 @@ using Blockcore.Indexer.Core.Storage.Postgres.Types;
 using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.Indexer.Core.Sync;
 using Blockcore.NBitcoin.DataEncoders;
+
+// using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -27,7 +30,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
     public class PostgresData : IStorage
     {
         private readonly ILogger<PostgresData> log;
-        private readonly PostgresDbContext db;
+        private readonly IDbContextFactory<PostgresDbContext> contextFactory;
         private readonly SyncConnection syncConnection;
         private readonly GlobalState globalState;
         private readonly ChainSettings chainConfiguration;
@@ -43,7 +46,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
 
         public PostgresData(ILogger<PostgresData> dbLogger, SyncConnection connection, IOptions<ChainSettings> chainConfiguration,
             GlobalState globalState, IMapPgBlockToStorageBlock pgBlockToStorageBlock, ICryptoClientFactory clientFactory,
-            IScriptInterpreter scriptInterpreter, PostgresDbContext db, IBlockRewindOperation rewindOperation, IComputeHistoryQueue computeHistoryQueue)
+            IScriptInterpreter scriptInterpreter, IDbContextFactory<PostgresDbContext> dbContextFactory, IBlockRewindOperation rewindOperation, IComputeHistoryQueue computeHistoryQueue)
         {
             log = dbLogger;
             this.chainConfiguration = chainConfiguration.Value;
@@ -53,29 +56,35 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
             this.pgBlockToStorageBlock = pgBlockToStorageBlock;
             this.clientFactory = clientFactory;
             this.scriptInterpreter = scriptInterpreter;
-            this.db = db;
+            contextFactory = dbContextFactory;
             this.rewindOperation = rewindOperation;
             this.computeHistoryQueue = computeHistoryQueue;
         }
         public List<string> GetBlockIndexIndexes()
         {
+            PostgresDbContext db = contextFactory.CreateDbContext();
+
             List<string> indexNames = db.Database.SqlQuery<string>($"SELECT indexname FROM pg_indexes").ToList();
             return indexNames;
         }
         public bool DeleteTransactionsFromMempool(List<string> transactionIds)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
+
             var result = db.mempoolTransactions.Where(txn => transactionIds.Contains(txn.TransactionId)).ExecuteDelete();
             return result == transactionIds.Count;
         }
 
         public List<string> GetMempoolTransactionIds()
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var res = db.mempoolTransactions.ToList().Select(t => t.TransactionId).ToList();
             return res;
         }
 
         public QueryTransaction GetTransaction(string transactionId)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             SyncTransactionInfo transaction = BlockTransactionGet(transactionId);
             SyncTransactionItems transactionItems = TransactionItemsGet(transactionId);
 
@@ -130,6 +139,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public SyncBlockInfo GetLatestBlock()
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             if (globalState.StoreTip != null)
             {
                 return globalState.StoreTip;
@@ -146,6 +156,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public QueryResult<SyncBlockInfo> Blocks(int? offset, int limit)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             SyncBlockInfo storeTip = globalState.StoreTip;
             long index = storeTip?.BlockIndex ?? db.Blocks.Count();
 
@@ -164,6 +175,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         private SyncTransactionItems TransactionItemsGet(string transactionId, Consensus.TransactionInfo.Transaction transaction = null)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             if (transaction == null)
             {
                 // Try to find the trx in disk
@@ -250,21 +262,25 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         private Types.Input GetTransactionInput(string transactionId, int index)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var res = db.Inputs.Where(i => i.Outpoint == new Outpoint() { TransactionId = transactionId, OutputIndex = index }).FirstOrDefault();
             return res;
         }
         private Output GetTransactionOutput(string transactionId, int index)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var res = db.Outputs.Where(o => o.Outpoint == new Outpoint { OutputIndex = index, TransactionId = transactionId }).FirstOrDefault();
             return res;
         }
         private SyncRawTransaction TransactionGetByHash(string transactionId)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var res = db.Transactions.Find(transactionId);
             return new SyncRawTransaction { TransactionHash = transactionId, RawTransaction = res.RawTransaction };
         }
         private SyncTransactionInfo BlockTransactionGet(string transactionId)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             Transaction transaction = db.Transactions.Find(transactionId);
 
             if (transaction == null)
@@ -287,6 +303,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public SyncBlockInfo BlockByIndex(long blockIndex)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             SyncBlockInfo block = pgBlockToStorageBlock.Map(db.Blocks.Find(blockIndex));
 
             SyncBlockInfo tip = globalState.StoreTip;
@@ -300,6 +317,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public SyncBlockInfo BlockByHash(string blockHash)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             SyncBlockInfo block = pgBlockToStorageBlock.Map(db.Blocks.Where(b => b.BlockHash == blockHash).FirstOrDefault());
             SyncBlockInfo tip = globalState.StoreTip;
 
@@ -312,6 +330,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public QueryResult<QueryOrphanBlock> OrphanBlocks(int? offset, int limit)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             int total = db.ReorgBlocks.Count();
 
             int itemsToSkip = offset ?? (total < limit ? 0 : total - limit);
@@ -369,11 +388,13 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
 
         public ReorgBlock OrphanBlockByHash(string blockHash)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             return db.ReorgBlocks.Where(rb => rb.BlockHash == blockHash).FirstOrDefault();
         }
 
         public async Task<long> InsertPeer(PeerDetails info)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             info.LastSeen = DateTime.UtcNow;
 
             db.Peers.Update(info);
@@ -382,6 +403,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
 
         public List<PeerDetails> GetPeerFromDate(DateTime date)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var res = db.Peers.Where(p => p.LastSeen > date).ToList();
             return res;
         }
@@ -418,6 +440,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         //TODO - RichList
         public QueryResult<BalanceForAddress> Richlist(int offset, int limit)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var total = db.RichList.Count();
 
             if (offset == 0)
@@ -452,6 +475,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public List<BalanceForAddress> AddressBalances(IEnumerable<string> addresses)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var res = db.RichList.Where(x => addresses.Contains(x.Address))
             .ToList()
             .Select(x => new BalanceForAddress { Balance = x.Balance, Address = x.Address })
@@ -462,6 +486,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         public QueryAddress AddressBalance(string address) => throw new NotImplementedException();
         public long TotalBalance()
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             return db.RichList.Sum(x => x.Balance);
         }
 
@@ -491,6 +516,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         /// <returns></returns>
         public QueryResult<SyncTransactionInfo> TransactionsByBlock(long index, int offset, int limit)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             int total = db.Transactions.Where(t => t.BlockIndex == index).Count();
 
             var list = db.Transactions.Where(t => t.BlockIndex == index)
@@ -513,6 +539,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public QueryResult<QueryAddressItem> AddressHistory(string address, int? offset, int limit)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             AddressComputedEntry addressComputedTable = ComputeAddressBalance(address);
 
             IQueryable<AddressHistoryComputedEntry> addressComputedEntries = db.AddressHistoryComputedTable.AsQueryable()
@@ -611,6 +638,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         /// </summary>
         private AddressComputedEntry ComputeAddressBalance(string address)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             AddressComputedEntry addressComputedEntry = db.AddressComputedTable.Find(address);
 
             if (addressComputedEntry == null)
@@ -706,7 +734,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                         Address = addressComputedEntry.Address,
                         TransactionId = key,
                         BlockIndex = Convert.ToUInt32(mapAddressBag.BlockIndex),
-                        Id = $"{key}-{address}",
+                        _Id = $"{key}-{address}",
                     };
 
                     history.Add(key, historyItem);
@@ -804,7 +832,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                 {
                     try
                     {
-                        db.AddressHistoryComputedTable.BulkInsert(history.Values, options => options.IncludeGraph = true);
+                        db.BulkInsert(history.Values, bulkConfig => bulkConfig.IncludeGraph = true); // . BulkInsert(history.Values, options => options.IncludeGraph = true);
                     }
                     catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
                     {
@@ -827,6 +855,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         public async Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(IEnumerable<string> addresses, bool includePending = false)
         {
 
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var outputTask = db.Outputs
             .Where(o => addresses.Contains(o.Address))
             .Select(o => o.Address)
@@ -890,6 +919,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
 
         public async Task DeleteBlockAsync(string blockHash)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             SyncBlockInfo block = BlockByHash(blockHash);
 
             if (!globalState.IndexModeCompleted)
@@ -911,6 +941,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         //   public List<IndexView> GetIndexesBuildProgress() => throw new NotImplementedException();
         public QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             ICollection<MempoolTransaction> list = db.mempoolTransactions.ToList().Skip(offset).Take(limit).ToList();
 
             var retList = new List<QueryTransaction>();
@@ -974,6 +1005,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public QueryResult<QueryMempoolTransactionHashes> GetMemoryTransactionsSlim(int offset, int limit)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             ICollection<MempoolTransaction> list = db.mempoolTransactions.OrderByDescending(o => o.FirstSeen).Skip(offset).Take(limit).ToList();
 
             var mempoolTransactions = new List<QueryMempoolTransactionHashes>();
@@ -1001,6 +1033,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
         }
         public async Task<QueryResult<Storage.Types.Output>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             SyncBlockInfo storeTip = globalState.StoreTip;
 
             // TODO: This must be fixed, the tip will be null whenever the node is inaccessible.
@@ -1079,6 +1112,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
 
         private List<MapMempoolAddressBag> MempoolBalance(string address)
         {
+            using PostgresDbContext db = contextFactory.CreateDbContext();
             var mapMempoolAddressBag = new List<MapMempoolAddressBag>();
 
             if (globalState.LocalMempoolView.IsEmpty)
