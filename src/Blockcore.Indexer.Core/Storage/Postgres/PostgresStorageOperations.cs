@@ -16,9 +16,7 @@ using System.Threading.Tasks;
 using Blockcore.Indexer.Core.Storage.Types;
 using Output = Blockcore.Indexer.Core.Storage.Postgres.Types.Output;
 using Input = Blockcore.Indexer.Core.Storage.Postgres.Types.Input;
-
-using Blockcore.NBitcoin.Protocol;
-// using EFCore.BulkExtensions;
+using Microsoft.Data.SqlClient;
 
 
 
@@ -200,10 +198,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
             Task pushBatchToPostgresTask = Task.Run(async () =>
             {
                 using var db = contextFactory.CreateDbContext();
-                await db.BulkInsertAsync(postgresStorageBatch.Blocks.Values, options => { options.IncludeGraph = true; });
-                // await db.BulkInsertAsync(postgresStorageBatch.Blocks.Values);
-                // await db.AddRangeAsync(postgresStorageBatch.Blocks.Values);
-                // await db.SaveChangesAsync();
+                await db.BulkInsertAsync(postgresStorageBatch.Blocks.Values, options => { options.IncludeGraph = true; options.InsertKeepIdentity = true; });
             });
 
             Task.WaitAll(pushBatchToPostgresTask, utxoInsertTask);
