@@ -69,7 +69,15 @@ public static class DatabaseRegistration
          Console.WriteLine("Connection string => " + connectionString);
 
          options.UseNpgsql(connectionString);
-      }/*, ServiceLifetime.Singleton*/);
+
+         DbContextOptions<PostgresDbContext> contextOptions = (DbContextOptions<PostgresDbContext>)options.Options;
+
+         using (var db = new PostgresDbContext(contextOptions))
+         {
+            db.Database.EnsureCreated();
+            Console.WriteLine("Database Created");
+         }
+      });
 
 
       return services;

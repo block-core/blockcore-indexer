@@ -172,13 +172,7 @@ namespace Blockcore.Indexer.Core
             endpoints.MapControllers();
          });
 
-         using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
-         {
-            var factory = serviceScope.ServiceProvider.GetRequiredService<IDbContextFactory<PostgresDbContext>>();
-            var db = factory.CreateDbContext();
-            db.Database.EnsureCreated();
-            Console.WriteLine("Database created");
-         }
+
       }
 
       private static string XmlCommentsFilePath
