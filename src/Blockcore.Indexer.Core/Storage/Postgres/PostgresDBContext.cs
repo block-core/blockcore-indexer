@@ -46,17 +46,15 @@ public class PostgresDbContext : DbContext
         ConfigureRichListEntity(modelBuilder);
         ConfigureAddressComputedEntity(modelBuilder);
         ConfigureAddressHistoryComputedEntity(modelBuilder);
-    }
 
+        ConfigueIndexes(modelBuilder);
+    }
 
     private void ConfigureBlockEntity(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Block>()
             .HasKey(b => b.BlockIndex);
 
-        modelBuilder.Entity<Block>()
-            .HasIndex(b => b.BlockHash)
-            .HasMethod("hash");
     }
 
     private void ConfigureTransactionEntity(ModelBuilder modelBuilder)
@@ -68,16 +66,10 @@ public class PostgresDbContext : DbContext
             .HasOne(t => t.Block)
             .WithMany(b => b.Transactions)
             .HasForeignKey(t => t.BlockIndex);
-
-        modelBuilder.Entity<Transaction>()
-            .HasIndex(t => t.Txid)
-            .IsUnique();
     }
 
     private void ConfigureInputEntity(ModelBuilder modelBuilder)
     {
-        // modelBuilder.Entity<Input>()
-        //     .HasKey(i => new { i.TrxHash, i.BlockIndex });
         modelBuilder.Entity<Input>()
         .HasKey(i => i._Id);
 
@@ -86,30 +78,45 @@ public class PostgresDbContext : DbContext
             .WithMany(t => t.Inputs)
             .HasForeignKey(i => i.TrxHash)
             .HasPrincipalKey(t => t.Txid);
-            // .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<Input>()
+            .OwnsOne(i => i.Outpoint, outpoint =>
+            {
+                outpoint.Property(o => o.TransactionId).HasColumnName("TransactionId");
+                outpoint.Property(o => o.OutputIndex).HasColumnName("OutputIndex");
+                outpoint.HasIndex(o => o.TransactionId).HasMethod("hash");
+            });
+
+        //Todo -> EFcore doesnt support complex types in navigational properties, needs to be mitigated
         // modelBuilder.Entity<Input>()
         //     .HasOne<Output>()
-        //     .WithOne()
-        //     .HasForeignKey("")
-        //     .HasForeignKey()
-            
+        //     .WithMany()
+        //     .HasForeignKey(i => new { i.Outpoint.TransactionId, i.Outpoint.OutputIndex })
+        //     .HasPrincipalKey(o => new { o.Outpoint.TransactionId, o.Outpoint.OutputIndex });
+
     }
 
     private void ConfigureOutputEntity(ModelBuilder modelBuilder)
     {
-        // modelBuilder.Entity<Output>()
-        //     .HasKey(o => new { o.Outpoint.TransactionId, o.Outpoint.OutputIndex });
         modelBuilder.Entity<Output>()
             .HasKey(o => o._Id);
 
+
+        modelBuilder.Entity<Output>()
+            .OwnsOne(i => i.Outpoint, outpoint =>
+            {
+                outpoint.Property(o => o.TransactionId).HasColumnName("TransactionId");
+                outpoint.Property(o => o.OutputIndex).HasColumnName("OutputIndex");
+                outpoint.HasIndex(o => o.TransactionId).HasMethod("hash");
+            });
+
+        //Todo -> EFcore doesnt support complex types in navigational properties, needs to be mitigated
         // modelBuilder.Entity<Output>()
         //     .HasOne<Transaction>(o => o.Transaction)
         //     .WithMany(t => t.Outputs)
         //     .HasForeignKey(o => o.Outpoint.TransactionId)
         //     .HasPrincipalKey(t => t.Txid);
     }
-
     private void ConfigureMempoolTransactionEntity(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<MempoolTransaction>()
@@ -118,8 +125,6 @@ public class PostgresDbContext : DbContext
 
     private void ConfigureMempoolInputEntity(ModelBuilder modelBuilder)
     {
-        // modelBuilder.Entity<MempoolInput>()
-        //     .HasKey(i => new { i.Txid, i.Vout });
         modelBuilder.Entity<MempoolInput>()
             .HasKey(i => i._Id);
 
@@ -132,11 +137,10 @@ public class PostgresDbContext : DbContext
 
     private void ConfigureMempoolOutputEntity(ModelBuilder modelBuilder)
     {
-        // modelBuilder.Entity<MempoolOutput>()
-        //     .HasKey(o => new { o.outpoint.TransactionId, o.outpoint.OutputIndex });
         modelBuilder.Entity<MempoolOutput>()
             .HasKey(o => o._Id);
 
+        //Todo -> EFcore doesnt support complex types in navigational properties, needs to be mitigated
         // modelBuilder.Entity<MempoolOutput>()
         //     .HasOne<MempoolTransaction>(o => o.Transaction)
         //     .WithMany(t => t.Outputs)
@@ -146,8 +150,6 @@ public class PostgresDbContext : DbContext
 
     private void ConfigureUnspentOutputEntity(ModelBuilder modelBuilder)
     {
-        // modelBuilder.Entity<UnspentOutput>()
-        //     .HasKey(uo => new { uo.Outpoint.TransactionId, uo.Outpoint.OutputIndex });
         modelBuilder.Entity<UnspentOutput>()
             .HasKey(uo => uo._Id);
     }
@@ -179,4 +181,69 @@ public class PostgresDbContext : DbContext
         modelBuilder.Entity<AddressHistoryComputedEntry>()
         .HasKey(r => r.Address);
     }
+
+    private void ConfigueIndexes(ModelBuilder modelBuilder)
+    {
+
+        modelBuilder.Entity<Block>()
+            .HasIndex(b => b.BlockHash)
+            .HasMethod("hash");
+
+        modelBuilder.Entity<Block>()
+            .HasIndex(b => b.BlockIndex)
+            .IsDescending(true);
+
+        modelBuilder.Entity<Transaction>()
+            .HasIndex(t => t.BlockIndex)
+            .IsDescending(true);
+
+        modelBuilder.Entity<Transaction>()
+                    .HasIndex(t => t.Txid)
+                    .IsUnique();
+                    
+        modelBuilder.Entity<Output>()
+            .HasIndex(o => o.BlockIndex)
+            .IsDescending(true);
+
+        modelBuilder.Entity<Output>()
+            .HasIndex(o => o.Address);
+
+        modelBuilder.Entity<Input>()
+            .HasIndex(i => i.Address);
+
+        modelBuilder.Entity<Input>()
+            .HasIndex(i => i.BlockIndex)
+            .IsDescending(true);
+
+        modelBuilder.Entity<UnspentOutput>()
+            .HasIndex(uo => uo.Address);
+
+        modelBuilder.Entity<UnspentOutput>()
+            .HasIndex(uo => uo.BlockIndex);
+
+        modelBuilder.Entity<AddressComputedEntry>()
+            .HasIndex(e => e.Address);
+
+        modelBuilder.Entity<AddressHistoryComputedEntry>()
+            .HasIndex(e => e.BlockIndex)
+            .IsDescending(true);
+
+        modelBuilder.Entity<AddressHistoryComputedEntry>()
+            .HasIndex(e => e.Position);
+
+        modelBuilder.Entity<AddressHistoryComputedEntry>()
+            .HasIndex(e => e.Address);
+
+        modelBuilder.Entity<MempoolTransaction>()
+            .HasIndex(m => m.TransactionId)
+            .HasMethod("hash");
+
+        modelBuilder.Entity<MempoolTransaction>()
+            .HasIndex(m => m.AddressOutputs);
+
+        modelBuilder.Entity<MempoolTransaction>()
+            .HasIndex(m => m.AddressInputs);
+
+    }
+
 }
