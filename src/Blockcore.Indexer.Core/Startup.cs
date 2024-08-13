@@ -45,7 +45,7 @@ namespace Blockcore.Indexer.Core
             case "MongoDb":
                services.AddMongoDatabase();
                break;
-            case "PostgresSQL":
+            case "PostgreSQL":
                services.AddPostgresDatabase();
                break;
             default: throw new InvalidOperationException();

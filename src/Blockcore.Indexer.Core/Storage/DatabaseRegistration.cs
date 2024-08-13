@@ -63,11 +63,8 @@ public static class DatabaseRegistration
          string dbName = indexerConfiguration.Value.DatabaseNameSubfix
                      ? $"Blockchain{chainConfiguration.Value.Symbol}"
                      : "Blockchain";
-         Console.WriteLine(indexerConfiguration.Value.ConnectionString);
+                     
          string connectionString = indexerConfiguration.Value.ConnectionString.Replace("{Symbol}", dbName);
-         Console.WriteLine(dbName);
-         Console.WriteLine("Connection string => " + connectionString);
-
          options.UseNpgsql(connectionString);
 
          DbContextOptions<PostgresDbContext> contextOptions = (DbContextOptions<PostgresDbContext>)options.Options;
@@ -75,7 +72,6 @@ public static class DatabaseRegistration
          using (var db = new PostgresDbContext(contextOptions))
          {
             db.Database.EnsureCreated();
-            Console.WriteLine("Database Created");
          }
       });
 
