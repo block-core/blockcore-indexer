@@ -1,22 +1,20 @@
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Blockcore.Consensus.TransactionInfo;
 using Blockcore.Indexer.Core.Crypto;
 using Blockcore.Indexer.Core.Operations;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
+using Blockcore.Indexer.Core.Storage.Postgres.Types;
+using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.NBitcoin;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Blockcore.Indexer.Core.Storage.Postgres.Types;
-using Blockcore.NBitcoin;
-using Blockcore.Consensus.TransactionInfo;
 using Transaction = Blockcore.Indexer.Core.Storage.Postgres.Types.Transaction;
-using System.Linq;
-using System.Collections.Generic;
-using System;
-using System.Threading.Tasks;
-using Blockcore.Indexer.Core.Storage.Types;
 using Output = Blockcore.Indexer.Core.Storage.Postgres.Types.Output;
 using Input = Blockcore.Indexer.Core.Storage.Postgres.Types.Input;
-using Microsoft.Data.SqlClient;
 
 
 
@@ -171,7 +169,7 @@ namespace Blockcore.Indexer.Core.Storage.Postgres
                 });
             }
 
-            Task utxoInsertTask = utxos.Any() ? Task.Run(async () => 
+            Task utxoInsertTask = utxos.Any() ? Task.Run(async () =>
                 await contextFactory.CreateDbContext().BulkInsertAsync(utxos))
                 : Task.CompletedTask;
 
