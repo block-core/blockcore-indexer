@@ -18,6 +18,7 @@ using Blockcore.Indexer.Core.Sync.SyncTasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -43,6 +44,9 @@ namespace Blockcore.Indexer.Core
          {
             case "MongoDb":
                services.AddMongoDatabase();
+               break;
+            case "PostgreSQL":
+               services.AddPostgresDatabase();
                break;
             default: throw new InvalidOperationException();
          }
@@ -131,8 +135,7 @@ namespace Blockcore.Indexer.Core
          services.AddSingleton<ICryptoClientFactory, CryptoClientFactory>();
          services.AddSingleton<ISyncBlockTransactionOperationBuilder, SyncBlockTransactionOperationBuilder>();
 
-         // TODO: Verify that it is OK we add this to shared Startup for Blockcore and Cirrus.
-         services.AddTransient<IBlockRewindOperation, BlockRewindOperation>();
+
       }
 
       public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -143,6 +146,7 @@ namespace Blockcore.Indexer.Core
          app.UseCors("IndexerPolicy");
 
          app.UseResponseCompression();
+
 
          //app.UseMvc();
 
@@ -167,6 +171,8 @@ namespace Blockcore.Indexer.Core
          {
             endpoints.MapControllers();
          });
+
+
       }
 
       private static string XmlCommentsFilePath

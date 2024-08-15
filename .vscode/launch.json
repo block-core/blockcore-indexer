@@ -8,7 +8,7 @@
             "type": "DotNetAutoAttach",
             "request": "launch",
             "name": ".NET Core Watch",
-            "args": [],
+            "args": ["chain=TBTC"],
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
@@ -19,8 +19,8 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/Blockcore.Indexer/bin/Debug/netcoreapp3.1/Blockcore.Indexer.dll",
-            "args": [],
+            "program": "${workspaceFolder}/src/Blockcore.Indexer/bin/Debug/net8.0/Blockcore.Indexer.dll",
+            "args": ["--chain=TBTC"],
             "cwd": "${workspaceFolder}/src/Blockcore.Indexer",
             "stopAtEntry": false,
             // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
