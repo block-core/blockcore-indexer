@@ -4,7 +4,6 @@ using Blockcore.Indexer.Core.Client;
 using Blockcore.Indexer.Core.Crypto;
 using Blockcore.Indexer.Core.Operations.Types;
 using Blockcore.Indexer.Core.Settings;
-using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Storage.Mongo;
 using Blockcore.Indexer.Core.Storage.Mongo.Types;
 using Blockcore.Indexer.Core.Storage.Types;
@@ -227,6 +226,7 @@ public class AngorMongoData : MongoData, IAngorStorage
       int itemsToSkip = offset ?? ((int)total < limit ? 0 : (int)total - limit);
 
       var projects = mongoDb.ProjectTable.AsQueryable()
+         .OrderBy(x => x.BlockIndex)
          .Skip(itemsToSkip)
          .Take(limit)
          .ToList();
@@ -240,7 +240,7 @@ public class AngorMongoData : MongoData, IAngorStorage
             ProjectIdentifier = _.AngorKey,
             TrxId = _.TransactionId,
             CreatedOnBlock = _.BlockIndex
-         }),
+         }).OrderByDescending(x => x.CreatedOnBlock),
          Offset = itemsToSkip,
          Limit = limit,
          Total = total
@@ -254,6 +254,7 @@ public class AngorMongoData : MongoData, IAngorStorage
       int itemsToSkip = offset ?? ((int)total < limit ? 0 : (int)total - limit);
 
       var investments = mongoDb.InvestmentTable.AsQueryable()
+         .OrderBy(x => x.BlockIndex)
          .Where(_ => _.AngorKey == projectId)
          .Skip(itemsToSkip)
          .Take(limit)
