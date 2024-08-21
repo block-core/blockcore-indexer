@@ -22,9 +22,9 @@ public class BlockRewindOperation : IBlockRewindOperation
 
         await StoreRewindBlockAsync(contextFactory, blockIndex);
 
-        Task Outputs = Task.Run(async () => await contextFactory.CreateDbContext().Outputs.Where(o => o.Outpoint.OutputIndex == blockIndex).ExecuteDeleteAsync());
-        Task AddressComputed = Task.Run(async () => await contextFactory.CreateDbContext().AddressComputedTable.Where(t => t.ComputedBlockIndex == blockIndex).ExecuteDeleteAsync());
-        Task AddressHistory = Task.Run(async () => await contextFactory.CreateDbContext().AddressHistoryComputedTable.Where(t => t.BlockIndex == blockIndex).ExecuteDeleteAsync());
+        Task Outputs = contextFactory.CreateDbContext().Outputs.Where(o => o.Outpoint.OutputIndex == blockIndex).ExecuteDeleteAsync();
+        Task AddressComputed = contextFactory.CreateDbContext().AddressComputedTable.Where(t => t.ComputedBlockIndex == blockIndex).ExecuteDeleteAsync();
+        Task AddressHistory =  contextFactory.CreateDbContext().AddressHistoryComputedTable.Where(t => t.BlockIndex == blockIndex).ExecuteDeleteAsync();
 
         await Task.WhenAll(Outputs, AddressComputed, AddressHistory);
 
