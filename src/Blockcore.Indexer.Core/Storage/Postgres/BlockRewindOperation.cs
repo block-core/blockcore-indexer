@@ -22,9 +22,9 @@ public class BlockRewindOperation : IBlockRewindOperation
 
         await StoreRewindBlockAsync(contextFactory, blockIndex);
 
-        Task Outputs = Task.Run(async () => await contextFactory.CreateDbContext().Outputs.Where(o => o.Outpoint.OutputIndex == blockIndex).ExecuteDeleteAsync());
-        Task AddressComputed = Task.Run(async () => await contextFactory.CreateDbContext().AddressComputedTable.Where(t => t.ComputedBlockIndex == blockIndex).ExecuteDeleteAsync());
-        Task AddressHistory = Task.Run(async () => await contextFactory.CreateDbContext().AddressHistoryComputedTable.Where(t => t.BlockIndex == blockIndex).ExecuteDeleteAsync());
+        Task Outputs = contextFactory.CreateDbContext().Outputs.Where(o => o.Outpoint.OutputIndex == blockIndex).ExecuteDeleteAsync();
+        Task AddressComputed = contextFactory.CreateDbContext().AddressComputedTable.Where(t => t.ComputedBlockIndex == blockIndex).ExecuteDeleteAsync();
+        Task AddressHistory =  contextFactory.CreateDbContext().AddressHistoryComputedTable.Where(t => t.BlockIndex == blockIndex).ExecuteDeleteAsync();
 
         await Task.WhenAll(Outputs, AddressComputed, AddressHistory);
 
@@ -33,9 +33,9 @@ public class BlockRewindOperation : IBlockRewindOperation
 
 
         await MergeRewindInputsToUnspentTransactionsAsync(blockIndex);
-        Task Block = Task.Run(async () => await contextFactory.CreateDbContext().Blocks.Where(b => b.BlockIndex == blockIndex).ExecuteDeleteAsync());
+        Task Block = contextFactory.CreateDbContext().Blocks.Where(b => b.BlockIndex == blockIndex).ExecuteDeleteAsync();
 
-        Task Utxo = Task.Run(async () => await contextFactory.CreateDbContext().unspentOutputs.Where(utxo => utxo.BlockIndex == blockIndex).ExecuteDeleteAsync());
+        Task Utxo = contextFactory.CreateDbContext().unspentOutputs.Where(utxo => utxo.BlockIndex == blockIndex).ExecuteDeleteAsync();
 
         await Task.WhenAll(Block, Utxo);
     }
