@@ -1,8 +1,16 @@
+## <small>0.2.67 (2024-09-03)</small>
+
+* bump version ([0c7e84e](https://github.com/block-core/blockcore-indexer/commit/0c7e84e))
+* changed IStorage.cs to not depend on mondo types (#215) ([86e523f](https://github.com/block-core/blockcore-indexer/commit/86e523f)), closes [#215](https://github.com/block-core/blockcore-indexer/issues/215)
+* Decoupling mongo db dependencies to allow adding postgreSQL (#213) ([e27a2c9](https://github.com/block-core/blockcore-indexer/commit/e27a2c9)), closes [#213](https://github.com/block-core/blockcore-indexer/issues/213)
+* Ordered the returned projects by block index and returned top to bottom ([c5a5421](https://github.com/block-core/blockcore-indexer/commit/c5a5421))
+
+
+
 ## <small>0.2.66 (2024-05-24)</small>
 
-* Add mainnet key ([1ed7da0](https://github.com/block-core/blockcore-indexer/commit/1ed7da0))
+* Add Angor mainnet key (#212) ([0208cc6](https://github.com/block-core/blockcore-indexer/commit/0208cc6)), closes [#212](https://github.com/block-core/blockcore-indexer/issues/212)
 * bump version ([c2ed435](https://github.com/block-core/blockcore-indexer/commit/c2ed435))
-* update mainnet key ([c6a1054](https://github.com/block-core/blockcore-indexer/commit/c6a1054))
 
 
 
