@@ -116,7 +116,7 @@ public class ProjectsSyncRunner : TaskRunner
 
       if (checkForExistingProject) return null;
 
-      var projectId = GetProjectIdDerivation(founderKey.ToHex());
+      var projectId = GetProjectIdDerivation(founderKey);
 
       if (projectId == 0)
          return null;
@@ -127,7 +127,7 @@ public class ProjectsSyncRunner : TaskRunner
 
       var projectIdentifier = encoder.Encode(0, angorKey.WitHash.ToBytes());
 
-      var nPubKey = Encoders.Hex.EncodeData(script.ToOps()[2].PushData); //Schnorr signature not supported
+      var nEventId = Encoders.Hex.EncodeData(script.ToOps()[2].PushData); //Schnorr signature not supported
 
       var angorFeeOutput = await AngorMongoDb.OutputTable
          .AsQueryable()
@@ -147,27 +147,18 @@ public class ProjectsSyncRunner : TaskRunner
          AngorKeyScriptHex = angorKey.WitHash.ScriptPubKey.ToHex(),
          BlockIndex = output.BlockIndex,
          FounderKey = founderKey.ToHex(),
-         NPubKey = nPubKey,
+         NosrtEventId = nEventId,
          AddressOnFeeOutput = angorFeeOutput.Address
       };
    }
 
-   private uint GetProjectIdDerivation(string founderKey)
+   private uint GetProjectIdDerivation(PubKey founderKey)
    {
       ExtKey.UseBCForHMACSHA512 = true;
       Hashes.UseBCForHMACSHA512 = true;
 
-      var key = new PubKey(founderKey);
+      var hashOfid = Hashes.Hash256(founderKey.ToBytes());
 
-      var hashOfid = Hashes.Hash256(key.ToBytes());
-
-      var projectid = hashOfid.GetLow32();
-
-      var ret = projectid / 2; // the max size of bip32 derivation range is 2,147,483,648 (2^31) the max number of uint is 4,294,967,295 so we must divide by zero
-
-      if (ret > int.MaxValue)
-         throw new Exception();
-
-      return ret;
+      return (uint)(hashOfid.GetLow64() & int.MaxValue);
    }
 }
