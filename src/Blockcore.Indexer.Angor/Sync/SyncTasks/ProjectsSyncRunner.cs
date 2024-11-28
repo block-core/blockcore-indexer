@@ -101,22 +101,17 @@ public class ProjectsSyncRunner : TaskRunner
    {
       var script = Script.FromHex(output.ScriptHex);
 
-      var ops = script.ToOps();
+      var parsedData = new DataFromOps();
 
-      if (ops.Count != 3 ||
-          ops.First().Name != Op.GetOpName(OpcodeType.OP_RETURN) ||
-          ops[1].PushData.Length != 33 ||
-          ops[2].PushData.Length != 32)
+      if (!parsedData.TryParse(script.ToOps()))
          return null;
 
-      var founderKey = new PubKey(script.ToOps()[1].PushData);
-
       var checkForExistingProject = await AngorMongoDb.ProjectTable.AsQueryable()
-         .AnyAsync(_ => _.FounderKey == founderKey.ToHex());
+         .AnyAsync(_ => _.FounderKey == parsedData.FounderPubKey.ToHex());
 
       if (checkForExistingProject) return null;
 
-      var projectId = GetProjectIdDerivation(founderKey);
+      var projectId = GetProjectIdDerivation(parsedData.FounderPubKey);
 
       if (projectId == 0)
          return null;
@@ -126,8 +121,6 @@ public class ProjectsSyncRunner : TaskRunner
       var encoder = new Bech32Encoder("angor");
 
       var projectIdentifier = encoder.Encode(0, angorKey.WitHash.ToBytes());
-
-      var nEventId = Encoders.Hex.EncodeData(script.ToOps()[2].PushData); //Schnorr signature not supported
 
       var angorFeeOutput = await AngorMongoDb.OutputTable
          .AsQueryable()
@@ -146,10 +139,32 @@ public class ProjectsSyncRunner : TaskRunner
          TransactionId = output.Outpoint.TransactionId,
          AngorKeyScriptHex = angorKey.WitHash.ScriptPubKey.ToHex(),
          BlockIndex = output.BlockIndex,
-         FounderKey = founderKey.ToHex(),
-         NosrtEventId = nEventId,
+         FounderKey = parsedData.FounderPubKey.ToHex(),
+         NosrtEventId = parsedData.keyType == 1 ? parsedData.NostrEventId : string.Empty,
          AddressOnFeeOutput = angorFeeOutput.Address
       };
+   }
+
+   private class DataFromOps
+   {
+      public PubKey FounderPubKey { get; set; }
+      public short keyType { get; set; }
+      public string NostrEventId { get; set; }
+
+      public bool TryParse(IList<Op> ops)
+      {
+         if (ops.Count != 4 ||
+             ops.First().Name != Op.GetOpName(OpcodeType.OP_RETURN) ||
+             ops[1].PushData.Length != 33 ||
+             ops[2].PushData.Length != 2 ||
+             ops[3].PushData.Length != 32)
+            return false;
+
+         FounderPubKey = new PubKey(ops[1].PushData);
+         keyType = BitConverter.ToInt16(ops[2].PushData);
+         NostrEventId = Encoders.Hex.EncodeData(ops[3].PushData);
+         return true;
+      }
    }
 
    private uint GetProjectIdDerivation(PubKey founderKey)
