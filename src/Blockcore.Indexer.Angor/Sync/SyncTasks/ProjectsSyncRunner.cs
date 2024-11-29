@@ -101,22 +101,17 @@ public class ProjectsSyncRunner : TaskRunner
    {
       var script = Script.FromHex(output.ScriptHex);
 
-      var ops = script.ToOps();
+      var parsedData = new DataFromOps();
 
-      if (ops.Count != 3 ||
-          ops.First().Name != Op.GetOpName(OpcodeType.OP_RETURN) ||
-          ops[1].PushData.Length != 33 ||
-          ops[2].PushData.Length != 32)
+      if (!parsedData.TryParse(script.ToOps()))
          return null;
 
-      var founderKey = new PubKey(script.ToOps()[1].PushData);
-
       var checkForExistingProject = await AngorMongoDb.ProjectTable.AsQueryable()
-         .AnyAsync(_ => _.FounderKey == founderKey.ToHex());
+         .AnyAsync(_ => _.FounderKey == parsedData.FounderPubKey.ToHex());
 
       if (checkForExistingProject) return null;
 
-      var projectId = GetProjectIdDerivation(founderKey.ToHex());
+      var projectId = GetProjectIdDerivation(parsedData.FounderPubKey);
 
       if (projectId == 0)
          return null;
@@ -126,8 +121,6 @@ public class ProjectsSyncRunner : TaskRunner
       var encoder = new Bech32Encoder("angor");
 
       var projectIdentifier = encoder.Encode(0, angorKey.WitHash.ToBytes());
-
-      var nPubKey = Encoders.Hex.EncodeData(script.ToOps()[2].PushData); //Schnorr signature not supported
 
       var angorFeeOutput = await AngorMongoDb.OutputTable
          .AsQueryable()
@@ -146,28 +139,41 @@ public class ProjectsSyncRunner : TaskRunner
          TransactionId = output.Outpoint.TransactionId,
          AngorKeyScriptHex = angorKey.WitHash.ScriptPubKey.ToHex(),
          BlockIndex = output.BlockIndex,
-         FounderKey = founderKey.ToHex(),
-         NPubKey = nPubKey,
+         FounderKey = parsedData.FounderPubKey.ToHex(),
+         NosrtEventId = parsedData.keyType == 1 ? parsedData.NostrEventId : string.Empty,
          AddressOnFeeOutput = angorFeeOutput.Address
       };
    }
 
-   private uint GetProjectIdDerivation(string founderKey)
+   private class DataFromOps
+   {
+      public PubKey FounderPubKey { get; set; }
+      public short keyType { get; set; }
+      public string NostrEventId { get; set; }
+
+      public bool TryParse(IList<Op> ops)
+      {
+         if (ops.Count != 4 ||
+             ops.First().Name != Op.GetOpName(OpcodeType.OP_RETURN) ||
+             ops[1].PushData.Length != 33 ||
+             ops[2].PushData.Length != 2 ||
+             ops[3].PushData.Length != 32)
+            return false;
+
+         FounderPubKey = new PubKey(ops[1].PushData);
+         keyType = BitConverter.ToInt16(ops[2].PushData);
+         NostrEventId = Encoders.Hex.EncodeData(ops[3].PushData);
+         return true;
+      }
+   }
+
+   private uint GetProjectIdDerivation(PubKey founderKey)
    {
       ExtKey.UseBCForHMACSHA512 = true;
       Hashes.UseBCForHMACSHA512 = true;
 
-      var key = new PubKey(founderKey);
+      var hashOfid = Hashes.Hash256(founderKey.ToBytes());
 
-      var hashOfid = Hashes.Hash256(key.ToBytes());
-
-      var projectid = hashOfid.GetLow32();
-
-      var ret = projectid / 2; // the max size of bip32 derivation range is 2,147,483,648 (2^31) the max number of uint is 4,294,967,295 so we must divide by zero
-
-      if (ret > int.MaxValue)
-         throw new Exception();
-
-      return ret;
+      return (uint)(hashOfid.GetLow64() & int.MaxValue);
    }
 }
