@@ -1,4 +1,11 @@
-## <small>0.2.67 (2024-09-03)</small>
+## <small>0.2.69 (2024-11-29)</small>
+
+* bump version and release ([d478edd](https://github.com/block-core/blockcore-indexer/commit/d478edd))
+* Changed Angor to keep nostr id not npub (#220) ([4a43a85](https://github.com/block-core/blockcore-indexer/commit/4a43a85)), closes [#220](https://github.com/block-core/blockcore-indexer/issues/220)
+
+
+
+## <small>0.2.67 (2024-08-16)</small>
 
 * bump version ([0c7e84e](https://github.com/block-core/blockcore-indexer/commit/0c7e84e))
 * changed IStorage.cs to not depend on mondo types (#215) ([86e523f](https://github.com/block-core/blockcore-indexer/commit/86e523f)), closes [#215](https://github.com/block-core/blockcore-indexer/issues/215)
