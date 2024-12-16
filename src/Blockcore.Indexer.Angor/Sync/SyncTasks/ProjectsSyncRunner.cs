@@ -140,7 +140,7 @@ public class ProjectsSyncRunner : TaskRunner
          AngorKeyScriptHex = angorKey.WitHash.ScriptPubKey.ToHex(),
          BlockIndex = output.BlockIndex,
          FounderKey = parsedData.FounderPubKey.ToHex(),
-         NosrtEventId = parsedData.keyType == 1 ? parsedData.NostrEventId : string.Empty,
+         NostrEventId = parsedData.keyType == 1 ? parsedData.NostrEventId : string.Empty,
          AddressOnFeeOutput = angorFeeOutput.Address
       };
    }

@@ -42,7 +42,7 @@ public class AngorMongoData : MongoData, IAngorStorage
          return new ProjectIndexerData
          {
             FounderKey = project.FounderKey,
-            NostrEventId = project.NosrtEventId,
+            NostrEventId = project.NostrEventId,
             ProjectIdentifier = project.AngorKey,
             TrxId = project.TransactionId,
             TotalInvestmentsCount = total,
@@ -236,7 +236,7 @@ public class AngorMongoData : MongoData, IAngorStorage
          Items = projects.Select(_ => new ProjectIndexerData
          {
             FounderKey = _.FounderKey,
-            NostrEventId =_.NosrtEventId,
+            NostrEventId =_.NostrEventId,
             ProjectIdentifier = _.AngorKey,
             TrxId = _.TransactionId,
             CreatedOnBlock = _.BlockIndex
