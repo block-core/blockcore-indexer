@@ -673,6 +673,40 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
+      /// <summary>
+      /// Calculates the balance for specified address.
+      /// </summary>
+      /// <param name="address"></param>
+      public AddressResponse AddressResponseBalance(string address)
+      {
+         Console.WriteLine(address);
+         AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
+         Console.WriteLine(addressComputedTable.Id);
+         List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
+
+         AddressResponse response = new()
+         {
+            Address = address,
+            ChainStats = new(){
+                    FundedTxCount=(int)addressComputedTable.CountReceived,
+                    FundedTxoSum=addressComputedTable.Received,
+                    SpentTxocount=(int)addressComputedTable.CountSent,
+                    SpentTxoSum=addressComputedTable.Sent,
+                    TxCount=(int)addressComputedTable.CountReceived+(int)addressComputedTable.CountSent
+                },
+            MempoolStats = new(){
+                    FundedTxCount=mempoolAddressBag.Count(s=>s.AmountInOutputs>0),
+                    FundedTxoSum=mempoolAddressBag.Sum(s => s.AmountInOutputs),
+                    SpentTxocount=mempoolAddressBag.Count(s=>s.AmountInInputs>0),
+                    SpentTxoSum=mempoolAddressBag.Sum(s => s.AmountInInputs),
+                    TxCount=mempoolAddressBag.Count(s => s.AmountInOutputs > 0)+mempoolAddressBag.Count(s => s.AmountInInputs > 0)
+                }
+         };
+
+         return response;
+      }
+
+
       public async Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(IEnumerable<string> addresses, bool includePending = false)
       {
          var outputTask = mongoDb.OutputTable.Distinct(_ => _.Address, _ => addresses.Contains(_.Address))

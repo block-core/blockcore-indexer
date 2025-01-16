@@ -15,6 +15,8 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryAddress AddressBalance(string address);
 
+      AddressResponse AddressResponseBalance(string address);
+
       Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(
          IEnumerable<string> addresses, bool includePending = false);
 
