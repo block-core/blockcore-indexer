@@ -32,8 +32,6 @@ jobs:
       PROJECT_NAME: 'Blockcore.Indexer'
       SOLUTION_PATH: 'Blockcore.Indexer.sln'
       PROJECT_PATH: 'src/Blockcore.Indexer/Blockcore.Indexer.csproj'
-      CIRRUS_NAME: 'Blockcore.Indexer.Cirrus'
-      CIRRUS_PATH: 'src/Blockcore.Indexer.Cirrus/Blockcore.Indexer.Cirrus.csproj'
       ANGOR_NAME: 'Blockcore.Indexer.Angor'
       ANGOR_PATH: 'src/Blockcore.Indexer.Angor/Blockcore.Indexer.Angor.csproj'
       BUILD_CONFIGURATION: 'Release'
@@ -59,30 +57,14 @@ jobs:
         echo VERSION=$(npm run version --silent) >> $GITHUB_ENV
       shell: bash
 
-    # - name: Variables
-    #   run: |
-    #     echo "::set-env name=VERSION::$(npm run version --silent)"
-    #     echo "::set-env name=RELEASE_CONFIGURATION::${{ matrix.runtime }}"
-
-    # - name: Setup .NET Core (${{ matrix.dotnet_version }})
-    #   uses: actions/setup-dotnet@v1
-    #   with:
-    #     dotnet-version: ${{ matrix.dotnet_version }}
-
     - name: Restore
       run: dotnet restore ${{env.SOLUTION_PATH}}
 
     - name: Unit Test
       run: dotnet test -v=normal -c ${{env.BUILD_CONFIGURATION}}
 
-    # - name: Build
-    #   run: dotnet build -c ${{env.BUILD_CONFIGURATION}} -r ${{env.RELEASE_CONFIGURATION}} /p:Version=${{ env.VERSION }} -v m ${{env.SOLUTION_PATH}}
-
     - name: Publish (Blockcore Indexer)
       run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} -r ${{matrix.runtime}} /p:Version=${{ env.VERSION }} -v m -o ./src/${{ env.PROJECT_NAME }}/bin/publish ${{env.PROJECT_PATH}}
-
-    - name: Publish (Cirrus Indexer)
-      run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} -r ${{matrix.runtime}} /p:Version=${{ env.VERSION }} -v m -o ./src/${{ env.CIRRUS_NAME }}/bin/publish ${{env.CIRRUS_PATH}}
 
     - name: Publish (Angor Indexer)
       run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} -r ${{matrix.runtime}} /p:Version=${{ env.VERSION }} -v m -o ./src/${{ env.ANGOR_NAME }}/bin/publish ${{env.ANGOR_PATH}}
@@ -91,8 +73,6 @@ jobs:
       run: |
         echo RELEASE_NAME=${{ env.PROJECT_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
         echo RELEASE_PATH=${{ env.PROJECT_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
-        echo RELEASE_CIRRUS_NAME=${{ env.CIRRUS_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
-        echo RELEASE_CIRRUS_PATH=${{ env.CIRRUS_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
         echo RELEASE_ANGOR_NAME=${{ env.ANGOR_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
         echo RELEASE_ANGOR_PATH=${{ env.ANGOR_NAME }}-${{ env.VERSION }}-${{ matrix.runtime }}${{ matrix.extension }} >> $GITHUB_ENV
       shell: bash
@@ -104,10 +84,6 @@ jobs:
         cd ./src/${{env.PROJECT_NAME}}/bin/publish/
         tar cvzf ${{env.RELEASE_NAME}} *
         cd ../../../../
-        echo RELEASE_CIRRUS_PATH=./src/${{env.CIRRUS_NAME}}/bin/publish/${{env.RELEASE_CIRRUS_NAME}} >> $GITHUB_ENV
-        cd ./src/${{env.CIRRUS_NAME}}/bin/publish/
-        tar cvzf ${{env.RELEASE_CIRRUS_NAME}} *
-        cd ../../../../
         echo RELEASE_ANGOR_PATH=./src/${{env.ANGOR_NAME}}/bin/publish/${{env.RELEASE_ANGOR_NAME}} >> $GITHUB_ENV
         cd ./src/${{env.ANGOR_NAME}}/bin/publish/
         tar cvzf ${{env.RELEASE_ANGOR_NAME}} *
@@ -116,28 +92,18 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         Compress-Archive -Path .\src\${{env.PROJECT_NAME}}\bin\publish\* -DestinationPath .\${{env.RELEASE_NAME}}
-        Compress-Archive -Path .\src\${{env.CIRRUS_NAME}}\bin\publish\* -DestinationPath .\${{env.RELEASE_CIRRUS_NAME}}
         Compress-Archive -Path .\src\${{env.ANGOR_NAME}}\bin\publish\* -DestinationPath .\${{env.RELEASE_ANGOR_NAME}}
 
     - name: Package (Mac)
       if: matrix.os == 'macos-latest'
       run: |
         zip -r ${{env.RELEASE_NAME}} ./src/${{env.PROJECT_NAME}}/bin/publish/
-        zip -r ${{env.RELEASE_CIRRUS_NAME}} ./src/${{env.CIRRUS_NAME}}/bin/publish/
         zip -r ${{env.RELEASE_ANGOR_NAME}} ./src/${{env.ANGOR_NAME}}/bin/publish/
-
-    #- run: mkdir -p path/to/artifact
-    #- run: echo hello > path/to/artifact/world.txt
 
     - uses: actions/upload-artifact@v3
       with:
         name: blockcore-indexer
         path: "${{env.RELEASE_PATH}}"
-
-    - uses: actions/upload-artifact@v3
-      with:
-        name: blockcore-cirrus-indexer
-        path: "${{env.RELEASE_CIRRUS_PATH}}"
 
     - uses: actions/upload-artifact@v3
       with:
@@ -149,7 +115,7 @@ jobs:
       with:
         commit: 'master'
         token: ${{ secrets.GITHUB_TOKEN }}
-        files: "${{env.RELEASE_PATH}};${{env.RELEASE_CIRRUS_PATH}};${{env.RELEASE_ANGOR_PATH}}"
+        files: "${{env.RELEASE_PATH}};${{env.RELEASE_ANGOR_PATH}}"
         draft: true
         prerelease: false
         body: ''
