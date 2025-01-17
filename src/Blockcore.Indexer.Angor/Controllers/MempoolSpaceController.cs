@@ -90,7 +90,7 @@ static class MempoolSpaceHelpers
     }
 }
 
-namespace Blockcore.Indexer.Core.Controllers
+namespace Blockcore.Indexer.Angor.Controllers
 {
     [ApiController]
     [Route("api/mempoolspace")]
@@ -124,16 +124,8 @@ namespace Blockcore.Indexer.Core.Controllers
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             var transactions = storage.AddressHistory(address, null, 50).Items.Select(t => t.TransactionHash).ToList();
-            Console.WriteLine("Time elapsed: {0}", stopwatch.Elapsed);
-            //fetch the transactions
-            //make the fetching async using the helper method
-            List<Task<QueryTransaction>> tasks = transactions.Select(txid => MempoolSpaceHelpers.GetTransactionAsync(txid, storage)).ToList();
-            Task.WaitAll(tasks.ToArray());
-            List<QueryTransaction> queryTransactions = tasks.Select(t => t.Result).ToList();
-            Console.WriteLine("Time elapsed: {0}", stopwatch.Elapsed);
-            //add a mapper to convert the 
+            List<QueryTransaction> queryTransactions = storage.GetMempoolTransactionList(transactions);
             List<MempoolTransaction> txns = queryTransactions.Select(trx => MempoolSpaceHelpers.MapToMempoolTransaction(trx, storage)).ToList();
-            Console.WriteLine("Time elapsed: {0}", stopwatch.Elapsed);
             stopwatch.Stop();
             return Ok(JsonSerializer.Serialize(txns, serializeOption));
         }

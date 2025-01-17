@@ -22,6 +22,8 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryResult<QueryAddressItem> AddressHistory(string address, int? offset, int limit);
 
+      List<QueryTransaction> GetMempoolTransactionList(List<string> txids);
+
       QueryResult<QueryMempoolTransactionHashes> GetMemoryTransactionsSlim(int offset, int limit);
 
       QueryResult<QueryTransaction> GetMemoryTransactions(int offset, int limit);
@@ -52,7 +54,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       long TotalBalance();
 
-      Task<QueryResult<Output>> GetUnspentTransactionsByAddressAsync(string address,long confirmations, int offset, int limit);
+      Task<QueryResult<Output>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit);
 
       Task DeleteBlockAsync(string blockHash);
 

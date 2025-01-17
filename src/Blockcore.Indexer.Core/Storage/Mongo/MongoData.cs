@@ -646,6 +646,78 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
+      public List<QueryTransaction> GetMempoolTransactionList(List<string> txids)
+      {
+
+         FilterDefinition<TransactionBlockTable> filter = Builders<TransactionBlockTable>.Filter.In(info => info.TransactionId, txids);
+         List<TransactionBlockTable> trxs = mongoDb.TransactionBlockTable.Find(filter).ToList();
+
+         SyncBlockInfo current = globalState.StoreTip;// GetLatestBlock();
+
+         var blkTasks = trxs.Select(trx => Task.Run(() => BlockByIndex(trx.BlockIndex))).ToList();
+         var trxItemsTasks = trxs.Select(trx => Task.Run(() => TransactionItemsGet(trx.TransactionId))).ToList();
+
+         Task.WaitAll(blkTasks.ToArray());
+         Task.WaitAll(blkTasks.ToArray());
+
+         List<SyncBlockInfo> blks = blkTasks.Select(t => t.Result).ToList();
+         List<SyncTransactionItems> transactionItemsList = trxItemsTasks.Select(t => t.Result).ToList();
+
+         List<SyncTransactionInfo> transactions = blks.Select((blk, index) => new SyncTransactionInfo
+         {
+            BlockIndex = trxs[index].BlockIndex,
+            BlockHash = blk.BlockHash,
+            Timestamp = blk.BlockTime,
+            TransactionHash = trxs[index].TransactionId,
+            TransactionIndex = trxs[index].TransactionIndex,
+            Confirmations = current.BlockIndex + 1 - trxs[index].BlockIndex
+         }
+         ).ToList();
+
+         var result = transactions.Select((transaction, index) => new QueryTransaction
+         {
+            Symbol = chainConfiguration.Symbol,
+            BlockHash = transaction?.BlockHash ?? null,
+            BlockIndex = transaction?.BlockIndex ?? null,
+            Confirmations = transaction?.Confirmations ?? 0,
+            Timestamp = transaction?.Timestamp ?? 0,
+            TransactionId = transaction?.TransactionHash ?? trxs[index].TransactionId,
+            TransactionIndex = transaction?.TransactionIndex,
+            RBF = transactionItemsList[index].RBF,
+            LockTime = transactionItemsList[index].LockTime.ToString(),
+            Version = transactionItemsList[index].Version,
+            IsCoinbase = transactionItemsList[index].IsCoinbase,
+            IsCoinstake = transactionItemsList[index].IsCoinstake,
+            Fee = transactionItemsList[index].Fee,
+            Weight = transactionItemsList[index].Weight,
+            Size = transactionItemsList[index].Size,
+            VirtualSize = transactionItemsList[index].VirtualSize,
+            HasWitness = transactionItemsList[index].HasWitness,
+            Inputs = transactionItemsList[index].Inputs.Select(i => new QueryTransactionInput
+            {
+               CoinBase = i.InputCoinBase,
+               InputAddress = i.InputAddress,
+               InputAmount = i.InputAmount,
+               InputIndex = i.PreviousIndex,
+               InputTransactionId = i.PreviousTransactionHash,
+               ScriptSig = i.ScriptSig,
+               ScriptSigAsm = new Script(NBitcoin.DataEncoders.Encoders.Hex.DecodeData(i.ScriptSig)).ToString(),
+               WitScript = i.WitScript,
+               SequenceLock = i.SequenceLock
+            }),
+            Outputs = transactionItemsList[index].Outputs.Select(o => new QueryTransactionOutput
+            {
+               Address = o.Address,
+               Balance = o.Value,
+               Index = o.Index,
+               OutputType = o.OutputType,
+               ScriptPubKey = o.ScriptPubKey,
+               SpentInTransaction = o.SpentInTransaction,
+               ScriptPubKeyAsm = new Script(NBitcoin.DataEncoders.Encoders.Hex.DecodeData(o.ScriptPubKey)).ToString()
+            }),
+         }).ToList();
+         return result;
+      }
       /// <summary>
       /// Calculates the balance for specified address.
       /// </summary>
