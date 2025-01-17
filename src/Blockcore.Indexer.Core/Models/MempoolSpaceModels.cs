@@ -5,12 +5,12 @@ using System.Net.Http.Json;
 
 namespace Blockcore.Indexer.Core.Models
 {
-   
+
     public class AddressStats
     {
-        public int FundedTxCount { get; set; }
+        public int FundedTxoCount { get; set; }
         public long FundedTxoSum { get; set; }
-        public int SpentTxocount { get; set; }
+        public int SpentTxoCount { get; set; }
         public long SpentTxoSum { get; set; }
         public int TxCount { get; set; }
     }
@@ -20,7 +20,7 @@ namespace Blockcore.Indexer.Core.Models
         public AddressStats ChainStats { get; set; }
         public AddressStats MempoolStats { get; set; }
     }
-    
+
     public class AddressUtxo
     {
         public string Txid { get; set; }
@@ -28,7 +28,7 @@ namespace Blockcore.Indexer.Core.Models
         public UtxoStatus Status { get; set; }
         public long Value { get; set; }
     }
-    
+
     public class UtxoStatus
     {
         public bool Confirmed { get; set; }
@@ -36,7 +36,7 @@ namespace Blockcore.Indexer.Core.Models
         public string BlockHash { get; set; }
         public long BlockTime { get; set; }
     }
-    
+
     public class RecommendedFees
     {
         public int FastestFee { get; set; }
@@ -45,7 +45,7 @@ namespace Blockcore.Indexer.Core.Models
         public int EconomyFee { get; set; }
         public int MinimumFee { get; set; }
     }
-    
+
     public class Vin
     {
         public bool IsCoinbase { get; set; }
@@ -82,7 +82,7 @@ namespace Blockcore.Indexer.Core.Models
         public List<PrevOut> Vout { get; set; }
         public UtxoStatus Status { get; set; }
     }
-    
+
     public class Outspent
     {
         public bool Spent { get; set; }

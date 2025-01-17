@@ -687,20 +687,22 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          AddressResponse response = new()
          {
             Address = address,
-            ChainStats = new(){
-                    FundedTxCount=(int)addressComputedTable.CountReceived,
-                    FundedTxoSum=addressComputedTable.Received,
-                    SpentTxocount=(int)addressComputedTable.CountSent,
-                    SpentTxoSum=addressComputedTable.Sent,
-                    TxCount=(int)addressComputedTable.CountReceived+(int)addressComputedTable.CountSent
-                },
-            MempoolStats = new(){
-                    FundedTxCount=mempoolAddressBag.Count(s=>s.AmountInOutputs>0),
-                    FundedTxoSum=mempoolAddressBag.Sum(s => s.AmountInOutputs),
-                    SpentTxocount=mempoolAddressBag.Count(s=>s.AmountInInputs>0),
-                    SpentTxoSum=mempoolAddressBag.Sum(s => s.AmountInInputs),
-                    TxCount=mempoolAddressBag.Count(s => s.AmountInOutputs > 0)+mempoolAddressBag.Count(s => s.AmountInInputs > 0)
-                }
+            ChainStats = new()
+            {
+               FundedTxoCount = (int)addressComputedTable.CountReceived,
+               FundedTxoSum = addressComputedTable.Received,
+               SpentTxoCount = (int)addressComputedTable.CountSent,
+               SpentTxoSum = addressComputedTable.Sent,
+               TxCount = (int)addressComputedTable.CountReceived + (int)addressComputedTable.CountSent
+            },
+            MempoolStats = new()
+            {
+               FundedTxoCount = mempoolAddressBag.Count(s => s.AmountInOutputs > 0),
+               FundedTxoSum = mempoolAddressBag.Sum(s => s.AmountInOutputs),
+               SpentTxoCount = mempoolAddressBag.Count(s => s.AmountInInputs > 0),
+               SpentTxoSum = mempoolAddressBag.Sum(s => s.AmountInInputs),
+               TxCount = mempoolAddressBag.Count(s => s.AmountInOutputs > 0) + mempoolAddressBag.Count(s => s.AmountInInputs > 0)
+            }
          };
 
          return response;
