@@ -648,7 +648,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public List<QueryTransaction> GetMempoolTransactionList(List<string> txids)
       {
-
          FilterDefinition<TransactionBlockTable> filter = Builders<TransactionBlockTable>.Filter.In(info => info.TransactionId, txids);
          List<TransactionBlockTable> trxs = mongoDb.TransactionBlockTable.Find(filter).ToList();
 
@@ -1381,7 +1380,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       }
 
       public Output GetOutputFromOutpoint(string txid, int index){
-         
+         var outpoint = new Outpoint { TransactionId = txid, OutputIndex = index };
+         return mongoDb.OutputTable.Find(o => o.Outpoint == outpoint).FirstOrDefault();
       }
    }
 }

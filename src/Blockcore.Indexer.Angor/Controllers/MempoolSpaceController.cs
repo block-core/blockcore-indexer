@@ -3,12 +3,7 @@ using Blockcore.Indexer.Core.Storage;
 using Blockcore.Indexer.Core.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
-using DBreeze.Utils;
-using System.Linq;
-using System.Collections.Generic;
-using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
+using Blockcore.Indexer.Core.Storage.Types;
 
 
 static class MempoolSpaceHelpers
@@ -48,15 +43,15 @@ static class MempoolSpaceHelpers
             },
             Vin = queryTransaction.Inputs.Select(input =>
             {
+                Output output = storage.GetOutputFromOutpoint(input.InputTransactionId, input.InputIndex);
                 return new Vin()
                 {
                     IsCoinbase = input.CoinBase != null,
-                    //TODO pending fetching outpoint info, Isn't used currently by the mempool api
                     Prevout = new PrevOut()
                     {
-                        Value = 0,
-                        Scriptpubkey = null,
-                        ScriptpubkeyAddress = null,
+                        Value = output.Value,
+                        Scriptpubkey = output.ScriptHex,
+                        ScriptpubkeyAddress = output.Address,
                         ScriptpubkeyAsm = null,
                         ScriptpubkeyType = null
                     },
@@ -82,11 +77,6 @@ static class MempoolSpaceHelpers
         };
 
         return mempoolTransaction;
-    }
-
-    public static async Task<QueryTransaction> GetTransactionAsync(string transactionId, IStorage storage)
-    {
-        return await Task.Run(() => storage.GetTransaction(transactionId));
     }
 }
 
@@ -121,12 +111,9 @@ namespace Blockcore.Indexer.Angor.Controllers
         [Route("address/{address}/txs")]
         public IActionResult GetAddressTransactions(string address)
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
             var transactions = storage.AddressHistory(address, null, 50).Items.Select(t => t.TransactionHash).ToList();
             List<QueryTransaction> queryTransactions = storage.GetMempoolTransactionList(transactions);
             List<MempoolTransaction> txns = queryTransactions.Select(trx => MempoolSpaceHelpers.MapToMempoolTransaction(trx, storage)).ToList();
-            stopwatch.Stop();
             return Ok(JsonSerializer.Serialize(txns, serializeOption));
         }
 
@@ -134,7 +121,6 @@ namespace Blockcore.Indexer.Angor.Controllers
         [Route("tx/{txid}/outspends")]
         public IActionResult GetTransactionOutspends(string txid)
         {
-            //fetch the transaction outputs
             List<OutspentResponse> responses = storage.GetTransactionOutspends(txid); 
             return Ok(JsonSerializer.Serialize(responses, serializeOption));
         }
