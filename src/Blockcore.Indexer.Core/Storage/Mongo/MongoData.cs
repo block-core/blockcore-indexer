@@ -1331,5 +1331,57 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
             Limit = limit
          };
       }
+
+      public List<OutspentResponse> GetTransactionOutspends(string txid){
+         var outpoints = mongoDb.OutputTable.Find(o => o.Outpoint.TransactionId == txid).ToList();
+         var OutspentResponses = outpoints.Select(op => GetOutputSpendingStatus(op.Outpoint)).ToList();
+         return OutspentResponses;
+      }
+      public OutspentResponse GetOutputSpendingStatus(Outpoint outpoint) {
+         // check if the output is spent in the mempool
+         var spentOutput = mongoDb.InputTable.Find(i => i.Outpoint == outpoint).FirstOrDefault();
+
+         OutspentResponse response = new()
+         {
+            spent = false,
+            txid = null,
+            vin = -1,
+            status = null
+         };
+
+         if (spentOutput != null){
+            response.spent = true;
+            response.txid = spentOutput.TrxHash;
+            response.vin = 0;
+            var block = BlockByIndex(spentOutput.BlockIndex);
+
+            response.status = new UtxoStatus(){
+               Confirmed = true,
+               BlockHeight = (int)spentOutput.BlockIndex,
+               BlockHash = block.BlockHash,
+               BlockTime = block.BlockTime,
+            };
+         }
+
+         //check in mempool
+         var mempoolSpentOutput = mongoDb.Mempool.Find(m => m.Inputs.Any(i => i.Outpoint == outpoint)).FirstOrDefault();
+         if(mempoolSpentOutput != null){
+            response.spent = true;
+            response.txid = mempoolSpentOutput.TransactionId;
+            response.vin = 0;
+            response.status = new UtxoStatus(){
+               Confirmed = false,
+               BlockHeight = 0,
+               BlockHash = null,
+               BlockTime = 0,
+            };
+         } 
+
+         return response;
+      }
+
+      public Output GetOutputFromOutpoint(string txid, int index){
+         
+      }
    }
 }

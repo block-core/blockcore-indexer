@@ -134,7 +134,9 @@ namespace Blockcore.Indexer.Angor.Controllers
         [Route("tx/{txid}/outspends")]
         public IActionResult GetTransactionOutspends(string txid)
         {
-            return Ok();
+            //fetch the transaction outputs
+            List<OutspentResponse> responses = storage.GetTransactionOutspends(txid); 
+            return Ok(JsonSerializer.Serialize(responses, serializeOption));
         }
 
         [HttpGet]

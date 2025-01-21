@@ -66,5 +66,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       List<PeerDetails> GetPeerFromDate(DateTime date);
       Task<long> InsertPeer(PeerDetails info);
+      
+      public List<OutspentResponse> GetTransactionOutspends(string txid);
    }
 }
