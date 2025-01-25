@@ -4,6 +4,7 @@ using Blockcore.Indexer.Core.Models;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using Blockcore.Indexer.Core.Storage.Types;
+using Blockcore.Indexer.Core.Handlers;
 
 
 static class MempoolSpaceHelpers
@@ -87,6 +88,7 @@ namespace Blockcore.Indexer.Angor.Controllers
     public class MempoolSpaceController : Controller
     {
         private readonly IStorage storage;
+        private readonly StatsHandler statsHandler;
 
         private readonly JsonSerializerOptions serializeOption = new JsonSerializerOptions
         {
@@ -94,9 +96,10 @@ namespace Blockcore.Indexer.Angor.Controllers
             WriteIndented = true
         };
 
-        public MempoolSpaceController(IStorage storage)
+        public MempoolSpaceController(IStorage storage, StatsHandler statsHandler)
         {
             this.storage = storage;
+            this.statsHandler = statsHandler;
         }
 
         [HttpGet]
@@ -129,7 +132,26 @@ namespace Blockcore.Indexer.Angor.Controllers
         [Route("fees/recommended")]
         public IActionResult GetRecommendedFees()
         {
-            return Ok();
+            RecommendedFees recommendedFees = new();
+            var statsFees = statsHandler.GetFeeEstimation([1, 3, 6, 12, 48]);
+            statsFees.Wait();
+            var Fees = statsFees.Result.Fees.Select(fee => ConvertToSatsPerVByte(fee.FeeRate)).ToList();
+            recommendedFees.FastestFee = (int)Fees[0];
+            recommendedFees.HalfHourFee = (int)Fees[1];
+            recommendedFees.HourFee = (int)Fees[2];
+            recommendedFees.EconomyFee = (int)Fees[3];
+            recommendedFees.MinimumFee = (int)Fees[4];
+            
+            return Ok(JsonSerializer.Serialize(recommendedFees, new JsonSerializerOptions()
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            }));
+        }
+
+        private double ConvertToSatsPerVByte(double fee)
+        {
+            return fee / 1_000;
         }
 
         [HttpGet]
