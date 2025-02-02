@@ -84,16 +84,14 @@ namespace Blockcore.Indexer.Angor.Controllers
         [Route("tx/{txid}/hex")]
         public IActionResult GetTransactionHex(string txid)
         {
-            var transactionHex = storage.GetRawTransaction(txid);
-            return Ok(transactionHex);
+            return Ok(storage.GetRawTransaction(txid));
         }
 
         [HttpGet]
-        [Route("block-height/0")]
-        public IActionResult GetBlockHeightZero()
+        [Route("block-height/{height}")]
+        public IActionResult GetBlockHeight(int height)
         {
-            var block = storage.BlockByIndex(0);
-            return Ok(block);
+            return Ok(storage.BlockByIndex(height));
         }
     }
 }

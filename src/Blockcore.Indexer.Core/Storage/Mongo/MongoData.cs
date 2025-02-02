@@ -777,9 +777,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
       /// <param name="address"></param>
       public AddressResponse AddressResponseBalance(string address)
       {
-         Console.WriteLine(address);
          AddressComputedTable addressComputedTable = ComputeAddressBalance(address);
-         Console.WriteLine(addressComputedTable.Id);
          List<MapMempoolAddressBag> mempoolAddressBag = MempoolBalance(address);
 
          AddressResponse response = new()
