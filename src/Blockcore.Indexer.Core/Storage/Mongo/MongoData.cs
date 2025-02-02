@@ -646,7 +646,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public List<QueryTransaction> GetMempoolTransactionList(List<string> txids)
+      public List<MempoolTransaction> GetMempoolTransactionList(List<string> txids)
       {
          FilterDefinition<TransactionBlockTable> filter = Builders<TransactionBlockTable>.Filter.In(info => info.TransactionId, txids);
          List<TransactionBlockTable> trxs = mongoDb.TransactionBlockTable.Find(filter).ToList();
@@ -657,7 +657,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var trxItemsTasks = trxs.Select(trx => Task.Run(() => TransactionItemsGet(trx.TransactionId))).ToList();
 
          Task.WaitAll(blkTasks.ToArray());
-         Task.WaitAll(blkTasks.ToArray());
+         Task.WaitAll(trxItemsTasks.ToArray());
 
          List<SyncBlockInfo> blks = blkTasks.Select(t => t.Result).ToList();
          List<SyncTransactionItems> transactionItemsList = trxItemsTasks.Select(t => t.Result).ToList();
@@ -673,49 +673,76 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
          ).ToList();
 
-         var result = transactions.Select((transaction, index) => new QueryTransaction
+         return transactions.Select((transaction, index) =>
          {
-            Symbol = chainConfiguration.Symbol,
-            BlockHash = transaction?.BlockHash ?? null,
-            BlockIndex = transaction?.BlockIndex ?? null,
-            Confirmations = transaction?.Confirmations ?? 0,
-            Timestamp = transaction?.Timestamp ?? 0,
-            TransactionId = transaction?.TransactionHash ?? trxs[index].TransactionId,
-            TransactionIndex = transaction?.TransactionIndex,
-            RBF = transactionItemsList[index].RBF,
-            LockTime = transactionItemsList[index].LockTime.ToString(),
-            Version = transactionItemsList[index].Version,
-            IsCoinbase = transactionItemsList[index].IsCoinbase,
-            IsCoinstake = transactionItemsList[index].IsCoinstake,
-            Fee = transactionItemsList[index].Fee,
-            Weight = transactionItemsList[index].Weight,
-            Size = transactionItemsList[index].Size,
-            VirtualSize = transactionItemsList[index].VirtualSize,
-            HasWitness = transactionItemsList[index].HasWitness,
-            Inputs = transactionItemsList[index].Inputs.Select(i => new QueryTransactionInput
+            var blk = blks[index];
+
+            return new MempoolTransaction
             {
-               CoinBase = i.InputCoinBase,
-               InputAddress = i.InputAddress,
-               InputAmount = i.InputAmount,
-               InputIndex = i.PreviousIndex,
-               InputTransactionId = i.PreviousTransactionHash,
-               ScriptSig = i.ScriptSig,
-               ScriptSigAsm = new Script(NBitcoin.DataEncoders.Encoders.Hex.DecodeData(i.ScriptSig)).ToString(),
-               WitScript = i.WitScript,
-               SequenceLock = i.SequenceLock
-            }),
-            Outputs = transactionItemsList[index].Outputs.Select(o => new QueryTransactionOutput
-            {
-               Address = o.Address,
-               Balance = o.Value,
-               Index = o.Index,
-               OutputType = o.OutputType,
-               ScriptPubKey = o.ScriptPubKey,
-               SpentInTransaction = o.SpentInTransaction,
-               ScriptPubKeyAsm = new Script(NBitcoin.DataEncoders.Encoders.Hex.DecodeData(o.ScriptPubKey)).ToString()
-            }),
-         }).ToList();
-         return result;
+               Txid = transaction.TransactionHash,
+               Version = (int)transactionItemsList[index].Version,
+               Locktime = int.Parse(transactionItemsList[index].LockTime.Split(':').Last()),
+               Size = transactionItemsList[index].Size,
+               Weight = transactionItemsList[index].Weight,
+               Fee = (int)transactionItemsList[index].Fee,
+               Status = new()
+               {
+                  Confirmed = transaction.Confirmations > 0,
+                  BlockHeight = (int)transaction.BlockIndex,
+                  BlockHash = transaction.BlockHash,
+                  BlockTime = transaction.Timestamp
+               },
+               Vin = transactionItemsList[index].Inputs.Select(input =>
+               {
+                  OutputTable output = GetTransactionOutput(input.PreviousTransactionHash, input.PreviousIndex);
+                  return new Vin()
+                  {
+                     IsCoinbase = input.InputCoinBase != null,
+                     Prevout = new PrevOut()
+                     {
+                        Value = output.Value,
+                        Scriptpubkey = output.ScriptHex,
+                        ScriptpubkeyAddress = output.Address,
+                        ScriptpubkeyAsm = null,
+                        ScriptpubkeyType = null
+                     },
+                     Scriptsig = input.ScriptSig,
+                     Asm = null,
+                     Sequence = long.Parse(input.SequenceLock),
+                     Txid = input.PreviousTransactionHash,
+                     Vout = input.PreviousIndex,
+                     Witness = ComputeWitScript(input.WitScript),
+                     InnserRedeemscriptAsm = null,
+                     InnerWitnessscriptAsm = null
+                  };
+               }).ToList(),
+               Vout = transactionItemsList[index].Outputs.Select(output => new PrevOut()
+               {
+                  Value = output.Value,
+                  Scriptpubkey = output.ScriptPubKey,
+                  ScriptpubkeyAddress = output.Address,
+                  ScriptpubkeyAsm = null,
+               }).ToList(),
+            };
+         }
+
+         ).ToList();
+      }
+
+      static List<string> ComputeWitScript(string witScript)
+      {
+         List<string> scripts = new();
+         int index = 0;
+         while (index < witScript.Length)
+         {
+            string sizeHex = witScript.Substring(index, 2);
+            int size = int.Parse(sizeHex, System.Globalization.NumberStyles.HexNumber);
+            index += 2;
+            string script = witScript.Substring(index, size * 2);
+            scripts.Add(script);
+         }
+
+         return scripts;
       }
       /// <summary>
       /// Calculates the balance for specified address.

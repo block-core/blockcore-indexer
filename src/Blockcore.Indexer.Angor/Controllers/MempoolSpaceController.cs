@@ -7,79 +7,6 @@ using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.Indexer.Core.Handlers;
 
 
-static class MempoolSpaceHelpers
-{
-    static List<string> ComputeWitScript(string witScript)
-    {
-        List<string> scripts = new();
-        int index = 0;
-        while (index < witScript.Length)
-        {
-            string sizeHex = witScript.Substring(index, 2);
-            int size = int.Parse(sizeHex, System.Globalization.NumberStyles.HexNumber);
-            index += 2;
-            string script = witScript.Substring(index, size * 2);
-            scripts.Add(script);
-        }
-
-        return scripts;
-    }
-
-    public static MempoolTransaction MapToMempoolTransaction(QueryTransaction queryTransaction, IStorage storage)
-    {
-        MempoolTransaction mempoolTransaction = new()
-        {
-            Txid = queryTransaction.TransactionId,
-            Version = (int)queryTransaction.Version,
-            Locktime = int.Parse(queryTransaction.LockTime.Split(':').Last()),
-            Size = queryTransaction.Size,
-            Weight = queryTransaction.Weight,
-            Fee = (int)queryTransaction.Fee,
-            Status = new()
-            {
-                Confirmed = queryTransaction.Confirmations > 0,
-                BlockHeight = (int)queryTransaction.BlockIndex,
-                BlockHash = queryTransaction.BlockHash,
-                BlockTime = queryTransaction.Timestamp
-            },
-            Vin = queryTransaction.Inputs.Select(input =>
-            {
-                Output output = storage.GetOutputFromOutpoint(input.InputTransactionId, input.InputIndex);
-                return new Vin()
-                {
-                    IsCoinbase = input.CoinBase != null,
-                    Prevout = new PrevOut()
-                    {
-                        Value = output.Value,
-                        Scriptpubkey = output.ScriptHex,
-                        ScriptpubkeyAddress = output.Address,
-                        ScriptpubkeyAsm = null,
-                        ScriptpubkeyType = null
-                    },
-                    Scriptsig = input.ScriptSig,
-                    Asm = input.ScriptSigAsm,
-                    Sequence = long.Parse(input.SequenceLock),
-                    Txid = input.InputTransactionId,
-                    Vout = input.InputIndex,
-                    Witness = ComputeWitScript(input.WitScript),
-                    InnserRedeemscriptAsm = null,
-                    InnerWitnessscriptAsm = null
-                };
-            }).ToList(),
-
-
-            Vout = queryTransaction.Outputs.Select(output => new PrevOut()
-            {
-                Value = output.Balance,
-                Scriptpubkey = output.ScriptPubKey,
-                ScriptpubkeyAddress = output.Address,
-                ScriptpubkeyAsm = output.ScriptPubKeyAsm,
-            }).ToList(),
-        };
-
-        return mempoolTransaction;
-    }
-}
 
 namespace Blockcore.Indexer.Angor.Controllers
 {
@@ -115,8 +42,7 @@ namespace Blockcore.Indexer.Angor.Controllers
         public IActionResult GetAddressTransactions(string address)
         {
             var transactions = storage.AddressHistory(address, null, 50).Items.Select(t => t.TransactionHash).ToList();
-            List<QueryTransaction> queryTransactions = storage.GetMempoolTransactionList(transactions);
-            List<MempoolTransaction> txns = queryTransactions.Select(trx => MempoolSpaceHelpers.MapToMempoolTransaction(trx, storage)).ToList();
+            List<MempoolTransaction> txns = storage.GetMempoolTransactionList(transactions).ToList();
             return Ok(JsonSerializer.Serialize(txns, serializeOption));
         }
 
