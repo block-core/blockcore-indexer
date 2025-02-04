@@ -203,6 +203,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return block;
       }
 
+      public async Task<SyncBlockInfo> BlockByIndexAsync(long blockIndex)
+      {
+         FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(info => info.BlockIndex, blockIndex);
+         var blockCursor = await mongoDb.BlockTable.FindAsync(filter);
+         var block = await blockCursor.FirstOrDefaultAsync();
+         SyncBlockInfo tip = globalState.StoreTip;
+         if (tip != null && block != null)
+            block.Confirmations = tip.BlockIndex + 1 - block.BlockIndex;
+
+         return mongoBlockToStorageBlock.Map(block);
+      }
+
       public SyncBlockInfo BlockByHash(string blockHash)
       {
          FilterDefinition<BlockTable> filter = Builders<BlockTable>.Filter.Eq(info => info.BlockHash, blockHash);
@@ -310,18 +322,41 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return mongoDb.TransactionTable.Find(filter).ToList().Select(t => new SyncRawTransaction { TransactionHash = trxHash, RawTransaction = t.RawTransaction }).FirstOrDefault();
       }
 
+      public async Task<SyncRawTransaction> TransactionGetByHashAsync(string trxHash){
+         FilterDefinition<TransactionTable> filter = Builders<TransactionTable>.Filter.Eq(info => info.TransactionId, trxHash);
+
+         var TransactionTableCursor = await mongoDb.TransactionTable.FindAsync(filter);
+         var TransactionTable = await TransactionTableCursor.ToListAsync();
+         
+         return TransactionTable.Select(t => new SyncRawTransaction { TransactionHash = trxHash, RawTransaction = t.RawTransaction }).FirstOrDefault();       
+      }
+
       public InputTable GetTransactionInput(string transaction, int index)
       {
          FilterDefinition<InputTable> filter = Builders<InputTable>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
 
          return mongoDb.InputTable.Find(filter).ToList().FirstOrDefault();
       }
+      public async Task<InputTable> GetTransactionInputAsync(string transaction, int index){
+         FilterDefinition<InputTable> filter = Builders<InputTable>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
 
+         var cursor = await mongoDb.InputTable.FindAsync(filter);
+         var list = await cursor.ToListAsync();
+         return list.FirstOrDefault();
+      }
       public OutputTable GetTransactionOutput(string transaction, int index)
       {
          FilterDefinition<OutputTable> filter = Builders<OutputTable>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
 
          return mongoDb.OutputTable.Find(filter).ToList().FirstOrDefault();
+      }
+
+      public async Task<OutputTable> GetTransactionOutputAsync(string transaction, int index)
+      {
+         FilterDefinition<OutputTable> filter = Builders<OutputTable>.Filter.Eq(addr => addr.Outpoint, new Outpoint { TransactionId = transaction, OutputIndex = index });
+         var cursor = await mongoDb.OutputTable.FindAsync(filter);
+         var list = await cursor.ToListAsync();
+         return list.FirstOrDefault();
       }
 
       public SyncTransactionInfo BlockTransactionGet(string transactionId)
@@ -469,6 +504,92 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return ret;
       }
 
+      public async Task<SyncTransactionItems> TransactionItemsGetAsync(string transactionId, Transaction transaction = null)
+      {
+         if (transaction == null)
+         {
+            // Try to find the trx in disk
+            SyncRawTransaction rawtrx = await TransactionGetByHashAsync(transactionId);
+
+            if (rawtrx == null)
+            {
+               var client = clientFactory.Create(syncConnection);
+
+               Client.Types.DecodedRawTransaction res = client.GetRawTransactionAsync(transactionId, 0).Result;
+
+               if (res.Hex == null)
+               {
+                  return null;
+               }
+
+               transaction = syncConnection.Network.Consensus.ConsensusFactory.CreateTransaction(res.Hex);
+               transaction.PrecomputeHash(false, true);
+            }
+            else
+            {
+               transaction = syncConnection.Network.Consensus.ConsensusFactory.CreateTransaction(rawtrx.RawTransaction);
+               transaction.PrecomputeHash(false, true);
+            }
+         }
+
+         bool hasWitness = transaction.HasWitness;
+         int witnessScaleFactor = syncConnection.Network.Consensus.Options?.WitnessScaleFactor ?? 4;
+
+         int size = NBitcoin.BitcoinSerializableExtensions.GetSerializedSize(transaction, syncConnection.Network.Consensus.ConsensusFactory);
+         int virtualSize = hasWitness ? transaction.GetVirtualSize(witnessScaleFactor) : size;
+         int weight = virtualSize * witnessScaleFactor - (witnessScaleFactor - 1);
+
+         var ret = new SyncTransactionItems
+         {
+            RBF = transaction.RBF,
+            LockTime = transaction.LockTime.ToString(),
+            Version = transaction.Version,
+            HasWitness = hasWitness,
+            Size = size,
+            VirtualSize = virtualSize,
+            Weight = weight,
+            IsCoinbase = transaction.IsCoinBase,
+            IsCoinstake = syncConnection.Network.Consensus.IsProofOfStake && transaction.IsCoinStake,
+            Inputs = transaction.Inputs.Select(v => new SyncTransactionItemInput
+            {
+               PreviousTransactionHash = v.PrevOut.Hash.ToString(),
+               PreviousIndex = (int)v.PrevOut.N,
+               WitScript = v.WitScript.ToScript().ToHex(),
+               ScriptSig = v.ScriptSig.ToHex(),
+               InputAddress = scriptInterpeter.GetSignerAddress(syncConnection.Network, v.ScriptSig),
+               SequenceLock = v.Sequence.ToString(),
+            }).ToList(),
+            Outputs = transaction.Outputs.Select((output, index) => new SyncTransactionItemOutput
+            {
+               Address = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey)?.Addresses?.FirstOrDefault(),
+               Index = index,
+               Value = output.Value,
+               OutputType = scriptInterpeter.InterpretScript(syncConnection.Network, output.ScriptPubKey)?.ScriptType, // StandardScripts.GetTemplateFromScriptPubKey(output.ScriptPubKey)?.Type.ToString(),
+               ScriptPubKey = output.ScriptPubKey.ToHex()
+            }).ToList()
+         };
+
+         foreach (SyncTransactionItemInput input in ret.Inputs)
+         {
+            OutputTable outputTable =  await GetTransactionOutputAsync(input.PreviousTransactionHash, input.PreviousIndex);
+            input.InputAddress = outputTable?.Address;
+            input.InputAmount = outputTable?.Value ?? 0;
+         }
+
+         // try to fetch spent outputs
+         foreach (SyncTransactionItemOutput output in ret.Outputs)
+         {
+            output.SpentInTransaction = (await GetTransactionInputAsync(transactionId, output.Index))?.TrxHash;
+         }
+
+         if (!ret.IsCoinbase && !ret.IsCoinstake)
+         {
+            // calcualte fee and feePk
+            ret.Fee = ret.Inputs.Sum(s => s.InputAmount) - ret.Outputs.Sum(s => s.Value);
+         }
+
+         return ret;
+      }
       public QueryResult<BalanceForAddress> Richlist(int offset, int limit)
       {
          FilterDefinitionBuilder<RichlistTable> filterBuilder = Builders<RichlistTable>.Filter;
@@ -646,18 +767,18 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public List<MempoolTransaction> GetMempoolTransactionList(List<string> txids)
+      public async Task<List<MempoolTransaction>> GetMempoolTransactionListAsync(List<string> txids)
       {
          FilterDefinition<TransactionBlockTable> filter = Builders<TransactionBlockTable>.Filter.In(info => info.TransactionId, txids);
-         List<TransactionBlockTable> trxs = mongoDb.TransactionBlockTable.Find(filter).ToList();
+         var trxsCursor = await mongoDb.TransactionBlockTable.FindAsync(filter);
+         var trxs = await trxsCursor.ToListAsync();
 
          SyncBlockInfo current = globalState.StoreTip;// GetLatestBlock();
+         var blkTasks = trxs.Select(trx => BlockByIndexAsync(trx.BlockIndex)).ToList();
+         var trxItemsTasks = trxs.Select(trx => TransactionItemsGetAsync(trx.TransactionId)).ToList();
 
-         var blkTasks = trxs.Select(trx => Task.Run(() => BlockByIndex(trx.BlockIndex))).ToList();
-         var trxItemsTasks = trxs.Select(trx => Task.Run(() => TransactionItemsGet(trx.TransactionId))).ToList();
-
-         Task.WaitAll(blkTasks.ToArray());
-         Task.WaitAll(trxItemsTasks.ToArray());
+         SyncBlockInfo[] blks = await Task.WhenAll(blkTasks);
+         SyncTransactionItems[] transactionItemsList = await Task.WhenAll(trxItemsTasks);
 
          List<SyncBlockInfo> blks = blkTasks.Select(t => t.Result).ToList();
          List<SyncTransactionItems> transactionItemsList = trxItemsTasks.Select(t => t.Result).ToList();
@@ -673,9 +794,11 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
          ).ToList();
 
-         return transactions.Select((transaction, index) =>
+         var tasks = await Task.WhenAll(transactions.Select(async (transaction, index) =>
          {
             var blk = blks[index];
+            var outputsTasks = transactionItemsList[index].Inputs.Select(async input => await GetTransactionOutputAsync(input.PreviousTransactionHash, input.PreviousIndex));
+            var outputs = await Task.WhenAll(outputsTasks);
 
             return new MempoolTransaction
             {
@@ -692,9 +815,9 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                   BlockHash = transaction.BlockHash,
                   BlockTime = transaction.Timestamp
                },
-               Vin = transactionItemsList[index].Inputs.Select(input =>
+               Vin = transactionItemsList[index].Inputs.Select((input, inputIndex) =>
                {
-                  OutputTable output = GetTransactionOutput(input.PreviousTransactionHash, input.PreviousIndex);
+                  OutputTable output = outputs[inputIndex];
                   return new Vin()
                   {
                      IsCoinbase = input.InputCoinBase != null,
@@ -725,8 +848,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                }).ToList(),
             };
          }
-
-         ).ToList();
+         ));
+         return tasks.ToList();
       }
 
       static List<string> ComputeWitScript(string witScript)

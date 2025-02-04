@@ -39,10 +39,10 @@ namespace Blockcore.Indexer.Angor.Controllers
 
         [HttpGet]
         [Route("address/{address}/txs")]
-        public IActionResult GetAddressTransactions(string address)
+        public async Task<IActionResult> GetAddressTransactions(string address)
         {
             var transactions = storage.AddressHistory(address, null, 50).Items.Select(t => t.TransactionHash).ToList();
-            List<MempoolTransaction> txns = storage.GetMempoolTransactionList(transactions).ToList();
+            List<MempoolTransaction> txns = await storage.GetMempoolTransactionListAsync(transactions);
             return Ok(JsonSerializer.Serialize(txns, serializeOption));
         }
 
@@ -84,7 +84,12 @@ namespace Blockcore.Indexer.Angor.Controllers
         [Route("tx/{txid}/hex")]
         public IActionResult GetTransactionHex(string txid)
         {
-            return Ok(storage.GetRawTransaction(txid));
+            var txn = storage.GetRawTransaction(txid);
+            if (txn == null)
+            {
+                return NotFound();
+            }
+            return Ok(txn);
         }
 
         [HttpGet]
