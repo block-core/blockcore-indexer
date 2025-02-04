@@ -96,7 +96,7 @@ namespace Blockcore.Indexer.Angor.Controllers
         [Route("block-height/{height}")]
         public IActionResult GetBlockHeight(int height)
         {
-            return Ok(storage.BlockByIndex(height));
+            return Ok(storage.BlockByIndex(height).BlockHash);
         }
     }
 }
