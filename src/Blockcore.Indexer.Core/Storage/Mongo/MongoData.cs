@@ -1479,14 +1479,16 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          };
       }
 
-      public List<OutspentResponse> GetTransactionOutspends(string txid){
-         var outpoints = mongoDb.OutputTable.Find(o => o.Outpoint.TransactionId == txid).ToList();
-         var OutspentResponses = outpoints.Select(op => GetOutputSpendingStatus(op.Outpoint)).ToList();
+      public async Task<List<OutspentResponse>> GetTransactionOutspendsAsync(string txid)
+      {
+         var outpoints = (await mongoDb.OutputTable.FindAsync(o => o.Outpoint.TransactionId == txid)).ToList();
+         var OutspentResponses = (await Task.WhenAll(outpoints.Select(async op => await GetOutputSpendingStatusAsync(op.Outpoint)))).ToList();
          return OutspentResponses;
       }
-      public OutspentResponse GetOutputSpendingStatus(Outpoint outpoint) {
+      public async Task<OutspentResponse> GetOutputSpendingStatusAsync(Outpoint outpoint)
+      {
          // check if the output is spent in the mempool
-         var spentOutput = mongoDb.InputTable.Find(i => i.Outpoint == outpoint).FirstOrDefault();
+         var spentOutput = (await mongoDb.InputTable.FindAsync(i => i.Outpoint == outpoint)).FirstOrDefault();
 
          OutspentResponse response = new()
          {
@@ -1511,8 +1513,8 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
 
          //check in mempool
-         var mempoolSpentOutput = mongoDb.Mempool.Find(m => m.Inputs.Any(i => i.Outpoint == outpoint)).FirstOrDefault();
-         if(mempoolSpentOutput != null){
+         var mempoolSpentOutput = (await mongoDb.Mempool.FindAsync(m => m.Inputs.Any(i => i.Outpoint == outpoint))).FirstOrDefault();
+         if (mempoolSpentOutput != null){
             response.spent = true;
             response.txid = mempoolSpentOutput.TransactionId;
             response.vin = 0;
