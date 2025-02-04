@@ -67,7 +67,7 @@ namespace Blockcore.Indexer.Core.Storage
       List<PeerDetails> GetPeerFromDate(DateTime date);
       Task<long> InsertPeer(PeerDetails info);
       
-      public Output GetOutputFromOutpoint(string txid, int index);
+      public Task<Output> GetOutputFromOutpointAsync(string txid, int index);
 
       public Task<List<OutspentResponse>> GetTransactionOutspendsAsync(string txid);
    }

@@ -779,10 +779,6 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          SyncBlockInfo[] blks = await Task.WhenAll(blkTasks);
          SyncTransactionItems[] transactionItemsList = await Task.WhenAll(trxItemsTasks);
-
-         List<SyncBlockInfo> blks = blkTasks.Select(t => t.Result).ToList();
-         List<SyncTransactionItems> transactionItemsList = trxItemsTasks.Select(t => t.Result).ToList();
-
          List<SyncTransactionInfo> transactions = blks.Select((blk, index) => new SyncTransactionInfo
          {
             BlockIndex = trxs[index].BlockIndex,
@@ -1529,9 +1525,10 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          return response;
       }
 
-      public Output GetOutputFromOutpoint(string txid, int index){
+      public async Task<Output> GetOutputFromOutpointAsync(string txid, int index)
+      {
          var outpoint = new Outpoint { TransactionId = txid, OutputIndex = index };
-         return mongoDb.OutputTable.Find(o => o.Outpoint == outpoint).FirstOrDefault();
+         return (await mongoDb.OutputTable.FindAsync(o => o.Outpoint == outpoint)).FirstOrDefault();
       }
    }
 }

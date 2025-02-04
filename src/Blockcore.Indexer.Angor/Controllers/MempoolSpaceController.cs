@@ -48,9 +48,9 @@ namespace Blockcore.Indexer.Angor.Controllers
 
         [HttpGet]
         [Route("tx/{txid}/outspends")]
-        public IActionResult GetTransactionOutspends(string txid)
+        public async Task<IActionResult> GetTransactionOutspends(string txid)
         {
-            List<OutspentResponse> responses = storage.GetTransactionOutspends(txid); 
+            List<OutspentResponse> responses = await storage.GetTransactionOutspendsAsync(txid);
             return Ok(JsonSerializer.Serialize(responses, serializeOption));
         }
 
@@ -67,7 +67,7 @@ namespace Blockcore.Indexer.Angor.Controllers
             recommendedFees.HourFee = (int)Fees[2];
             recommendedFees.EconomyFee = (int)Fees[3];
             recommendedFees.MinimumFee = (int)Fees[4];
-            
+
             return Ok(JsonSerializer.Serialize(recommendedFees, new JsonSerializerOptions()
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
