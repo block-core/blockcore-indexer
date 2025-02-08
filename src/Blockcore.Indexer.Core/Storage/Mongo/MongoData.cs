@@ -1489,38 +1489,19 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          OutspentResponse response = new()
          {
             spent = false,
-            txid = null,
-            vin = -1,
-            status = null
          };
 
-         if (spentOutput != null){
+         if (spentOutput != null)
+         {
             response.spent = true;
-            response.txid = spentOutput.TrxHash;
-            response.vin = 0;
-            var block = BlockByIndex(spentOutput.BlockIndex);
-
-            response.status = new UtxoStatus(){
-               Confirmed = true,
-               BlockHeight = (int)spentOutput.BlockIndex,
-               BlockHash = block.BlockHash,
-               BlockTime = block.BlockTime,
-            };
          }
 
          //check in mempool
          var mempoolSpentOutput = (await mongoDb.Mempool.FindAsync(m => m.Inputs.Any(i => i.Outpoint == outpoint))).FirstOrDefault();
-         if (mempoolSpentOutput != null){
+         if (mempoolSpentOutput != null)
+         {
             response.spent = true;
-            response.txid = mempoolSpentOutput.TransactionId;
-            response.vin = 0;
-            response.status = new UtxoStatus(){
-               Confirmed = false,
-               BlockHeight = 0,
-               BlockHash = null,
-               BlockTime = 0,
-            };
-         } 
+         }
 
          return response;
       }
