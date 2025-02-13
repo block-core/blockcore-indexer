@@ -1,7 +1,23 @@
+## <small>0.2.70 (2025-02-13)</small>
+
+* Adapt Indexer to Mempool Endpoints (#223) ([b47a366](https://github.com/block-core/blockcore-indexer/commit/b47a366)), closes [#223](https://github.com/block-core/blockcore-indexer/issues/223)
+* fix typo (#222) ([579a879](https://github.com/block-core/blockcore-indexer/commit/579a879)), closes [#222](https://github.com/block-core/blockcore-indexer/issues/222)
+* Update build.yml ([d2dbb2d](https://github.com/block-core/blockcore-indexer/commit/d2dbb2d))
+* Update build.yml ([74d9873](https://github.com/block-core/blockcore-indexer/commit/74d9873))
+* Update build.yml ([affe5f7](https://github.com/block-core/blockcore-indexer/commit/affe5f7))
+* Update build.yml ([1c75498](https://github.com/block-core/blockcore-indexer/commit/1c75498))
+* Update build.yml ([318b0ac](https://github.com/block-core/blockcore-indexer/commit/318b0ac))
+* update version ([51ddca6](https://github.com/block-core/blockcore-indexer/commit/51ddca6))
+
+
+
 ## <small>0.2.69 (2024-11-29)</small>
 
 * bump version and release ([d478edd](https://github.com/block-core/blockcore-indexer/commit/d478edd))
 * Changed Angor to keep nostr id not npub (#220) ([4a43a85](https://github.com/block-core/blockcore-indexer/commit/4a43a85)), closes [#220](https://github.com/block-core/blockcore-indexer/issues/220)
+* Update build.yml ([4c9a1cd](https://github.com/block-core/blockcore-indexer/commit/4c9a1cd))
+* Update build.yml ([ab8d0f8](https://github.com/block-core/blockcore-indexer/commit/ab8d0f8))
+* upgrade to version 2.69 ([feb872b](https://github.com/block-core/blockcore-indexer/commit/feb872b))
 
 
 
