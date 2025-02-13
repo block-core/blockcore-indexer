@@ -129,17 +129,17 @@ jobs:
     #- run: mkdir -p path/to/artifact
     #- run: echo hello > path/to/artifact/world.txt
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: blockcore-indexer
         path: "${{env.RELEASE_PATH}}"
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: blockcore-cirrus-indexer
         path: "${{env.RELEASE_CIRRUS_PATH}}"
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: blockcore-angor-indexer
         path: "${{env.RELEASE_ANGOR_PATH}}"
