@@ -15,10 +15,14 @@ namespace Blockcore.Indexer.Core.Storage
 
       QueryAddress AddressBalance(string address);
 
+      AddressResponse AddressResponseBalance(string address);
+
       Task<List<QueryAddressBalance>> QuickBalancesLookupForAddressesWithHistoryCheckAsync(
          IEnumerable<string> addresses, bool includePending = false);
 
       QueryResult<QueryAddressItem> AddressHistory(string address, int? offset, int limit);
+
+      Task<List<MempoolTransaction>> GetMempoolTransactionListAsync(List<string> txids);
 
       QueryResult<QueryMempoolTransactionHashes> GetMemoryTransactionsSlim(int offset, int limit);
 
@@ -50,7 +54,7 @@ namespace Blockcore.Indexer.Core.Storage
 
       long TotalBalance();
 
-      Task<QueryResult<Output>> GetUnspentTransactionsByAddressAsync(string address,long confirmations, int offset, int limit);
+      Task<QueryResult<Output>> GetUnspentTransactionsByAddressAsync(string address, long confirmations, int offset, int limit);
 
       Task DeleteBlockAsync(string blockHash);
 
@@ -62,5 +66,9 @@ namespace Blockcore.Indexer.Core.Storage
 
       List<PeerDetails> GetPeerFromDate(DateTime date);
       Task<long> InsertPeer(PeerDetails info);
+      
+      public Task<Output> GetOutputFromOutpointAsync(string txid, int index);
+
+      public Task<List<OutspentResponse>> GetTransactionOutspendsAsync(string txid);
    }
 }
