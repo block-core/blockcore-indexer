@@ -11,7 +11,7 @@ using Blockcore.Indexer.Core.Handlers;
 namespace Blockcore.Indexer.Angor.Controllers
 {
     [ApiController]
-    [Route("api")]
+    [Route("api/V1")]
     public class MempoolSpaceController : Controller
     {
         private readonly IStorage storage;
