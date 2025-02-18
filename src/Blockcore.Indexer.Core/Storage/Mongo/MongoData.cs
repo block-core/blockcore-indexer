@@ -827,7 +827,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                      },
                      Scriptsig = input.ScriptSig,
                      Asm = null,
-                     Sequence = long.Parse(input.SequenceLock),
+                     //Sequence = long.Parse(input.SequenceLock),
                      Txid = input.PreviousTransactionHash,
                      Vout = input.PreviousIndex,
                      Witness = ComputeWitScript(input.WitScript),
