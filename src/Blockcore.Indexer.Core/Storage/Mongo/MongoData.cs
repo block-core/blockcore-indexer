@@ -850,19 +850,15 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       static List<string> ComputeWitScript(string witScript)
       {
-         List<string> scripts = new();
-         int index = 0;
-         while (index < witScript.Length)
+         if(string.IsNullOrEmpty(witScript))
          {
-            string sizeHex = witScript.Substring(index, 2);
-            int size = int.Parse(sizeHex, System.Globalization.NumberStyles.HexNumber);
-            index += 2;
-            string script = witScript.Substring(index, size * 2);
-            scripts.Add(script);
+            return new List<string>();
          }
 
-         return scripts;
+         var witscript = new WitScript(Script.FromHex(witScript).ToOps().ToArray());
+         return witscript.Pushes.Select(p => Op.GetPushOp(p).ToString()).ToList();
       }
+
       /// <summary>
       /// Calculates the balance for specified address.
       /// </summary>
