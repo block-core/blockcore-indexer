@@ -8,6 +8,7 @@ namespace Blockcore.Indexer.Angor.Controllers;
 
 [ApiController]
 [Route("api/query/Angor")]
+[Route("api/v1/query/Angor")] 
 public class ProjectQueryController : Controller
 {
    private readonly IPagingHelper paging;
