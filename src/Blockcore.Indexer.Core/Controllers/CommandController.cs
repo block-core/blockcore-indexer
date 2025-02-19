@@ -11,6 +11,7 @@ namespace Blockcore.Indexer.Core.Controllers
    /// </summary>
    [ApiController]
    [Route("api/command")]
+   [Route("api/v1/tx")] // the mempool api
    public class CommandController : Controller
    {
       private readonly CommandHandler commandHandler;
