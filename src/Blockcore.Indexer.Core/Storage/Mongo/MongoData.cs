@@ -557,7 +557,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                WitScript = v.WitScript.ToScript().ToHex(),
                ScriptSig = v.ScriptSig.ToHex(),
                InputAddress = scriptInterpeter.GetSignerAddress(syncConnection.Network, v.ScriptSig),
-               SequenceLock = v.Sequence.ToString(),
+               SequenceLock = v.Sequence.Value.ToString(),
             }).ToList(),
             Outputs = transaction.Outputs.Select((output, index) => new SyncTransactionItemOutput
             {
