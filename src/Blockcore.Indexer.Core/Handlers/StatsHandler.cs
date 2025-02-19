@@ -267,7 +267,17 @@ namespace Blockcore.Indexer.Core.Handlers
                   throw;
                }
 
-               var feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRate = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
+               FeeEstimation feeEstimation;
+               try
+               {
+                  feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRate = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
+               }
+               catch (Exception e)
+               {
+                  Network network = syncConnection.Network;
+                  feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRate = network.MinTxFee, };
+                  log.LogError(e, "fee call failed");
+               }
 
                feeEstimations.Fees.Add(feeEstimation);
 
