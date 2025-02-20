@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using Blockcore.Indexer.Core.Storage.Types;
 using Blockcore.Indexer.Core.Handlers;
+using Blockcore.Utilities.Extensions;
 
 
 
@@ -79,7 +80,17 @@ namespace Blockcore.Indexer.Angor.Controllers
         {
             return fee / 1_000;
         }
-
+        [HttpGet]
+        [Route("tx/{txid}")]
+        public async Task<IActionResult> GetTransaction(string txid)
+        {
+            var txns = await storage.GetMempoolTransactionListAsync([txid]);
+            if (txns.IsEmpty())
+            {
+                return NotFound();
+            }
+            return Ok(JsonSerializer.Serialize(txns.First(), serializeOption));
+        }
         [HttpGet]
         [Route("tx/{txid}/hex")]
         public IActionResult GetTransactionHex(string txid)
