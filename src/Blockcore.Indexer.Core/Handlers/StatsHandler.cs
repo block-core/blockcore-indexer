@@ -267,17 +267,7 @@ namespace Blockcore.Indexer.Core.Handlers
                   throw;
                }
 
-               FeeEstimation feeEstimation;
-               try
-               {
-                  feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRate = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
-               }
-               catch (Exception e)
-               {
-                  Network network = syncConnection.Network;
-                  feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRate = network.MinTxFee, };
-                  log.LogError(e, "fee call failed");
-               }
+               var feeEstimation = new FeeEstimation() { Confirmations = confirmation, FeeRate = estimateSmartFee.FeeRate.FeePerK.Satoshi, };
 
                feeEstimations.Fees.Add(feeEstimation);
 
@@ -285,12 +275,10 @@ namespace Blockcore.Indexer.Core.Handlers
 
                cache.Set(key, feeEstimation, TimeSpan.FromMinutes(1));
             }
-
          }
 
          return feeEstimations;
       }
-
 
       // TODO: Figure out the new alternative to MaxPort that can be used.
       // This code is temporary til Blockcore upgrades to netcore 3.3

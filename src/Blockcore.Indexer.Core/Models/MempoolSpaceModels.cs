@@ -22,10 +22,14 @@ namespace Blockcore.Indexer.Core.Models
     }
 
     public class OutspentResponse{
-        public bool spent { get; set; }
-    }
+        public bool Spent { get; set; }
+        public string Txid { get; set; }
+        public int Vin { get; set; }
+        public UtxoStatus Status { get; set; }
 
-    public class AddressUtxo
+   }
+
+   public class AddressUtxo
     {
         public string Txid { get; set; }
         public int Vout { get; set; }

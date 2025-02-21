@@ -11,7 +11,7 @@ namespace Blockcore.Indexer.Core.Controllers
    /// </summary>
    [ApiController]
    [Route("api/command")]
-   [Route("api/v1/tx")] // the mempool api
+   [Route("api/v1")] // the mempool api
    public class CommandController : Controller
    {
       private readonly CommandHandler commandHandler;
@@ -25,6 +25,7 @@ namespace Blockcore.Indexer.Core.Controllers
       }
 
       [HttpPost("send")]
+      [HttpPost("tx")]
       public async Task<IActionResult> Send([FromBody][ModelBinder(BinderType = typeof(RawStringModelBinder))] string data)
       {
          if (string.IsNullOrEmpty(data))

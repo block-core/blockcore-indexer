@@ -470,7 +470,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                WitScript = v.WitScript.ToScript().ToHex(),
                ScriptSig = v.ScriptSig.ToHex(),
                InputAddress = scriptInterpeter.GetSignerAddress(syncConnection.Network, v.ScriptSig),
-               SequenceLock = v.Sequence.ToString(),
+               SequenceLock = v.Sequence.Value.ToString(),
             }).ToList(),
             Outputs = transaction.Outputs.Select((output, index) => new SyncTransactionItemOutput
             {
@@ -827,7 +827,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
                      },
                      Scriptsig = input.ScriptSig,
                      Asm = null,
-                     //Sequence = long.Parse(input.SequenceLock),
+                     Sequence = TryParseSequenceLock(input.SequenceLock),
                      Txid = input.PreviousTransactionHash,
                      Vout = input.PreviousIndex,
                      Witness = ComputeWitScript(input.WitScript),
@@ -846,6 +846,21 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          }
          ));
          return tasks.ToList();
+      }
+
+      private long TryParseSequenceLock(string sequenceLock)
+      {
+         if (long.TryParse(sequenceLock, out long result))
+         {
+            return result;
+         }
+         else
+         {
+            // Handle the case where the sequence lock is not a valid integer
+            // For example, log the error and return a default value
+            log.LogError($"Invalid sequence lock format: {sequenceLock}");
+            return 0; // or any other default value
+         }
       }
 
       static List<string> ComputeWitScript(string witScript)
@@ -1477,6 +1492,7 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
          var OutspentResponses = (await Task.WhenAll(outpoints.Select(async op => await GetOutputSpendingStatusAsync(op.Outpoint)))).ToList();
          return OutspentResponses;
       }
+
       public async Task<OutspentResponse> GetOutputSpendingStatusAsync(Outpoint outpoint)
       {
          // check if the output is spent in the mempool
@@ -1484,19 +1500,24 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
          OutspentResponse response = new()
          {
-            spent = false,
+            Spent = false,
          };
 
+         // todo: add the additional block status and the vin index
          if (spentOutput != null)
          {
-            response.spent = true;
+            response.Spent = true;
+            response.Txid = spentOutput.TrxHash;
+            response.Status = new UtxoStatus { BlockHeight = (int)spentOutput.BlockIndex, Confirmed = true, };
          }
 
          //check in mempool
          var mempoolSpentOutput = (await mongoDb.Mempool.FindAsync(m => m.Inputs.Any(i => i.Outpoint == outpoint))).FirstOrDefault();
          if (mempoolSpentOutput != null)
          {
-            response.spent = true;
+            response.Spent = true;
+            response.Txid = mempoolSpentOutput.TransactionId;
+            response.Status = new UtxoStatus { Confirmed = false, };
          }
 
          return response;
