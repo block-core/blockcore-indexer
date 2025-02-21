@@ -1,7 +1,54 @@
-## <small>0.2.70 (2025-02-13)</small>
+## <small>0.2.78 (2025-02-21)</small>
+
+* Add some additional fixes to the indexer ([242c233](https://github.com/block-core/blockcore-indexer/commit/242c233))
+* Added tx/txid endpoint (#226) ([168804e](https://github.com/block-core/blockcore-indexer/commit/168804e)), closes [#226](https://github.com/block-core/blockcore-indexer/issues/226)
+* Fixed Fee and Sequence Lock (#225) ([5a1265c](https://github.com/block-core/blockcore-indexer/commit/5a1265c)), closes [#225](https://github.com/block-core/blockcore-indexer/issues/225)
+
+
+
+## <small>0.2.77 (2025-02-19)</small>
+
+* Add mepool post trx endpoint ([4444ec6](https://github.com/block-core/blockcore-indexer/commit/4444ec6))
+
+
+
+## <small>0.2.76 (2025-02-19)</small>
+
+* add versioning ([9a15597](https://github.com/block-core/blockcore-indexer/commit/9a15597))
+
+
+
+## <small>0.2.75 (2025-02-18)</small>
+
+* adjust the endpoint to be api/V1 ([4e78f4c](https://github.com/block-core/blockcore-indexer/commit/4e78f4c))
+
+
+
+## <small>0.2.74 (2025-02-18)</small>
+
+* remove sequence lock for now ([1eed4f1](https://github.com/block-core/blockcore-indexer/commit/1eed4f1))
+
+
+
+## <small>0.2.73 (2025-02-18)</small>
+
+* Fix how we compute witsecipt ([59ea941](https://github.com/block-core/blockcore-indexer/commit/59ea941))
+
+
+
+## <small>0.2.72 (2025-02-18)</small>
+
+* bump version ([9155ebd](https://github.com/block-core/blockcore-indexer/commit/9155ebd))
+* Fixed the MempoolController Route to be same as Mempool's API (#224) ([2f9b765](https://github.com/block-core/blockcore-indexer/commit/2f9b765)), closes [#224](https://github.com/block-core/blockcore-indexer/issues/224)
+
+
+
+## <small>0.2.71 (2025-02-13)</small>
 
 * Adapt Indexer to Mempool Endpoints (#223) ([b47a366](https://github.com/block-core/blockcore-indexer/commit/b47a366)), closes [#223](https://github.com/block-core/blockcore-indexer/issues/223)
+* bump version ([99530fb](https://github.com/block-core/blockcore-indexer/commit/99530fb))
 * fix typo (#222) ([579a879](https://github.com/block-core/blockcore-indexer/commit/579a879)), closes [#222](https://github.com/block-core/blockcore-indexer/issues/222)
+* push the change log file ([51c4da0](https://github.com/block-core/blockcore-indexer/commit/51c4da0))
 * Update build.yml ([d2dbb2d](https://github.com/block-core/blockcore-indexer/commit/d2dbb2d))
 * Update build.yml ([74d9873](https://github.com/block-core/blockcore-indexer/commit/74d9873))
 * Update build.yml ([affe5f7](https://github.com/block-core/blockcore-indexer/commit/affe5f7))
