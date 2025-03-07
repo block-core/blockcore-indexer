@@ -1495,31 +1495,44 @@ namespace Blockcore.Indexer.Core.Storage.Mongo
 
       public async Task<OutspentResponse> GetOutputSpendingStatusAsync(Outpoint outpoint)
       {
-         // check if the output is spent in the mempool
          var spentOutput = (await mongoDb.InputTable.FindAsync(i => i.Outpoint == outpoint)).FirstOrDefault();
 
          OutspentResponse response = new()
          {
             Spent = false,
+            Txid = null,
+            Vin = -1,
+            Status = null,
          };
 
-         // todo: add the additional block status and the vin index
          if (spentOutput != null)
          {
             response.Spent = true;
             response.Txid = spentOutput.TrxHash;
-            response.Status = new UtxoStatus { BlockHeight = (int)spentOutput.BlockIndex, Confirmed = true, };
+            var block = await BlockByIndexAsync(spentOutput.BlockIndex);
+            response.Status = new()
+            {
+               Confirmed = true,
+               BlockHeight = (int)spentOutput.BlockIndex,
+               BlockHash = block.BlockHash,
+               BlockTime = block.BlockTime
+            };
          }
 
-         //check in mempool
          var mempoolSpentOutput = (await mongoDb.Mempool.FindAsync(m => m.Inputs.Any(i => i.Outpoint == outpoint))).FirstOrDefault();
          if (mempoolSpentOutput != null)
          {
             response.Spent = true;
             response.Txid = mempoolSpentOutput.TransactionId;
-            response.Status = new UtxoStatus { Confirmed = false, };
+            response.Vin = -1;
+            response.Status = new UtxoStatus()
+            {
+               Confirmed = false,
+               BlockHeight = -1,
+               BlockHash = null,
+               BlockTime = -1,
+            };
          }
-
          return response;
       }
 
